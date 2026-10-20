@@ -25,7 +25,8 @@ export function registerExtensions(program: Command, ctx: CliContext) {
   skills
     .command('list')
     .description('List pinned skills')
-    .action(() => skillsList(ctx));
+    .option('--json', 'print a JSON array of id, version, vetted and source')
+    .action((opts: { json?: boolean }) => skillsList(ctx, opts));
   skills
     .command('add <ids...>')
     .description('Install catalog skills (or packs) with their ecosystem tool, verify them and pin them in the lock')

@@ -40,7 +40,7 @@ depends_on: [T1]
 parallel_safe: false
 ```
 
-### [ ] T3 — `skills list --json`
+### [x] T3 — `skills list --json`
 
 ```yaml
 project: mandao
@@ -50,7 +50,7 @@ exemplar: src/cli/run.ts
 risk_tags: []
 ac: [AC-3]
 scenarios: [S-3.1]
-tests: { unit: [prints a JSON array of id, version, vetted and source] }
+tests: { unit: ["prints a JSON array of id, version, vetted and source"] }
 dod: [npm run check is green]
 verify: npx vitest run test/integration/cli.test.ts
 depends_on: [T2]
