@@ -28,6 +28,16 @@ harnesses:
     simple:
       implementer: claude-sonnet-5-5
       reviewer: claude-opus-5-5
+    profiles:
+      balanced:
+        why: "Scripts do the Leader's mechanical work, so the Leader runs on Sonnet; Opus keeps reviewing, and implementers follow the task tier."
+        leader: claude-sonnet-5-5
+      economy:
+        why: "The cheapest set that keeps a minimum: no Opus. Strong tasks run on Sonnet and are reviewed by Sonnet (same tier, reduced independence); Haiku for fast tasks."
+        leader: claude-sonnet-5-5
+        reviewer: claude-sonnet-5-5
+        implementer: { fast: claude-haiku-5-5, standard: claude-sonnet-5-5, strong: claude-sonnet-5-5 }
+        tester: claude-sonnet-5-5
     tiers:
       claude-haiku-5-5: fast
       claude-sonnet-5-5: standard
@@ -81,6 +91,15 @@ harnesses:
     simple:
       implementer: Claude Sonnet 5.5
       reviewer: GPT-6 Luna
+    profiles:
+      balanced:
+        why: "Copilot bills premium requests per model; the Leader drops to Haiku because scripts do its mechanical work. The reviewer stays on another vendor's standard model."
+        leader: Claude Haiku 5.5
+      economy:
+        why: "The fewest premium requests that keep a minimum: Haiku leads, implements fast and standard tasks and tests; Sonnet implements strong ones and GPT-6 Luna reviews."
+        leader: Claude Haiku 5.5
+        implementer: { fast: Claude Haiku 5.5, standard: Claude Haiku 5.5, strong: Claude Sonnet 5.5 }
+        tester: Claude Haiku 5.5
     tiers:
       Claude Haiku 5.5: fast
       Claude Haiku 4.5: fast
@@ -133,6 +152,16 @@ harnesses:
     simple:
       implementer: gpt-6.1-sol
       reviewer: gpt-6-sol
+    profiles:
+      balanced:
+        why: "Scripts do the Leader's mechanical work, so the Leader keeps gpt-6.1-sol at low effort; the Reviewer keeps high effort."
+        effort: { leader: low }
+      economy:
+        why: "gpt-6-luna for fast and standard tasks and tests; gpt-6.1-sol at medium effort reviews (never below the Implementer) and leads at low effort."
+        implementer: { fast: gpt-6-luna, standard: gpt-6-luna, strong: gpt-6.1-sol }
+        tester: gpt-6-luna
+        reviewer: gpt-6.1-sol
+        effort: { leader: low, reviewer: medium, implementer: { fast: low, standard: medium, strong: medium }, tester: low }
     # Escalating to strong keeps the model and raises the reasoning effort: a real escalation.
     effort:
       leader: high
@@ -186,6 +215,16 @@ harnesses:
     simple:
       implementer: anthropic/claude-sonnet-5-5
       reviewer: anthropic/claude-opus-5-5
+    profiles:
+      balanced:
+        why: "Same as Claude Code with an Anthropic key: the Leader runs on Sonnet, Opus reviews."
+        leader: anthropic/claude-sonnet-5-5
+      economy:
+        why: "No Opus: Sonnet leads, reviews and implements standard and strong tasks; Haiku implements fast ones."
+        leader: anthropic/claude-sonnet-5-5
+        reviewer: anthropic/claude-sonnet-5-5
+        implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-sonnet-5-5 }
+        tester: anthropic/claude-sonnet-5-5
     provider_sets:
       anthropic:
         providers: [anthropic]

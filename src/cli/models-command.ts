@@ -1,7 +1,8 @@
 import type { Command } from 'commander';
+import { readConfig, readModels } from '../engine/files.js';
 import { type HarnessId, ROLES, TIERS, type Tier } from '../schemas/index.js';
 import { type CliContext, sync } from './context.js';
-import { isHarness, printModels, resolveForCli, setMode, setModel } from './models.js';
+import { isHarness, printModels, profilesTable, resolveForCli, setMode, setModel, setProfile } from './models.js';
 
 /** models, models set, models mode. Positional options keep `--harness` on the subcommand. */
 export function registerModels(program: Command, ctx: CliContext) {
@@ -31,6 +32,21 @@ export function registerModels(program: Command, ctx: CliContext) {
         tier: opts.tier as Tier | undefined,
         project: opts.project,
       });
+      sync(ctx, {});
+    });
+  models
+    .command('profile [profile]')
+    .description('peak · balanced · economy: show every profile per harness, or switch to one (your own role choices are kept)')
+    .action((profile?: string) => {
+      const config = readConfig(ctx.root());
+      const current = readModels(ctx.root());
+      if (!profile) {
+        console.log(`Current profile: ${current.profile ?? 'peak'}\n\n${profilesTable(config.harnesses, current.mode ?? 'routed')}`);
+        return;
+      }
+      const r = setProfile(ctx.root(), profile);
+      const kept = Object.entries(r.kept).map(([h, m]) => `${h}: ${Object.keys(m).join(', ')}`);
+      console.log(`Profile ${r.previous} → ${r.profile}.${kept.length ? ` Kept your own choices (${kept.join('; ')}).` : ''}`);
       sync(ctx, {});
     });
   models

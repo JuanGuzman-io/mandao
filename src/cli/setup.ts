@@ -44,6 +44,7 @@ export function registerSetup(program: Command, ctx: CliContext) {
     .option('--language-business <lang>', 'language of business content (story, release notes, PO questions)')
     .option('--language-technical <lang>', 'language of technical content (requirements, design, tasks)')
     .option('--models-mode <mode>', 'simple | routed')
+    .option('--model-profile <profile>', 'peak | balanced | economy (default: peak)')
     .option('--polyrepo <strategy>', 'workspace-repo | home | local (polyrepo only)')
     .option('--home <path>', 'home repository path when --polyrepo home')
     .option('-y, --yes', 'accept detected defaults without prompting')

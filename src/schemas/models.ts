@@ -5,6 +5,13 @@ export const ROLES = ['leader', 'reviewer', 'reviewer_alt', 'implementer', 'test
 export type Role = (typeof ROLES)[number];
 
 export const MODEL_MODES = ['simple', 'routed'] as const;
+
+/**
+ * Model profiles (cost-conscious design): `peak` is the recommendation itself; `balanced` and `economy`
+ * override some roles over it. Chosen at init or with `mandao models profile`; never changed by Mandao.
+ */
+export const MODEL_PROFILES = ['peak', 'balanced', 'economy'] as const;
+export type ModelProfile = (typeof MODEL_PROFILES)[number];
 export type ModelMode = (typeof MODEL_MODES)[number];
 
 const model = z.string().min(1);
@@ -37,6 +44,7 @@ export type RoleModels = z.infer<typeof roleModels>;
 export const modelsSchema = z.object({
   schema_version: schemaVersion,
   mode: z.enum(MODEL_MODES).optional(),
+  profile: z.enum(MODEL_PROFILES).optional(),
   harnesses: z.partialRecord(harnessId, roleModels).default({}),
 });
 export type Models = z.infer<typeof modelsSchema>;
@@ -89,6 +97,11 @@ export const recommendationsSchema = z.object({
         .optional(),
       /** Reasoning effort per role, for harnesses that support it. */
       effort: roleEfforts.optional(),
+      /** The cheaper profiles: role overrides over `routed`/`simple`, with the reason for each choice. */
+      profiles: z
+        .object({ balanced: roleModels.extend({ why: z.string().min(1) }), economy: roleModels.extend({ why: z.string().min(1) }) })
+        .partial()
+        .optional(),
       /**
        * Mandao's classification of each recommended or optional model into a tier. It is a judgement, not
        * vendor data; it backs the rule that a Reviewer never runs below the Implementer's tier.

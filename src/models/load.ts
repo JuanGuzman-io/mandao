@@ -33,11 +33,17 @@ export function resolveWorkspaceModels(
   const mode = project?.mode ?? workspace.mode ?? 'routed';
   const out: Partial<Record<HarnessId, ResolvedModels>> = {};
   for (const harness of config.harnesses) {
-    out[harness] = resolveModels(harness, mode, recommendations, [
-      { source: 'workspace', models: workspace.harnesses[harness] },
-      { source: 'project', models: project?.harnesses[harness] },
-      ...(opts.extra ?? []),
-    ]);
+    out[harness] = resolveModels(
+      harness,
+      mode,
+      recommendations,
+      [
+        { source: 'workspace', models: workspace.harnesses[harness] },
+        { source: 'project', models: project?.harnesses[harness] },
+        ...(opts.extra ?? []),
+      ],
+      workspace.profile ?? 'peak',
+    );
   }
   return out;
 }
