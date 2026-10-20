@@ -78,7 +78,9 @@ Where each fact lives:
   system whose falsity would change a decision, task or scope item, with what changes if false. A High
   premise counts as verified only with an executed command and an excerpt of its output (read-only, in
   the worktree or a sandbox, with a timeout, through the resource guard); a search or a read is not
-  enough. Otherwise it is `UNVERIFIED`. The outputs go in the evidence block.
+  enough. The run is recorded with `mandao run premise <spec> <Pn> -- <command>`; without a recorded
+  run it is `UNVERIFIED`, and `trace` reports `PREMISE_UNPROVEN` otherwise. The outputs go in the
+  evidence block.
 
 ## spec.md (lite depth)
 

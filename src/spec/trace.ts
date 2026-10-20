@@ -2,7 +2,16 @@ import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
 import type { Task } from './tasks.js';
 
-export type TraceFindingType = 'GAP' | 'ORPHAN' | 'BROKEN_REF' | 'UNPLANNED' | 'UNTESTED' | 'E2E_MISSING' | 'UNCOMMITTED';
+export type TraceFindingType =
+  | 'GAP'
+  | 'ORPHAN'
+  | 'BROKEN_REF'
+  | 'UNPLANNED'
+  | 'UNTESTED'
+  | 'E2E_MISSING'
+  | 'UNCOMMITTED'
+  /** A High premise with neither a recorded run nor the UNVERIFIED marker (ADR 0033). */
+  | 'PREMISE_UNPROVEN';
 
 export interface TraceFinding {
   type: TraceFindingType;

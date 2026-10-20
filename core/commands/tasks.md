@@ -49,8 +49,9 @@ nothing to do here. Otherwise:
    The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
    not list it.
 3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a
-   command goes into the **Done when** of the first task that can run it, so a false premise fails in
-   implement, not in verify. A search never counts as proof.
+   command goes into the **Done when** of the first task that can run it (recorded with
+   `mandao run premise`), so a false premise fails in implement, not in verify. A search never counts as
+   proof.
 4. **Write `## Overview`:** `{{script:tasks}} {{arg:spec}} --index --write` generates it from the details,
    grouped by acceptance criterion, with a checkpoint per group. Never edit it by hand.
 <!-- mandao:if multiProject -->

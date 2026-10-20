@@ -8,7 +8,7 @@ import { join } from 'node:path';
  */
 export const LOG_DIR = '_log';
 
-export type LogFile = 'execution.md' | 'progress.yml' | 'reviews' | 'mutations' | 'gates' | 'approvals.yml';
+export type LogFile = 'execution.md' | 'progress.yml' | 'reviews' | 'mutations' | 'gates' | 'approvals.yml' | 'premises';
 
 /** Where a machine file of the spec is: `_log/<name>`, or the root when an older spec keeps it there. */
 export function logPath(specDir: string, name: LogFile): string {
