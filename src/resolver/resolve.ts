@@ -2,11 +2,11 @@ import matter from 'gray-matter';
 import { parse as parseYaml } from 'yaml';
 import type { z } from 'zod';
 import {
+  type CommandFrontmatter,
   commandFrontmatterSchema,
   formatIssues,
-  personaFrontmatterSchema,
-  type CommandFrontmatter,
   type PersonaFrontmatter,
+  personaFrontmatterSchema,
 } from '../schemas/index.js';
 import type { Layer, LayerKind } from './layers.js';
 

@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import semver from 'semver';
+import { z } from 'zod';
 import { kebabId, PROFILES, profile, schemaVersion } from './common.js';
 
 export const MAX_PROJECT_SKILLS = 10;
@@ -30,7 +30,10 @@ const skill = z.object({
 const matcher = z
   .object({
     packages: z.array(z.string()).default([]),
-    versions: z.string().refine((r) => semver.validRange(r) !== null, 'must be a valid semver range').optional(),
+    versions: z
+      .string()
+      .refine((r) => semver.validRange(r) !== null, 'must be a valid semver range')
+      .optional(),
     files: z.array(z.string()).default([]),
   })
   .refine((m) => m.packages.length > 0 || m.files.length > 0, 'needs at least one package or file matcher');
@@ -61,10 +64,14 @@ export const catalogSchema = z
     const check = (id: string, path: (string | number)[]) => {
       if (!known.has(id)) ctx.addIssue({ code: 'custom', path, message: `unknown skill "${id}"` });
     };
-    cat.bootstrap.forEach((id, i) => check(id, ['bootstrap', i]));
+    cat.bootstrap.forEach((id, i) => {
+      check(id, ['bootstrap', i]);
+    });
     for (const [tech, t] of Object.entries(cat.technologies)) {
       check(t.primary, ['technologies', tech, 'primary']);
-      t.alt.forEach((a, i) => check(a.skill, ['technologies', tech, 'alt', i, 'skill']));
+      t.alt.forEach((a, i) => {
+        check(a.skill, ['technologies', tech, 'alt', i, 'skill']);
+      });
       for (const w of [t.when ?? {}, ...t.alt.map((a) => a.when)]) {
         for (const [facet, value] of Object.entries(w)) {
           if (!cat.facets[facet]?.[value]) {
@@ -73,7 +80,11 @@ export const catalogSchema = z
         }
       }
     }
-    for (const [pack, ids] of Object.entries(cat.packs)) ids.forEach((id, i) => check(id, ['packs', pack, i]));
+    for (const [pack, ids] of Object.entries(cat.packs)) {
+      ids.forEach((id, i) => {
+        check(id, ['packs', pack, i]);
+      });
+    }
   });
 
 export type Catalog = z.infer<typeof catalogSchema>;

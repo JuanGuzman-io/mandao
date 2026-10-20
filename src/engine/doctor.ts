@@ -2,14 +2,14 @@ import { existsSync, readdirSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import semver from 'semver';
 import { ADAPTERS } from '../adapters/index.js';
-import { ResolveError } from '../resolver/resolve.js';
 import { loadLayers } from '../resolver/layers.js';
-import { GATES, LOCAL_REPO, type Config } from '../schemas/index.js';
+import { ResolveError } from '../resolver/resolve.js';
+import { type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
-import { planChanges } from '../writer/plan.js';
 import { isRepo } from '../workspace/detect.js';
-import { ConfigError, LOCK_FILE, SOURCES_FILE, hasConfig, inputsText, readConfig, readLock, readModels, readSources } from './files.js';
+import { planChanges } from '../writer/plan.js';
+import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readModels, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildOutputs } from './sync.js';
 
@@ -30,7 +30,9 @@ const OPTIONAL_TOOLS = [
 ];
 
 function onPath(bin: string): boolean {
-  return (process.env.PATH ?? '').split(delimiter).some((dir) => dir && (existsSync(join(dir, bin)) || existsSync(join(dir, `${bin}.cmd`))));
+  return (process.env.PATH ?? '')
+    .split(delimiter)
+    .some((dir) => dir && (existsSync(join(dir, bin)) || existsSync(join(dir, `${bin}.cmd`))));
 }
 
 function hasSkill(root: string, name: string): boolean {
@@ -41,8 +43,14 @@ function workspaceFindings(root: string, config: Config): Finding[] {
   const out: Finding[] = [];
   for (const p of config.projects) {
     if (!existsSync(join(root, p.path))) out.push({ level: 'error', message: `project "${p.name}": path "${p.path}" does not exist` });
-    else if (p.repo && !isRepo(join(root, p.path))) out.push({ level: 'warn', message: `project "${p.name}" is declared as a repository but has no .git` });
-    if (p.repo === LOCAL_REPO) out.push({ level: 'info', message: `project "${p.name}" has no remote yet (repo: local)`, fix: 'set projects[].repo to its remote URL so close can link PRs' });
+    else if (p.repo && !isRepo(join(root, p.path)))
+      out.push({ level: 'warn', message: `project "${p.name}" is declared as a repository but has no .git` });
+    if (p.repo === LOCAL_REPO)
+      out.push({
+        level: 'info',
+        message: `project "${p.name}" has no remote yet (repo: local)`,
+        fix: 'set projects[].repo to its remote URL so close can link PRs',
+      });
     const missing = GATES.filter((g) => !p.gates[g]);
     if (missing.length) {
       out.push({
@@ -84,7 +92,10 @@ export function runDoctor(root: string): Finding[] {
   let config: Config;
   try {
     config = readConfig(root);
-    findings.push({ level: 'ok', message: `config: ${config.workspace}, ${config.projects.length} project(s), harnesses ${config.harnesses.join(', ')}` });
+    findings.push({
+      level: 'ok',
+      message: `config: ${config.workspace}, ${config.projects.length} project(s), harnesses ${config.harnesses.join(', ')}`,
+    });
   } catch (e) {
     if (!(e instanceof ConfigError)) throw e;
     findings.push(...e.issues.map((m) => ({ level: 'error' as const, message: m })));
@@ -105,7 +116,7 @@ export function runDoctor(root: string): Finding[] {
 
   findings.push(...workspaceFindings(root, config));
 
-  let build;
+  let build: ReturnType<typeof buildOutputs>;
   try {
     build = buildOutputs(config, readModels(root), loadLayers(root, config.presets), version, 'project');
   } catch (e) {
@@ -124,11 +135,18 @@ export function runDoctor(root: string): Finding[] {
     return findings;
   }
   if (lock.mandao !== version) {
-    findings.push({ level: 'warn', message: `lock was written by mandao ${lock.mandao}; installed is ${version}`, fix: 'run `mandao update`' });
+    findings.push({
+      level: 'warn',
+      message: `lock was written by mandao ${lock.mandao}; installed is ${version}`,
+      fix: 'run `mandao update`',
+    });
   }
   const global = readLock(globalLockFile());
   if (global && global.mandao !== lock.mandao) {
-    findings.push({ level: 'warn', message: `global install is mandao ${global.mandao}; this project pins ${lock.mandao} (the project version wins)` });
+    findings.push({
+      level: 'warn',
+      message: `global install is mandao ${global.mandao}; this project pins ${lock.mandao} (the project version wins)`,
+    });
   }
   if (lock.config_hash !== sha256(inputsText(root))) {
     findings.push({ level: 'warn', message: 'config.yml or models.yml changed since the last sync', fix: 'run `mandao sync`' });
@@ -138,10 +156,21 @@ export function runDoctor(root: string): Finding[] {
   const drift = plan.filter((c) => c.action === 'drift' || c.action === 'drift-orphan');
   const pending = plan.filter((c) => ['create', 'update', 'delete'].includes(c.action));
   for (const c of drift) {
-    findings.push({ level: 'warn', message: `${c.path} was edited by hand`, fix: 'move the change into .mandao/overrides/, then `mandao sync --force`' });
+    findings.push({
+      level: 'warn',
+      message: `${c.path} was edited by hand`,
+      fix: 'move the change into .mandao/overrides/, then `mandao sync --force`',
+    });
   }
   if (pending.length) {
-    findings.push({ level: 'warn', message: `${pending.length} generated file(s) out of date: ${pending.map((c) => c.path).slice(0, 5).join(', ')}${pending.length > 5 ? ', …' : ''}`, fix: 'run `mandao sync`' });
+    findings.push({
+      level: 'warn',
+      message: `${pending.length} generated file(s) out of date: ${pending
+        .map((c) => c.path)
+        .slice(0, 5)
+        .join(', ')}${pending.length > 5 ? ', …' : ''}`,
+      fix: 'run `mandao sync`',
+    });
   }
   if (!drift.length && !pending.length) findings.push({ level: 'ok', message: `${plan.length} generated file(s) in sync` });
 
@@ -149,7 +178,8 @@ export function runDoctor(root: string): Finding[] {
   if (unknown.length) findings.push({ level: 'error', message: `unknown harnesses: ${unknown.join(', ')}` });
 
   for (const tool of OPTIONAL_TOOLS) {
-    if (!onPath(tool.name) && !hasSkill(root, tool.name)) findings.push({ level: 'info', message: `${tool.name} not found: ${tool.fallback}` });
+    if (!onPath(tool.name) && !hasSkill(root, tool.name))
+      findings.push({ level: 'info', message: `${tool.name} not found: ${tool.fallback}` });
   }
 
   const overrides = join(root, '.mandao', 'overrides');

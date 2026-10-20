@@ -1,4 +1,7 @@
+import { posix } from 'node:path';
+import type { TokenSyntax } from '../render/render.js';
 import type { Capability } from '../schemas/index.js';
+import { BLOCK_BEGIN, BLOCK_END } from './agents-md.js';
 import {
   argumentHint,
   commandName,
@@ -12,10 +15,7 @@ import {
   renderPersonaBody,
   selectCommands,
 } from './shared.js';
-import type { TokenSyntax } from '../render/render.js';
 import type { Adapter, AdapterInput, GeneratedFile } from './types.js';
-import { BLOCK_BEGIN, BLOCK_END } from './agents-md.js';
-import { posix } from 'node:path';
 
 /** CLAUDE.md is only a pointer to AGENTS.md, next to every AGENTS.md that Mandao manages. */
 function claudeMdPointers(input: AdapterInput): GeneratedFile[] {

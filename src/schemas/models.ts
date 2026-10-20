@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { harnessId, schemaVersion, TIERS, type HarnessId, type Tier } from './common.js';
+import { type HarnessId, harnessId, schemaVersion, TIERS, type Tier } from './common.js';
 
 const tierMap = z.object(Object.fromEntries(TIERS.map((t) => [t, z.string().min(1)])) as Record<Tier, z.ZodString>);
 

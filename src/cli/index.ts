@@ -1,18 +1,18 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Command } from 'commander';
 import { parseDocument } from 'yaml';
-import { readFileSync, writeFileSync } from 'node:fs';
 import { readCatalog } from '../engine/catalog.js';
 import { runDoctor } from '../engine/doctor.js';
 import { CONFIG_FILE, ConfigError, LOCK_FILE, readConfig, readLock, writeYaml } from '../engine/files.js';
 import { detectPackageManager, latestRunner } from '../engine/package-manager.js';
 import { syncProject } from '../engine/sync.js';
 import { ResolveError } from '../resolver/resolve.js';
-import { HARNESS_IDS, MAX_PROJECT_SKILLS, PROFILES, type HarnessId } from '../schemas/index.js';
+import { HARNESS_IDS, type HarnessId, MAX_PROJECT_SKILLS, PROFILES } from '../schemas/index.js';
 import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
 import { analyzeDiff, collectDiff, DEFAULT_LIMITS } from '../scripts/quick-check.js';
 import { packageInfo } from '../util/package-root.js';
-import { runInit, type InitOptions } from './init.js';
+import { type InitOptions, runInit } from './init.js';
 import { c, printChanges, printFindings, printWarnings } from './output.js';
 
 const root = () => process.cwd();
@@ -105,25 +105,48 @@ skills
     const packs = ids.filter((id) => id in catalog.packs);
     const wanted = [...new Set(ids.flatMap((id) => catalog.packs[id] ?? [id]))];
     const unknown = wanted.filter((id) => !(id in catalog.skills));
-    if (unknown.length) throw new Error(`Not in the catalog: ${unknown.join(', ')}. Unknown technologies get unvetted candidates or a generated skill via /mandao-constitution.`);
+    if (unknown.length)
+      throw new Error(
+        `Not in the catalog: ${unknown.join(', ')}. Unknown technologies get unvetted candidates or a generated skill via /mandao-constitution.`,
+      );
     const bootstrap = new Set(catalog.bootstrap);
     const pinned = new Map(lock.skills.map((s) => [s.id, s]));
     for (const id of wanted) {
       const s = catalog.skills[id]!;
-      const source = s.source.type === 'git' ? `${s.source.url}#${s.source.ref}` : s.source.type === 'npm' ? `npm:${s.source.package}` : s.source.type === 'skills' ? `skills:${s.source.ref}` : `bundled:${s.source.path}`;
+      const source =
+        s.source.type === 'git'
+          ? `${s.source.url}#${s.source.ref}`
+          : s.source.type === 'npm'
+            ? `npm:${s.source.package}`
+            : s.source.type === 'skills'
+              ? `skills:${s.source.ref}`
+              : `bundled:${s.source.path}`;
       pinned.set(id, { id, version: s.version, source, author: s.author, license: s.license, vetted: s.vetted });
     }
     const counted = [...pinned.keys()].filter((id) => !bootstrap.has(id));
     if (counted.length > MAX_PROJECT_SKILLS) {
       throw new Error(`That would pin ${counted.length} project skills; the cap is ${MAX_PROJECT_SKILLS}. Remove some first.`);
     }
-    writeYaml(lockPath, { ...lock, skills: [...pinned.values()].sort((a, b) => a.id.localeCompare(b.id)) }, '# Written by mandao. Do not edit by hand.');
+    writeYaml(
+      lockPath,
+      { ...lock, skills: [...pinned.values()].sort((a, b) => a.id.localeCompare(b.id)) },
+      '# Written by mandao. Do not edit by hand.',
+    );
     if (packs.length) editConfig((doc) => doc.set('skill_packs', [...new Set([...config.skill_packs, ...packs])]));
     console.log('  Pinned in .mandao/mandao.lock. Install them with your ecosystem tooling:');
     for (const id of wanted) {
       const s = catalog.skills[id]!;
-      const how = s.source.type === 'skills' ? `npx skills add ${s.source.ref}` : s.source.type === 'git' ? `git: ${s.source.url} @ ${s.source.ref}` : s.source.type === 'npm' ? `npm: ${s.source.package}@${s.version}` : 'bundled with Mandao';
-      console.log(`  ${s.vetted ? c.green('vetted  ') : c.yellow('unvetted')} ${id}@${s.version} — ${how} ${c.dim(`(${s.author}, ${s.license})`)}`);
+      const how =
+        s.source.type === 'skills'
+          ? `npx skills add ${s.source.ref}`
+          : s.source.type === 'git'
+            ? `git: ${s.source.url} @ ${s.source.ref}`
+            : s.source.type === 'npm'
+              ? `npm: ${s.source.package}@${s.version}`
+              : 'bundled with Mandao';
+      console.log(
+        `  ${s.vetted ? c.green('vetted  ') : c.yellow('unvetted')} ${id}@${s.version} — ${how} ${c.dim(`(${s.author}, ${s.license})`)}`,
+      );
     }
   });
 
@@ -136,7 +159,10 @@ run
   .option('--max-loc <n>', 'changed-lines limit', String(DEFAULT_LIMITS.maxLoc))
   .action((opts: { base: string; maxFiles: string; maxLoc: string }) => {
     const config = readConfig(root());
-    const repos = config.workspace === 'polyrepo' ? config.projects.map((p) => ({ dir: join(root(), p.path), prefix: p.path })) : [{ dir: root(), prefix: '' }];
+    const repos =
+      config.workspace === 'polyrepo'
+        ? config.projects.map((p) => ({ dir: join(root(), p.path), prefix: p.path }))
+        : [{ dir: root(), prefix: '' }];
     const files = [];
     const manifests = [];
     for (const r of repos) {

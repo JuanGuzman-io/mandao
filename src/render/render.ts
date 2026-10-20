@@ -31,9 +31,7 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     multiProject: config.projects.length > 1,
     mode: config.workspace,
     // Paths are relative to `workspace.home`; agents run from the workspace root.
-    paths: Object.fromEntries(
-      Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)]),
-    ) as Config['paths'],
+    paths: Object.fromEntries(Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)])) as Config['paths'],
     version,
     scriptRunner: config.scripts.runner,
   };

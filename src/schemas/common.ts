@@ -1,8 +1,6 @@
 import { z } from 'zod';
 
-export const kebabId = z
-  .string()
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be kebab-case');
+export const kebabId = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be kebab-case');
 
 export const HARNESS_IDS = ['claude', 'copilot'] as const;
 export const harnessId = z.enum(HARNESS_IDS);

@@ -14,7 +14,10 @@ function workspace() {
     projects: [{ name: 'shop', path: '.', profile: 'app' }],
     harnesses: ['claude', 'copilot'],
   });
-  writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, harnesses: { claude: { fast: 'haiku', standard: 'sonnet', strong: 'opus' } } });
+  writeYaml(join(root, '.mandao/models.yml'), {
+    schema_version: 1,
+    harnesses: { claude: { fast: 'haiku', standard: 'sonnet', strong: 'opus' } },
+  });
   return root;
 }
 
@@ -68,13 +71,17 @@ describe('doctor', () => {
     const root = workspace();
     syncProject(root);
     // Copilot has no model registry by default, so model separation is instruction-only.
-    expect(runDoctor(root).filter((f) => f.level === 'error' || f.level === 'warn').map((f) => f.message)).toEqual([
-      expect.stringMatching(/^copilot: "reviewer" must use a different model/),
-    ]);
+    expect(
+      runDoctor(root)
+        .filter((f) => f.level === 'error' || f.level === 'warn')
+        .map((f) => f.message),
+    ).toEqual([expect.stringMatching(/^copilot: "reviewer" must use a different model/)]);
 
     writeFileSync(join(root, '.claude/skills/mandao-specify/SKILL.md'), 'hand edit');
     writeFileSync(join(root, '.mandao/models.yml'), 'schema_version: 1\nharnesses: {}\n');
-    const warns = runDoctor(root).filter((f) => f.level === 'warn').map((f) => f.message);
+    const warns = runDoctor(root)
+      .filter((f) => f.level === 'warn')
+      .map((f) => f.message);
     expect(warns).toEqual(
       expect.arrayContaining([
         '.claude/skills/mandao-specify/SKILL.md was edited by hand',
@@ -86,7 +93,9 @@ describe('doctor', () => {
   test('invalid config is an error with the field path', () => {
     const root = workspace();
     writeFileSync(join(root, '.mandao/config.yml'), 'schema_version: 1\nworkspace: galaxy\nprojects: []\nharnesses: [claude]\n');
-    const errors = runDoctor(root).filter((f) => f.level === 'error').map((f) => f.message);
+    const errors = runDoctor(root)
+      .filter((f) => f.level === 'error')
+      .map((f) => f.message);
     expect(errors.some((m) => m.includes('workspace:'))).toBe(true);
     expect(errors.some((m) => m.includes('projects:'))).toBe(true);
   });

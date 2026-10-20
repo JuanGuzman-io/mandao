@@ -1,10 +1,10 @@
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { ADAPTERS, type AdapterInput } from '../../src/adapters/index.js';
 import { renderAgentsMd } from '../../src/adapters/agents-md.js';
+import { ADAPTERS, type AdapterInput } from '../../src/adapters/index.js';
 import { readLayer } from '../../src/resolver/layers.js';
 import { resolve } from '../../src/resolver/resolve.js';
-import { configSchema, type ConfigInput, type Models } from '../../src/schemas/index.js';
+import { type ConfigInput, configSchema, type Models } from '../../src/schemas/index.js';
 
 const resolution = resolve([readLayer('core', 'core', join(import.meta.dirname, '../fixtures/content'))]);
 

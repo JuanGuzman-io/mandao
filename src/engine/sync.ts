@@ -1,16 +1,16 @@
 import { join } from 'node:path';
-import { ADAPTERS, type AdapterInput, type GeneratedFile, type InstallScope } from '../adapters/index.js';
 import { renderAgentsMd } from '../adapters/agents-md.js';
+import { ADAPTERS, type AdapterInput, type GeneratedFile, type InstallScope } from '../adapters/index.js';
 import { COMMITLINT_PATH, commitlintConfig } from '../commits/commitlint.js';
 import { installTemplates } from '../render/templates.js';
-import { layerHash, loadLayers, type Layer } from '../resolver/layers.js';
-import { resolve, type Resolution } from '../resolver/resolve.js';
-import { configSchema, emptyModels, type Config, type HarnessId, type Lock, type LockFile, type Models } from '../schemas/index.js';
+import { type Layer, layerHash, loadLayers } from '../resolver/layers.js';
+import { type Resolution, resolve } from '../resolver/resolve.js';
+import { type Config, configSchema, emptyModels, type HarnessId, type Lock, type LockFile, type Models } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { applyChanges } from '../writer/apply.js';
-import { planChanges, type Change } from '../writer/plan.js';
-import { LOCK_FILE, inputsText, readConfig, readLock, readModels, writeYaml } from './files.js';
+import { type Change, planChanges } from '../writer/plan.js';
+import { inputsText, LOCK_FILE, readConfig, readLock, readModels, writeYaml } from './files.js';
 import { globalLockFile, globalRoots } from './global.js';
 
 export interface BuildResult {
@@ -39,7 +39,14 @@ export function buildOutputs(config: Config, models: Models, layers: Layer[], ve
     for (const t of installTemplates(resolution.templates, profiles)) {
       files.push({ path: t.path, content: t.content, ownership: 'owned', from: t.from, harness: 'mandao', scope: 'project' });
     }
-    files.push({ path: COMMITLINT_PATH, content: commitlintConfig(config, version), ownership: 'owned', from: 'config:commits', harness: 'mandao', scope: 'project' });
+    files.push({
+      path: COMMITLINT_PATH,
+      content: commitlintConfig(config, version),
+      ownership: 'owned',
+      from: 'config:commits',
+      harness: 'mandao',
+      scope: 'project',
+    });
   }
 
   return { files, warnings, layers, resolution };
@@ -61,9 +68,7 @@ function lockFrom(previous: Lock | undefined, entries: LockFile[], layers: Layer
     schema_version: 1,
     mandao: version,
     config_hash: configHash,
-    layers: layers.map((l) =>
-      l.kind === 'core' ? { kind: l.kind, id: l.id, version } : { kind: l.kind, id: l.id, hash: layerHash(l) },
-    ),
+    layers: layers.map((l) => (l.kind === 'core' ? { kind: l.kind, id: l.id, version } : { kind: l.kind, id: l.id, hash: layerHash(l) })),
     skills: previous?.skills ?? [],
     files: entries.sort((a, b) => a.path.localeCompare(b.path)),
   };
@@ -106,10 +111,14 @@ export function syncGlobal(harnesses: HarnessId[], opts: SyncOptions = {}): Sync
   const previous = readLock(lockPath);
   // Only manage the harnesses requested now; keep entries for the others.
   const kept = (previous?.files ?? []).filter((f) => !harnesses.includes(f.harness as HarnessId));
-  const changes = planChanges(build.files, (previous?.files ?? []).filter((f) => harnesses.includes(f.harness as HarnessId)), { project: process.cwd(), global: roots }, opts.force);
+  const changes = planChanges(
+    build.files,
+    (previous?.files ?? []).filter((f) => harnesses.includes(f.harness as HarnessId)),
+    { project: process.cwd(), global: roots },
+    opts.force,
+  );
   const entries = opts.dryRun ? changes.flatMap((c) => (c.lock ? [c.lock] : [])) : applyChanges(changes, Object.values(roots));
   const lock = lockFrom(previous, [...kept, ...entries], layers, sha256(JSON.stringify(harnesses)), version);
   if (!opts.dryRun) writeYaml(lockPath, lock, '# Written by mandao. Do not edit by hand.');
   return { changes, warnings: build.warnings, lock };
 }
-

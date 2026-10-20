@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
-import { QUICK_FORBIDDEN_TAGS, type Config, type RiskTag } from '../schemas/index.js';
+import { type Config, QUICK_FORBIDDEN_TAGS, type RiskTag } from '../schemas/index.js';
 
 export interface FileStat {
   path: string;
@@ -41,16 +41,20 @@ const CONTRACT_RE = /(^|\/)(openapi|swagger)[^/]*\.(ya?ml|json)$|\.proto$|\.grap
 const AI_RE = /(^|\/)(prompts?|retriev\w*|rag|embeddings?|guardrails?|evals?)\/|\.prompt(\.md)?$|\.(j2|jinja2?)$/i;
 
 const TAG_PATTERNS: [RiskTag, RegExp][] = [
-  ['auth', /(^|[\/_.-])(auth|authn|authz|authenticat\w*|authoriz\w*|login|logout|sessions?|oauth|oidc|sso|jwt|tokens?|permissions?|rbac|acl|guards?)([\/_.-]|$)/i],
-  ['payments', /(^|[\/_.-])(payments?|billing|invoices?|checkout|stripe|paypal|subscriptions?)([\/_.-]|$)/i],
-  ['pii', /(^|[\/_.-])(pii|gdpr|personal[-_]?data|consent|privacy)([\/_.-]|$)/i],
+  [
+    'auth',
+    /(^|[/_.-])(auth|authn|authz|authenticat\w*|authoriz\w*|login|logout|sessions?|oauth|oidc|sso|jwt|tokens?|permissions?|rbac|acl|guards?)([/_.-]|$)/i,
+  ],
+  ['payments', /(^|[/_.-])(payments?|billing|invoices?|checkout|stripe|paypal|subscriptions?)([/_.-]|$)/i],
+  ['pii', /(^|[/_.-])(pii|gdpr|personal[-_]?data|consent|privacy)([/_.-]|$)/i],
   ['migration', MIGRATION_RE],
   ['public-api', CONTRACT_RE],
   ['infra', /(^|\/)(terraform|infra|k8s|helm|\.github\/workflows)\/|Dockerfile$|docker-compose[^/]*\.ya?ml$|\.tf$/i],
   ['ai-prompt', AI_RE],
 ];
 
-const DEP_MANIFESTS = /(^|\/)(package\.json|pyproject\.toml|requirements[^/]*\.txt|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|pubspec\.yaml|composer\.json|Gemfile)$/;
+const DEP_MANIFESTS =
+  /(^|\/)(package\.json|pyproject\.toml|requirements[^/]*\.txt|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|pubspec\.yaml|composer\.json|Gemfile)$/;
 
 /** Dependency names declared in one manifest's content. */
 export function manifestDeps(path: string, content: string | undefined): Set<string> {
@@ -58,7 +62,9 @@ export function manifestDeps(path: string, content: string | undefined): Set<str
   if (path.endsWith('package.json')) {
     try {
       const pkg = JSON.parse(content) as Record<string, Record<string, string> | undefined>;
-      return new Set(['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].flatMap((k) => Object.keys(pkg[k] ?? {})));
+      return new Set(
+        ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'].flatMap((k) => Object.keys(pkg[k] ?? {})),
+      );
     } catch {
       return new Set();
     }
@@ -85,7 +91,10 @@ export function analyzeDiff(
   config: Pick<Config, 'projects'>,
   limits: QuickLimits = DEFAULT_LIMITS,
 ): QuickReport {
-  const totals = files.reduce((t, f) => ({ files: t.files + 1, added: t.added + f.added, deleted: t.deleted + f.deleted, loc: t.loc + f.added + f.deleted }), { files: 0, added: 0, deleted: 0, loc: 0 });
+  const totals = files.reduce(
+    (t, f) => ({ files: t.files + 1, added: t.added + f.added, deleted: t.deleted + f.deleted, loc: t.loc + f.added + f.deleted }),
+    { files: 0, added: 0, deleted: 0, loc: 0 },
+  );
   const projects = [...new Set(files.map((f) => projectOf(f.path, config) ?? '(outside projects)'))].sort();
 
   const newDependencies = manifests.flatMap((m) => {
@@ -110,10 +119,22 @@ export function analyzeDiff(
   const aiTouched = aiChanges.filter((p) => aiProjects.has(projectOf(p, config) ?? ''));
   if (aiTouched.length) reasons.push(`prompt/model/retrieval changes in an ai project: ${aiTouched.join(', ')}`);
 
-  return { files, totals, projects, newDependencies, migrations, publicContracts, aiChanges, riskTags, withinLimits: reasons.length === 0, reasons };
+  return {
+    files,
+    totals,
+    projects,
+    newDependencies,
+    migrations,
+    publicContracts,
+    aiChanges,
+    riskTags,
+    withinLimits: reasons.length === 0,
+    reasons,
+  };
 }
 
-const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+const git = (cwd: string, args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
 
 const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
 

@@ -12,7 +12,10 @@ export function packageInfo(): { root: string; version: string } {
     const pkgFile = join(dir, 'package.json');
     if (existsSync(pkgFile)) {
       const pkg = JSON.parse(readFileSync(pkgFile, 'utf8')) as { name?: string; version?: string };
-      if (pkg.name === 'mandao') return (cached = { root: dir, version: pkg.version ?? '0.0.0' });
+      if (pkg.name === 'mandao') {
+        cached = { root: dir, version: pkg.version ?? '0.0.0' };
+        return cached;
+      }
     }
     dir = dirname(dir);
   }

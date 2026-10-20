@@ -56,7 +56,8 @@ export function planChanges(files: GeneratedFile[], previous: LockFile[], roots:
       if (disk === undefined) changes.push({ ...base, action: 'create', write: file.content, lock });
       else if (sha256(disk) === hash) changes.push({ ...base, action: 'unchanged', lock });
       // An unknown file at a generated path is treated as user content, like drift.
-      else if (!force && (!recorded || sha256(disk) !== recorded.hash)) changes.push({ ...base, action: 'drift', ...(recorded ? { lock: recorded } : {}) });
+      else if (!force && (!recorded || sha256(disk) !== recorded.hash))
+        changes.push({ ...base, action: 'drift', ...(recorded ? { lock: recorded } : {}) });
       else changes.push({ ...base, action: 'update', write: file.content, lock });
       continue;
     }
@@ -64,7 +65,8 @@ export function planChanges(files: GeneratedFile[], previous: LockFile[], roots:
     const current = disk === undefined ? undefined : extractBlock(disk);
     if (disk === undefined) changes.push({ ...base, action: 'create', write: upsertBlock(undefined, file.content), lock });
     else if (current !== undefined && sha256(current) === hash) changes.push({ ...base, action: 'unchanged', lock });
-    else if (!force && current !== undefined && recorded && sha256(current) !== recorded.hash) changes.push({ ...base, action: 'drift', lock: recorded });
+    else if (!force && current !== undefined && recorded && sha256(current) !== recorded.hash)
+      changes.push({ ...base, action: 'drift', lock: recorded });
     else changes.push({ ...base, action: 'update', write: upsertBlock(disk, file.content), lock });
   }
 

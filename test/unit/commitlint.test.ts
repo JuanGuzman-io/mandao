@@ -7,22 +7,36 @@ import { branchIdPattern, commitlintConfig } from '../../src/commits/commitlint.
 import { configSchema } from '../../src/schemas/index.js';
 
 type Rule = (parsed: Record<string, unknown>) => [boolean, string];
-let cfg: { parserPreset: { parserOpts: { headerPattern: RegExp; headerCorrespondence: string[] } }; plugins: { rules: Record<string, Rule> }[] };
+let cfg: {
+  parserPreset: { parserOpts: { headerPattern: RegExp; headerCorrespondence: string[] } };
+  plugins: { rules: Record<string, Rule> }[];
+};
 
 /** Mimics the conventional-commits parser: header pattern + correspondence. */
 function parse(message: string) {
   const [header = '', ...rest] = message.split('\n');
   const { headerPattern, headerCorrespondence } = cfg.parserPreset.parserOpts;
   const m = header.match(headerPattern);
-  const parsed: Record<string, unknown> = { header, raw: message, notes: rest.some((l) => l.startsWith('BREAKING CHANGE')) ? [{ title: 'BREAKING CHANGE' }] : [] };
-  headerCorrespondence.forEach((k, i) => (parsed[k] = m?.[i + 1] ?? null));
+  const parsed: Record<string, unknown> = {
+    header,
+    raw: message,
+    notes: rest.some((l) => l.startsWith('BREAKING CHANGE')) ? [{ title: 'BREAKING CHANGE' }] : [],
+  };
+  headerCorrespondence.forEach((k, i) => {
+    parsed[k] = m?.[i + 1] ?? null;
+  });
   return parsed;
 }
 const check = (rule: string, message: string) => cfg.plugins[0]!.rules[rule]!(parse(message));
 
 beforeAll(async () => {
   process.env.MANDAO_SPEC_ID = 'PROJ-123';
-  const config = configSchema.parse({ schema_version: 1, workspace: 'single', projects: [{ name: 'a', path: '.', profile: 'app' }], harnesses: ['claude'] });
+  const config = configSchema.parse({
+    schema_version: 1,
+    workspace: 'single',
+    projects: [{ name: 'a', path: '.', profile: 'app' }],
+    harnesses: ['claude'],
+  });
   const file = join(mkdtempSync(join(tmpdir(), 'mandao-cl-')), 'commitlint.config.mjs');
   writeFileSync(file, commitlintConfig(config, '0.1.0'));
   cfg = (await import(pathToFileURL(file).href)).default;
@@ -55,7 +69,10 @@ describe('generated commitlint config', () => {
 
   test('requires the Refs trailer for the active spec id', () => {
     expect(check('mandao-refs', '✨ feat(api): add endpoint\n\nRefs: PROJ-123')[0]).toBe(true);
-    expect(check('mandao-refs', '✨ feat(api): add endpoint\n\nRefs: PROJ-1234')).toEqual([false, 'spec PROJ-123 is active: add the trailer "Refs: PROJ-123"']);
+    expect(check('mandao-refs', '✨ feat(api): add endpoint\n\nRefs: PROJ-1234')).toEqual([
+      false,
+      'spec PROJ-123 is active: add the trailer "Refs: PROJ-123"',
+    ]);
     expect(check('mandao-refs', '✨ feat(api): add endpoint')[0]).toBe(false);
   });
 

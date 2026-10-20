@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { applyConditionals, renderBody, renderInline, type RenderContext, type TokenSyntax } from '../../src/render/render.js';
+import { applyConditionals, type RenderContext, renderBody, renderInline, type TokenSyntax } from '../../src/render/render.js';
 import { installTemplates } from '../../src/render/templates.js';
 import { commandFrontmatterSchema, type Profile } from '../../src/schemas/index.js';
 
@@ -58,7 +58,12 @@ describe('conditionals', () => {
   });
 
   test('a hidden outer block hides inner blocks even when they are true', () => {
-    expect(applyConditionals('<!-- mandao:if profile=ai -->\n<!-- mandao:if harness=claude -->\nx\n<!-- mandao:endif -->\n<!-- mandao:endif -->\n', ctx())).toBe('');
+    expect(
+      applyConditionals(
+        '<!-- mandao:if profile=ai -->\n<!-- mandao:if harness=claude -->\nx\n<!-- mandao:endif -->\n<!-- mandao:endif -->\n',
+        ctx(),
+      ),
+    ).toBe('');
   });
 
   test.each([
@@ -89,7 +94,9 @@ describe('tokens', () => {
   });
 
   test('the local runner avoids the network', () => {
-    expect(renderBody(meta, '{{script:quick-check}}', ctx({ scriptRunner: 'local' }), syntax)).toBe('npx --no-install mandao run quick-check');
+    expect(renderBody(meta, '{{script:quick-check}}', ctx({ scriptRunner: 'local' }), syntax)).toBe(
+      'npx --no-install mandao run quick-check',
+    );
   });
 
   test.each([
@@ -115,7 +122,10 @@ describe('tokens', () => {
 
 test('installTemplates picks the profile variant and falls back to shared', () => {
   const t = (key: string) => ({ key, content: key, origin: { kind: 'core' as const, id: 'core', patchedBy: [] } });
-  const out = installTemplates([t('shared/design.md'), t('shared/story.md'), t('ai/design.md'), t('ai/evals.md'), t('data/x.md')], ['app', 'ai']);
+  const out = installTemplates(
+    [t('shared/design.md'), t('shared/story.md'), t('ai/design.md'), t('ai/evals.md'), t('data/x.md')],
+    ['app', 'ai'],
+  );
   expect(out.map((o) => [o.path, o.content])).toEqual([
     ['.mandao/templates/ai/design.md', 'ai/design.md'],
     ['.mandao/templates/ai/evals.md', 'ai/evals.md'],

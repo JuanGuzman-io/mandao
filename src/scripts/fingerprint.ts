@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import semver from 'semver';
-import { MAX_PROJECT_SKILLS, type Catalog, type Config, type Profile } from '../schemas/index.js';
+import { type Catalog, type Config, MAX_PROJECT_SKILLS, type Profile } from '../schemas/index.js';
 import { dependencyNames } from '../workspace/detect.js';
 
 type Matcher = Catalog['technologies'][string]['match'];
@@ -31,7 +31,24 @@ export interface SkillProposal {
   dropped: { skill: string; technology: string; reason: string }[];
 }
 
-const FINGERPRINT_FILES = ['tsconfig.json', 'next.config.js', 'next.config.mjs', 'next.config.ts', 'angular.json', 'nest-cli.json', 'pubspec.yaml', 'Dockerfile', 'dbt_project.yml', 'serverless.yml', 'template.yaml', 'cdk.json', 'manage.py', 'pom.xml', 'go.mod', 'Cargo.toml'];
+const FINGERPRINT_FILES = [
+  'tsconfig.json',
+  'next.config.js',
+  'next.config.mjs',
+  'next.config.ts',
+  'angular.json',
+  'nest-cli.json',
+  'pubspec.yaml',
+  'Dockerfile',
+  'dbt_project.yml',
+  'serverless.yml',
+  'template.yaml',
+  'cdk.json',
+  'manage.py',
+  'pom.xml',
+  'go.mod',
+  'Cargo.toml',
+];
 
 function satisfies(declared: string, wanted: string | undefined): boolean {
   if (!wanted || declared === '*' || declared === 'latest') return true;
@@ -76,7 +93,14 @@ export function fingerprintProject(root: string, project: Config['projects'][num
   const dir = join(root, project.path);
   const dependencies = readDependencies(dir);
   const files = FINGERPRINT_FILES.filter((f) => existsSync(join(dir, f)));
-  return { project: project.name, path: project.path, profile: project.profile, dependencies, files, facets: detectFacets(catalog, dependencies, files) };
+  return {
+    project: project.name,
+    path: project.path,
+    profile: project.profile,
+    dependencies,
+    files,
+    facets: detectFacets(catalog, dependencies, files),
+  };
 }
 
 const holds = (when: Record<string, string> | undefined, facets: Record<string, string>) =>
@@ -100,7 +124,11 @@ export function proposeSkills(fingerprints: ProjectFingerprint[], catalog: Catal
       const skill = alt?.skill ?? (holds(tech.when, fp.facets) ? tech.primary : undefined);
       if (!skill) {
         const facets = Object.keys(tech.when ?? {}).join(', ');
-        dropped.push({ skill: tech.primary, technology, reason: `${fp.project}: could not detect ${facets}; ask which convention the project follows` });
+        dropped.push({
+          skill: tech.primary,
+          technology,
+          reason: `${fp.project}: could not detect ${facets}; ask which convention the project follows`,
+        });
         continue;
       }
       if (bootstrap.has(skill)) continue;

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { capability, harnessId, kebabId, profile, PROFILES, schemaVersion, tier } from './common.js';
+import { capability, harnessId, kebabId, PROFILES, profile, schemaVersion, tier } from './common.js';
 
 const io = z.object({
   path: z.string().min(1),
@@ -14,10 +14,11 @@ export const commandFrontmatterSchema = z
     title: z.string().min(1),
     description: z.string().min(1).max(300),
     status: z.enum(['stable', 'stub']),
-    flow: z
-      .object({ after: z.array(kebabId).default([]), next: z.array(kebabId).default([]) })
-      .prefault({}),
-    profiles: z.array(profile).min(1).default([...PROFILES]),
+    flow: z.object({ after: z.array(kebabId).default([]), next: z.array(kebabId).default([]) }).prefault({}),
+    profiles: z
+      .array(profile)
+      .min(1)
+      .default([...PROFILES]),
     arguments: z
       .array(
         z.object({

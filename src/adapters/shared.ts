@@ -1,6 +1,6 @@
 import { stringify as stringifyYaml } from 'yaml';
+import { applyConditionals, contextFromConfig, type RenderContext, renderBody, type TokenSyntax } from '../render/render.js';
 import type { ResolvedCommand, ResolvedPersona } from '../resolver/resolve.js';
-import { applyConditionals, contextFromConfig, renderBody, type RenderContext, type TokenSyntax } from '../render/render.js';
 import type { Capability, HarnessId, Tier } from '../schemas/index.js';
 import type { AdapterInput } from './types.js';
 
@@ -43,7 +43,7 @@ export function renderContext(input: AdapterInput, harness: HarnessId): RenderCo
 
 export function renderCommandBody(cmd: ResolvedCommand, ctx: RenderContext, syntax: TokenSyntax): string {
   try {
-    return renderBody(cmd.meta, cmd.body, ctx, syntax).trimEnd() + '\n';
+    return `${renderBody(cmd.meta, cmd.body, ctx, syntax).trimEnd()}\n`;
   } catch (e) {
     throw new Error(`command "${cmd.meta.id}" (${ctx.harness}): ${(e as Error).message}`);
   }
@@ -58,7 +58,7 @@ export function renderPersonaBody(persona: ResolvedPersona, ctx: RenderContext, 
     scripts: [],
   } as unknown as ResolvedCommand['meta'];
   try {
-    return renderBody(meta, applyConditionals(persona.body, ctx), ctx, syntax).trimEnd() + '\n';
+    return `${renderBody(meta, applyConditionals(persona.body, ctx), ctx, syntax).trimEnd()}\n`;
   } catch (e) {
     throw new Error(`persona "${persona.meta.id}" (${ctx.harness}): ${(e as Error).message}`);
   }
@@ -75,7 +75,9 @@ export function modelSeparationWarnings(input: AdapterInput, harness: HarnessId)
     const a = modelFor(input, harness, p.meta.tier);
     const b = modelFor(input, harness, other.meta.tier);
     if (!a || !b) {
-      warnings.push(`${harness}: "${p.meta.id}" must use a different model than "${other.meta.id}", but .mandao/models.yml has no models for ${harness}; the rule is enforced by instruction only`);
+      warnings.push(
+        `${harness}: "${p.meta.id}" must use a different model than "${other.meta.id}", but .mandao/models.yml has no models for ${harness}; the rule is enforced by instruction only`,
+      );
     } else if (a === b) {
       warnings.push(`${harness}: "${p.meta.id}" and "${other.meta.id}" both resolve to model "${a}"`);
     }

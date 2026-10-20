@@ -22,12 +22,19 @@ export function printChanges(changes: Change[], verbose = false) {
     console.log(`  ${c.dim('·')} .mandao/templates/ ${c.dim(`(${templates.length} files)`)}`);
   }
   for (const ch of shown) {
-    const note = ch.action === 'drift' ? ' (edited by hand, kept)' : ch.action === 'drift-orphan' ? ' (no longer generated, edited by hand, kept)' : '';
+    const note =
+      ch.action === 'drift'
+        ? ' (edited by hand, kept)'
+        : ch.action === 'drift-orphan'
+          ? ' (no longer generated, edited by hand, kept)'
+          : '';
     console.log(`  ${SYMBOL[ch.action]} ${ch.path}${c.dim(note)}`);
   }
   const count = (a: Change['action']) => changes.filter((ch) => ch.action === a).length;
   console.log(
-    c.dim(`  ${count('create')} created, ${count('update')} updated, ${count('delete')} deleted, ${count('unchanged')} unchanged, ${count('drift') + count('drift-orphan')} drifted`),
+    c.dim(
+      `  ${count('create')} created, ${count('update')} updated, ${count('delete')} deleted, ${count('unchanged')} unchanged, ${count('drift') + count('drift-orphan')} drifted`,
+    ),
   );
   if (count('drift') + count('drift-orphan') > 0) {
     console.log(c.yellow('  Drifted files were not overwritten. Move the change into .mandao/overrides/, then run `mandao sync --force`.'));

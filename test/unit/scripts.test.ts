@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
-import { analyzeDiff, manifestDeps } from '../../src/scripts/quick-check.js';
-import { detectFacets, proposeSkills, type ProjectFingerprint } from '../../src/scripts/fingerprint.js';
 import { catalogSchema } from '../../src/schemas/index.js';
+import { detectFacets, type ProjectFingerprint, proposeSkills } from '../../src/scripts/fingerprint.js';
+import { analyzeDiff, manifestDeps } from '../../src/scripts/quick-check.js';
 
 const config = {
   projects: [
@@ -18,19 +18,33 @@ describe('quick-check', () => {
   });
 
   test('limits on files, lines and projects', () => {
-    const r = analyzeDiff([f('services/api/a.ts', 60), f('services/api/b.ts', 50), f('services/bot/c.ts'), f('services/bot/d.ts')], [], config);
+    const r = analyzeDiff(
+      [f('services/api/a.ts', 60), f('services/api/b.ts', 50), f('services/bot/c.ts'), f('services/bot/d.ts')],
+      [],
+      config,
+    );
     expect(r.reasons).toEqual(['touches 2 projects (api, bot)', '4 files changed (limit 3)', '112 lines changed (limit ~100)']);
   });
 
   test('exactly at the limits is still quick', () => {
-    expect(analyzeDiff([f('services/api/a.ts', 50, 48), f('services/api/b.ts', 2), f('services/api/c.ts', 0)], [], config).withinLimits).toBe(true);
+    expect(
+      analyzeDiff([f('services/api/a.ts', 50, 48), f('services/api/b.ts', 2), f('services/api/c.ts', 0)], [], config).withinLimits,
+    ).toBe(true);
   });
 
   test('new dependencies escalate; version bumps of existing ones do not', () => {
     const before = JSON.stringify({ dependencies: { zod: '^3' } });
-    const bump = analyzeDiff([f('services/api/package.json')], [{ path: 'services/api/package.json', before, after: JSON.stringify({ dependencies: { zod: '^4' } }) }], config);
+    const bump = analyzeDiff(
+      [f('services/api/package.json')],
+      [{ path: 'services/api/package.json', before, after: JSON.stringify({ dependencies: { zod: '^4' } }) }],
+      config,
+    );
     expect(bump.newDependencies).toEqual([]);
-    const added = analyzeDiff([f('services/api/package.json')], [{ path: 'services/api/package.json', before, after: JSON.stringify({ dependencies: { zod: '^3', lodash: '1' } }) }], config);
+    const added = analyzeDiff(
+      [f('services/api/package.json')],
+      [{ path: 'services/api/package.json', before, after: JSON.stringify({ dependencies: { zod: '^3', lodash: '1' } }) }],
+      config,
+    );
     expect(added.reasons).toContain('new dependencies: services/api/package.json: lodash');
   });
 
@@ -60,7 +74,12 @@ describe('quick-check', () => {
   });
 
   test('nested projects resolve to the deepest path', () => {
-    const nested = { projects: [{ name: 'root', path: '.', profile: 'app' as const, gates: {} }, { name: 'web', path: 'apps/web', profile: 'app' as const, gates: {} }] };
+    const nested = {
+      projects: [
+        { name: 'root', path: '.', profile: 'app' as const, gates: {} },
+        { name: 'web', path: 'apps/web', profile: 'app' as const, gates: {} },
+      ],
+    };
     expect(analyzeDiff([f('apps/web/x.ts')], [], nested).projects).toEqual(['web']);
   });
 
@@ -87,7 +106,15 @@ describe('proposeSkills', () => {
     catalogSchema.parse({
       schema_version: 1,
       bootstrap: ['graphify'],
-      skills: { graphify: skill({ binding: 'core' }), 'react-19': skill(), 'flutter-bloc': skill(), 'flutter-riverpod': skill({ vetted: false }), a: skill(), b: skill(), c: skill() },
+      skills: {
+        graphify: skill({ binding: 'core' }),
+        'react-19': skill(),
+        'flutter-bloc': skill(),
+        'flutter-riverpod': skill({ vetted: false }),
+        a: skill(),
+        b: skill(),
+        c: skill(),
+      },
       technologies: {
         react: { match: { packages: ['react'], versions: '>=19' }, primary: 'react-19' },
         flutter: {
@@ -116,7 +143,9 @@ describe('proposeSkills', () => {
 
   test('facets pick the primary or the alternative', () => {
     expect(proposeSkills([fp({ flutter: '*', flutter_bloc: '^8' })], catalog()).matches.map((m) => m.skill)).toEqual(['flutter-bloc']);
-    expect(proposeSkills([fp({ flutter: '*', flutter_riverpod: '^2' })], catalog()).matches.map((m) => m.skill)).toEqual(['flutter-riverpod']);
+    expect(proposeSkills([fp({ flutter: '*', flutter_riverpod: '^2' })], catalog()).matches.map((m) => m.skill)).toEqual([
+      'flutter-riverpod',
+    ]);
   });
 
   test('when no facet is detected the primary is not guessed', () => {

@@ -1,7 +1,7 @@
 import { BLOCK_BEGIN, BLOCK_END } from '../adapters/agents-md.js';
 
-const blockRe = () => new RegExp(`${escape(BLOCK_BEGIN)}[\\s\\S]*?${escape(BLOCK_END)}`);
-function escape(s: string) {
+const blockRe = () => new RegExp(`${escapeRe(BLOCK_BEGIN)}[\\s\\S]*?${escapeRe(BLOCK_END)}`);
+function escapeRe(s: string) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
@@ -18,6 +18,9 @@ export function upsertBlock(existing: string | undefined, block: string): string
 
 /** Removes the managed block; returns undefined when nothing else is left in the file. */
 export function removeBlock(existing: string): string | undefined {
-  const rest = existing.replace(blockRe(), '').replace(/\n{3,}/g, '\n\n').trim();
+  const rest = existing
+    .replace(blockRe(), '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
   return rest === '' ? undefined : `${rest}\n`;
 }

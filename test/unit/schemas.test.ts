@@ -8,8 +8,7 @@ const baseConfig = {
   harnesses: ['claude'],
 };
 
-const messages = (r: { success: boolean; error?: { issues: { message: string }[] } }) =>
-  r.error?.issues.map((i) => i.message) ?? [];
+const messages = (r: { success: boolean; error?: { issues: { message: string }[] } }) => r.error?.issues.map((i) => i.message) ?? [];
 
 describe('config', () => {
   test('fills defaults for paths, spec ids and the commit emoji map', () => {
@@ -49,7 +48,11 @@ describe('config', () => {
   });
 
   test('polyrepo projects cannot live at the root', () => {
-    const r = configSchema.safeParse({ ...baseConfig, workspace: 'polyrepo', projects: [{ name: 'a', path: '.', profile: 'app', repo: 'local' }] });
+    const r = configSchema.safeParse({
+      ...baseConfig,
+      workspace: 'polyrepo',
+      projects: [{ name: 'a', path: '.', profile: 'app', repo: 'local' }],
+    });
     expect(messages(r)).toContain('polyrepo projects cannot live at the workspace root');
   });
 
@@ -63,18 +66,39 @@ describe('config', () => {
 });
 
 describe('catalog', () => {
-  const skill = { description: 'x', source: { type: 'skills', ref: 'a/b' }, version: '1', author: 'x', license: 'MIT', vetted: true, binding: 'stack', phases: ['implement'] };
+  const skill = {
+    description: 'x',
+    source: { type: 'skills', ref: 'a/b' },
+    version: '1',
+    author: 'x',
+    license: 'MIT',
+    vetted: true,
+    binding: 'stack',
+    phases: ['implement'],
+  };
 
   test('every referenced skill and facet must exist', () => {
     const r = catalogSchema.safeParse({
       schema_version: 1,
       bootstrap: ['ghost'],
       skills: { bloc: skill },
-      technologies: { flutter: { match: { packages: ['flutter'] }, primary: 'bloc', when: { state: 'bloc' }, alt: [{ skill: 'riverpod', when: { state: 'riverpod' } }] } },
+      technologies: {
+        flutter: {
+          match: { packages: ['flutter'] },
+          primary: 'bloc',
+          when: { state: 'bloc' },
+          alt: [{ skill: 'riverpod', when: { state: 'riverpod' } }],
+        },
+      },
       packs: { dev: ['nope'] },
     });
     expect(messages(r)).toEqual(
-      expect.arrayContaining(['unknown skill "ghost"', 'unknown skill "riverpod"', 'unknown skill "nope"', 'facet "state: bloc" is not defined in facets']),
+      expect.arrayContaining([
+        'unknown skill "ghost"',
+        'unknown skill "riverpod"',
+        'unknown skill "nope"',
+        'facet "state: bloc" is not defined in facets',
+      ]),
     );
   });
 

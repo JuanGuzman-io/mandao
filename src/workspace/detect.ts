@@ -20,11 +20,53 @@ export interface DetectedWorkspace {
   projects: DetectedProject[];
 }
 
-const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', 'out', 'target', 'vendor', '.venv', 'venv', '__pycache__', 'coverage']);
+const IGNORED_DIRS = new Set([
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'out',
+  'target',
+  'vendor',
+  '.venv',
+  'venv',
+  '__pycache__',
+  'coverage',
+]);
 
-const MANIFESTS = ['package.json', 'pyproject.toml', 'requirements.txt', 'go.mod', 'Cargo.toml', 'pom.xml', 'build.gradle', 'build.gradle.kts', 'pubspec.yaml', 'composer.json', 'Gemfile'];
+const MANIFESTS = [
+  'package.json',
+  'pyproject.toml',
+  'requirements.txt',
+  'go.mod',
+  'Cargo.toml',
+  'pom.xml',
+  'build.gradle',
+  'build.gradle.kts',
+  'pubspec.yaml',
+  'composer.json',
+  'Gemfile',
+];
 
-const AI_MARKERS = ['openai', '@anthropic-ai/sdk', 'anthropic', 'langchain', '@langchain/core', 'langgraph', 'llama-index', 'llamaindex', 'ai', '@ai-sdk/', 'transformers', 'sentence-transformers', 'chromadb', 'pinecone', 'qdrant-client', 'litellm', 'dspy'];
+const AI_MARKERS = [
+  'openai',
+  '@anthropic-ai/sdk',
+  'anthropic',
+  'langchain',
+  '@langchain/core',
+  'langgraph',
+  'llama-index',
+  'llamaindex',
+  'ai',
+  '@ai-sdk/',
+  'transformers',
+  'sentence-transformers',
+  'chromadb',
+  'pinecone',
+  'qdrant-client',
+  'litellm',
+  'dspy',
+];
 const DATA_MARKERS = ['dbt-core', 'apache-airflow', 'dagster', 'prefect', 'pyspark', 'great-expectations', 'polars'];
 
 export const isRepo = (dir: string) => existsSync(join(dir, '.git'));
@@ -198,7 +240,12 @@ export function detectWorkspace(root: string): DetectedWorkspace {
 
   const manifests = manifestDirs(root);
   if (manifests.length >= 2) {
-    return { mode: 'monorepo', rootIsRepo, reason: `${manifests.length} subdirectories with manifests`, projects: toProjects(root, manifests) };
+    return {
+      mode: 'monorepo',
+      rootIsRepo,
+      reason: `${manifests.length} subdirectories with manifests`,
+      projects: toProjects(root, manifests),
+    };
   }
 
   return {

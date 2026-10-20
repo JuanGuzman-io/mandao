@@ -8,9 +8,23 @@ import { removeBlock, upsertBlock } from '../../src/writer/blocks.js';
 import { planChanges } from '../../src/writer/plan.js';
 import { makeTree } from '../helpers.js';
 
-const owned = (path: string, content: string): GeneratedFile => ({ path, content, ownership: 'owned', from: 'command:x', harness: 'claude', scope: 'project' });
+const owned = (path: string, content: string): GeneratedFile => ({
+  path,
+  content,
+  ownership: 'owned',
+  from: 'command:x',
+  harness: 'claude',
+  scope: 'project',
+});
 const block = (body: string) => `<!-- mandao:begin -->\n${body}\n<!-- mandao:end -->`;
-const managed = (path: string, body: string): GeneratedFile => ({ path, content: block(body), ownership: 'managed-block', from: 'block:mandao', harness: 'agents-md', scope: 'project' });
+const managed = (path: string, body: string): GeneratedFile => ({
+  path,
+  content: block(body),
+  ownership: 'managed-block',
+  from: 'block:mandao',
+  harness: 'agents-md',
+  scope: 'project',
+});
 
 /** Runs a sync round: plan, apply, return the plan and the new lock. */
 function sync(root: string, files: GeneratedFile[], lock: LockFile[], force = false) {
@@ -69,7 +83,7 @@ describe('managed blocks', () => {
     expect(plan).toEqual([['AGENTS.md', 'update']]);
     expect(readFileSync(join(root, 'AGENTS.md'), 'utf8')).toBe(`# Team rules\n\nBe nice.\n\n${block('v1')}\n`);
 
-    writeFileSync(join(root, 'AGENTS.md'), readFileSync(join(root, 'AGENTS.md'), 'utf8') + '\n## Skill Map\n- x\n');
+    writeFileSync(join(root, 'AGENTS.md'), `${readFileSync(join(root, 'AGENTS.md'), 'utf8')}\n## Skill Map\n- x\n`);
     expect(sync(root, [managed('AGENTS.md', 'v2')], lock).plan).toEqual([['AGENTS.md', 'update']]);
     expect(readFileSync(join(root, 'AGENTS.md'), 'utf8')).toBe(`# Team rules\n\nBe nice.\n\n${block('v2')}\n\n## Skill Map\n- x\n`);
   });
@@ -77,7 +91,7 @@ describe('managed blocks', () => {
   test('an edit inside the block is drift', () => {
     const root = makeTree({});
     const { lock } = sync(root, [managed('AGENTS.md', 'v1')], []);
-    writeFileSync(join(root, 'AGENTS.md'), block('hacked') + '\n');
+    writeFileSync(join(root, 'AGENTS.md'), `${block('hacked')}\n`);
     expect(sync(root, [managed('AGENTS.md', 'v2')], lock).plan).toEqual([['AGENTS.md', 'drift']]);
   });
 

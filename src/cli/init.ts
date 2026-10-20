@@ -2,10 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as p from '@clack/prompts';
-import { CONFIG_FILE, MODELS_FILE, SOURCES_FILE, hasConfig, writeYaml } from '../engine/files.js';
+import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
 import { syncGlobal, syncProject } from '../engine/sync.js';
-import { configSchema, DEFAULT_MODELS, HARNESS_IDS, PROFILES, type ConfigInput, type HarnessId, type Profile } from '../schemas/index.js';
-import { detectWorkspace, type DetectedProject, type DetectedWorkspace } from '../workspace/detect.js';
+import { type ConfigInput, configSchema, DEFAULT_MODELS, HARNESS_IDS, type HarnessId, PROFILES, type Profile } from '../schemas/index.js';
+import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { c, printChanges, printWarnings } from './output.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
@@ -30,7 +30,10 @@ function bail(value: unknown): asserts value is NonNullable<unknown> {
 }
 
 function parseHarnesses(list: string[]): HarnessId[] {
-  const ids = list.flatMap((h) => h.split(',')).map((h) => h.trim()).filter(Boolean);
+  const ids = list
+    .flatMap((h) => h.split(','))
+    .map((h) => h.trim())
+    .filter(Boolean);
   const bad = ids.filter((h) => !(HARNESS_IDS as readonly string[]).includes(h));
   if (bad.length) throw new Error(`Unknown harness: ${bad.join(', ')}. Available: ${HARNESS_IDS.join(', ')}`);
   return ids as HarnessId[];
@@ -100,7 +103,11 @@ function initWorkspaceRepo(root: string, projects: DetectedProject[]) {
   const ignore = join(root, '.gitignore');
   const existing = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
   const lines = projects.map((pr) => `/${pr.path}/`).filter((l) => !existing.split('\n').includes(l));
-  if (lines.length) appendFileSync(ignore, `${existing && !existing.endsWith('\n') ? '\n' : ''}# Child repositories (Mandao polyrepo workspace)\n${lines.join('\n')}\n`);
+  if (lines.length)
+    appendFileSync(
+      ignore,
+      `${existing && !existing.endsWith('\n') ? '\n' : ''}# Child repositories (Mandao polyrepo workspace)\n${lines.join('\n')}\n`,
+    );
 }
 
 const OVERRIDES_README = `# Overrides
@@ -187,7 +194,11 @@ export async function runInit(root: string, opts: InitOptions) {
 
   writeYaml(join(root, CONFIG_FILE), config, '# Mandao configuration. Run `mandao sync` after editing. Schema: docs/schemas.md');
   if (!existsSync(join(root, MODELS_FILE))) {
-    writeYaml(join(root, MODELS_FILE), models, '# Model tier registry per harness: fast | standard | strong. The Reviewer must differ from the Implementer.');
+    writeYaml(
+      join(root, MODELS_FILE),
+      models,
+      '# Model tier registry per harness: fast | standard | strong. The Reviewer must differ from the Implementer.',
+    );
   }
   if (!existsSync(join(root, SOURCES_FILE))) {
     writeYaml(join(root, SOURCES_FILE), SOURCES_TEMPLATE, '# Where business context lives: tracker, docs, chat, design, transcripts.');

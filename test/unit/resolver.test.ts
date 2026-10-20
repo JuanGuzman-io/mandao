@@ -1,8 +1,12 @@
 import { describe, expect, test } from 'vitest';
 import type { Layer, LayerKind } from '../../src/resolver/layers.js';
-import { mergePatch, resolve, ResolveError } from '../../src/resolver/resolve.js';
+import { mergePatch, ResolveError, resolve } from '../../src/resolver/resolve.js';
 
-const layer = (kind: LayerKind, files: Record<string, string>, id: string = kind): Layer => ({ kind, id, files: new Map(Object.entries(files)) });
+const layer = (kind: LayerKind, files: Record<string, string>, id: string = kind): Layer => ({
+  kind,
+  id,
+  files: new Map(Object.entries(files)),
+});
 
 const command = (id: string, extra = '', body = 'Body') => `---
 schema_version: 1
@@ -61,7 +65,8 @@ describe('resolve', () => {
           'commands/a.md': command('a', 'flow: { next: [ghost] }\n'),
           'commands/b.md': command('not-b'),
           'commands/c.md': command('c', 'tier: huge\n').replace('tier: standard\n', ''),
-          'personas/reviewer.md': '---\nschema_version: 1\nid: reviewer\ntitle: R\ndescription: r\ntier: strong\ncapabilities: [read]\nmust_differ_from: implementer\n---\n',
+          'personas/reviewer.md':
+            '---\nschema_version: 1\nid: reviewer\ntitle: R\ndescription: r\ntier: strong\ncapabilities: [read]\nmust_differ_from: implementer\n---\n',
         }),
         layer('overrides', { 'commands/zzz.patch.yml': 'tier: fast\n' }),
       ]);

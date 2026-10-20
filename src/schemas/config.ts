@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
 
-export const COMMIT_TYPES = [
-  'feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'build', 'ci', 'revert',
-] as const;
+export const COMMIT_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'build', 'ci', 'revert'] as const;
 export type CommitType = (typeof COMMIT_TYPES)[number];
 
 export const DEFAULT_COMMIT_EMOJI: Record<CommitType | 'breaking', string> = {
@@ -28,7 +26,10 @@ const project = z.object({
   name: kebabId,
   path: relPath,
   profile,
-  tracker_key: z.string().regex(/^[A-Z][A-Z0-9_]*$/, 'must be an uppercase tracker key').optional(),
+  tracker_key: z
+    .string()
+    .regex(/^[A-Z][A-Z0-9_]*$/, 'must be an uppercase tracker key')
+    .optional(),
   /** Polyrepo: remote URL of the project's own repository (or `local` when it has none). */
   repo: z.string().min(1).optional(),
   /** Shell command per deterministic gate, run from the project path. Missing gates are reported by doctor. */
@@ -40,7 +41,10 @@ const commits = z
   .object({
     emoji: z
       .object(
-        Object.fromEntries([...COMMIT_TYPES, 'breaking'].map((t) => [t, z.string().min(1)])) as Record<CommitType | 'breaking', z.ZodString>,
+        Object.fromEntries([...COMMIT_TYPES, 'breaking'].map((t) => [t, z.string().min(1)])) as Record<
+          CommitType | 'breaking',
+          z.ZodString
+        >,
       )
       .default(DEFAULT_COMMIT_EMOJI),
     max_subject_length: z.number().int().positive().default(72),
@@ -79,7 +83,10 @@ export const configSchema = z
         /** Branch naming; `{type}` is feat or fix. */
         branch: z.string().default('{type}/{id}-{slug}'),
         /** Prefix for local ids when there is no tracker: MDO-0001. */
-        local_prefix: z.string().regex(/^[A-Z][A-Z0-9]*$/).default('MDO'),
+        local_prefix: z
+          .string()
+          .regex(/^[A-Z][A-Z0-9]*$/)
+          .default('MDO'),
       })
       .prefault({}),
     commits,
@@ -95,10 +102,15 @@ export const configSchema = z
       names.add(p.name);
       paths.add(p.path);
       if (cfg.workspace === 'polyrepo' && !p.repo) {
-        ctx.addIssue({ code: 'custom', path: ['projects', i, 'repo'], message: `polyrepo project "${p.name}" needs repo (remote URL, or "local")` });
+        ctx.addIssue({
+          code: 'custom',
+          path: ['projects', i, 'repo'],
+          message: `polyrepo project "${p.name}" needs repo (remote URL, or "local")`,
+        });
       }
     });
-    if (new Set(cfg.harnesses).size !== cfg.harnesses.length) ctx.addIssue({ code: 'custom', path: ['harnesses'], message: 'duplicate harness' });
+    if (new Set(cfg.harnesses).size !== cfg.harnesses.length)
+      ctx.addIssue({ code: 'custom', path: ['harnesses'], message: 'duplicate harness' });
     if (cfg.workspace === 'single' && cfg.projects.length > 1) {
       ctx.addIssue({ code: 'custom', path: ['workspace'], message: 'single mode allows exactly one project' });
     }
@@ -106,7 +118,8 @@ export const configSchema = z
       ctx.addIssue({ code: 'custom', path: ['projects'], message: 'polyrepo projects cannot live at the workspace root' });
     }
     const emojis = Object.values(cfg.commits.emoji);
-    if (new Set(emojis).size !== emojis.length) ctx.addIssue({ code: 'custom', path: ['commits', 'emoji'], message: 'each commit type needs a distinct emoji' });
+    if (new Set(emojis).size !== emojis.length)
+      ctx.addIssue({ code: 'custom', path: ['commits', 'emoji'], message: 'each commit type needs a distinct emoji' });
   });
 
 export type Config = z.infer<typeof configSchema>;
