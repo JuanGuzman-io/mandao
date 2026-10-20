@@ -241,7 +241,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/guards.test.ts
 ```
 
-### [ ] T2 — The guard runs over every test with one named exception, and the suite stays green
+### [x] T2 — The guard runs over every test with one named exception, and the suite stays green
 
 - **What:** replace the regex test in `test/unit/architecture.test.ts` with one that runs
   `findClimbs` over `test/` and honours `ALLOWED` ([D4](#d4)); rewrite the one legitimate climb

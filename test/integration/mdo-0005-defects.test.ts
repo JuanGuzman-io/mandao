@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { cpSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { Command } from 'commander';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -263,7 +263,7 @@ describe('#4 and #6: commit-spec has fixed subjects, and close commits its docum
       'src/AGENTS.md': 'guide\n',
       'src/unrelated.ts': 'export {};\n',
     })) {
-      mkdirSync(join(root, f, '..'), { recursive: true });
+      mkdirSync(dirname(join(root, f)), { recursive: true });
       writeFileSync(join(root, f), c);
     }
     writeFileSync(join(root, SPEC, 'close-summary.md'), 'closed\n');

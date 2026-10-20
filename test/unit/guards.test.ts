@@ -1,8 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { findClimbs } from '../guards.js';
+import { findClimbs, withoutAllowed } from '../guards.js';
 
-/** Interpolated so the legacy regex guard in architecture.test.ts does not flag these snippets. */
-const UP = '..';
 const run = (...rows: string[]) => findClimbs('snippet.test.ts', rows.join('\n'));
 
 describe('findClimbs: join and resolve with a parent segment', () => {
@@ -36,15 +34,21 @@ describe('findClimbs: join and resolve with a parent segment', () => {
   });
 
   it('S-1.3: reports a default-import call', () => {
-    const call = `path.join(ws, '${UP}')`;
-    const found = run("import path from 'node:path';", `const a = ${call};`);
-    expect(found).toEqual([{ line: 2, text: call }]);
+    const found = run("import path from 'node:path';", "const a = path.join(ws, '..');");
+    expect(found).toEqual([{ line: 2, text: "path.join(ws, '..')" }]);
   });
 
   it('S-1.4: reports .. before a following segment', () => {
-    const call = `join(ws, '${UP}', 'x')`;
-    const found = run("import { join } from 'node:path';", `const p = ${call};`);
-    expect(found).toEqual([{ line: 2, text: call }]);
+    const found = run("import { join } from 'node:path';", "const p = join(ws, '..', 'x');");
+    expect(found).toEqual([{ line: 2, text: "join(ws, '..', 'x')" }]);
+  });
+});
+
+describe('withoutAllowed: exceptions', () => {
+  it('S-4.1: drops only the allowed call and keeps the other finding', () => {
+    const found = run("import { dirname, join } from 'node:path';", 'const a = dirname(makeTree({}));', "const b = join(ws, '..');");
+    const allowed = [{ file: 'snippet.test.ts', call: 'dirname(makeTree({}))', why: 'look-alike folder' }];
+    expect(withoutAllowed('snippet.test.ts', found, allowed)).toEqual([{ line: 3, text: "join(ws, '..')" }]);
   });
 });
 

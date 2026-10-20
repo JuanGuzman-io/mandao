@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0007-catch-every-way-a-test-can-climb-out-of-its-work
-updated_at: 2026-10-20T20:54:27.449Z
+updated_at: 2026-10-20T20:58:32.955Z
 current: null
 open_questions: []
 next_step: ""
@@ -11,4 +11,10 @@ red_tests:
     files:
       - path: test/unit/guards.test.ts
         sha256: 81f71237c78c94a718ade472760df153504d207ffa45f579ab55bdc5aaee9554
+  - task: T2
+    files:
+      - path: test/unit/architecture.test.ts
+        sha256: e73155560e10291b271c7116ec39e27b60bb046f5c2869bd0cf108f2db4e7c99
+      - path: test/unit/guards.test.ts
+        sha256: 019b1ac0475e62f60b8dc33dc28af4a7aac2e954e94a9aa60cd39632a3a7ddae
 pending_commits: []

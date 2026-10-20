@@ -75,6 +75,18 @@ function isClimb(checker: ts.TypeChecker, call: ts.CallExpression): boolean {
   return fn === 'dirname' && isTreeArgument(checker, call.arguments[0]);
 }
 
+/** A justified exception: this exact call, in this file, may climb out of the work folder. */
+export interface Allowed {
+  file: string;
+  call: string;
+  why: string;
+}
+
+/** Drops only the findings whose file and exact call text match an entry; everything else stays reported. */
+export function withoutAllowed(file: string, found: Climb[], allowed: Allowed[]): Climb[] {
+  return found.filter((c) => !allowed.some((a) => a.file === file && a.call === c.text));
+}
+
 /** Reports every `node:path` call in `source` that climbs out of the test's work folder. Pure: reads only `source`. */
 export function findClimbs(file: string, source: string): Climb[] {
   const { sf, checker } = createChecker(file, source);

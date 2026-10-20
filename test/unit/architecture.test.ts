@@ -1,6 +1,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vitest';
+import { findClimbs, withoutAllowed } from '../guards.js';
 
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(join(dir, e.name)) : [join(dir, e.name)]));
@@ -29,12 +30,23 @@ test('only test/helpers.ts creates temporary folders', () => {
   expect(offenders).toEqual([]);
 });
 
-/** MDO-0006 D4: a file must not write next to a workspace through join(<folder>, '..', …), it leaks outside makeTree. */
-test('no test climbs out of a folder with join(<folder>, "..")', () => {
+/**
+ * MDO-0007 D4/D5: no test calls a node:path function that climbs out of its work folder (join/resolve with a
+ * '..' segment, dirname of a makeTree folder). A finding is excused only by an exact { file, call } entry.
+ */
+test('no test climbs out of its work folder', () => {
   const root = join(import.meta.dirname, '../..');
+  const ALLOWED = [
+    {
+      file: 'test/unit/helpers.test.ts',
+      call: 'dirname(makeTree({}))',
+      // MDO-0006 S-2.1 needs a look-alike folder next to a workspace and removes it in its own finally.
+      why: 'look-alike folder next to a workspace, removed in the same test',
+    },
+  ];
   const offenders = files(join(root, 'test'))
+    .filter((f) => f.endsWith('.ts'))
     .map((f) => relative(root, f))
-    .filter((f) => f !== 'test/unit/architecture.test.ts')
-    .filter((f) => /\bjoin\((?!import\.meta\.dirname\b)[^,()]+,\s*['"`]\.\.['"`]/.test(readFileSync(join(root, f), 'utf8')));
+    .flatMap((f) => withoutAllowed(f, findClimbs(f, readFileSync(join(root, f), 'utf8')), ALLOWED).map((c) => `${f}:${c.line} ${c.text}`));
   expect(offenders).toEqual([]);
 });
