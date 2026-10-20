@@ -29,19 +29,23 @@ Pick the task: `<task>` or `next` from `node .mandao/bin/mandao.mjs run tasks <s
 `node .mandao/bin/mandao.mjs run loop <spec> <Tn> --harness <this harness>` at every step:
 
 1. **Checkpoint** before anything else:
-   `node .mandao/bin/mandao.mjs run checkpoint <spec> --task <Tn> --phase implementing --harness <h> --model <your model> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   `node .mandao/bin/mandao.mjs run checkpoint <spec> --task <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
    Checkpoints are the only memory between sessions: write one after every step below.
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
    (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
    `self` when it ran in your own context); the script reads its model and effort from the agent file the
-   harness loads. Pass what the agent said about itself as `--claimed-implementer` / `--claimed-reviewer`:
-   a difference is recorded as `identity mismatch`.
+   harness loads, and the Leader's model from `models.yml`. Pass what the agent said about itself, verbatim,
+   as `--claimed-implementer` / `--claimed-reviewer`: it is only compared, never recorded as the identity,
+   and only a claim that names a different model is recorded as `identity mismatch`.
 2. **Brief:** `node .mandao/bin/mandao.mjs run brief <spec> <Tn> --harness <h>` gives the clauses, files, exemplar,
    gates, skills, lenses, models and impacted tests.
 3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
    has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
    spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
    tasks with declared tests, the Implementer writes the red test first and records it the same way.
+   A `characterization: true` task (`tdd.evidence: mutation`) has no red step: its tests pin down existing
+   behavior, and the Implementer proves each assertion with `node .mandao/bin/mandao.mjs run mutation` (rules/test-policy.md)
+   before reporting.
    **Implement** in a fresh context with the implementer for the tier:
    the `mandao_implementer_<tier>` custom agent (or `mandao_implementer` in simple mode). Codex loads
    `.codex/agents/` only in a trusted project; when the agent is not available, say so and record
@@ -69,7 +73,8 @@ Pick the task: `<task>` or `next` from `node .mandao/bin/mandao.mjs run tasks <s
    With neither, review in your own context: `--reviewer self`, which the script records as `reduced
    independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
-   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
+   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n> --reason "<the first blocking finding>"`
+     (required: the log keeps why the task failed); back to step 3. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
    - **The spec is wrong** → write a Pivot Record (`.mandao/templates/app/spec/pivot-record.md`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.

@@ -10,7 +10,7 @@ import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from 
 import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
-import { blockingMarkers, commitMessage, type LoopContext, loopState, planTasks, trace } from '../spec/index.js';
+import { blockingMarkers, commitMessage, type LoopContext, loopState, planTasks, TASK_KINDS, trace } from '../spec/index.js';
 import { onPath } from '../util/which.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -115,7 +115,7 @@ function registerPlanning(run: Command, ctx: CliContext) {
           spec.tasks,
           markers.flatMap((m) => m.criticalOpen),
         ),
-        issues: spec.issues,
+        issues: [...spec.issues, ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`)],
       });
     });
 }

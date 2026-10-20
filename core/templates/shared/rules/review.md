@@ -20,6 +20,11 @@ Skills teach, the constitution decides, the Reviewer enforces. The Reviewer buil
 Gate commands come from `projects[].gates` in `.mandao/config.yml`. A missing gate is reported, not
 invented.
 
+Test policy at level 1 includes the evidence: a `RED` row for a task with mandatory tests, or `MUTANT`
+rows for a `characterization: true` task. For the latter, check the classification against the diff: any
+change to production behavior means it is not characterization → FAIL. Each recorded mutation
+(`mutations/<Tn>-<n>.md`) must change what an assertion protects.
+
 ## Risk tags → lenses
 
 | Tags | Lens |
@@ -47,7 +52,8 @@ The Reviewer **never runs on a lower tier or effort than the Implementer** (ADR 
 another vendor is not an acceptable substitute. Independence never blocks.
 
 Who reviewed is recorded by the scripts from the agent or process actually invoked, never from what a
-model says about itself; a different claim is recorded as `identity mismatch`.
+model says about itself (agent files and `models.yml`); a claim that names a different model is recorded
+as `identity mismatch`. A FAIL is checkpointed with its first blocking finding (`--reason`).
 
 ## Quick changes
 

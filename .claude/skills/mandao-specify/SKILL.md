@@ -81,7 +81,11 @@ From `.mandao/templates/app/spec/design.md`:
 
 - **Premise Ledger**: one row per claim about existing code that the design depends on, with
   evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before relying on it`. If there
-  are none, write that explicitly.
+  are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
+  reading code (MDO-0004 read one and was wrong): cite the command and an excerpt of its output. Only
+  safe runs: read-only, inside the worktree or a sandbox, no writes to real systems and no external
+  effects, with a timeout, and through `node .mandao/bin/mandao.mjs run resources` when it builds or tests (never force the
+  guard). If it cannot run safely, it stays `UNVERIFIED`.
 - Decisions with alternatives, changes per project and module, and an **exemplar file** per change.
 - Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
@@ -126,6 +130,7 @@ did not exist), `optional` (lite).
 - Otherwise ask for approval of requirements and design — **showing the diagram** when there is one;
   the PO or lead approves looking at it. On approval set `status: approved` in both
   (and in `story.md` if it was still `draft`), then commit the spec documents on their own:
-  `node .mandao/bin/mandao.mjs run commit-spec $ref specify <title>` (a `docs` commit with `Refs: <ID>`; never pushed).
+  `node .mandao/bin/mandao.mjs run commit-spec $ref specify` (a `docs` commit with `Refs: <ID>` and a fixed subject; never
+  pushed).
 - Summarize: depth, FR/NFR counts, AC coverage, Premise Ledger rows marked `UNVERIFIED`, risk tags,
   and the next mandao.

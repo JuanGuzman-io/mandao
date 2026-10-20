@@ -50,13 +50,52 @@ export function agentIdentity(root: string, spec: string, defaultHarness: string
 /** The execution-row cell: `model` or `model (effort)`. */
 export const identityCell = (id: Identity | undefined) => (id ? (id.effort ? `${id.model} (${id.effort})` : id.model) : '—');
 
-/** Notes for a claim that does not match the invoked identity, and for unverifiable self steps. */
+/** Model families a claim must name before it counts as one; anything else (agent names, prose) is ignored. */
+const MODEL_FAMILY = /^(claude|sonnet|opus|haiku|fable|gpt|o[1-9]|codex|gemini|kimi|qwen|grok|deepseek|glm|llama|mistral|big-pickle)(-|$)/;
+
+/** `anthropic/Claude Sonnet 5.5` and `claude-sonnet-5-5` compare equal: last path segment, lower case, `-`. */
+const normalModel = (m: string) =>
+  (m.split('/').at(-1) ?? m)
+    .toLowerCase()
+    .replace(/[\s._]+/g, '-')
+    .replace(/^-|-$/g, '');
+
+/** The model ids a free-text claim names (MDO-0005: "mandao-reviewer (identity not stated)" names none). */
+export function claimedModels(text: string): string[] {
+  const words = text
+    .split(/[\s,;()[\]"'`]+/)
+    .map(normalModel)
+    .filter(Boolean);
+  const out: string[] = [];
+  words.forEach((w, i) => {
+    // A bare vendor name ("Claude") says nothing about which model.
+    if (!MODEL_FAMILY.test(w) || w === 'claude') return;
+    // "Sonnet 5.5": the version is the next word.
+    const next = words[i + 1];
+    out.push(next && /^\d+(-\d+)*$/.test(next) ? `${w}-${next}` : w);
+  });
+  return out;
+}
+
+/** A claim matches when one of its ids is part of the invoked id or the other way round (`sonnet` ⊂ `claude-sonnet-5-5`). */
+function claimMatches(claimed: string[], model: string): boolean {
+  const invoked = normalModel(model);
+  return claimed.some((c) => invoked.includes(c) || c.includes(invoked));
+}
+
+/**
+ * Notes for a claim that names a different model than the one invoked, and for unverifiable self steps.
+ * The claim is only ever compared, never recorded as the identity (ADR 0021): free text that names no
+ * model is not evidence of anything.
+ */
 export function identityNotes(role: 'implementer' | 'reviewer', id: Identity | undefined, claimed?: string): string[] {
   if (!id) return [];
   const notes: string[] = [];
   if (id.source === 'self')
     notes.push(role === 'reviewer' ? 'reduced independence (reviewed in the Leader context)' : 'implemented in the Leader context');
-  if (claimed && id.source !== 'self' && claimed !== id.model)
-    notes.push(`identity mismatch: ${role} claimed ${claimed}, invoked ${id.model}`);
+  const models = claimed ? claimedModels(claimed) : [];
+  const comparable = id.source !== 'self' && id.model !== '(harness default)';
+  if (comparable && models.length && !claimMatches(models, id.model))
+    notes.push(`identity mismatch: ${role} claimed ${models.join(', ')}, invoked ${id.model}`);
   return notes;
 }

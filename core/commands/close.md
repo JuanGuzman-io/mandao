@@ -22,7 +22,7 @@ templates:
   - close/release-notes.md
   - close/technical.md
   - close/kaizen.md
-scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan]
+scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
 approval: required
 ---
 
@@ -100,5 +100,7 @@ release notes as a block the user can paste.
 
 ## 8. Finish
 
-`{{script:close-summary}} {{arg:spec}} --closed`, set `status: closed` in story.md, and report: Kaizen
-headline, impacts applied, drift, where it was published.
+`{{script:close-summary}} {{arg:spec}} --closed`, set `status: closed` in story.md, then commit everything
+close wrote on its own: `{{script:commit-spec}} {{arg:spec}} close` (the spec folder, `{{paths.releases}}/<ID>/`,
+`docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
+never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.

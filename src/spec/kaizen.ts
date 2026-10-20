@@ -1,8 +1,12 @@
 import type { ExecutionRow } from './execution.js';
 import type { Task } from './tasks.js';
 
-/** TDD practice of a spec (ADR 0022): every task with mandatory tests has red evidence, none, or some. */
-export type TddPractice = 'tdd' | 'no-tdd' | 'partial' | 'not-applicable';
+/**
+ * TDD practice of a spec (ADR 0022): every task with mandatory tests has red evidence, none, or some.
+ * Characterization tasks (pinning existing behavior, proven by mutations) are counted apart: a spec made
+ * only of them is `characterization`, in neither comparison group.
+ */
+export type TddPractice = 'tdd' | 'no-tdd' | 'partial' | 'characterization' | 'not-applicable';
 
 export interface BugsAfterMerge {
   /** `fix` commits whose `Refs` trailer points to the spec, dated after it closed. */
@@ -27,7 +31,7 @@ export interface SpecMetrics {
   reducedIndependence: number;
   providerIndependence: number;
   forcedRuns: number;
-  tdd: { practice: TddPractice; tasksWithTests: number; tasksWithRed: number };
+  tdd: { practice: TddPractice; tasksWithTests: number; tasksWithRed: number; tasksCharacterized: number; tasksWithMutants: number };
   bugsAfterMerge?: BugsAfterMerge;
 }
 
@@ -44,17 +48,25 @@ function escalations(rows: ExecutionRow[]): number {
   return count;
 }
 
+function practiceOf(withTests: number, withRed: number, characterized: number): TddPractice {
+  if (!withTests) return characterized ? 'characterization' : 'not-applicable';
+  if (withRed === withTests) return 'tdd';
+  return withRed === 0 ? 'no-tdd' : 'partial';
+}
+
 function tddPractice(tasks: Task[], rows: ExecutionRow[]): SpecMetrics['tdd'] {
-  const withTests = tasks.filter((t) => t.tests.unit.length + t.tests.e2e.length > 0);
-  const withRed = withTests.filter((t) => rows.some((r) => r.task === t.id && r.verdict === 'RED'));
-  const practice: TddPractice = !withTests.length
-    ? 'not-applicable'
-    : withRed.length === withTests.length
-      ? 'tdd'
-      : withRed.length === 0
-        ? 'no-tdd'
-        : 'partial';
-  return { practice, tasksWithTests: withTests.length, tasksWithRed: withRed.length };
+  const has = (t: Task, verdict: string) => rows.some((r) => r.task === t.id && r.verdict === verdict);
+  const tested = tasks.filter((t) => t.tests.unit.length + t.tests.e2e.length > 0);
+  const characterized = tested.filter((t) => t.characterization);
+  const withTests = tested.filter((t) => !t.characterization);
+  const withRed = withTests.filter((t) => has(t, 'RED'));
+  return {
+    practice: practiceOf(withTests.length, withRed.length, characterized.length),
+    tasksWithTests: withTests.length,
+    tasksWithRed: withRed.length,
+    tasksCharacterized: characterized.length,
+    tasksWithMutants: characterized.filter((t) => has(t, 'MUTANT')).length,
+  };
 }
 
 /** Kaizen's measure step (design §18.1) for one spec, from its execution log only. */
@@ -91,7 +103,7 @@ export interface TddComparison {
   minPerGroup: number;
   tdd: GroupSummary;
   noTdd: GroupSummary;
-  /** Specs left out: partial TDD or no tests at all. */
+  /** Specs left out: partial TDD, characterization only, or no tests at all. */
   excluded: string[];
   /** `insufficient data` below the minimum per group; otherwise the differences, never a verdict on causes. */
   result: 'insufficient data' | { reworkRateDelta: number; reviewerFailsPerTaskDelta: number; bugsAfterMergeDelta?: number };
@@ -117,7 +129,7 @@ function summarize(group: SpecMetrics[]): GroupSummary {
 export function compareTdd(metrics: SpecMetrics[], minPerGroup = 5): TddComparison {
   const tdd = summarize(metrics.filter((m) => m.tdd.practice === 'tdd'));
   const noTdd = summarize(metrics.filter((m) => m.tdd.practice === 'no-tdd'));
-  const excluded = metrics.filter((m) => m.tdd.practice === 'partial' || m.tdd.practice === 'not-applicable').map((m) => m.spec);
+  const excluded = metrics.filter((m) => m.tdd.practice !== 'tdd' && m.tdd.practice !== 'no-tdd').map((m) => m.spec);
   const enough = tdd.n >= minPerGroup && noTdd.n >= minPerGroup;
   const result: TddComparison['result'] = enough
     ? {

@@ -17,7 +17,7 @@ export interface VerifySuite {
 
 export interface VerifyPlan {
   suites: VerifySuite[];
-  /** Tasks with declared tests and no RED row (ADR 0022). */
+  /** Tasks with declared tests and no RED row, or no MUTANT row for a characterization task (ADR 0022). */
   missingRed: string[];
   deferred: Progress['deferred_to_ci'];
   findings: { type: string; ref: string; message: string }[];
@@ -74,7 +74,7 @@ export function verifyPlan(input: {
   const findings = trace(input.story, input.requirements, tasks, input.commits).findings;
   const missingRed = tasks
     .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0)
-    .filter((t) => !execution.some((r) => r.task === t.id && r.verdict === 'RED'))
+    .filter((t) => !execution.some((r) => r.task === t.id && r.verdict === (t.characterization ? 'MUTANT' : 'RED')))
     .map((t) => t.id);
   const deferred = input.progress?.deferred_to_ci ?? [];
   const blockers = [

@@ -31,7 +31,8 @@ Write task content in `{{language.technical}}`; headings, ids and YAML keys stay
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend {{command:clarify}}.
 2. **Write `tasks.md`** from `{{template:spec/tasks.md}}`: `### [ ] Tn — title` plus a YAML block per
-   task with project, tier (`fast | standard | strong`), files and modules from the graph, an exemplar
+   task with project, kind (what the task changes, which becomes its commit type: a task that only
+   adds or changes tests is `test`, only documentation is `docs`), tier (`fast | standard | strong`), files and modules from the graph, an exemplar
    file, risk tags (`{{template:rules/review.md}}`), the AC and scenario clauses it implements
    (`{{template:rules/traceability.md}}`), the tests the policy requires
    (`{{template:rules/test-policy.md}}`), DoD (module `AGENTS.md` and its `CLAUDE.md` pointer), a verify

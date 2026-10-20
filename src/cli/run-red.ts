@@ -20,7 +20,7 @@ interface RedOptions {
 }
 
 /** The command that runs exactly these test files for the project: configured, or the runner's. */
-function testCommand(root: string, project: { path: string; tests: { impacted?: string } }, files: string[], workers: number) {
+export function testCommand(root: string, project: { path: string; tests: { impacted?: string } }, files: string[], workers: number) {
   const runner = detectRunner(projectDir(root, project.path));
   const template = project.tests.impacted ?? (runner ? RUNNER_COMMANDS[runner].module : undefined);
   return template ? fillCommand(template, files, workers) : undefined;

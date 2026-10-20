@@ -34,6 +34,21 @@ code to pass it; then refactor within the task's scope. Where it says **Never**,
   from the spec and the Implementer makes them pass.
 - Kaizen compares specs with and without TDD (rework, Reviewer FAILs, bugs after merge).
 
+### Characterization tests
+
+A task that **only pins down behavior that already exists** declares `characterization: true`. Its tests
+pass from the start, so a red run proves nothing; the evidence is a recorded mutation instead:
+
+- `mandao run mutation <spec> <Tn> <test files> --patch <diff> --agent <agent>` applies the mutation,
+  runs the tests, reverts it and checks the mutated files are back exactly as they were. Only a failing
+  run with a clean revert is recorded: a `MUTANT` row, and the diff with the failing output in
+  `mutations/<Tn>-<n>.md`. A surviving mutation means the tests do not protect that code.
+- Each mutation changes exactly what an assertion protects (never a test or the task's own files): one
+  mutation per assertion, until every assertion has failed once.
+- A task that adds or changes behavior is never characterization: it needs a red test. The Reviewer
+  checks the classification and FAILs a task that hides new behavior behind it.
+- Kaizen counts these tasks as `characterization`, apart from `tdd` and `no-tdd`.
+
 ## E2E
 
 - `critical-flows.md` in the constitution lists the critical flows; AC that touch them carry

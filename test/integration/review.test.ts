@@ -36,7 +36,7 @@ describe('identity from the agent file the harness loads, never from the model (
     const root = agents();
     const id = agentIdentity(root, 'mandao_reviewer@codex', 'codex');
     expect(identityNotes('reviewer', id, 'gpt-6-sol')).toEqual([]);
-    expect(identityNotes('reviewer', id, 'gpt-6.1-sol')).toEqual(['identity mismatch: reviewer claimed gpt-6.1-sol, invoked gpt-6-sol']);
+    expect(identityNotes('reviewer', id, 'gpt-6.1-sol')).toEqual(['identity mismatch: reviewer claimed gpt-6-1-sol, invoked gpt-6-sol']);
     expect(identityNotes('reviewer', agentIdentity(root, 'self', 'codex'), 'gpt-6-sol')).toEqual([
       'reduced independence (reviewed in the Leader context)',
     ]);

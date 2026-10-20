@@ -9,7 +9,7 @@ rule: commits
 
 - One commit per task, only after the Reviewer's PASS. Rework attempts are never committed.
 - Each commit leaves lint and the impacted tests green.
-- `tasks.md` is updated in the same commit; `execution.md` records the hash.
+- `tasks.md` is updated in the same commit; the `Mandao-Task` trailer links the task to its commit.
 
 ## Format
 
@@ -26,6 +26,8 @@ Mandao-AC: AC-1, AC-3
 
 - Header: `<emoji> <type>(<scope>): <subject>`. Emoji first, unicode, imperative mood, at most the
   configured length (72 by default) without the emoji.
+- Type: a task's commit takes the task's `kind` from `tasks.md`, checked against the real diff (a
+  commit that only changes tests is `test`, only documentation is `docs`).
 - Scope: the project in a monorepo or polyrepo, the module in a single repo.
 - Emoji map: fixed per type in `.mandao/config.yml` (`commits.emoji`); never choose freely. A breaking
   change uses the `breaking` emoji instead of the type's.

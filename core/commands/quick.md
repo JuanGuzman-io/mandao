@@ -21,8 +21,7 @@ templates:
   - rules/quick-gate.md
   - rules/review.md
   - rules/commits.md
-  - spec/quick-log.md
-scripts: [quick-check, spec-new]
+scripts: [quick-check, spec-new, quick-log]
 approval: none
 ---
 
@@ -75,9 +74,11 @@ Run `{{script:quick-check}}` and read its JSON.
 
 ## 6. Record and commit
 
-1. Append a row to `{{paths.specs}}/quick/quick-log.md` (create it from
-   `{{template:spec/quick-log.md}}` if missing): date, name, project, files, lines, gates, review,
-   commit.
+1. Record the row with `{{script:quick-log}} <name> --gates "<gate results>" --verdict <PASS|FAIL>
+   --reviewer <agent you invoked> --harness <this harness>` (`self` when the review ran in your own
+   context). The script measures files and lines from the diff and reads the reviewer's model from its
+   agent file: never type a model name into the log. Pass what the reviewer said about itself, verbatim,
+   as `--claimed-reviewer`; it is only compared.
 2. Commit following `{{template:rules/commits.md}}`, with the trailer `Mandao-Quick: <name>` and,
    when a spec id is active, `Refs: <ID>`. Example:
 
