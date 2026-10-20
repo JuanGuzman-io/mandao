@@ -13,8 +13,9 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0004](0004-layered-resolution.md) | Layered resolution with frontmatter patches | Accepted |
 | [0005](0005-workspace-model.md) | Workspace model: single, monorepo, polyrepo | Accepted |
 | [0006](0006-scripts-via-mandao-run.md) | Helper scripts run through `mandao run` | Accepted |
-| [0007](0007-pure-adapters.md) | Pure adapters, one impure writer | Accepted |
+| [0007](0007-pure-adapters.md) | Pure adapters, one writer for every file | Accepted (amended 2026-10-20) |
 | [0008](0008-copilot-second-adapter.md) | GitHub Copilot as the second adapter | Accepted |
 | [0009](0009-rules-live-in-templates.md) | Methodology rules live in templates, commands stay lean | Accepted |
 | [0010](0010-design-document-alignment.md) | Alignment with the design document | Accepted |
 | [0011](0011-models-languages-and-iteration-2-decisions.md) | Models per role, profiles vs presets, skill installs, quick review, hooks, spec states, languages | Accepted |
+| [0012](0012-dogfooding-corrections.md) | Corrections from the first dogfooding run | Accepted |

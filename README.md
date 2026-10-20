@@ -73,8 +73,14 @@ Files in `.mandao/overrides/` win over presets and core:
 
 ```bash
 npm install
-npm run check      # typecheck + tests
+npm run check      # typecheck, Biome (lint, format, complexity) and tests
 npm run build
+npm link           # expose this checkout as the global `mandao` until it is published
 ```
+
+Generated commands call `node .mandao/bin/mandao.mjs`, which runs Mandao from local
+`node_modules/.bin`, then a global install (such as `npm link`), then `npx mandao@<locked version>`.
+Force one with `scripts.runner` in `.mandao/config.yml`; `mandao doctor` shows which one it uses.
+Undo the link with `npm rm -g mandao`.
 
 Requires Node ≥ 22.18. Commits follow the format in `core/templates/shared/rules/commits.md`.
