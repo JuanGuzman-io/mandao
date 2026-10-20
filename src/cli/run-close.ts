@@ -26,6 +26,7 @@ import {
   planTasks,
   prPlan,
   renderCloseSummary,
+  sessionCutKaizen,
   specMetrics,
   summarizeCosts,
   verifyResults,
@@ -116,7 +117,8 @@ function registerKaizen(run: Command, ctx: CliContext) {
         folders.map((s) => ({ spec: s.name, costs: specCosts(s.dir), tasks: s.tasks, rows: s.execution })),
         leaderSwitch(ctx.root(), config),
       );
-      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, specs: metrics });
+      const sessionCut = sessionCutKaizen(folders.map((s) => ({ spec: s.name, measure: sessionsOf(config, s) })));
+      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, sessionCut, specs: metrics });
     });
 }
 

@@ -30,3 +30,9 @@ spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
 | 2026-10-20 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts; `npx vitest run test/integration/close.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-20 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
 | 2026-10-20 | T3 | 1 | standard | claude | — | claude-opus-5-5 | PASS | advisories: A1 redundant /sessions/ assertion close.test.ts:326; A2 S-3.1 declared unit but is integration; A3 long line close.md:53; A4 absent pauses/verify/afterTasks not spelled out; OPEN repo's own generated harness files need regenerating before close |
+| 2026-10-20 | T4 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-20 | T4 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/kaizen-sessions.test.ts; `npx vitest run test/unit/kaizen-sessions.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-20 | T4 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/kaizen-sessions.test.ts |
+| 2026-10-20 | T4 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/unit/kaizen-sessions.test.ts; FAIL: B1: TURNS_AFTER_TASKS mean and n include specs without verify and close recorded (D4 spec.md:223-224); B2: 20% threshold is an inline magic number |
+| 2026-10-20 | T4 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/kaizen-sessions.test.ts |
+| 2026-10-20 | T4 | 1 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/kaizen-sessions.test.ts; advisories: close 'not measured' exclusion untested; redundant S-4.2 comment; A4 (attempt 1) no end-to-end kaizen-compare test for sessionCut |

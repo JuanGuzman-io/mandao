@@ -111,7 +111,7 @@ parallel_safe: false
 verify: npx vitest run test/integration/close.test.ts
 ```
 
-### [ ] T4 — Kaizen compares with the session-cut constants and proposes new values
+### [x] T4 — Kaizen compares with the session-cut constants and proposes new values
 
 - **What:** `kaizen-sessions.ts` per [D4](spec.md#d4), `sessionCut` in `mandao run kaizen-compare`, and
   close step 1 reporting it with its sample size ([FR-4](spec.md#fr4)).

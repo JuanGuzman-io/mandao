@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
-updated_at: 2026-10-20T23:17:45.964Z
+updated_at: 2026-10-20T23:24:22.496Z
 current: null
 open_questions: []
 next_step: ""
@@ -19,4 +19,8 @@ red_tests:
     files:
       - path: test/integration/close.test.ts
         sha256: e1a8a617172253ae33145c12d98dcf8b99b700d4378e673d1e7ae63cf921309e
+  - task: T4
+    files:
+      - path: test/unit/kaizen-sessions.test.ts
+        sha256: e16be6ca9db0983b0a4938c99a0d5a09bd659778cfc5e1ef049dd19f546d1c9b
 pending_commits: []
