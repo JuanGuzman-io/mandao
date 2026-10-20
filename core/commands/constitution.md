@@ -34,7 +34,7 @@ templates:
   - constitution/ux.md
   - constitution/infrastructure.md
   - constitution/CHANGELOG.md
-scripts: [fingerprint]
+scripts: [fingerprint, branching]
 approval: required
 ---
 
@@ -106,6 +106,11 @@ Write the workspace level in `{{paths.constitution}}/` from the templates, and a
 - Propose gate commands per project (format, lint, typecheck, test, secrets, audit, sast, metrics)
   from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`.
 - A project inherits from the workspace. A contradiction is a `CONFLICT`, never a silent override.
+- **Branching model** (ADR 0023): `{{script:branching}}` reports the model in force and what the existing
+  branches suggest (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` →
+  ask between trunk and feature-branch). Always confirm with the user, then write `branching` in
+  `.mandao/config.yml` (only `model` plus the fields that differ from the preset; polyrepo projects may
+  set their own) and document it in the `## Branching` section of `infrastructure.md`.
 
 ## 4. Product context
 

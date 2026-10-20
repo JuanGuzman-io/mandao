@@ -28,10 +28,19 @@ projects:                      # always a list; a simple repo is one project wit
       audit: npm audit --omit=dev
       sast: semgrep --config auto
       metrics: npx eslint --rule 'complexity: [error, 10]'
-harnesses: [claude, copilot]
 presets: []                    # bundled ids or ./paths, lowest precedence first
 skill_packs: []
-spec: { branch: "{type}/{id}-{slug}", local_prefix: MDO }
+harnesses: [claude, copilot]  # claude | copilot | codex | opencode | antigravity (experimental)
+spec: { branch: "{prefix}{id}-{slug}", local_prefix: MDO }   # {prefix} from branching.prefixes
+branching:                     # ADR 0023: a preset plus only the fields that differ
+  model: gitflow               # trunk | feature-branch (default) | gitflow | env-branches
+  # base: develop              # where spec branches start and where PRs target
+  # promotion: [develop, main] # recorded, never automated
+  # production: main
+  # prefixes: { feature: feature/, fix: bugfix/, hotfix: hotfix/, release: release/ }
+  # hotfix: { from: main, merge_to: [main, develop] }
+  # protected: [main, develop] # Mandao never commits or pushes here
+  # max_branch_age_days: 2     # trunk only
 commits:
   emoji: { feat: ✨, fix: 🐛, docs: 📝, style: 🎨, refactor: ♻️, test: ✅, chore: 🔧,
            perf: ⚡️, build: 📦️, ci: 👷, revert: ⏪️, breaking: 💥 }

@@ -69,3 +69,17 @@ tracker MCP reports it.
   protected branches and, for trunk, branch age.
 - `constitution` gains the detection step; the `infrastructure.md` template gains a branching section.
 - `close` can link the spec to a release (gitflow) and records the environment reached.
+
+## Implementation (iteration 2b, 2026-10-20)
+
+- `branching` in `config.yml` (and per project) with presets resolved by `resolveBranching`; `spec.branch`
+  now defaults to `{prefix}{id}-{slug}` (`{type}` still works).
+- `spec-new` names the branch from the prefixes (`--hotfix` for the hotfix lane), proposes
+  `git worktree add -b <branch> <path> <base>` and reports a missing base; `where` reports a protected
+  branch; `mandao run commit` refuses to commit on one.
+- `mandao run branching` shows the model in force and what the branches suggest; `constitution` confirms
+  it with the user and documents it in `infrastructure.md` (`## Branching`).
+- `doctor` warns when the base does not exist and, in trunk, about spec branches older than
+  `max_branch_age_days`.
+- Pending until `close` exists: associating a spec with a team-made `release/` branch and recording the
+  environment reached.

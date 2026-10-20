@@ -97,7 +97,8 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
-7. **Commit** locally, no confirmation needed, never push. Hashes are never recorded: the commit is
+7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
+   the script refuses). Hashes are never recorded: the commit is
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
    1. Checkpoint the PASS and queue the commit:
       `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
