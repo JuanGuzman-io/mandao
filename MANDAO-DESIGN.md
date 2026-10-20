@@ -483,7 +483,7 @@ One story = **one spec, one development**, even across projects.
   ```
 - **One Leader per feature**; Implementers use the Skill Map, profile and commands of each task's project.
 - The Reviewer checks contract conformance on both sides. A contract change mid-way is a Pivot Record.
-- Delivery: one branch, one PR by default; stacked PRs in dependency order when the LOC estimate is large. Polyrepo: one PR per repo.
+- Delivery: one branch, one PR by default. **DECIDED (ADR 0028):** splitting is decided by the task dependency structure, the projects touched and the **real** size of the commits at the end (`mandao run pr-plan`, against `size_limits.pr`) — stacked PRs along the dependency waves, or per project — never by an estimate. Polyrepo: one PR per repo.
 
 ### 14.2 Roles
 
@@ -849,8 +849,8 @@ Scope: a project, a route, or a critical flow from `critical-flows.md`. `--audit
 
 Double-checked gate.
 
-**Pre-check (with the graph, before touching code).** Quick only if all hold:
-- one project, one module, ≤ 3 files, estimated ≤ ~100 LOC;
+**Pre-check (with the graph, before touching code).** Structural only, no size estimate (ADR 0028). Quick only if all hold:
+- one project, one module, the files located with the graph within `size_limits.quick.max_files`;
 - no new dependencies; no migrations or schema changes;
 - no changes to API contracts, events or public interfaces;
 - no shared library touched (it affects every consumer);
@@ -858,7 +858,9 @@ Double-checked gate.
 - no new or modified business rules; no constitution impact;
 - profile `ai`: no prompt, model or retrieval changes.
 
-**Post-check (on the real diff).** If the change outgrew the estimate, stop: do not commit as quick; escalate to `story` or `specify` with what was learned, keeping the work as a draft.
+**Post-check (on the real diff).** `quick-check` measures the diff with `git diff --numstat` (deterministic, no tokens) against `size_limits.quick` (files and changed lines) in `config.yml`. Over a threshold: stop, do not commit as quick, escalate to `story` or `specify` with what was learned, keeping the work as a draft.
+
+**DECIDED (ADR 0028) — no size estimates anywhere.** No estimated size is stored in spec documents or re-estimated; crossing a threshold only triggers its action (escalate, propose splitting the PR), never an update of documents.
 
 **Never skipped:** level 0 gates, impacted tests, lite review, a `quick-log.md` entry, and a commit with `Mandao-Quick: <name>`.
 

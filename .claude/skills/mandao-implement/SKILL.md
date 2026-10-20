@@ -94,4 +94,7 @@ The Definition of Done includes the module's `AGENTS.md` and, when the workspace
 ## 2. After the last task
 
 Report: tasks done, FAILs and escalations, reduced or provider independence, deferred tests, commits.
+Then `node .mandao/bin/mandao.mjs run pr-plan $spec` says how to deliver: one PR, one per repository (polyrepo), or
+stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
+against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
 Next: /mandao-verify.

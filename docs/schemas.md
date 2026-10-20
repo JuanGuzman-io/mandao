@@ -47,6 +47,9 @@ commits:
   max_subject_length: 72
   trailers: { refs: Refs, task: Mandao-Task, acs: Mandao-AC, quick: Mandao-Quick }
 scripts: { runner: npx }       # npx (pinned version) | local (devDependency)
+size_limits:                   # ADR 0028: measured on the real diff only, never estimated; projects override
+  quick: { max_files: 3, max_changed_lines: 100 }   # quick post-check (git diff --numstat)
+  pr:    { max_files: 25, max_changed_lines: 400 }  # pr-plan proposes splitting above these
 resources:                     # ADR 0013 / 0024; projects[].resources overrides any key
   max_workers: auto            # half the cores
   priority: low

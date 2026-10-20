@@ -21,6 +21,13 @@ Write them as `ASSUMPTION(source: …): …`, `OPEN(critical, owner: PO): …`, 
 
 A critical `OPEN` blocks the next phase. Say so explicitly instead of continuing.
 
+## No size estimates
+
+Never estimate the size of a change (lines, files) and never write a size into a spec document,
+`tasks.md` or `progress.yml`. Size is only measured on the real diff (`git diff --numstat`) by the
+scripts, against `size_limits` in `.mandao/config.yml`; crossing a threshold only triggers its action
+(escalate a quick change, propose splitting the PR), never an update of documents (ADR 0028).
+
 ## Sources and provenance
 
 - Cite where every non-obvious claim comes from: file path with line, command output (as run), tracker item, document link with date.

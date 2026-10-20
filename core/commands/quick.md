@@ -34,7 +34,8 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 
 ## 1. Pre-check
 
-1. Locate the change with the graph (or search): project, module, files, estimated lines.
+1. Locate the change with the graph (or search): project, module and the files to touch. Do not estimate
+   its size: the post-check measures the real diff.
 2. Check every pre-check condition of the quick gate. Name the project and module.
 3. If any condition fails, do not edit anything. Explain which one and recommend {{command:story}} or
    {{command:specify}}, passing along what you found.

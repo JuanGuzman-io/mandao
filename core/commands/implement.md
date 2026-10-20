@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit]
+scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit, pr-plan]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -129,4 +129,7 @@ The Definition of Done includes the module's `AGENTS.md` and, when the workspace
 ## 2. After the last task
 
 Report: tasks done, FAILs and escalations, reduced or provider independence, deferred tests, commits.
+Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
+stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
+against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
 Next: {{command:verify}}.
