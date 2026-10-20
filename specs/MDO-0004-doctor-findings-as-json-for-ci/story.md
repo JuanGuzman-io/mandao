@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: in-progress
+status: closed
 sources:
   - { ref: "user request in /mandao-story (tech lead running a Mandao pilot)", kind: conversation, date: 2026-10-20 }
   - { ref: "src/cli/setup.ts:62-69 (doctor command, exit code 1 on error)", kind: code, date: 2026-10-20 }

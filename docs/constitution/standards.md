@@ -46,6 +46,7 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 
 The CLI prints to stdout for results and stderr for errors; `run` scripts print JSON only. No secrets
 or file contents in output beyond paths.
+Commands with `--json` print exactly one JSON document on stdout; errors go to stderr.
 
 ## Dependencies
 
