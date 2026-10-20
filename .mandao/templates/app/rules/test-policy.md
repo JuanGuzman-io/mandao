@@ -21,6 +21,19 @@ level that demonstrates it**. Coverage percentages are not a goal.
 
 The Reviewer fails a task with a missing mandatory test and flags unnecessary tests as noise.
 
+## TDD where tests are mandatory (ADR 0022)
+
+Where the table says **Always**: red test first, derived from the scenario or clause; then the minimum
+code to pass it; then refactor within the task's scope. Where it says **Never**, TDD does not apply.
+
+- **Red evidence:** `mandao run red <spec> <Tn> <test files> --agent <agent>` runs the tests and records
+  a `RED` row only if they fail. No red evidence on a task with mandatory tests → the Reviewer FAILs it.
+- **No weakening a red test.** Mandao remembers each red test's hash; a later change shows up as
+  `red test changed` in `execution.md` and in the brief, and the Reviewer judges it.
+- **Tests by another agent:** for tasks with risk tags or tier strong, the Tester writes the red tests
+  from the spec and the Implementer makes them pass.
+- Kaizen compares specs with and without TDD (rework, Reviewer FAILs, bugs after merge).
+
 ## E2E
 
 - `critical-flows.md` in the constitution lists the critical flows; AC that touch them carry

@@ -23,6 +23,11 @@ UNVERIFIED — confirm at source before relying on it. If there are none, say so
 |---|---|---|---|---|
 | P1 | | | | High / Low |
 
+## Diagram
+<!-- Written by `mandao run diagram --stamp` (ADR 0022): the approval diagram derived from this design,
+with the hash of the design it came from. Required at standard and full depth across projects or for
+a new flow. Regenerated whenever this design changes; `close` compares it with what was built. -->
+
 ## Decisions
 
 | # | Decision | Alternatives | Why |

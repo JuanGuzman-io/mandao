@@ -31,8 +31,9 @@ Write requirements and design content in `en` and anything addressed to the PO
 
 The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
 `node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type>` and, with **one** confirmation, run the
-`command` it returns (`git worktree add -b <branch> <path>`); write every artifact of the spec inside
-that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
+`command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
+from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
+a missing base) before asking. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
 session already runs in the worktree. If there is no `story.md`, write one from
 `.mandao/templates/app/spec/story.md` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the
@@ -87,11 +88,31 @@ Run `node .mandao/bin/mandao.mjs run trace <ID>` for the structural part (GAP, O
 and `.mandao/templates/app/rules/consistency-check.md` for the semantic part, over story, requirements and design. Write the table in
 `requirements.md` even when it is empty.
 
-## 7. Close
+## 7. Diagram for approval
+
+`node .mandao/bin/mandao.mjs run diagram <ID>` says whether the spec needs it (ADR 0022): `yes` (standard or full depth across
+projects), `if-new-flow` (standard or full in one project: required when the design adds a flow that
+did not exist), `optional` (lite).
+
+- **Derive it from `design.md`, never draw it from memory.** Pick the type by the kind of change:
+  new endpoint or integration → `sequence` · pipeline, RAG, ETL → `data-flow` · new module or service →
+  `architecture` · user or approval process → `workflow` · entity states → `lifecycle` · changes to
+  existing behavior → `before-after`.
+- Generate it with the Archify skill when it is available, into `diagrams/proposed.html` in the spec
+  folder (plus a PNG export), then record it:
+  `node .mandao/bin/mandao.mjs run diagram <ID> --stamp --tool archify --type <type> --file diagrams/proposed.html`.
+  Without Archify, write Mermaid to a file and run
+  `node .mandao/bin/mandao.mjs run diagram <ID> --stamp --tool mermaid --type <type> --mermaid <file>`, which embeds it.
+- The stamp records which `design.md` it came from. Whenever `design.md` changes, `node .mandao/bin/mandao.mjs run diagram`
+  reports `stale: true`: regenerate it before asking for approval.
+- With a tracker MCP, offer to attach the PNG to the story — only after the user confirms.
+
+## 8. Close
 
 - If there are `[NEEDS CLARIFICATION]` items or findings, recommend /mandao-clarify and list them
   by impact. A critical finding blocks /mandao-tasks.
-- Otherwise ask for approval of requirements and design. On approval set `status: approved` in both
+- Otherwise ask for approval of requirements and design — **showing the diagram** when there is one;
+  the PO or lead approves looking at it. On approval set `status: approved` in both
   (and in `story.md` if it was still `draft`).
 - Summarize: depth, FR/NFR counts, AC coverage, Premise Ledger rows marked `UNVERIFIED`, risk tags,
   and the next mandao.

@@ -43,11 +43,17 @@ Pick the task: `${input:task:Optional task id (default - the next eligible task)
    a difference is recorded as `identity mismatch`.
 2. **Brief:** `node .mandao/bin/mandao.mjs run brief ${input:spec:Spec folder or id} <Tn> --harness <h>` gives the clauses, files, exemplar,
    gates, skills, lenses, models and impacted tests.
-3. **Implement** in a fresh context with the implementer for the tier:
+3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
+   has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
+   spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
+   tasks with declared tests, the Implementer writes the red test first and records it the same way.
+   **Implement** in a fresh context with the implementer for the tier:
    the `mandao-implementer-<tier>` custom agent (or `mandao-implementer` in simple mode) as a subagent.
    Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED
    --implementer <agent>`.
-4. **Gates and impacted tests** (`.mandao/templates/app/rules/test-policy.md`): run the project's level 0 gates,
+4. **Gates and impacted tests** (`.mandao/templates/app/rules/test-policy.md`): before a build, check
+   `node .mandao/bin/mandao.mjs run resources --project <project> --kind build`; when it says `defer`, do not force it — report
+   and wait, unless the user asks (a forced run is recorded). Run the project's level 0 gates,
    and the impacted tests with `node .mandao/bin/mandao.mjs run tests <project> <changed files>` — never the full suite.
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
@@ -69,7 +75,8 @@ Pick the task: `${input:task:Optional task id (default - the next eligible task)
    - **The spec is wrong** → write a Pivot Record (`.mandao/templates/app/spec/pivot-record.md`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
-7. **Commit** locally, no confirmation needed, never push. Hashes are never recorded: the commit is
+7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
+   the script refuses). Hashes are never recorded: the commit is
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
    1. Checkpoint the PASS and queue the commit:
       `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or

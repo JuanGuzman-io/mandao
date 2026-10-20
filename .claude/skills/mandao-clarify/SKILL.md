@@ -27,3 +27,6 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
    who answered, what changed) and update requirements and design.
 5. Re-run `node .mandao/bin/mandao.mjs run trace $spec`. A critical finding still open keeps blocking
    /mandao-tasks; say so.
+
+If an answer changes `design.md` and `node .mandao/bin/mandao.mjs run diagram <ID>` then reports `stale: true`, regenerate the
+approval diagram as `/mandao-specify` step 7 describes before asking for approval again.

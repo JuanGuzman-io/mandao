@@ -25,5 +25,5 @@ closest available step.
 
 - Kaizen: measure (rework, pivots, bugs, review FAILs) → learn (0–3 lessons with evidence) → standardize (1–3 line edits) → record.
 - Applies Constitution and Product Impact with approval; the single writer, on the apply-capable branch only.
-- Syncs `AGENTS.md`, updates the graph, writes the technical doc, release notes criterion by criterion against the story, and a diagram (Archify, Mermaid as fallback).
+- Syncs `AGENTS.md`, updates the graph, writes the technical doc, release notes criterion by criterion against the story, and a diagram of what was built, derived from the diff (Archify, Mermaid as fallback), compared with the one approved in specify: differences are drift, explained in the technical doc (ADR 0022).
 - Publishes to the tracker story only after confirmation, idempotently (stores published ids); without MCP writes `docs/releases/<ID>/` plus a copy-paste block. Follows `.mandao/templates/app/rules/context.md`.
