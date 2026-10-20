@@ -1,10 +1,10 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { beforeAll, describe, expect, test } from 'vitest';
 import { branchIdPattern, commitlintConfig } from '../../src/commits/commitlint.js';
 import { configSchema } from '../../src/schemas/index.js';
+import { makeTree } from '../helpers.js';
 
 type Rule = (parsed: Record<string, unknown>) => [boolean, string];
 let cfg: {
@@ -37,7 +37,7 @@ beforeAll(async () => {
     projects: [{ name: 'a', path: '.', profile: 'app' }],
     harnesses: ['claude'],
   });
-  const file = join(mkdtempSync(join(tmpdir(), 'mandao-cl-')), 'commitlint.config.mjs');
+  const file = join(makeTree({}), 'commitlint.config.mjs');
   writeFileSync(file, commitlintConfig(config, '0.1.0'));
   cfg = (await import(pathToFileURL(file).href)).default;
 });

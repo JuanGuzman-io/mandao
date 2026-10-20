@@ -1,12 +1,8 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0006-leave-no-temporary-folders-behind-after-the-test
-updated_at: 2026-10-20T19:30:46.936Z
-current:
-  task: T2
-  phase: implementing
-  harness: claude
-  model: claude-opus-5-5
+updated_at: 2026-10-20T19:32:27.954Z
+current: null
 open_questions: []
 next_step: ""
 deferred_to_ci: []
@@ -17,4 +13,8 @@ red_tests:
         sha256: 87026673b224b5ed4a5ffe9f5b7cb281e506a710df2fa4d806d34d757dda22e7
       - path: test/unit/helpers-teardown.test.ts
         sha256: d2d8f48fc7aa562b4fad4e7b3fa591b54f9fea43b2ffcc284ec6abb49708551b
+  - task: T2
+    files:
+      - path: test/unit/architecture.test.ts
+        sha256: 76464dadb437acd47f24a0601b8d3bb3a022874b7caf7c81222c22af46894200
 pending_commits: []

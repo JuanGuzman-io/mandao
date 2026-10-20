@@ -55,7 +55,7 @@ parallel_safe: false
 characterization: false
 ```
 
-### [ ] T2 — Guard against temp folders created outside `makeTree`, and move commitlint onto it
+### [x] T2 — Guard against temp folders created outside `makeTree`, and move commitlint onto it
 
 ```yaml
 project: mandao
