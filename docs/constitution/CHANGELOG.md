@@ -4,6 +4,12 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-20 — MDO-0005 close (prove the doctor crash path end to end)
+- standards.md § Exemplar files: "Process-level CLI test | `test/integration/doctor-process.test.ts`",
+  so the next test that needs the real entry point reuses its in-test tsup build instead of adding a
+  runner.
+- Approved by: the maintainer's delegate (MDO-0005 close).
+
 ## 2026-10-20 — MDO-0004 close (doctor findings as JSON for CI)
 - critical-flows.md: the `init` → `sync` → `doctor` row names `test/integration/doctor-cli.test.ts`
   as CLI-level coverage of the doctor's exit code.

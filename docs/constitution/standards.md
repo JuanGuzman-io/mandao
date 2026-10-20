@@ -32,6 +32,7 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 | Canonical command | `core/commands/quick.md` |
 | Unit test | `test/unit/models.test.ts` |
 | Integration test | `test/integration/engine.test.ts` |
+| Process-level CLI test | `test/integration/doctor-process.test.ts` |
 
 ## Errors
 
