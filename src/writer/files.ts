@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, isAbsolute, relative } from 'node:path';
 import { type Document, parseDocument } from 'yaml';
 import { sha256 } from '../util/hash.js';
 
@@ -40,6 +40,13 @@ export function removeFile(abs: string, pruneUpTo: string[]): void {
     }
     current = dirname(current);
   }
+}
+
+/** Removes a scratch folder, but only one strictly inside `within` (a spec's own `_log/`): never anything else. */
+export function removeScratchDir(abs: string, within: string): void {
+  const rel = relative(within, abs);
+  if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${abs} is not inside ${within}`);
+  rmSync(abs, { recursive: true, force: true });
 }
 
 export class ConcurrentEditError extends Error {
