@@ -8,10 +8,13 @@ import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
 import { analyzeDiff, collectDiff, DEFAULT_LIMITS, type FileStat, type ManifestChange } from '../scripts/quick-check.js';
 import type { CliContext } from './context.js';
 import { isHarness, resolveForCli } from './models.js';
+import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 
 /** run quick-check, run models, run fingerprint: JSON on stdout for the commands to read. */
 export function registerRun(program: Command, ctx: CliContext) {
   const run = program.command('run').description('Helper scripts that Mandao commands call');
+  registerSpecScripts(run, ctx);
+  registerSpecWriters(run, ctx);
   run
     .command('quick-check')
     .description('Measure the working-tree diff against the quick limits (JSON on stdout)')
