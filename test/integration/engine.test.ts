@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { runDoctor } from '../../src/engine/doctor.js';
 import { readLock, writeYaml } from '../../src/engine/files.js';
 import { syncGlobal, syncProject } from '../../src/engine/sync.js';
@@ -150,6 +150,36 @@ describe('models in doctor', () => {
         'claude: reduced independence for strong tasks (every reviewer uses the implementer model); my-model reviews in a clean context',
       ]),
     );
+  });
+
+  test('another harness reviews strong tasks only with a reviewer of the strong tier (ADR 0021)', () => {
+    const root = workspace();
+    const bin = makeTree({ codex: '#!/bin/sh\n' });
+    chmodSync(join(bin, 'codex'), 0o755);
+    vi.stubEnv('PATH', `${bin}:${process.env.PATH}`);
+    try {
+      writeYaml(join(root, '.mandao/config.yml'), {
+        schema_version: 1,
+        workspace: 'single',
+        projects: [{ name: 'shop', path: '.', profile: 'app' }],
+        harnesses: ['claude', 'codex'],
+      });
+      writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: {} });
+      const claudeReview = () =>
+        runDoctor(root, { probe }).filter((f) => f.message.startsWith('claude: ') && /strong tasks/.test(f.message));
+      // Default Codex reviewer (gpt-6-sol) is standard: below an Opus implementer, so not offered.
+      expect(claudeReview().map((f) => f.level)).toEqual(['warn']);
+      writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { codex: { reviewer: 'gpt-6-astra' } } });
+      expect(claudeReview()).toEqual([
+        {
+          level: 'info',
+          message:
+            'claude: strong tasks are reviewed in codex (gpt-6-astra) as a read-only process, since every reviewer uses the implementer model (ADR 0021)',
+        },
+      ]);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   test('a project models.yml applies to that project only', () => {

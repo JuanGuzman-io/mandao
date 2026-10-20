@@ -3,6 +3,9 @@ import { join } from 'node:path';
 import { resolveWorkspaceModels } from '../models/load.js';
 import { independence, missingRoles, type ResolvedModels, strongEqualsStandard, usedModels } from '../models/resolve.js';
 import type { Config, Recommendations } from '../schemas/index.js';
+import { crossReviewers } from '../scripts/review.js';
+import { type CrossReviewer, crossReviewer } from '../spec/index.js';
+import { onPath } from '../util/which.js';
 import type { Finding } from './doctor.js';
 
 type Rec = NonNullable<Recommendations['harnesses'][keyof Recommendations['harnesses']]>;
@@ -23,14 +26,22 @@ function choiceFindings(m: ResolvedModels, rec: Rec | undefined, label: string):
   return out;
 }
 
-function reviewFindings(m: ResolvedModels, label: string): Finding[] {
+function reviewFindings(m: ResolvedModels, label: string, alternatives: CrossReviewer[]): Finding[] {
   const out: Finding[] = independence(m)
     .filter((x) => x.reduced)
-    .map((check) => ({
-      level: 'warn' as const,
-      message: `${label}: reduced independence for ${check.tier} tasks (${check.reason}); ${check.implementer.model} reviews in a clean context`,
-      fix: 'choose a reviewer_alt of the same tier or higher on another model (see `optional` in the recommendations), or review in another harness',
-    }));
+    .map((check): Finding => {
+      const cross = crossReviewer(check.implementer, m, alternatives);
+      return cross
+        ? {
+            level: 'info',
+            message: `${label}: ${check.tier} tasks are reviewed in ${cross.harness} (${cross.model}) as a read-only process, since ${check.reason} (ADR 0021)`,
+          }
+        : {
+            level: 'warn',
+            message: `${label}: reduced independence for ${check.tier} tasks (${check.reason}); ${check.implementer.model} reviews in a clean context`,
+            fix: 'choose a reviewer_alt of the same tier or higher on another model (see `optional` in the recommendations), or add and log in another harness (e.g. `mandao harness add codex`) to review there',
+          };
+    });
   if (strongEqualsStandard(m)) {
     out.push({
       level: 'info',
@@ -58,7 +69,8 @@ export function modelFindings(root: string, config: Config, recs: Recommendation
           fix: `mandao models set <role> <model> --harness ${harness}`,
         });
       }
-      out.push(...choiceFindings(m, recs.harnesses[harness], label), ...reviewFindings(m, label));
+      const alternatives = crossReviewers(config.harnesses, harness, resolved, onPath);
+      out.push(...choiceFindings(m, recs.harnesses[harness], label), ...reviewFindings(m, label, alternatives));
     }
   }
   for (const harness of config.harnesses) {

@@ -64,7 +64,7 @@ function currentTier(start: Tier, own: ExecutionRow[]): { tier: Tier; fails: num
 }
 
 /** The first other-harness reviewer at or above the Implementer's tier; none when the tier is unknown. */
-function crossReviewer(impl: Choice | undefined, models: ResolvedModels, alternatives: CrossReviewer[]) {
+export function crossReviewer(impl: Choice | undefined, models: ResolvedModels, alternatives: CrossReviewer[]) {
   const implTier = impl ? models.tiers[impl.model] : undefined;
   if (!implTier) return undefined;
   const alt = alternatives.find((a) => a.tier && TIER_RANK[a.tier] >= TIER_RANK[implTier]);
