@@ -83,7 +83,8 @@ Pick the task: `${input:task:Optional task id (default - the next eligible task)
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
    1. Checkpoint the PASS and queue the commit:
       `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
-      `--next-task`), subject per `.mandao/templates/app/rules/commits.md`.
+      `--next-task`), subject per `.mandao/templates/app/rules/commits.md`. When `node .mandao/bin/mandao.mjs run review` already wrote
+      the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
    2. `node .mandao/bin/mandao.mjs run commit ${input:spec:Spec folder or id} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
       per pending task with its trailers.
    If the commit cannot run, do not work around it: the task stays `PASS · pending-commit`, `resume` and
