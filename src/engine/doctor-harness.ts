@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import type { GeneratedFile } from '../adapters/types.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
@@ -8,6 +8,7 @@ import { onPath } from '../util/which.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
 import type { Finding } from './doctor.js';
+import { codexFindings } from './doctor-codex.js';
 import { harnessVersionFindings, type Probe } from './tools.js';
 
 /** Committed settings that must stay portable (ADR 0015); local variants are git-ignored. */
@@ -32,14 +33,25 @@ export function portabilityFindings(root: string): Finding[] {
   return out;
 }
 
+/** The wrapper that runs graphify's guard only for roles with a shell; portable through the project dir. */
+export const GRAPH_GUARD = 'node "$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs" hook graph-guard';
+
 /** graphify installs its own hooks; Mandao only checks that they are there (shared or local settings). */
 function graphHookFindings(root: string, config: Config): Finding[] {
   if (!onPath('graphify')) return [];
   const out: Finding[] = [];
   const claudeSettings = ['.claude/settings.json', '.claude/settings.local.json'].map((f) => join(root, f));
-  const hasClaudeHook = claudeSettings.some((f) => existsSync(f) && readFileSync(f, 'utf8').includes('graphify'));
+  const settings = claudeSettings.filter((f) => existsSync(f)).map((f) => readFileSync(f, 'utf8'));
+  const hasClaudeHook = settings.some((t) => t.includes('graphify') || t.includes('hook graph-guard'));
   if (config.harnesses.includes('claude') && !hasClaudeHook) {
     out.push({ level: 'info', message: 'graphify is installed but its Claude Code hooks are not', fix: 'run `graphify claude install`' });
+  }
+  if (settings.some((t) => t.includes('graphify hook-guard'))) {
+    out.push({
+      level: 'warn',
+      message: "graphify's Claude Code hook also fires for the Reviewer, which has no shell to run `graphify query`",
+      fix: `in .claude/settings.json, replace \`graphify hook-guard <mode>\` with \`${GRAPH_GUARD} <mode>\` (ADR 0021)`,
+    });
   }
   const postCommit = join(root, '.git', 'hooks', 'post-commit');
   if (isRepo(root) && !(existsSync(postCommit) && readFileSync(postCommit, 'utf8').includes('graphify'))) {
@@ -50,6 +62,11 @@ function graphHookFindings(root: string, config: Config): Finding[] {
     });
   }
   return out;
+}
+
+/** The paths a harness may have recorded for this checkout: as given and with symlinks resolved. */
+function checkoutPaths(root: string): string[] {
+  return [...new Set([root, realpathSync(root)])];
 }
 
 /** One summary line per installed harness: generated files, models per role, minimum version. */
@@ -95,8 +112,6 @@ export function harnessFindings(
   probe: Probe,
 ): Finding[] {
   const out = [...statusFindings(root, config, files, lock, recs, probe), ...portabilityFindings(root), ...graphHookFindings(root, config)];
-  if (config.harnesses.includes('codex')) {
-    out.push({ level: 'info', message: 'codex: project agents in .codex/ load only when you trust this project in Codex' });
-  }
+  if (config.harnesses.includes('codex')) out.push(...codexFindings(checkoutPaths(root), probe));
   return out;
 }

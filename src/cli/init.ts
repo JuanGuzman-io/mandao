@@ -23,7 +23,7 @@ import {
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { createIfMissing } from '../writer/files.js';
-import { c, printChanges, printWarnings } from './output.js';
+import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
 
@@ -363,6 +363,6 @@ export async function runInit(root: string, opts: InitOptions) {
   printChanges(result.changes);
   printWarnings(result.warnings);
 
-  const next = 'Next: open your agent here and run /mandao-constitution.';
+  const next = [...harnessSetupNotes(harnesses), 'Next: open your agent here and run /mandao-constitution.'].join('\n');
   interactive ? p.outro(next) : console.log(next);
 }

@@ -58,3 +58,13 @@ export function printFindings(findings: Finding[]) {
     if (f.fix) console.log(`        ${c.dim(`→ ${f.fix}`)}`);
   }
 }
+
+/** Steps a harness needs from the user after its files are generated (ADR 0021). */
+export function harnessSetupNotes(harnesses: readonly string[]): string[] {
+  if (!harnesses.includes('codex')) return [];
+  return [
+    'Codex: trust this project (Codex asks the first time you open it here; each worktree is its own path).',
+    '  Without trust Codex ignores .codex/agents (no Implementer or Reviewer agents) and .codex/rules',
+    '  (the approval prompt that lets `mandao run commit` write .git). `mandao doctor` checks it.',
+  ];
+}

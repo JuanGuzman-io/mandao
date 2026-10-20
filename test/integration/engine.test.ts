@@ -85,6 +85,24 @@ describe('doctor', () => {
     );
   });
 
+  test('a task waiting for its commit is a warning with the command that commits it', () => {
+    const root = workspace();
+    syncProject(root);
+    writeYaml(join(root, 'specs/MDO-0001-x/progress.yml'), {
+      schema_version: 1,
+      spec: 'MDO-0001-x',
+      updated_at: 'now',
+      pending_commits: [{ task: 'T3', subject: 'print pinned skills as JSON', files: ['src/a.ts'] }],
+    });
+    expect(runDoctor(root, { probe }).filter((f) => f.level === 'warn')).toEqual([
+      {
+        level: 'warn',
+        message: 'MDO-0001-x: T3 passed review and wait for their commit',
+        fix: 'run `mandao run commit MDO-0001-x` (local only, one commit per task)',
+      },
+    ]);
+  });
+
   test('invalid config is an error with the field path', () => {
     const root = workspace();
     writeFileSync(join(root, '.mandao/config.yml'), 'schema_version: 1\nworkspace: galaxy\nprojects: []\nharnesses: [claude]\n');

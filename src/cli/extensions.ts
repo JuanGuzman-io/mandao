@@ -2,7 +2,7 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
 import { type CliContext, editConfig, sync } from './context.js';
-import { c } from './output.js';
+import { c, harnessSetupNotes } from './output.js';
 import { skillsAdd } from './skills.js';
 
 /** harness add, skills add. */
@@ -19,6 +19,7 @@ export function registerExtensions(program: Command, ctx: CliContext) {
       if (!added.length) return console.log(c.dim('  Nothing to add.'));
       editConfig(ctx, (doc) => doc.set('harnesses', [...current, ...added]));
       sync(ctx, {});
+      for (const line of harnessSetupNotes(added)) console.log(c.dim(line));
     });
 
   program
