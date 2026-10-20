@@ -17,3 +17,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0008](0008-copilot-second-adapter.md) | GitHub Copilot as the second adapter | Accepted |
 | [0009](0009-rules-live-in-templates.md) | Methodology rules live in templates, commands stay lean | Accepted |
 | [0010](0010-design-document-alignment.md) | Alignment with the design document | Accepted |
+| [0011](0011-models-languages-and-iteration-2-decisions.md) | Models per role, profiles vs presets, skill installs, quick review, hooks, spec states, languages | Accepted |

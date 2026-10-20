@@ -3,7 +3,7 @@
 **Status:** Accepted · 2026-10-19
 
 ## Context
-`mandao_design_document.md` became the source of truth after the first schemas were written.
+`MANDAO-DESIGN.md` became the source of truth after the first schemas were written.
 
 ## Decision
 Adopted from the document: `schema_version` on every artifact; `workspace: <mode>` as a string;

@@ -28,7 +28,6 @@ inputs:                     # contract: what the command reads
     required: true
 outputs:                    # contract: what the command writes
   - path: "{{paths.specs}}/<spec>/requirements.md"
-tier: strong                # fast | standard | strong
 capabilities: [read, edit, search, shell]
 templates: [requirements.md, design.md]   # templates the body references
 scripts: []                 # scripts the body runs via {{script:x}}
@@ -49,7 +48,6 @@ harness:                    # optional, per-adapter frontmatter passthrough
 | `profiles` | no | Defaults to every profile. |
 | `arguments` | no | Order matters: it is the order of positional arguments. |
 | `inputs`, `outputs` | yes | May be empty lists. Paths may use `{{paths.*}}`. |
-| `tier` | yes | Mapped to a concrete model through `models.<harness>` in `config.yml`. |
 | `capabilities` | yes | `read`, `edit`, `search`, `shell`, `web`, `mcp`, `agents`. |
 | `templates`, `scripts` | no | Every `{{template:x}}` and `{{script:x}}` in the body must be listed here. |
 | `approval` | no | Defaults to `none`. |
@@ -69,6 +67,7 @@ The token language is closed. An unknown token fails validation.
 | `{{paths.specs}}`, `{{paths.constitution}}`, `{{paths.releases}}` | Configured paths. |
 | `{{command:x}}` | How to invoke another mandao in this harness, e.g. `/mandao-tasks`. |
 | `{{version}}` | Installed Mandao version. |
+| `{{language.business}}`, `{{language.technical}}` | Configured content languages (ADR 0011). |
 
 How each harness renders them:
 
@@ -98,7 +97,12 @@ Supported conditions:
 
 Blocks may nest. An unclosed or unknown condition fails validation.
 
+## Models
+
+Commands do not pin a model: they run on the session's model. Models belong to roles
+(`.mandao/models.yml`, ADR 0011), and personas expand into one agent per role variant.
+
 ## Personas
 
 `core/personas/<id>.md` uses the same idea with a smaller frontmatter: `id`, `title`, `description`,
-`schema_version`, `tier`, `capabilities`, and optionally `must_differ_from` (another persona whose model must differ).
+`schema_version`, `capabilities`, optionally `scripts` and `must_differ_from` (another persona whose model must differ).

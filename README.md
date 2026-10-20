@@ -51,8 +51,9 @@ are implemented; the others are declared with their contracts and say so when in
 | `mandao doctor` | Validate config, content and generated files; report optional tools and their fallbacks |
 | `mandao update` | Re-resolve with the installed version; overrides are never touched |
 | `mandao harness add <id>` | Generate files for another harness |
-| `mandao skills add <id\|pack>` | Pin catalog skills in the lock and print how to install them |
-| `mandao run quick-check \| fingerprint` | Helper scripts used by the commands (JSON output) |
+| `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester) |
+| `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
+| `mandao run quick-check \| fingerprint \| models` | Helper scripts used by the commands (JSON output) |
 
 ## Customizing
 
@@ -64,7 +65,7 @@ Files in `.mandao/overrides/` win over presets and core:
 
 ## Docs
 
-- [Design document](mandao_design_document.md): the source of truth
+- [Design document](MANDAO-DESIGN.md): the source of truth
 - [Command format](docs/command-format.md) and [schemas](docs/schemas.md)
 - [Decisions](docs/decisions/)
 

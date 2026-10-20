@@ -8,13 +8,15 @@ Every file is YAML validated with zod (`src/schemas/`) and carries `schema_versi
 ```yaml
 schema_version: 1
 workspace: monorepo            # single | monorepo | polyrepo
+default_profile: app           # for projects that do not set one
+language: { business: es, technical: en }   # content only; headings, keywords and markers stay English
 home: .                        # holds canonical specs, workspace constitution, root AGENTS.md
 local_only: false              # polyrepo: accept unversioned workspace artifacts
 paths: { specs: specs, constitution: docs/constitution, releases: docs/releases }
 projects:                      # always a list; a simple repo is one project with path: .
   - name: api
     path: apps/api
-    profile: app               # app | ai | data
+    profile: app               # app | ai | data (defaults to default_profile)
     tracker_key: API
     repo: git@github.com:acme/api.git   # required in polyrepo ("local" without a remote)
     gates:                     # level 0 gates, run from the project path
@@ -42,19 +44,28 @@ Cross-field rules: unique project names and paths; `single` has exactly one proj
 projects need `repo` and cannot sit at the root; paths are relative, never escape the workspace, and
 lose trailing slashes; every commit type has a distinct emoji.
 
-## `.mandao/models.yml` — tier registry
+## `.mandao/models.yml` — model per role
 
 ```yaml
 schema_version: 1
+mode: routed                    # simple | routed
 harnesses:
-  claude: { fast: haiku, standard: sonnet, strong: opus }
-  copilot: { fast: …, standard: …, strong: … }   # left to the team; names are not portable
+  claude:
+    leader: opus
+    reviewer: opus
+    reviewer_alt: fable         # reviews when the Implementer ran on the Reviewer's model
+    implementer: { fast: haiku, standard: sonnet, strong: opus }   # simple mode: implementer: sonnet
+    tester: sonnet
 ```
+
+A project can override roles in `<project>/.mandao/models.yml`. Precedence: command flag > spec
+frontmatter (`models:` in `story.md`) > project > workspace > `core/models/recommendations.yml`.
+Missing roles fall back to the next layer. `mandao models` shows each role's model and source.
 
 ## `.mandao/mandao.lock` — resolution, written by the CLI only
 
-`mandao` version, `config_hash` (config.yml + models.yml), resolved layers with hashes, pinned
-skills (id, version, source, author, license, vetted), and every generated file with its harness,
+`mandao` version, `config_hash` (config.yml + models.yml), resolved layers with hashes, the
+`reviewed` date of the model recommendations already offered per harness, pinned skills (id, version, source, author, license, vetted), and every generated file with its harness,
 origin (`command:specify`, `persona:reviewer`, `template:shared/rules/review.md`, `block:mandao`),
 ownership (`owned` or `managed-block`) and content hash. See ADR 0003.
 
@@ -79,7 +90,7 @@ bootstrap: [graphify, software-architect, product-manager-toolkit, brainstorming
 skills:
   flutter-bloc:
     description: …
-    source: { type: skills, ref: owner/repo }   # git | npm | skills | bundled; referenced, never vendored
+    source: { type: skills, ref: owner/repo }   # git | npm | skills | command | plugin | bundled; referenced, never vendored
     version: 1.2.0
     author: …
     license: MIT
@@ -101,4 +112,7 @@ packs:
   dev-flutter: [flutter-bloc, flutter-riverpod]
 ```
 
-Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.
+Source types: `skills` (`npx skills add <ref>`), `npm`, `command` (a documented shell installer,
+e.g. `uv tool install …`), `plugin` (an agent-side install such as `/plugin install …`, printed for the
+user), `git` (copied by hand) and `bundled`. Any source may declare `verify`, a command that proves the
+install. Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.
