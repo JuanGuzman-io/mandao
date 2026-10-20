@@ -164,6 +164,11 @@ describe('content defects found by MDO-0004', () => {
     expect(core('templates/shared/spec/verify-report.md')).toContain('First column: the bare id, `AC-n` or `AC-n/Cn`');
   });
 
+  test('quick does not repeat "quick" in the branch name (MDO-0005 quick run)', () => {
+    expect(core('commands/quick.md')).toContain('{{script:spec-new}} "<name>" --id quick');
+    expect(core('commands/quick.md')).not.toContain('"quick <name>"');
+  });
+
   test('specify and clarify commit the spec documents on their own', () => {
     expect(core('commands/specify.md')).toContain('{{script:commit-spec}}');
     expect(core('commands/clarify.md')).toContain('{{script:commit-spec}}');
