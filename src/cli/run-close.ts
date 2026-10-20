@@ -4,16 +4,21 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
 import { fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
-import { repoRoot, taskCommits } from '../scripts/commits.js';
+import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
+import { publishPlan } from '../scripts/publish.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import {
+  acStatus,
   type BugsAfterMerge,
   type CloseSummary,
   compareTdd,
+  impactItems,
   parseCloseSummary,
   renderCloseSummary,
   specMetrics,
+  verifyResults,
   withEnvironment,
+  withPublication,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
@@ -67,6 +72,7 @@ function registerKaizen(run: Command, ctx: CliContext) {
 }
 
 interface SummaryOptions {
+  published?: string;
   closed?: boolean;
   release?: string;
   detectRelease?: boolean;
@@ -74,17 +80,33 @@ interface SummaryOptions {
   source?: 'ci' | 'tracker';
 }
 
+/** gitflow: the one release branch that contains every commit of the spec (ADR 0023). */
+function detectedRelease(config: ReturnType<typeof readConfig>, spec: SpecFolder): CloseSummary['release'] {
+  if (!spec.story) return undefined;
+  const repo = repoRoot(spec.dir);
+  const shas = [...taskCommits(repo, spec.story.meta.id, config.commits.trailers).values()].flat();
+  const found = releaseBranchesContaining(repo, shas, branchingFor(config).prefixes.release);
+  if (found.length > 1) throw new Error(`several release branches contain the spec: ${found.join(', ')}; pick one with --release`);
+  return found[0] ? { branch: found[0], how: 'detected' } : undefined;
+}
+
+/** `--published "<target>|<kind>|<id>|<hash>[|<url>]"` → a publication record. */
+function publication(record: string, at: string): CloseSummary['published'][number] {
+  const [target, kind, id, hash, url] = record.split('|');
+  if (!target || !id || !hash || !['comment', 'attachment', 'page', 'file'].includes(kind ?? '')) {
+    throw new Error('--published "<target>|<comment|attachment|page|file>|<id>|<hash>[|<url>]"');
+  }
+  return { target, kind: kind as 'comment', id, hash, at, ...(url ? { url } : {}) };
+}
+
 function updatedSummary(config: ReturnType<typeof readConfig>, spec: SpecFolder, o: SummaryOptions): CloseSummary {
   let s = summaryOf(spec);
   const now = new Date().toISOString();
   if (o.closed && !s.closed_at) s = { ...s, closed_at: now };
   if (o.release) s = { ...s, release: { branch: o.release, how: 'given' } };
-  if (o.detectRelease && spec.story) {
-    const shas = [...taskCommits(repoRoot(spec.dir), spec.story.meta.id, config.commits.trailers).values()].flat();
-    const found = releaseBranchesContaining(repoRoot(spec.dir), shas, branchingFor(config).prefixes.release);
-    if (found.length === 1) s = { ...s, release: { branch: found[0]!, how: 'detected' } };
-    else if (found.length > 1) throw new Error(`several release branches contain the spec: ${found.join(', ')}; pick one with --release`);
-  }
+  const release = o.detectRelease ? detectedRelease(config, spec) : undefined;
+  if (release) s = { ...s, release };
+  if (o.published) s = withPublication(s, publication(o.published, now));
   if (o.env) {
     if (!o.source) throw new Error('--env needs --source ci|tracker: an environment is recorded only as CI or the tracker reported it');
     s = withEnvironment(s, o.env, o.source, now);
@@ -101,6 +123,7 @@ function registerSummary(run: Command, ctx: CliContext) {
     .option('--detect-release', 'gitflow: find the release branch that contains every commit of the spec')
     .option('--env <name>', 'an environment the spec reached')
     .option('--source <source>', 'who reported the environment: ci | tracker')
+    .option('--published <record>', 'after a publication: "<target>|<kind>|<id>|<hash>[|<url>]"')
     .action((ref: string, o: SummaryOptions) => {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
@@ -110,8 +133,47 @@ function registerSummary(run: Command, ctx: CliContext) {
     });
 }
 
-/** Close scripts (design §18): Kaizen measures and the close summary. */
+function registerReleaseStatus(run: Command, ctx: CliContext) {
+  run
+    .command('release-status <spec>')
+    .description('Each AC as met, partial or pending, from tasks, commits by trailer and verify-report.md')
+    .action((ref: string) => {
+      const config = readConfig(ctx.root());
+      const spec = readSpec(findSpec(ctx.root(), config, ref));
+      if (!spec.story) throw new Error(`${spec.name} needs story.md`);
+      const committed = commitState(spec, config.commits.trailers).committed;
+      const verify = verifyResults(readIf(join(spec.dir, 'verify-report.md')));
+      json({ criteria: acStatus(spec.story, spec.tasks, spec.execution, committed, verify), language: config.language });
+    });
+
+  run
+    .command('impacts <spec>')
+    .description('Constitution and product changes design.md proposed, for close to apply with approval')
+    .action((ref: string) => {
+      const config = readConfig(ctx.root());
+      const spec = readSpec(findSpec(ctx.root(), config, ref));
+      const design = readIf(join(spec.dir, 'design.md')) ?? '';
+      json({ constitution: impactItems(design, 'Constitution Impact'), product: impactItems(design, 'Product Impact') });
+    });
+}
+
+/** Close scripts (design §18): Kaizen, the close summary, release status and impacts. */
 export function registerClose(run: Command, ctx: CliContext) {
   registerKaizen(run, ctx);
   registerSummary(run, ctx);
+  registerReleaseStatus(run, ctx);
+  registerPublish(run, ctx);
+}
+
+function registerPublish(run: Command, ctx: CliContext) {
+  run
+    .command('publish-plan <spec>')
+    .description('The exact payload for a tracker target and whether it is new, changed or unchanged (idempotent)')
+    .requiredOption('--target <target>', 'where it goes, e.g. jira:PROJ-123')
+    .action((ref: string, o: { target: string }) => {
+      const config = readConfig(ctx.root());
+      const spec = readSpec(findSpec(ctx.root(), config, ref));
+      const id = spec.story?.meta.id ?? spec.name;
+      json(publishPlan(ctx.root(), join(ctx.root(), config.paths.releases, id), spec.dir, o.target, summaryOf(spec)));
+    });
 }

@@ -8,6 +8,7 @@ export * from './loop.js';
 export * from './markdown.js';
 export * from './plan.js';
 export * from './progress.js';
+export * from './release.js';
 export * from './requirements.js';
 export * from './story.js';
 export * from './tasks.js';
