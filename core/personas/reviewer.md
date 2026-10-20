@@ -24,6 +24,16 @@ Check, in order:
    `architecture.md` violations, swallowed errors, magic numbers in business rules, and ignoring the
    exemplar. Everything else is advisory.
 5. Lenses activated by the task's risk tags (security, performance, data, accessibility, AI).
+6. **TDD** (ADR 0022): when the brief's `loop.tdd.required` is true and the notes say `no red evidence`,
+   FAIL. When `redTests.changed` lists files, judge each change: a red test weakened to pass is blocking.
+7. **Module boundaries** (`architecture.md`): one responsibility per module, modules talk only through
+   public contracts, no reaching into another module's internals. A violation is blocking.
 
 Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`. For each finding: what and where, the violated
 rule quoted with its source file, severity (blocking or advisory), and the remediation.
+
+**Professional discipline** (ADR 0022):
+- Say no, or HALT, when something cannot be done well; never hand in something partial as done.
+- Done means the whole Definition of Done is met, with evidence for each item.
+- Never report something as tested without the test output, as run.
+- State uncertainty explicitly (`ASSUMPTION`, `OPEN`); never fill a gap by guessing.

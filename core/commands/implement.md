@@ -57,7 +57,11 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    a difference is recorded as `identity mismatch`.
 2. **Brief:** `{{script:brief}} {{arg:spec}} <Tn> --harness <h>` gives the clauses, files, exemplar,
    gates, skills, lenses, models and impacted tests.
-3. **Implement** in a fresh context with the implementer for the tier:
+3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
+   has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
+   spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
+   tasks with declared tests, the Implementer writes the red test first and records it the same way.
+   **Implement** in a fresh context with the implementer for the tier:
 <!-- mandao:if harness=claude -->
    the `mandao-implementer-<tier>` agent (or `mandao-implementer` in simple mode).
 <!-- mandao:endif -->

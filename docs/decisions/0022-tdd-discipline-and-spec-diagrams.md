@@ -50,3 +50,19 @@ internals.
 - 2b adds: a red-evidence row or field in `execution.md` and the Reviewer check; Tester-first tasks in
   `tasks`; persona rules; an `architecture.md` section in the constitution template; a diagram step in
   `specify` and drift in `close`; Kaizen fields to compare TDD and non-TDD specs.
+
+## Implementation (iteration 2b, 2026-10-20)
+
+**TDD and discipline — implemented.**
+- Verdict `RED`. `mandao run red <spec> <Tn> <tests> --agent <agent>` runs the tests (budget and queue
+  of `mandao run tests`) and records the row only when they fail; a pass or a run without a verdict is
+  not evidence. The writer's identity comes from its agent file (ADR 0021).
+- Each red test's hash goes to `progress.yml` (`red_tests`); a later change is noted as
+  `red test changed: <files>` on the next checkpoint and listed in the brief (`redTests.changed`).
+- `loop` returns `tdd: { required, testsBy, red }`: required when the task declares tests; `testsBy:
+  tester` (action `write-red-tests` before implementing) for risk tags or tier strong; a review
+  without red evidence carries the note `no red evidence`, which the Reviewer FAILs.
+- Discipline rules in the Leader, Implementer, Tester and Reviewer personas; module boundaries in the
+  `architecture.md` template and in the Reviewer's checklist.
+- **Pending until `close` and Kaizen exist:** the comparison of specs with and without TDD. The data is
+  already in `execution.md` (RED rows, FAILs).

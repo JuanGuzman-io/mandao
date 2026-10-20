@@ -13,7 +13,8 @@ spec: <ID>-<slug>
 |---|---|---|---|---|---|---|---|---|
 
 <!--
-Verdict: STARTED | REPORTED | PASS | FAIL | HALT | PIVOT | DEFERRED_TO_CI.
+Verdict: STARTED | RED | REPORTED | PASS | FAIL | HALT | PIVOT | DEFERRED_TO_CI. RED is TDD evidence:
+the task's tests failed before implementing (`mandao run red`).
 Notes: `reduced independence` (review on the implementer's model), `provider independence`
 (implemented in one harness, reviewed in another), `identity mismatch` (a model claimed to be other
 than the process the script invoked), deferred tests and why, advisories.
