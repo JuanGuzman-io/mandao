@@ -105,6 +105,40 @@ chat: { kind: slack, channels: ["#team-checkout"] }
 design: { kind: figma, ref: "https://figma.com/…" }
 ```
 
+## `mandao doctor --json` — report
+
+`mandao doctor --json` prints the same findings as the text output, as one JSON document on standard
+output (2-space indent, no colors, no headers). The exit code is the same as in text mode: `1` when any
+`error` finding exists, `0` otherwise.
+
+Example for a workspace with a config but no `.mandao/mandao.lock` (the messages are illustrative, not fixed text):
+
+```json
+{
+  "schema_version": 1,
+  "counts": { "error": 1, "warn": 1, "info": 1, "ok": 2 },
+  "findings": [
+    { "level": "ok", "message": "Node 22.18.0" },
+    { "level": "ok", "message": "config: single, 1 project(s), harnesses claude" },
+    { "level": "info", "message": "no .mandao/sources.yml: story and constitution --product will only use local context" },
+    { "level": "warn", "message": "project \"api\" is declared as a repository but has no .git" },
+    { "level": "error", "message": "no .mandao/mandao.lock", "fix": "run `mandao sync`" }
+  ]
+}
+```
+
+- `findings` lists every finding in the order the text output prints them. Each has `level`
+  (`error | warn | info | ok`) and `message`. `fix` is present only when the finding has a suggested fix;
+  the key is omitted otherwise, never `null`.
+- `counts` always has all four keys, `error`, `warn`, `info` and `ok`, even when a level has no findings
+  (then `0`), so CI can read `.counts.error` without a default.
+- `schema_version` is `1`. The top-level keys are exactly `schema_version`, `counts` and `findings`; the
+  finding keys are only `level`, `message` and `fix`. Any change to that set of keys, or to the meaning of
+  a key, bumps `schema_version`. A unit test asserts the exact top-level and `counts` keys and limits
+  finding keys to `level`, `message` and `fix`, so the contract cannot change silently.
+- A config-validation error names the file and the field path (for example `config.yml: projects[0].path`)
+  and has no `fix`. When `config.yml` is invalid the doctor stops there, so no later findings are reported.
+
 ## `core/catalog/skills.yml` — curated skills
 
 ```yaml

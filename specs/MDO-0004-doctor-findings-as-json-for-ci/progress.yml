@@ -1,12 +1,8 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0004-doctor-findings-as-json-for-ci
-updated_at: 2026-10-20T16:57:10.153Z
-current:
-  task: T2
-  phase: awaiting-review
-  harness: claude
-  model: claude-opus-5-5
+updated_at: 2026-10-20T17:33:57.694Z
+current: null
 open_questions: []
 next_step: ""
 deferred_to_ci: []
@@ -15,4 +11,12 @@ red_tests:
     files:
       - path: test/unit/doctor-report.test.ts
         sha256: 136a35680f97993978a17ba164c1c3d0700eaa173db071dbce6b3fc8d402fd2a
-pending_commits: []
+  - task: T2
+    files:
+      - path: test/integration/doctor-cli.test.ts
+        sha256: 238568802dcdb00436406b3dcdfa753b54bbde96bb8bb5a96f108a70edd23b48
+pending_commits:
+  - task: T2
+    subject: add --json to mandao doctor with the shared exit rule
+    files:
+      - src/cli/setup.ts

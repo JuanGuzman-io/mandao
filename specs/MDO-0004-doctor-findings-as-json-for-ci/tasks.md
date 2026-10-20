@@ -31,7 +31,7 @@ depends_on: []
 parallel_safe: false
 ```
 
-### [ ] T2 — `mandao doctor --json` with the shared exit-code rule
+### [x] T2 — `mandao doctor --json` with the shared exit-code rule
 
 ```yaml
 project: mandao
@@ -49,7 +49,7 @@ depends_on: [T1]
 parallel_safe: false
 ```
 
-### [ ] T3 — Document `--json` and the report contract
+### [x] T3 — Document `--json` and the report contract
 
 ```yaml
 project: mandao
