@@ -27,8 +27,8 @@ import {
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 const readIf = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : undefined);
 const summaryOf = (spec: SpecFolder) => parseCloseSummary(readIf(join(spec.dir, 'close-summary.md')), spec.name);
 

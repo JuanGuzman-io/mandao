@@ -15,19 +15,18 @@ import { logPath } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 import { registerClose } from './run-close.js';
 import { registerDiagram } from './run-diagram.js';
 import { registerMutation } from './run-mutation.js';
 import { registerRed } from './run-red.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 function loadSpec(ctx: CliContext, ref: string) {
   const config = readConfig(ctx.root());
   return { config, spec: readSpec(findSpec(ctx.root(), config, ref)) };
 }
 
-interface CheckpointOptions {
+export interface CheckpointOptions {
   task?: string;
   nextTask?: string;
   phase?: string;
@@ -118,7 +117,7 @@ function leaderModel(ctx: CliContext, harness: string | undefined): string {
   return leader ? `${leader.model}${leader.effort ? ` (${leader.effort})` : ''}` : 'unknown';
 }
 
-function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
+export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
@@ -151,10 +150,9 @@ function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions
 }
 
 /** The Leader checkpoint (writes through src/writer). */
-function registerCheckpoint(run: Command, ctx: CliContext) {
-  run
-    .command('checkpoint <spec>')
-    .description('Write the checkpoint after a Leader step: progress.yml, an execution row, a task checkbox')
+/** The checkpoint's options, shared by `checkpoint` and `step`. */
+export function withCheckpointOptions(cmd: Command): Command {
+  return cmd
     .option('--task <id>', 'the task this step is about (the execution row and the task in progress)')
     .option('--next-task <id>', 'after recording the row, the task now in progress (default: --task)')
     .option('--phase <phase>', 'implementing | awaiting-review | rework-n')
@@ -173,11 +171,18 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     .option('--done <id>', 'mark a task done in tasks.md')
     .option('--clear', 'no task in progress')
     .option('--deferred <tests|reason>', 'record impacted tests deferred to CI for --task: "<tests, comma separated>|<reason>"')
-    .option('--pending-commit <subject>', 'with a PASS: queue the task commit with this subject for `mandao run commit`')
-    .action((ref: string, o: CheckpointOptions) => {
-      const { spec } = loadSpec(ctx, ref);
-      json(writeCheckpoint(ctx, spec, o));
-    });
+    .option('--pending-commit <subject>', 'with a PASS: queue the task commit with this subject for `mandao run commit`');
+}
+
+function registerCheckpoint(run: Command, ctx: CliContext) {
+  withCheckpointOptions(
+    run
+      .command('checkpoint <spec>')
+      .description('Write the checkpoint after a Leader step: progress.yml, an execution row, a task checkbox'),
+  ).action((ref: string, o: CheckpointOptions) => {
+    const { spec } = loadSpec(ctx, ref);
+    json(writeCheckpoint(ctx, spec, o));
+  });
 }
 
 /** The steps that commit spec documents, and the subject each one gets (MDO-0005: no free-text subjects). */

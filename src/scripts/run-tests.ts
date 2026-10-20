@@ -14,7 +14,11 @@ export interface TestRun {
   reason: string;
   /** The last part of the runner's stdout, kept as evidence (mutation runs record it). */
   outputTail?: string;
+  /** The whole stdout (capped), only when asked: `mandao run gates` keeps it in `_log/`. */
+  output?: string;
 }
+
+const FULL_CAP = 2 * 1024 * 1024;
 
 const TAIL_CHARS = 4000;
 
@@ -32,7 +36,7 @@ function streamRun(
   root: string,
   env: NodeJS.ProcessEnv,
   timeoutMs: number,
-  tail: { text: string },
+  tail: { text: string; full?: string },
 ): Promise<number | 'timeout'> {
   return new Promise((resolve) => {
     const child = spawn(command, {
@@ -45,6 +49,7 @@ function streamRun(
     child.stdout.on('data', (chunk: Buffer) => {
       process.stderr.write(chunk);
       tail.text = (tail.text + chunk.toString('utf8')).slice(-TAIL_CHARS);
+      if (tail.full !== undefined && tail.full.length < FULL_CAP) tail.full += chunk.toString('utf8');
     });
     const timer = setTimeout(() => {
       try {
@@ -75,6 +80,7 @@ export async function runTests(
   command: string | undefined,
   budget: Budget,
   queueWaitMs = 30 * 60_000,
+  opts: { keepOutput?: boolean } = {},
 ): Promise<TestRun> {
   if (budget.decision === 'defer' || !command) {
     return { status: 'DEFERRED_TO_CI', workers: 0, durationMs: 0, reason: command ? budget.reason : 'no test command could be built' };
@@ -93,7 +99,7 @@ export async function runTests(
   }
   try {
     const env = { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) };
-    const tail = { text: '' };
+    const tail: { text: string; full?: string } = { text: '', ...(opts.keepOutput ? { full: '' } : {}) };
     const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000, tail);
     const durationMs = Date.now() - started;
     if (exit === 'timeout')
@@ -106,6 +112,7 @@ export async function runTests(
       durationMs,
       reason: budget.reason,
       ...(tail.text ? { outputTail: tail.text } : {}),
+      ...(tail.full !== undefined ? { output: tail.full } : {}),
     };
   } finally {
     releaseLock(lock);

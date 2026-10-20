@@ -1,21 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
-import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
 import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
-import { detectRunner, fillCommand, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
+import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
-import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
-import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
+import { checkTransition, expectedPlace, proposeSpec, whereAmI } from '../scripts/spec.js';
 import { docPath, LITE_DOC } from '../scripts/spec-log.js';
 import {
   blockingMarkers,
   commitMessage,
-  type LoopContext,
   loopState,
   planTasks,
   TASK_KINDS,
@@ -24,67 +20,13 @@ import {
   trace,
   withIndex,
 } from '../spec/index.js';
-import { onPath } from '../util/which.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 import { registerLedger } from './run-ledger.js';
 import { registerVerify } from './run-verify.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
-
-function harnessOption(value: string | undefined): HarnessId {
-  const h = value ?? 'claude';
-  if (!(HARNESS_IDS as readonly string[]).includes(h)) throw new Error(`Unknown harness "${h}"`);
-  return h as HarnessId;
-}
-
-function loadSpec(ctx: CliContext, ref: string) {
-  const config = readConfig(ctx.root());
-  return { config, spec: readSpec(findSpec(ctx.root(), config, ref)) };
-}
-
-function modelsFor(ctx: CliContext, harness: HarnessId, project?: string) {
-  const config = readConfig(ctx.root());
-  const p = project ? config.projects.find((x) => x.name === project) : undefined;
-  return resolveWorkspaceModels(ctx.root(), config, readRecommendations(), p ? { project: p } : {})[harness];
-}
-
-/** What the loop needs beyond the log: the commit found by trailers, and other harnesses' reviewers. */
-function loopContext(
-  ctx: CliContext,
-  spec: ReturnType<typeof loadSpec>['spec'],
-  task: string,
-  harness: HarnessId,
-  project?: string,
-): LoopContext {
-  const config = readConfig(ctx.root());
-  const p = project ? config.projects.find((x) => x.name === project) : undefined;
-  const all = resolveWorkspaceModels(ctx.root(), config, readRecommendations(), p ? { project: p } : {});
-  return {
-    committed: commitState(spec, config.commits.trailers).committed.has(task),
-    alternatives: crossReviewers(config.harnesses, harness, all, onPath),
-  };
-}
-
-function projectNamed(ctx: CliContext, name: string) {
-  const project = readConfig(ctx.root()).projects.find((p) => p.name === name);
-  if (!project) throw new Error(`Unknown project "${name}"`);
-  return project;
-}
-
-/** Impacted unit tests for changed files in one project. */
-function impactFor(ctx: CliContext, project: ReturnType<typeof projectNamed>, files: string[]) {
-  const runner = detectRunner(projectDir(ctx.root(), project.path));
-  const graph = readGraph(graphFile(ctx.root()));
-  return selectImpact({
-    changed: files,
-    projectPath: project.path,
-    ...(project.tests.impacted ? { configured: project.tests.impacted } : {}),
-    ...(runner ? { runner } : {}),
-    ...(graph ? { graph } : {}),
-  });
-}
+import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
 
 /** Spec proposal, traceability and the task plan. */
 function registerPlanning(run: Command, ctx: CliContext) {

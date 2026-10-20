@@ -12,8 +12,7 @@ import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type Task, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
+import { json } from './json.js';
 
 interface RedOptions {
   self?: boolean;

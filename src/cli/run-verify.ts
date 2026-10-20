@@ -5,8 +5,7 @@ import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
 import { verifyPlan } from '../spec/index.js';
 import type { CliContext } from './context.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
+import { json } from './json.js';
 
 /**
  * Files the spec changed: those touched by the commits carrying its trailers (rebase-safe, ADR 0021),

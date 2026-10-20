@@ -147,6 +147,11 @@ describe('#1 and #5: identity comes from agent files and models.yml, never from 
         'mandao run checkpoint --implementer',
         'mandao run checkpoint --reviewer',
         'mandao run quick-log --claimed-reviewer',
+        // `step` shares the checkpoint's options and its writer (agentIdentity).
+        'mandao run step --claimed-implementer',
+        'mandao run step --claimed-reviewer',
+        'mandao run step --implementer',
+        'mandao run step --reviewer',
         'mandao run quick-log --reviewer',
       ].sort(),
     );
