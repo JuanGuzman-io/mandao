@@ -25,13 +25,15 @@ node dist/cli.js doctor                      # providers: opencode; version in r
 
 | # | Check | How | Expected |
 |---|---|---|---|
-| 1 | Commands visible, once | `ls .opencode/commands`; `opencode run "/mandao-resume"` | One file per mandao; the dashboard prints from the command, not from a skill |
+| 1 | Commands visible, once | `ls .opencode/commands`; in the **TUI**, type `/` | One entry per mandao. `opencode run "/mandao-…"` does not run commands in OpenCode 2 (plain text) |
 | 2 | One copy of each Mandao skill | `opencode run "List every skill whose name starts with mandao-"` | None listed: `.opencode/opencode.jsonc` hides the `.claude/skills` and `.agents/skills` copies |
 | 3 | Models per role | `.opencode/agents/mandao-implementer*.md` and `mandao-reviewer.md` `model:` lines | `opencode/glm-5.3-flash-free` and `opencode/beam-free`; the Reviewer with edit and bash denied |
-| 4 | Handoff from Claude Code | In Claude Code: `spec-new` + a one-task spec, checkpoint `STARTED`, stop. Then `opencode run "/mandao-resume MDO-xxxx"` | Reads the checkpoint, offers review / continue / discard, uses OpenCode's models |
+| 4 | Handoff from Claude Code | In Claude Code: `spec-new` + a one-task spec, checkpoint `STARTED`, stop. Then in the OpenCode **TUI**: `/mandao-resume MDO-xxxx` | Reads the checkpoint, offers review / continue / discard, uses OpenCode's models (`mandao run models --harness opencode`) |
 | 5 | Implementer in OpenCode | Continue the task in OpenCode with `mandao-implementer-standard` | `RED` row recorded with `mandao run red`, then REPORTED with the agent identity `glm-5.3-flash-free` |
 | 6 | Review as a separate process | `node dist/cli.js run review MDO-xxxx T1 --via opencode --brief … --gates …` | `VERDICT` parsed; the row records `opencode/beam-free` as reviewer and `provider independence` if implemented elsewhere |
 | 7 | Commit and clean up | `mandao run commit`; then remove the worktree and branch | One commit with trailers; nothing left behind |
 
 Record the OpenCode version, each result, and any difference between what a model says it is and what
 Mandao recorded (`identity mismatch`).
+
+Results of the 2026-10-20 run: `2b-opencode-results.md`.
