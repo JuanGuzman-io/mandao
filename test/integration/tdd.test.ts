@@ -127,6 +127,8 @@ describe('mandao run red', () => {
       'mandao-implementer-standard',
     );
     expect(readSpec(join(root, SPEC)).execution.at(-1)!.notes).toBe('red test changed: test/a.test.ts');
+    // The checkpoint keeps the red tests recorded, so the next step still sees the change.
+    expect(readSpec(join(root, SPEC)).progress!.red_tests.map((r) => r.task)).toEqual(['T2']);
   });
 
   test('mandao run diagram stamps a Mermaid fallback into design.md and reports it stale after an edit', async () => {

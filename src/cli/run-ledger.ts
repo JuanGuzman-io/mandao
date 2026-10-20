@@ -117,6 +117,8 @@ function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions
     open_questions: o.question ?? spec.progress?.open_questions ?? [],
     next_step: o.next ?? '',
     deferred_to_ci: [...(spec.progress?.deferred_to_ci ?? []), ...deferredEntry(o)],
+    // Red tests stay recorded across checkpoints: they are what a later change is compared with (ADR 0022).
+    red_tests: spec.progress?.red_tests ?? [],
     pending_commits: [...(spec.progress?.pending_commits ?? []), ...pending],
   });
   return {
