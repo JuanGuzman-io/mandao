@@ -1,13 +1,14 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { homedir } from 'node:os';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { Command } from 'commander';
 import { repoRoot } from '../scripts/commits.js';
 import { excerpt } from '../scripts/gates.js';
 import { runTests } from '../scripts/run-tests.js';
 import { docPath, logPath } from '../scripts/spec-log.js';
 import { parsePremises, premiseFindings } from '../spec/index.js';
-import { writeText } from '../writer/files.js';
+import { ensureDir, removeScratchDir, writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -23,6 +24,23 @@ export function recordedPremises(specDir: string): Set<string> {
 export function specPremiseFindings(specDir: string) {
   const design = docPath(specDir, 'design');
   return premiseFindings(existsSync(design) ? readFileSync(design, 'utf8') : undefined, recordedPremises(specDir));
+}
+
+/** Where a spec's probe scripts live: inside its log, committed with the premise records. */
+export const probesDir = (specDir: string) => join(logPath(specDir, 'premises'), 'probes');
+
+/**
+ * The paths a command names that leave the worktree: absolute or `~` paths outside it, and relative
+ * ones that climb out. The first word (the program, e.g. `node`) is not checked.
+ */
+export function pathsOutside(words: string[], root: string): string[] {
+  return words.slice(1).flatMap((raw) => {
+    const w = raw.replace(/^['"]|['"]$/g, '').replace(/^--?[\w-]+=/, '');
+    if (!/^(\/|~|\.\.?\/)/.test(w) && !w.includes('/../')) return [];
+    const abs = w.startsWith('~') ? join(homedir(), w.slice(1)) : resolve(root, w);
+    const rel = relative(root, abs);
+    return rel.startsWith('..') || isAbsolute(rel) ? [raw] : [];
+  });
 }
 
 const sha = (dir: string) => {
@@ -55,12 +73,30 @@ export function registerPremise(run: Command, ctx: CliContext) {
       const known = existsSync(design) ? parsePremises(readFileSync(design, 'utf8')).map((p) => p.id) : [];
       if (!known.includes(id)) throw new Error(`${id} is not in the Premise Ledger of ${relative(ctx.root(), design)}`);
       const command = words.join(' ');
+      const cwd = repoRoot(spec.dir);
+      // MDO-0007: probes lived in the user's home. Every path the command names stays in the worktree.
+      const outside = pathsOutside(words, cwd);
+      if (outside.length)
+        throw new Error(
+          `the command names paths outside the worktree (${outside.join(', ')}): put probes in ${relative(cwd, probesDir(spec.dir))}/`,
+        );
       const project = config.projects[0]!;
       const budget = budgetFor(ctx.root(), config, project, 'unit', `${id} premise`, o.force, spec.dir);
-      const cwd = repoRoot(spec.dir);
-      const result = await runTests(cwd, `${id} premise`, `${command} 2>&1`, { ...budget, timeoutS: Number(o.timeout) }, undefined, {
-        keepOutput: true,
-      });
+      // Temporary files the probe makes go inside the spec's log, and are removed after the run.
+      const scratch = join(logPath(spec.dir, 'premises'), 'tmp', id);
+      const home = join(logPath(spec.dir, 'premises'), 'tmp', `${id}-home`);
+      ensureDir(scratch);
+      ensureDir(home);
+      let result: Awaited<ReturnType<typeof runTests>>;
+      try {
+        result = await runTests(cwd, `${id} premise`, `${command} 2>&1`, { ...budget, timeoutS: Number(o.timeout) }, undefined, {
+          keepOutput: true,
+          // HOME too: a probe that writes to `~` from its own code lands in the spec's log, not the real home.
+          env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch, HOME: home, USERPROFILE: home },
+        });
+      } finally {
+        removeScratchDir(join(logPath(spec.dir, 'premises'), 'tmp'), spec.dir);
+      }
       if (result.status !== 'PASS' && result.status !== 'FAIL') {
         json({ premise: id, recorded: false, status: result.status, reason: result.reason });
         process.exitCode = 1;
@@ -73,7 +109,7 @@ export function registerPremise(run: Command, ctx: CliContext) {
         [
           `# ${id} — run`,
           '',
-          `- Command: \`${command}\``,
+          `- Command: \`${command}\` (from the worktree root)`,
           `- Ran at: ${new Date().toISOString()} on ${sha(cwd)}`,
           `- Exit: ${result.exitCode}`,
           '',

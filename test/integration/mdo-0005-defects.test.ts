@@ -287,7 +287,7 @@ describe('#4 and #6: commit-spec has fixed subjects, and close commits its docum
     await run(root, 'commit-spec', 'MDO-0001', 'clarify');
     expect(lastJson().header).toBe('📝 docs(mandao): record the MDO-0001 clarification answers');
     await expect(run(root, 'commit-spec', 'MDO-0001', 'approve')).rejects.toThrow(
-      /step must be one of specify, clarify, tasks, verify, close/,
+      /step must be one of specify, spec, clarify, tasks, verify, close/,
     );
   });
 });

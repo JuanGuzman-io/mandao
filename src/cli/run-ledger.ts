@@ -188,6 +188,7 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
 /** The steps that commit spec documents, and the subject each one gets (MDO-0005: no free-text subjects). */
 export const SPEC_STEPS = {
   specify: (id: string) => `approve the ${id} requirements and design`,
+  spec: (id: string) => `approve the ${id} spec`,
   clarify: (id: string) => `record the ${id} clarification answers`,
   tasks: (id: string) => `approve the ${id} task plan`,
   verify: (id: string) => `record the ${id} verify report`,

@@ -68,7 +68,7 @@ function stepDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
   return [];
 }
 
-const COMMIT_STEP: Partial<Record<ApprovalStep, keyof typeof SPEC_STEPS>> = { design: 'specify', spec: 'specify', tasks: 'tasks' };
+const COMMIT_STEP: Partial<Record<ApprovalStep, keyof typeof SPEC_STEPS>> = { design: 'specify', spec: 'spec', tasks: 'tasks' };
 
 const NEXT: Record<ApprovalStep, string> = {
   story: '/mandao-specify',

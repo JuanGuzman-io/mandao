@@ -80,7 +80,7 @@ export async function runTests(
   command: string | undefined,
   budget: Budget,
   queueWaitMs = 30 * 60_000,
-  opts: { keepOutput?: boolean } = {},
+  opts: { keepOutput?: boolean; env?: Record<string, string> } = {},
 ): Promise<TestRun> {
   if (budget.decision === 'defer' || !command) {
     return { status: 'DEFERRED_TO_CI', workers: 0, durationMs: 0, reason: command ? budget.reason : 'no test command could be built' };
@@ -98,7 +98,7 @@ export async function runTests(
     };
   }
   try {
-    const env = { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) };
+    const env = { ...process.env, ...opts.env, MANDAO_TEST_WORKERS: String(budget.workers) };
     const tail: { text: string; full?: string } = { text: '', ...(opts.keepOutput ? { full: '' } : {}) };
     const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000, tail);
     const durationMs = Date.now() - started;

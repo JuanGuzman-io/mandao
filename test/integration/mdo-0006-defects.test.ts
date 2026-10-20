@@ -121,6 +121,17 @@ describe('minor defects found by the MDO-0006 run', () => {
 });
 
 describe('readability pass in the content', () => {
+  test('specify loads diagram, hotfix, type, lite and data-model rules only when they apply (ADR 0034)', () => {
+    const specify = readFileSync(join(core, 'commands/specify.md'), 'utf8');
+    for (const r of ['diagram', 'hotfix', 'spec-types', 'doc-lite', 'doc-data-model'])
+      expect(specify).toContain(`{{template:rules/${r}.md}}`);
+    expect(specify).not.toContain('sequence` · pipeline'); // the diagram table lives in rules/diagram.md
+    expect(specify.length).toBeLessThan(12_000);
+    expect(readFileSync(join(core, 'templates/shared/rules/diagram.md'), 'utf8')).toContain(
+      '| Data change | Entities and relationships (`erd`',
+    );
+  });
+
   test('spec-docs.md keeps only the principles; each command loads the rules of the documents it writes', () => {
     expect(readFileSync(join(core, 'templates/shared/rules/spec-docs.md'), 'utf8').length).toBeLessThan(3000);
     const loads: Record<string, string[]> = {

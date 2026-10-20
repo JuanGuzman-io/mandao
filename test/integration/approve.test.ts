@@ -67,6 +67,16 @@ describe('mandao approve: no model session', () => {
     expect(log).toEqual([expect.objectContaining({ step: 'design', by: 'Ana PO', at: expect.any(String) })]);
   });
 
+  test('a lite spec is approved under its own subject (MDO-0007)', async () => {
+    const root = repo();
+    expect(await approve(root, 'MDO-0001', 'spec')).toMatchObject({
+      approved: true,
+      commit: { committed: true },
+      next: '/mandao-implement',
+    });
+    expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 spec');
+  });
+
   test('a critical OPEN blocks the approval: nothing changes', async () => {
     const root = repo();
     const file = join(root, SPEC, 'requirements.md');

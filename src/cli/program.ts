@@ -7,6 +7,8 @@ import { registerHook } from './hook.js';
 import { registerModels } from './models-command.js';
 import { registerRun } from './run.js';
 import { registerSetup } from './setup.js';
+import { registerStart } from './start.js';
+import { registerWorktree } from './worktree.js';
 
 /**
  * The CLI, built per call so tests can run it against a temporary workspace. Positional options keep
@@ -24,6 +26,8 @@ export function buildProgram(cwd: () => string = () => process.cwd()): Command {
   registerModels(program, ctx);
   registerRun(program, ctx);
   registerApprove(program, ctx);
+  registerStart(program, ctx);
+  registerWorktree(program, ctx);
   registerHook(program, ctx);
   return program;
 }
