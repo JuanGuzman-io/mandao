@@ -3,7 +3,7 @@ schema_version: 1
 spec: MDO-0005-prove-the-doctor-crash-path-end-to-end
 depth: lite
 projects: [mandao]
-status: draft
+status: approved
 ---
 
 # Design — Prove that a crashing doctor never sends garbage to CI
