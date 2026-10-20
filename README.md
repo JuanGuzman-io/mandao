@@ -39,6 +39,21 @@ step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it a
 At `lite` depth `/mandao-specify` writes the story, a single `spec.md` and up to three tasks in one
 session, with one approval.
 
+### Recommended flow
+
+```
+mandao start "<description or tracker id>"    # branch, worktree and its setup, no model tokens
+cd <worktree> && claude "/mandao-specify <ID> --depth lite"   # the exact command is printed
+mandao approve <ID> spec                      # from the terminal, no model session
+# back in the same session: /mandao-implement <ID>, /mandao-verify <ID>, /mandao-close <ID>
+```
+
+`mandao start` copies the env files listed in `.mandao/worktree-include`, installs dependencies by
+lockfile, runs the project's `worktree.setup` hooks, copies the code graph and records a baseline of the
+cheap gates, so the session is born in the worktree in any harness. `--open` launches Claude Code or
+Codex there; `mandao start --quick "<change>"` does the same for quick changes; `mandao worktree list |
+clean` handles leftovers.
+
 ### Approving without a model session
 
 `mandao approve <spec> <step>` (`story`, `design`, `spec`, `tasks`, `close`) checks the same gates the
@@ -75,6 +90,8 @@ Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` · `models profile <peak\|balanced\|economy>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester); a profile switches every role at once and keeps your own choices |
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
 | `mandao skills list` | List skills pinned in the workspace lock |
+| `mandao start "<description\|ID>"` | Create the spec's branch and worktree and set it up (env files, dependencies, setup hooks, graph, baseline); print or `--open` the harness there |
+| `mandao worktree list \| clean` | Spec worktrees; remove the merged ones that hold no work |
 | `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session |
 | `mandao run cost <spec>` | Spend per command and role against `budget.per_spec`; commands record their own spend (Claude Code reads its session record at official prices) |
 | `mandao run …` | Helper scripts the commands call, compact JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |

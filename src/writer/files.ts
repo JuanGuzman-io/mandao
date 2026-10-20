@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, relative } from 'node:path';
 import { type Document, parseDocument } from 'yaml';
 import { sha256 } from '../util/hash.js';
@@ -47,6 +47,12 @@ export function removeScratchDir(abs: string, within: string): void {
   const rel = relative(within, abs);
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${abs} is not inside ${within}`);
   rmSync(abs, { recursive: true, force: true });
+}
+
+/** Copies a file or a folder into place (worktree setup: env files, the graph cache). Never a symlink. */
+export function copyInto(src: string, dest: string): void {
+  mkdirSync(dirname(dest), { recursive: true });
+  cpSync(src, dest, { recursive: true, dereference: true, force: true });
 }
 
 export class ConcurrentEditError extends Error {

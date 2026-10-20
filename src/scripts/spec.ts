@@ -194,14 +194,15 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
   const b = branchingFor(config, opts.project);
   const branch = specBranch(config, b, { id, slug, ...(opts.type ? { type: opts.type } : {}), ...(opts.hotfix ? { hotfix: true } : {}) });
   const base = startPoint(b, opts.hotfix);
-  const worktree = join(worktreesDir(root, config), `${id}-${slug}`);
+  const name = slug ? `${id}-${slug}` : id;
+  const worktree = join(worktreesDir(root, config), name);
   const issues = branchExists(root, base)
     ? []
     : [`base branch "${base}" does not exist here: create it, or set branching.base in .mandao/config.yml (model ${b.model})`];
   return {
     id,
     slug,
-    folder: join(config.paths.specs, `${id}-${slug}`),
+    folder: join(config.paths.specs, name),
     branch,
     base,
     worktree,

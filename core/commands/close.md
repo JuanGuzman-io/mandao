@@ -120,3 +120,7 @@ the close produced; never edit it by hand), set `status: closed` in story.md, th
 close wrote on its own: `{{script:commit-spec}} {{arg:spec}} close` (the spec folder, `{{paths.releases}}/<ID>/`,
 `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.
+
+**Worktree** (`worktrees.cleanup` in `.mandao/config.yml`): after the spec's branch is merged, `ask`
+offers to remove the worktree, `auto-after-merge` removes it when it holds no work, `never` leaves it.
+Removal goes through `mandao worktree clean`, which never removes a worktree with uncommitted work.

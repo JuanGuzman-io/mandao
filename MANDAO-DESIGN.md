@@ -542,12 +542,27 @@ One story = **one spec, one development**, even across projects.
 - **Disqualifying evidence:** every gate states what makes its evidence worthless (e.g., variance larger than the measured effect), not only what passes.
 - **DECIDED (ADR 0022, implemented in 2b) — professional discipline**, written into the personas as checkable rules (never "follow the book"): say no or HALT when something cannot be done well instead of delivering something partial as done; "done" means the whole DoD is met, with evidence; never report something as tested without the test output; state uncertainty explicitly instead of assuming.
 
-### 14.5 Branches and worktrees
+### 14.5 Worktrees (always)
 
-**DECIDED (ADR 0015).**
+**DECIDED (ADR 0037).** Every spec, including quick, runs in its own git worktree in a sibling folder (`../<repo>.worktrees/<ID>-<slug>`, configurable in `paths.worktrees`). `mandao start` creates it (default); `specify`/`quick` create it as a fallback when run from the main checkout. Polyrepo: one worktree per touched repo, same branch name.
+
+**Setup** (Node script, no model tokens, through the resource guard):
+1. `git worktree add` with branch `<prefix><ID>-<slug>` from `branching.base` (or `hotfix.from` with `--hotfix`).
+2. **Env files:** copy only the files listed in `.mandao/worktree-include`; if a `.worktreeinclude` exists, honor it too, so Claude Code and Mandao share one list. Copy, never symlink. Each listed file must be gitignored; a tracked file is skipped with a warning. Env files never leave the machine and are never committed.
+3. **Dependencies** for each touched project (monorepo: once at the workspace root), detected by lockfile: `pnpm-lock.yaml` → `pnpm install --frozen-lockfile`; `package-lock.json` → `npm ci`; `yarn.lock` → `yarn install --immutable` (v1: `--frozen-lockfile`); `bun.lock(b)` → `bun install --frozen-lockfile`; `uv.lock` → `uv sync`; `poetry.lock` → `poetry install`; `go.mod` → `go mod download`; `Cargo.lock` → `cargo fetch`; `pubspec.lock` → `flutter pub get`; `composer.lock` → `composer install`; `Gemfile.lock` → `bundle install`. **Never symlink dependency folders** between worktrees; speed comes from package-manager caches.
+4. **Project setup hooks:** `worktree.setup` commands per project in `config.yml` (codegen, ORM client generation, building shared libs).
+5. **Graph cache:** copy `graphify-out/` from the main checkout and run an incremental update.
+6. **Baseline:** on the clean worktree, run the cheap gates only (lint, typecheck, build; never the full test suite locally, per §16.5) and record the result in `_log/`. The test baseline is the base branch's last CI result. A red baseline is reported before any change, so pre-existing failures are not attributed to the spec.
+
+**Cleanup:** after merge, `close` offers to remove the worktree (`worktrees.cleanup: ask | auto-after-merge | never`). `mandao worktree list | clean` handles leftovers; `resume` shows active worktrees.
+
+**OPEN:**
+- Isolated local services per worktree (database, queues), so a migration in one worktree never hits a database another uses. Proposed: a per-worktree compose project name and a port offset written into the copied env.
+- Disk usage limits for many parallel worktrees.
+
+**Branches.**
 
 - **DECIDED (ADR 0023, implemented in 2b; release association waits for `close`) — branching adapts to the team.** `branching.model` picks a preset — `trunk` (base and PR on `main`, short-lived branches, warning past `max_branch_age_days` with a suggestion to split the spec, stack PRs or use a feature flag), `feature-branch` (base and PR on `main`), `gitflow` (base and PR on `develop`; hotfix from `main` merged into `main` and `develop`; `release/` branches made by the team, which `close` can associate with the spec), `env-branches` (base and PR on `test`; promotion `test → staging → main`; hotfix from `main` with back-merge to `staging` and `test`). Fields, each with the preset default and overridable: `model`, `base`, `promotion`, `production`, `prefixes` (`feature`, `fix`, `hotfix`, `release`), `hotfix` (`from`, `merge_to`), `protected`, `max_branch_age_days` (trunk). Per-project override in polyrepo, otherwise inherited. `constitution` detects the model (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` → asks trunk or feature-branch), always confirms it and documents it in `infrastructure.md`.
-- `specify` (or `quick`) creates the branch `<prefix><ID>-<slug>` **from `base`** and its git worktree, with a single confirmation, so every artifact of the spec lives on that branch. **DECIDED (ADR 0020):** worktrees live in a sibling folder, `paths.worktrees` (default `../{repo}.worktrees`), resolved from the main checkout.
 - `implement` never creates branches: it checks that it runs inside the spec's worktree and, if not, warns and shows the path.
 - The PR targets `base`; Mandao never commits or pushes to a `protected` branch; `verified` is confirmed by the CI of `base`. Promotion between environments is never automated: Mandao only records the environment reached when CI or a tracker MCP reports it.
 - Commits are local and need no confirmation after the Reviewer's PASS. Mandao never pushes.

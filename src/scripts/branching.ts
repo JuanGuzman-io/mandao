@@ -14,7 +14,8 @@ export function specBranch(config: Config, b: Branching, p: { id: string; slug: 
     .replace('{prefix}', b.prefixes[kind])
     .replace('{type}', p.type === 'bug' ? 'fix' : 'feat')
     .replace('{id}', p.id)
-    .replace('{slug}', p.slug);
+    .replace('{slug}', p.slug)
+    .replace(/[-_/]+$/, ''); // a tracker id with no title leaves no trailing separator
 }
 
 /** Where a spec branch starts: `base`, or `hotfix.from` in the hotfix lane. */

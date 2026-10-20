@@ -94,6 +94,8 @@ const project = z.object({
   size_limits: sizeLimitsSchema.optional(),
   /** Polyrepo: this repository's own branching model; otherwise the workspace's applies (ADR 0023). */
   branching: branchingInput.optional(),
+  /** Commands run in every new worktree after dependencies: codegen, ORM clients, shared libs (§14.5). */
+  worktree: z.object({ setup: z.array(z.string().min(1)).default([]) }).prefault({}),
 });
 export type ProjectConfig = z.infer<typeof project>;
 
@@ -161,6 +163,8 @@ export const configSchema = z
     size_limits: sizeLimitsSchema.default({}),
     /** Kaizen (design §18.1): no TDD conclusion below this many specs per group (ADR 0026). */
     kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
+    /** What `close` does with a spec's worktree after merge (ADR 0037). */
+    worktrees: z.object({ cleanup: z.enum(['ask', 'auto-after-merge', 'never']).default('ask') }).prefault({}),
     /** Cost cap per spec in USD (ADR 0036): a warning at 80%, a confirmation to go on at 100%. */
     budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** The team's branching model (ADR 0023): preset plus overrides. */

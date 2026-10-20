@@ -43,3 +43,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0034](0034-specify-data-model-and-diagram-by-change.md) | specify: a conditional data model, and the diagram chosen by what is built | Accepted |
 | [0035](0035-readable-specs-and-cost-levers.md) | Readable spec documents, a real lite, Leader scripts, approvals and recorded premises | Accepted |
 | [0036](0036-cost-conscious-by-design.md) | Cost-conscious by design | Accepted |
+| [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted |
