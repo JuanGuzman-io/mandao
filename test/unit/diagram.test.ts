@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { designSourceHash, diagramState, readStamp, stampDiagram } from '../../src/spec/index.js';
+import { designSourceHash, diagramDrift, diagramState, implementedGraph, readStamp, stampDiagram } from '../../src/spec/index.js';
 
 const design = (depth: string, projects: string[], body = '## Decisions\n\nUse a refresh token.\n') =>
   `---\nschema_version: 1\nspec: MDO-0001-x\ndepth: ${depth}\nprojects: [${projects.join(', ')}]\n---\n\n# Design — x\n\n${body}`;
@@ -39,5 +39,65 @@ describe('approval diagram (ADR 0022)', () => {
     const edited = stamped.replace('Use a refresh token.', 'Use a session cookie.');
     expect(diagramState(edited).stale).toBe(true);
     expect(diagramState(stamped.replace('## Diagram\n', '## Diagram\n\n')).stale).toBe(false);
+  });
+});
+
+describe('diagram drift by identity (ADR 0026)', () => {
+  const g = (nodes: { id: string; label?: string; kind?: 'module' | 'contract' }[], edges: [string, string][] = []) => ({
+    schema_version: 1 as const,
+    nodes: nodes.map((n) => ({ kind: 'module' as const, ...n })),
+    edges: edges.map(([from, to]) => ({ from, to })),
+  });
+
+  test('a renamed box is not drift; added or missing modules and edges are', () => {
+    const proposed = g(
+      [
+        { id: 'src/cli', label: 'CLI' },
+        { id: 'src/engine', label: 'Engine' },
+      ],
+      [['src/cli', 'src/engine']],
+    );
+    const renamed = g(
+      [
+        { id: 'src/cli', label: 'Command line' },
+        { id: 'src/engine', label: 'Engine' },
+      ],
+      [['src/cli', 'src/engine']],
+    );
+    expect(diagramDrift(proposed, renamed)).toMatchObject({
+      drift: false,
+      relabelled: [{ id: 'src/cli', proposed: 'CLI', implemented: 'Command line' }],
+    });
+    const built = g([{ id: 'src/cli' }, { id: 'src/writer' }], [['src/cli', 'src/writer']]);
+    expect(diagramDrift(proposed, built)).toMatchObject({
+      drift: true,
+      addedNodes: ['src/writer'],
+      missingNodes: ['src/engine'],
+      addedEdges: ['src/cli -> src/writer'],
+      missingEdges: ['src/cli -> src/engine'],
+    });
+  });
+
+  test('contracts are compared only when the implemented graph has contract nodes; otherwise unverified', () => {
+    const proposed = g([{ id: 'src/api' }, { id: 'POST /tokens', kind: 'contract' }]);
+    expect(diagramDrift(proposed, g([{ id: 'src/api' }]))).toMatchObject({ drift: false, unverifiedContracts: ['POST /tokens'] });
+    expect(diagramDrift(proposed, g([{ id: 'src/api' }, { id: 'POST /token', kind: 'contract' }]))).toMatchObject({
+      drift: true,
+      addedNodes: ['POST /token'],
+      missingNodes: ['POST /tokens'],
+    });
+  });
+
+  test('the implemented graph comes from the changed source files and the code graph', () => {
+    const dependents = new Map([['src/engine/sync.ts', new Set(['src/cli/run.ts', 'src/engine/doctor.ts'])]]);
+    const changed = ['src/cli/run.ts', 'src/engine/sync.ts', 'test/unit/x.test.ts', 'README.md'];
+    expect(implementedGraph(changed, dependents, (f) => f.startsWith('test/'))).toEqual({
+      schema_version: 1,
+      nodes: [
+        { id: 'src/cli', kind: 'module' },
+        { id: 'src/engine', kind: 'module' },
+      ],
+      edges: [{ from: 'src/cli', to: 'src/engine' }],
+    });
   });
 });

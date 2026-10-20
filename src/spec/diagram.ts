@@ -14,6 +14,8 @@ export interface DiagramStamp {
   file: string;
   /** Hash of design.md without its `## Diagram` section, when the diagram was generated. */
   source: string;
+  /** Structured source of the diagram (`diagrams/proposed.graph.json`), what close's drift compares (ADR 0026). */
+  graph?: string;
 }
 
 const SECTION = /^## Diagram[ \t]*\n[\s\S]*?(?=^## |(?![\s\S]))/m;
@@ -50,7 +52,8 @@ export function diagramState(designMd: string): DiagramState {
 
 /** design.md with its `## Diagram` section stamped for the current design (added at the end when missing). */
 export function stampDiagram(designMd: string, d: Omit<DiagramStamp, 'source'>, mermaid?: string): string {
-  const marker = `<!-- mandao:diagram type=${d.type} tool=${d.tool} file=${d.file} source=${designSourceHash(designMd)} -->`;
+  const graph = d.graph ? ` graph=${d.graph}` : '';
+  const marker = `<!-- mandao:diagram type=${d.type} tool=${d.tool} file=${d.file}${graph} source=${designSourceHash(designMd)} -->`;
   const body = mermaid ? `\`\`\`mermaid\n${mermaid.trim()}\n\`\`\`` : `![${d.type} diagram](${d.file})`;
   const section = `## Diagram\n\n${marker}\nDerived from this design; regenerated whenever it changes. Part of the design approval.\n\n${body}\n\n`;
   return SECTION.test(designMd) ? designMd.replace(SECTION, section) : `${designMd.trimEnd()}\n\n${section.trimEnd()}\n`;

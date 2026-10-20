@@ -1,6 +1,7 @@
 export * from './close-summary.js';
 export * from './commit.js';
 export * from './diagram.js';
+export * from './diagram-graph.js';
 export * from './execution.js';
 export * from './kaizen.js';
 export * from './loop.js';

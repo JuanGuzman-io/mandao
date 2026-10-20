@@ -60,3 +60,64 @@ describe('close in a real repository', () => {
     expect(round.published.map((p) => p.hash)).toEqual(['h2']);
   });
 });
+
+describe('mandao run diagram-drift', () => {
+  test('derives the implemented graph from the spec commits and compares it by identity', async () => {
+    const { buildProgram } = await import('../../src/cli/program.js');
+    const { writeYaml } = await import('../../src/engine/files.js');
+    const { cpSync, mkdirSync, readFileSync } = await import('node:fs');
+    const root = realpathSync(makeTree({ 'src/cli/run.ts': 'x', 'src/engine/sync.ts': 'y' }));
+    git(root, 'init', '-q', '-b', 'main');
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'p', path: '.' }],
+      harnesses: ['claude'],
+    });
+    const spec = join(root, 'specs/MDO-0001-skills-list');
+    cpSync(join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list'), spec, { recursive: true });
+    mkdirSync(join(spec, 'diagrams'));
+    writeFileSync(
+      join(spec, 'diagrams/proposed.graph.json'),
+      JSON.stringify({
+        schema_version: 1,
+        nodes: [
+          { id: 'src/cli', label: 'CLI' },
+          { id: 'src/skills', label: 'Skills' },
+        ],
+        edges: [],
+      }),
+    );
+    writeFileSync(join(spec, 'design.md'), '---\ndepth: standard\nprojects: [p]\n---\n\n# Design\n\n## Decisions\n\nx\n');
+    git(root, 'add', '.');
+    commit(root, 'src/cli/run.ts', '✨ feat(cli): list\n\nRefs: MDO-0001\nMandao-Task: T1', '2026-10-01T10:00:00Z');
+    const out: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((s: string) => void out.push(s));
+    const run = (...args: string[]) => buildProgram(() => root).parseAsync(['node', 'mandao', 'run', ...args]);
+    writeFileSync(join(spec, 'flow.mmd'), 'flowchart LR\n  cli --> skills');
+    await run(
+      'diagram',
+      'MDO-0001',
+      '--stamp',
+      '--tool',
+      'mermaid',
+      '--type',
+      'workflow',
+      '--mermaid',
+      join(spec, 'flow.mmd'),
+      '--graph',
+      'diagrams/proposed.graph.json',
+    );
+    await run('diagram-drift', 'MDO-0001');
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({
+      drift: true,
+      missingNodes: ['src/skills'],
+      addedNodes: ['src/engine'],
+      implemented: 'diagrams/implemented.graph.json',
+    });
+    // The spec's commit touched src/cli and src/engine; the design proposed src/cli and src/skills.
+    const built = JSON.parse(readFileSync(join(spec, 'diagrams/implemented.graph.json'), 'utf8'));
+    expect(built.nodes.map((n: { id: string }) => n.id)).toEqual(['src/cli', 'src/engine']);
+    vi.restoreAllMocks();
+  });
+});
