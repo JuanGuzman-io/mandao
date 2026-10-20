@@ -92,8 +92,12 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
 /** A PASS queued for its commit: the task's changed files now, minus those queued before it. */
 function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending_commits'] {
   if (!o.pendingCommit) return [];
-  if (!o.task || (o.verdict !== 'PASS' && o.verdict !== 'DEFERRED_TO_CI'))
-    throw new Error('--pending-commit needs --task and a PASS verdict');
+  const passing = (v: string | undefined) => v === 'PASS' || v === 'DEFERRED_TO_CI';
+  // The PASS may be this checkpoint's, or already written by `mandao run review --via` (ADR 0021).
+  const lastVerdict = spec.execution.filter((r) => r.task === o.task).at(-1)?.verdict;
+  if (!o.task || (!passing(o.verdict) && !(o.verdict === undefined && passing(lastVerdict)))) {
+    throw new Error('--pending-commit needs --task and a PASS: give --verdict PASS, or record it first with `mandao run review`');
+  }
   const queued = new Set(spec.progress?.pending_commits.flatMap((p) => p.files) ?? []);
   const files = changedFiles(repoRoot(spec.dir), spec.dir).filter((f) => !queued.has(f));
   return [{ task: o.task, subject: o.pendingCommit, files }];

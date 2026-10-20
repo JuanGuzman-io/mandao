@@ -149,6 +149,37 @@ describe('mandao run red', () => {
     await expect(run(root, 'diagram', 'MDO-0001', '--stamp', '--tool', 'archify', '--type', 'workflow')).rejects.toThrow(/needs --file/);
   });
 
+  test('a PASS written by review --via can be queued for commit without recording it again', async () => {
+    const root = workspace();
+    git(root, 'add', '.');
+    git(root, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'base');
+    const pass = '| 2026-10-20 | T2 | 1 | standard | opencode | x | y | PASS | read-only opencode process |';
+    const file = join(root, SPEC, 'execution.md');
+    writeFileSync(file, readFileSync(file, 'utf8').replace(/(\| STARTED \| \|\n)/, `$1${pass}\n`));
+    writeFileSync(join(root, 'test/a.test.ts'), 'expect(1).toBe(1)\n');
+    await run(
+      root,
+      'checkpoint',
+      'MDO-0001',
+      '--task',
+      'T2',
+      '--done',
+      'T2',
+      '--pending-commit',
+      'register the skills list command',
+      '--clear',
+    );
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
+    expect(
+      readSpec(join(root, SPEC))
+        .execution.filter((r) => r.verdict === 'PASS')
+        .map((r) => r.task),
+    ).toEqual(['T1', 'T2']);
+    await expect(run(root, 'checkpoint', 'MDO-0001', '--task', 'T1', '--pending-commit', 'x', '--verdict', 'FAIL')).rejects.toThrow(
+      /needs --task and a PASS/,
+    );
+  });
+
   test('tests that already pass are not red evidence: nothing is recorded', async () => {
     const root = workspace();
     vi.stubEnv('RED', '0');
