@@ -20,6 +20,7 @@ const AGENT_FILES: Partial<Record<HarnessId, (name: string) => string>> = {
   copilot: (n) => `.github/agents/${n}.agent.md`,
   codex: (n) => `.codex/agents/${n}.toml`,
   opencode: (n) => `.opencode/agents/${n}.md`,
+  antigravity: (n) => `.agents/agents/${n}.md`,
 };
 
 const tomlValue = (text: string, key: string) => text.match(new RegExp(`^${key}\\s*=\\s*"([^"]*)"`, 'm'))?.[1];

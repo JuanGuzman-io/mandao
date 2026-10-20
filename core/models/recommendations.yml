@@ -231,3 +231,38 @@ harnesses:
       - model: ollama/*
         roles: [implementer]
         note: "local models (ollama/*, lmstudio/*), for implementer.fast only: they vary widely in quality and tool use; verify on your tasks before relying on them"
+
+  antigravity:
+    reviewed: 2026-10-20
+    sources:
+      - https://antigravity.google/docs/subagents
+      - https://antigravity.google/docs/models
+      - https://antigravity.google/docs/plans
+    # Experimental (ADR 0019). A subagent's `model` is a tier, not a model ID: `inherit` (the session's
+    # model), `flash` or `pro`. No documented version command, so no minimum-version check.
+    # Free and Plus only have Flash, and defaults must work on every plan: simple mode, Flash for both
+    # roles, which is reduced independence (ADR 0020). `pro` is optional.
+    default_mode: simple
+    available: [flash]
+    routed:
+      leader: flash
+      reviewer: flash
+      implementer: { fast: flash, standard: flash, strong: flash }
+      tester: flash
+    simple:
+      implementer: flash
+      reviewer: flash
+    tiers:
+      flash: standard
+      pro: strong
+    notes:
+      - "Experimental: formats moved this month, skill arguments and agent tool names are not documented."
+      - "Free and Plus only have Flash: Implementer and Reviewer both run on Flash, so reviews have reduced independence. Use pro for the reviewer if your plan has it (AI Pro, Ultra, Enterprise), or review in another harness."
+      - "The Reviewer's read-only rule is in its prompt only: Antigravity's tool names are not documented, so Mandao cannot restrict its tools."
+    optional:
+      - model: pro
+        roles: [leader, reviewer, reviewer_alt, implementer]
+        note: requires AI Pro (not on trial), Ultra or Enterprise
+      - model: inherit
+        roles: [implementer, tester]
+        note: "the session's model, whatever the user picked; Mandao cannot know its tier"

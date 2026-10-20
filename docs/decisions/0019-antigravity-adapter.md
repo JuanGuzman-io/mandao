@@ -42,3 +42,18 @@ https://github.com/google-antigravity/antigravity-cli (README and releases; the 
 - The adapter waits until skill arguments are documented, or uses `$ARGUMENTS`-free bodies that ask
   for the input instead.
 - Antigravity's format moved this week (workflows → skills); it is the least stable target.
+
+## Implementation (iteration 2b, 2026-10-20) — experimental
+
+- **Shared `.agents/skills/`:** `src/adapters/agents-skills.ts` renders the mandao skills once for every
+  active reader. Codex owns them when active (its output does not change when Antigravity is added);
+  otherwise Antigravity does. With both, the skill body names both invocations (`$mandao-x`, `/mandao-x`
+  in Antigravity) and `agents/openai.yaml` is kept for Codex; without Codex it is not written. Removing
+  Codex keeps the skills and drops only the Codex files (tested through `sync`).
+- **Subagents:** `.agents/agents/mandao-*.md` with `name`, `description` and a model **tier**. Tool names
+  are not documented, so the Reviewer's read-only rule lives in its prompt only, and `doctor` says so.
+- **Recommendations:** `default_mode: simple`, Flash for implementer and reviewer (Free and Plus only
+  have Flash; 2a decision): reduced independence, with `pro` optional for AI Pro, Ultra and Enterprise.
+- **Experimental:** the adapter declares why; `init` and `doctor` show it. No version check, no
+  cross-harness review process (`agy -p` is not supported inside other agents on consumer plans).
+- Not verified live: Antigravity is not installed on the machine that built this.

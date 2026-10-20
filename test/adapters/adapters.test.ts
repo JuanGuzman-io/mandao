@@ -278,3 +278,56 @@ describe('Claude Code + Codex + OpenCode together', () => {
       .files.flatMap((f) => f.path.match(/^\.claude\/skills\/(mandao-[^/]+)\//)?.[1] ?? [])
       .sort();
 });
+
+describe('antigravity (experimental)', () => {
+  const withHarnesses = (harnesses: string[]) => ({
+    ...input('single'),
+    config: configSchema.parse({ ...configs.single, harnesses }),
+  });
+  const render = (h: 'codex' | 'antigravity', harnesses: string[]) => ADAPTERS[h].render(withHarnesses(harnesses)).files;
+
+  test('alone: skills in .agents/skills invoked as /name, without the Codex policy file', () => {
+    const files = render('antigravity', ['antigravity']);
+    const skill = files.find((f) => f.path === '.agents/skills/mandao-specify/SKILL.md')!;
+    expect(skill.harness).toBe('antigravity');
+    expect(skill.content).toContain('continue with /mandao-tasks');
+    expect(files.some((f) => f.path.endsWith('agents/openai.yaml'))).toBe(false);
+  });
+
+  test('with Codex: the shared skills are rendered once, by Codex, naming both invocations', () => {
+    const both = ['codex', 'antigravity'];
+    const codex = render('codex', both);
+    const antigravity = render('antigravity', both);
+    expect(antigravity.some((f) => f.path.startsWith('.agents/skills/'))).toBe(false);
+    const skill = codex.find((f) => f.path === '.agents/skills/mandao-specify/SKILL.md')!;
+    expect(skill.content).toContain('continue with $mandao-tasks (`/mandao-tasks` in Antigravity)');
+    const paths = [...codex, ...antigravity].map((f) => f.path);
+    expect(new Set(paths).size).toBe(paths.length);
+  });
+
+  test('subagents take a model tier, never a model ID', () => {
+    const recs = recommendationsSchema.parse({
+      schema_version: 1,
+      harnesses: {
+        antigravity: {
+          reviewed: '2026-10-20',
+          sources: ['https://example.com/antigravity'],
+          default_mode: 'simple',
+          available: ['flash'],
+          routed: {
+            leader: 'flash',
+            reviewer: 'flash',
+            implementer: { fast: 'flash', standard: 'flash', strong: 'flash' },
+            tester: 'flash',
+          },
+          simple: { implementer: 'flash', reviewer: 'flash' },
+        },
+      },
+    });
+    const files = ADAPTERS.antigravity.render(
+      input('single', 'project', { antigravity: resolveModels('antigravity', 'simple', recs, []) }),
+    ).files;
+    const reviewer = files.find((f) => f.path === '.agents/agents/mandao-reviewer.md')!;
+    expect(reviewer.content).toMatch(/^model: flash$/m);
+  });
+});

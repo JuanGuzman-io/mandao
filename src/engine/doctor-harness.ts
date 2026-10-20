@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
+import { ADAPTERS } from '../adapters/index.js';
 import type { GeneratedFile } from '../adapters/types.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { missingRoles } from '../models/resolve.js';
@@ -114,6 +115,10 @@ export function harnessFindings(
 ): Finding[] {
   const out = [...statusFindings(root, config, files, lock, recs, probe), ...portabilityFindings(root), ...graphHookFindings(root, config)];
   if (config.harnesses.includes('codex')) out.push(...codexFindings(checkoutPaths(root), probe));
+  for (const h of config.harnesses) {
+    const why = ADAPTERS[h].experimental;
+    if (why) out.push({ level: 'info', message: `${h} is experimental: ${why}` });
+  }
   if (config.harnesses.includes('opencode')) out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode));
   return out;
 }

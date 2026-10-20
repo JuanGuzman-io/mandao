@@ -42,7 +42,13 @@ export interface InitOptions {
   force?: boolean;
 }
 
-const HARNESS_LABEL: Record<HarnessId, string> = { claude: 'Claude Code', copilot: 'GitHub Copilot', codex: 'Codex', opencode: 'OpenCode' };
+const HARNESS_LABEL: Record<HarnessId, string> = {
+  claude: 'Claude Code',
+  copilot: 'GitHub Copilot',
+  codex: 'Codex',
+  opencode: 'OpenCode',
+  antigravity: 'Antigravity (experimental)',
+};
 
 function bail(value: unknown): asserts value is NonNullable<unknown> {
   if (p.isCancel(value)) {

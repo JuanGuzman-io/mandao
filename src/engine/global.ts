@@ -21,6 +21,8 @@ export function globalRoots(): Record<HarnessId, string> {
     codex: join(h, '.agents'),
     // OpenCode reads user commands from ~/.config/opencode/commands (opencode.ai/docs/commands).
     opencode: join(process.env.XDG_CONFIG_HOME ?? join(h, '.config'), 'opencode'),
+    // Antigravity reads user skills from ~/.gemini/config/skills (antigravity.google/docs/skills).
+    antigravity: join(h, '.gemini', 'config'),
   };
 }
 

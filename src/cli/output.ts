@@ -61,8 +61,12 @@ export function printFindings(findings: Finding[]) {
 
 /** Steps a harness needs from the user after its files are generated (ADR 0021). */
 export function harnessSetupNotes(harnesses: readonly string[]): string[] {
-  if (!harnesses.includes('codex')) return [];
+  const notes = harnesses.includes('antigravity')
+    ? ['Antigravity support is experimental (ADR 0019): `mandao doctor` lists what is not verified.']
+    : [];
+  if (!harnesses.includes('codex')) return notes;
   return [
+    ...notes,
     'Codex: trust this project (Codex asks the first time you open it here; each worktree is its own path).',
     '  Without trust Codex ignores .codex/agents (no Implementer or Reviewer agents) and .codex/rules',
     '  (the approval prompt that lets `mandao run commit` write .git). `mandao doctor` checks it.',

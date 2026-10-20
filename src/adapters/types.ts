@@ -37,5 +37,7 @@ export interface Adapter {
   name: string;
   /** When the target format was last checked against the official docs, and where. */
   verified: { date: string; docs: string[] };
+  /** Why the adapter is experimental, when it is: `init` and `doctor` say so. */
+  experimental?: string;
   render(input: AdapterInput): AdapterOutput;
 }

@@ -53,6 +53,26 @@ describe('syncProject', () => {
     expect(existsSync(join(root, '.github'))).toBe(false);
   });
 
+  test('removing Codex keeps the skills Antigravity shares and drops the Codex-only files', () => {
+    const root = workspace();
+    const setHarnesses = (harnesses: string[]) =>
+      writeYaml(join(root, '.mandao/config.yml'), {
+        schema_version: 1,
+        workspace: 'single',
+        projects: [{ name: 'shop', path: '.', profile: 'app' }],
+        harnesses,
+      });
+    setHarnesses(['codex', 'antigravity']);
+    syncProject(root);
+    expect(existsSync(join(root, '.agents/skills/mandao-specify/agents/openai.yaml'))).toBe(true);
+    setHarnesses(['antigravity']);
+    const r = syncProject(root);
+    expect(r.changes.find((c) => c.path === '.agents/skills/mandao-specify/SKILL.md')?.action).toBe('update');
+    expect(existsSync(join(root, '.agents/skills/mandao-specify/SKILL.md'))).toBe(true);
+    expect(existsSync(join(root, '.agents/skills/mandao-specify/agents/openai.yaml'))).toBe(false);
+    expect(existsSync(join(root, '.codex/agents'))).toBe(false);
+  });
+
   test('an override wins and survives the next sync', () => {
     const root = workspace();
     syncProject(root);

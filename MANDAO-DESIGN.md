@@ -95,7 +95,7 @@ mandao/
 - Adapters are **pure functions**: canonical command in → target files out.
 - Each adapter has **snapshot tests**. This is the part that breaks when a harness changes its format.
 - Every adapter records the date its target format was last verified against official docs.
-- **DECIDED (ADR 0018) — adapters:** Claude Code and GitHub Copilot exist. Pending, each verified against its vendor's official docs in its own ADR before it is written: **Codex** (OpenAI), **OpenCode** (provider-agnostic) and **Antigravity** (Google). Order and reasons: see the iteration plan.
+- **DECIDED (ADR 0018) — adapters:** Claude Code, GitHub Copilot, **Codex** (ADR 0016), **OpenCode** (ADR 0017: commands, agents with `provider/model`, one recommendation per provider set, other harnesses' mandao skills hidden so each mandao appears once) and **Antigravity**, experimental (ADR 0019: shares `.agents/skills/` with Codex, rendered once; subagents with a model tier). Each verified against its vendor's official docs and source before it was written.
 
 ### 4.4 Resolution stack
 
