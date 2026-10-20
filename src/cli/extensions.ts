@@ -3,9 +3,9 @@ import { readConfig } from '../engine/files.js';
 import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
 import { type CliContext, editConfig, sync } from './context.js';
 import { c, harnessSetupNotes } from './output.js';
-import { skillsAdd } from './skills.js';
+import { skillsAdd, skillsList } from './skills.js';
 
-/** harness add, skills add. */
+/** harness add, skills list, skills add. */
 export function registerExtensions(program: Command, ctx: CliContext) {
   const harness = program.command('harness').description('Manage harnesses');
   harness
@@ -22,9 +22,13 @@ export function registerExtensions(program: Command, ctx: CliContext) {
       for (const line of harnessSetupNotes(added)) console.log(c.dim(line));
     });
 
-  program
-    .command('skills')
-    .description('Manage project skills')
+  const skills = program.command('skills').description('Manage project skills');
+  skills
+    .command('list')
+    .description('List pinned skills')
+    .option('--json', 'print a JSON array of id, version, vetted and source')
+    .action((opts: { json?: boolean }) => skillsList(ctx, opts));
+  skills
     .command('add <ids...>')
     .description('Install catalog skills (or packs) with their ecosystem tool, verify them and pin them in the lock')
     .option('-y, --yes', 'install without asking for confirmation (CI)')

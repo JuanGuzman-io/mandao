@@ -1,0 +1,8 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0001-list-pinned-skills
+updated_at: 2026-10-20T14:09:06.740Z
+current: null
+open_questions: []
+next_step: "all tasks done: /mandao-verify"
+deferred_to_ci: []

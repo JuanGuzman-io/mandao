@@ -56,6 +56,7 @@ step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it a
 | `mandao harness add <id>` | Generate files for another harness |
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester) |
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
+| `mandao skills list` | List skills pinned in the workspace lock |
 | `mandao run …` | Helper scripts the commands call, JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
 
 ## Customizing
