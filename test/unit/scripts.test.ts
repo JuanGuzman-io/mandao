@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 import { catalogSchema } from '../../src/schemas/index.js';
 import { detectFacets, type ProjectFingerprint, proposeSkills } from '../../src/scripts/fingerprint.js';
-import { analyzeDiff, manifestDeps } from '../../src/scripts/quick-check.js';
+import { analyzeDiff, manifestDeps, sizeLimits } from '../../src/scripts/quick-check.js';
 
 const config = {
   projects: [
@@ -14,7 +14,7 @@ const f = (path: string, added = 1, deleted = 0) => ({ path, added, deleted });
 describe('quick-check', () => {
   test('a small change in one project is quick', () => {
     const r = analyzeDiff([f('services/api/src/copy.ts', 3, 1)], [], config);
-    expect(r).toMatchObject({ withinLimits: true, reasons: [], projects: ['api'], totals: { files: 1, loc: 4 } });
+    expect(r).toMatchObject({ withinLimits: true, reasons: [], projects: ['api'], totals: { files: 1, changedLines: 4 } });
   });
 
   test('limits on files, lines and projects', () => {
@@ -23,7 +23,16 @@ describe('quick-check', () => {
       [],
       config,
     );
-    expect(r.reasons).toEqual(['touches 2 projects (api, bot)', '4 files changed (limit 3)', '112 lines changed (limit ~100)']);
+    expect(r.reasons).toEqual(['touches 2 projects (api, bot)', '4 files changed (limit 3)', '112 lines changed (limit 100)']);
+  });
+
+  test('limits come from size_limits: workspace, then project, over the defaults (ADR 0028)', () => {
+    expect(sizeLimits().quick).toEqual({ max_files: 3, max_changed_lines: 100 });
+    const l = sizeLimits({ quick: { max_changed_lines: 200 }, pr: { max_files: 10 } }, { quick: { max_files: 5 } });
+    expect(l).toEqual({ quick: { max_files: 5, max_changed_lines: 200 }, pr: { max_files: 10, max_changed_lines: 400 } });
+    const big = [f('services/api/a.ts', 150)];
+    expect(analyzeDiff(big, [], config).withinLimits).toBe(false);
+    expect(analyzeDiff(big, [], config, { maxFiles: 3, maxChangedLines: l.quick.max_changed_lines }).withinLimits).toBe(true);
   });
 
   test('exactly at the limits is still quick', () => {

@@ -5,7 +5,7 @@ import { readConfig } from '../engine/files.js';
 import { independence } from '../models/resolve.js';
 import type { HarnessId } from '../schemas/index.js';
 import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
-import { analyzeDiff, collectDiff, DEFAULT_LIMITS, type FileStat, type ManifestChange } from '../scripts/quick-check.js';
+import { analyzeDiff, collectDiff, type FileStat, type ManifestChange, sizeLimits } from '../scripts/quick-check.js';
 import type { CliContext } from './context.js';
 import { isHarness, resolveForCli } from './models.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
@@ -17,12 +17,15 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerSpecWriters(run, ctx);
   run
     .command('quick-check')
-    .description('Measure the working-tree diff against the quick limits (JSON on stdout)')
+    .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')
     .option('--base <ref>', 'git ref to diff against', 'HEAD')
-    .option('--max-files <n>', 'file limit', String(DEFAULT_LIMITS.maxFiles))
-    .option('--max-loc <n>', 'changed-lines limit', String(DEFAULT_LIMITS.maxLoc))
-    .action((opts: { base: string; maxFiles: string; maxLoc: string }) => {
+    .option('--project <name>', "apply this project's size_limits over the workspace's")
+    .option('--max-files <n>', 'override size_limits.quick.max_files')
+    .option('--max-changed-lines <n>', 'override size_limits.quick.max_changed_lines')
+    .action((opts: { base: string; project?: string; maxFiles?: string; maxChangedLines?: string }) => {
       const config = readConfig(ctx.root());
+      const project = opts.project ? config.projects.find((p) => p.name === opts.project) : undefined;
+      const quick = sizeLimits(config.size_limits, project?.size_limits).quick;
       const repos =
         config.workspace === 'polyrepo'
           ? config.projects.map((p) => ({ dir: join(ctx.root(), p.path), prefix: p.path }))
@@ -34,7 +37,10 @@ export function registerRun(program: Command, ctx: CliContext) {
         files.push(...diff.files);
         manifests.push(...diff.manifests);
       }
-      const report = analyzeDiff(files, manifests, config, { maxFiles: Number(opts.maxFiles), maxLoc: Number(opts.maxLoc) });
+      const report = analyzeDiff(files, manifests, config, {
+        maxFiles: Number(opts.maxFiles ?? quick.max_files),
+        maxChangedLines: Number(opts.maxChangedLines ?? quick.max_changed_lines),
+      });
       console.log(JSON.stringify(report, null, 2));
     });
   run

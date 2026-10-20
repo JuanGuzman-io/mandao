@@ -3,9 +3,10 @@ import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
-import { fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
+import { commitsSize, fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { publishPlan } from '../scripts/publish.js';
+import { sizeLimits } from '../scripts/quick-check.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import {
   acStatus,
@@ -14,6 +15,8 @@ import {
   compareTdd,
   impactItems,
   parseCloseSummary,
+  planTasks,
+  prPlan,
   renderCloseSummary,
   specMetrics,
   verifyResults,
@@ -163,6 +166,23 @@ export function registerClose(run: Command, ctx: CliContext) {
   registerSummary(run, ctx);
   registerReleaseStatus(run, ctx);
   registerPublish(run, ctx);
+  registerPrPlan(run, ctx);
+}
+
+function registerPrPlan(run: Command, ctx: CliContext) {
+  run
+    .command('pr-plan <spec>')
+    .description('One PR, one per repo, or stacked: from task dependencies, projects and the real diff (ADR 0028)')
+    .action((ref: string) => {
+      const config = readConfig(ctx.root());
+      const spec = readSpec(findSpec(ctx.root(), config, ref));
+      if (!spec.story) throw new Error(`${spec.name} needs story.md`);
+      const repo = repoRoot(spec.dir);
+      const byTask = taskCommits(repo, spec.story.meta.id, config.commits.trailers);
+      const sizes = new Map(spec.tasks.map((t) => [t.id, commitsSize(repo, byTask.get(t.id) ?? [])]));
+      const limits = sizeLimits(config.size_limits).pr;
+      json(prPlan({ tasks: spec.tasks, waves: planTasks(spec.tasks).waves, sizes, limits, polyrepo: config.workspace === 'polyrepo' }));
+    });
 }
 
 function registerPublish(run: Command, ctx: CliContext) {

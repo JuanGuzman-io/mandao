@@ -2,6 +2,18 @@ import { z } from 'zod';
 import { branchingInput } from './branching.js';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
 
+/**
+ * Size thresholds, measured on the real diff only (ADR 0028): never estimated, never stored in a spec.
+ * Crossing one triggers its action — escalate a quick change, propose splitting the PR — nothing else.
+ */
+const sizeLimit = z.object({ max_files: z.number().int().positive(), max_changed_lines: z.number().int().positive() }).partial();
+export const sizeLimitsSchema = z.object({ quick: sizeLimit, pr: sizeLimit }).partial();
+export type SizeLimits = z.infer<typeof sizeLimitsSchema>;
+export const DEFAULT_SIZE_LIMITS = {
+  quick: { max_files: 3, max_changed_lines: 100 },
+  pr: { max_files: 25, max_changed_lines: 400 },
+} as const;
+
 /** Operations with their own memory floor (ADR 0024): a build does not need what an e2e suite needs. */
 export const OPERATIONS = ['build', 'tests', 'e2e'] as const;
 export type Operation = (typeof OPERATIONS)[number];
@@ -78,6 +90,8 @@ const project = z.object({
     .partial()
     .default({}),
   resources: resourcesSchema.default({}),
+  /** This project's size thresholds, over the workspace's (ADR 0028). */
+  size_limits: sizeLimitsSchema.optional(),
   /** Polyrepo: this repository's own branching model; otherwise the workspace's applies (ADR 0023). */
   branching: branchingInput.optional(),
 });
@@ -138,6 +152,8 @@ export const configSchema = z
       })
       .prefault({}),
     projects: z.array(project).min(1),
+    /** Thresholds on the real diff: quick post-check and PR splitting (ADR 0028). */
+    size_limits: sizeLimitsSchema.default({}),
     /** Kaizen (design §18.1): no TDD conclusion below this many specs per group (ADR 0026). */
     kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
     /** The team's branching model (ADR 0023): preset plus overrides. */

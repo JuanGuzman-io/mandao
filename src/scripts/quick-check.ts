@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
-import { type Config, QUICK_FORBIDDEN_TAGS, type RiskTag } from '../schemas/index.js';
+import { type Config, DEFAULT_SIZE_LIMITS, QUICK_FORBIDDEN_TAGS, type RiskTag, type SizeLimits } from '../schemas/index.js';
 
 /** The part of the config the diff analysis needs. */
 export type WorkspaceProjects = { projects: Pick<Config['projects'][number], 'name' | 'path' | 'profile'>[] };
@@ -18,16 +18,29 @@ export interface ManifestChange {
   after: string | undefined;
 }
 
+/** Quick thresholds on the real diff (ADR 0028): files and changed lines, measured, never estimated. */
 export interface QuickLimits {
   maxFiles: number;
-  maxLoc: number;
+  maxChangedLines: number;
 }
 
-export const DEFAULT_LIMITS: QuickLimits = { maxFiles: 3, maxLoc: 100 };
+export const DEFAULT_LIMITS: QuickLimits = {
+  maxFiles: DEFAULT_SIZE_LIMITS.quick.max_files,
+  maxChangedLines: DEFAULT_SIZE_LIMITS.quick.max_changed_lines,
+};
+
+/** `size_limits` of a scope, workspace then project, over the defaults. */
+export function sizeLimits(workspace: SizeLimits = {}, project: SizeLimits = {}) {
+  return {
+    quick: { ...DEFAULT_SIZE_LIMITS.quick, ...workspace.quick, ...project.quick },
+    pr: { ...DEFAULT_SIZE_LIMITS.pr, ...workspace.pr, ...project.pr },
+  };
+}
 
 export interface QuickReport {
   files: FileStat[];
-  totals: { files: number; added: number; deleted: number; loc: number };
+  /** Measured with `git diff --numstat` (the machine-readable `--stat`): deterministic, no estimate. */
+  totals: { files: number; added: number; deleted: number; changedLines: number };
   projects: string[];
   newDependencies: string[];
   migrations: string[];
@@ -95,8 +108,13 @@ export function analyzeDiff(
   limits: QuickLimits = DEFAULT_LIMITS,
 ): QuickReport {
   const totals = files.reduce(
-    (t, f) => ({ files: t.files + 1, added: t.added + f.added, deleted: t.deleted + f.deleted, loc: t.loc + f.added + f.deleted }),
-    { files: 0, added: 0, deleted: 0, loc: 0 },
+    (t, f) => ({
+      files: t.files + 1,
+      added: t.added + f.added,
+      deleted: t.deleted + f.deleted,
+      changedLines: t.changedLines + f.added + f.deleted,
+    }),
+    { files: 0, added: 0, deleted: 0, changedLines: 0 },
   );
   const projects = [...new Set(files.map((f) => projectOf(f.path, config) ?? '(outside projects)'))].sort();
 
@@ -113,7 +131,7 @@ export function analyzeDiff(
   const reasons: string[] = [];
   if (projects.length > 1) reasons.push(`touches ${projects.length} projects (${projects.join(', ')})`);
   if (totals.files > limits.maxFiles) reasons.push(`${totals.files} files changed (limit ${limits.maxFiles})`);
-  if (totals.loc > limits.maxLoc) reasons.push(`${totals.loc} lines changed (limit ~${limits.maxLoc})`);
+  if (totals.changedLines > limits.maxChangedLines) reasons.push(`${totals.changedLines} lines changed (limit ${limits.maxChangedLines})`);
   if (newDependencies.length) reasons.push(`new dependencies: ${newDependencies.join(', ')}`);
   if (migrations.length) reasons.push(`migrations: ${migrations.join(', ')}`);
   if (publicContracts.length) reasons.push(`public contracts: ${publicContracts.join(', ')}`);

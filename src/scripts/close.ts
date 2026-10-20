@@ -58,3 +58,18 @@ export function forcedRunCount(executionMd: string | undefined): number {
   const section = executionMd?.split(/^## Forced runs\s*$/m)[1]?.split(/^## /m)[0] ?? '';
   return section.split('\n').filter((l) => l.startsWith('- ')).length;
 }
+
+/** Files and changed lines of the given commits (`git show --numstat`): the real size, never an estimate. */
+export function commitsSize(repo: string, shas: string[]): { files: string[]; changedLines: number } {
+  const files = new Set<string>();
+  let changedLines = 0;
+  for (const sha of shas) {
+    for (const line of git(repo, ['show', '--numstat', '--format=', sha]).split('\n').filter(Boolean)) {
+      const [a, d, path] = line.split('\t');
+      if (!path) continue;
+      files.add(path);
+      changedLines += (a === '-' ? 0 : Number(a)) + (d === '-' ? 0 : Number(d));
+    }
+  }
+  return { files: [...files].sort(), changedLines };
+}
