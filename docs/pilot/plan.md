@@ -75,17 +75,19 @@ mechanism, not the hypothesis.
 ## 6.1 Reference costs from dogfooding
 
 What real runs on the Mandao repository cost, as reported by each Claude Code session
-(`total_cost_usd`). Use them to size the caps in F0; they are not a forecast for another codebase.
+(`total_cost_usd`). A session resumed for an approval reports its **cumulative** cost, so each command
+counts its session's last figure once (corrected 2026-10-20: the first version of this table added the
+resumed figures up and overstated MDO-0004 and MDO-0005). Use them to size the caps in F0; they are not a forecast for another codebase.
 
 | Run | Spec | Commands | Cost (USD) | Notes |
 |---|---|---|---|---|
-| 2026-10-20 | MDO-0004 (3 tasks, standard depth, public-api) | specify 1.64 · clarify 1.63 · tasks 1.16 · implement 9.88 · verify 0.94 · close 1.92 | **17.18** | Leader on Opus 5.5; implementers on Sonnet and Haiku; reviews on Opus. `story` not measured (no JSON output). Implement includes one FAIL and rework. |
-| 2026-10-20 | MDO-0005 (1 task, lite depth, test-only) | story 1.20 · specify 2.18 · clarify 2.00 · tasks 1.14 · implement 1.84 · verify 0.67 · close 1.64 | **10.67** | One Reviewer FAIL and rework; specify ran the real CLI to check premises. |
+| 2026-10-20 | MDO-0004 (3 tasks, standard depth, public-api) | specify 1.39 · clarify 0.70 · tasks 0.60 · implement 3.80 · verify 0.94 · close 1.15 | **8.58** | Leader on Opus 5.5; implementers on Sonnet and Haiku; reviews on Opus. `story` not measured (no JSON output). Implement includes one FAIL and rework. |
+| 2026-10-20 | MDO-0005 (1 task, lite depth, test-only) | story 0.63 · specify 1.44 · clarify 0.91 · tasks 0.63 · implement 1.84 · verify 0.67 · close 0.93 | **7.06** | One Reviewer FAIL and rework; specify ran the real CLI to check premises. |
 | 2026-10-20 | Two `quick` changes (docs, test) | quick 0.60 + 0.44 | **1.03** | Gates, separate review, log row and commit each. |
 
-**Where the cost goes.** MDO-0005 was smaller than MDO-0004 but cost more per task (10.67 USD for one
-task against 5.73 per task): the commands before `implement` (story → tasks, 6.52 USD) cost about the same
-whatever the size, so a one-task spec pays them alone. Inside `implement` (1.84 USD) the Leader cost
+**Where the cost goes.** MDO-0005 was smaller than MDO-0004 but cost more per task (7.06 USD for one
+task against 2.86 per task): the commands before `implement` (story → tasks, 3.62 USD; specify → tasks
+2.69 in MDO-0004) cost about the same whatever the size, so a one-task spec pays them alone. Inside `implement` (1.84 USD) the Leader cost
 1.03, the Reviewer 0.57 and the Implementer 0.24.
 
 From now on every run reports its cost **per command and, inside `implement`, per role**: per model from
