@@ -158,4 +158,15 @@ describe('Leader scripts', () => {
     expect(t2).toMatchObject({ verdict: 'FAIL', fails: ['the hint is missing'], committed: false });
     expect(s.totals).toMatchObject({ tasks: 2, fails: 1 });
   });
+  test('MDO-0007: rows without --tier take the task tier, and advisories in row notes are counted', async () => {
+    const root = repo();
+    const reviewer = ['--harness', 'claude', '--reviewer', 'mandao-reviewer'];
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'REPORTED');
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', ...reviewer, '--verdict', 'PASS', '--notes', 'Advisories: (1) a. (2) b.');
+    const log = readFileSync(logPath(join(root, SPEC), 'execution.md'), 'utf8');
+    const rows = log.split('\n').filter((l) => l.startsWith('| ') && l.includes('| T2 |'));
+    expect(rows.slice(-2).map((l) => l.split('|')[4]!.trim())).toEqual(['standard', 'standard']);
+    expect((await run(root, 'implement-summary', 'MDO-0001')).advisories).toBe(2);
+  });
+
 });
