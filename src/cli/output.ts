@@ -59,6 +59,25 @@ export function printFindings(findings: Finding[]) {
   }
 }
 
+export type DoctorReport = {
+  schema_version: 1;
+  counts: Record<Finding['level'], number>;
+  findings: Finding[];
+};
+
+/** The `mandao doctor --json` document: findings in order plus a count per level (MDO-0004). */
+export function doctorReport(findings: Finding[]): DoctorReport {
+  const counts: DoctorReport['counts'] = { error: 0, warn: 0, info: 0, ok: 0 };
+  for (const f of findings) counts[f.level] += 1;
+  return {
+    schema_version: 1,
+    counts,
+    findings: findings.map((f) =>
+      f.fix === undefined ? { level: f.level, message: f.message } : { level: f.level, message: f.message, fix: f.fix },
+    ),
+  };
+}
+
 /** Steps a harness needs from the user after its files are generated (ADR 0021). */
 export function harnessSetupNotes(harnesses: readonly string[]): string[] {
   const notes = harnesses.includes('antigravity')

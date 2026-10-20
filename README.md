@@ -56,6 +56,7 @@ Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 | `mandao init` | Set up the workspace (or `--scope global` for `/mandao-init`) |
 | `mandao sync` | Regenerate harness files from `.mandao/config.yml`; never overwrites hand edits without `--force` |
 | `mandao doctor` | Validate config, content and generated files; report optional tools and their fallbacks |
+| `mandao doctor --json` | Same findings as one JSON document for CI (`counts` per level, `findings`); nothing else on stdout. See [`docs/schemas.md`](docs/schemas.md) |
 | `mandao update` | Re-resolve with the installed version; overrides are never touched |
 | `mandao harness add <id>` | Generate files for another harness |
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester) |

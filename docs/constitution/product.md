@@ -40,4 +40,5 @@ In this version: CLI (`init`, `sync`, `doctor`, `update`, `harness add`, `skills
 | Chooses a model per role with dated recommendations | `src/models/`, `core/models/recommendations.yml` | §14.3 | implemented |
 | Blocks risky changes from the quick lane | `src/scripts/quick-check.ts` | §21 | implemented |
 | Installs vetted skills after confirmation | `src/skills/install.ts` | §17.2 | implemented |
+| Doctor findings as JSON for CI | `src/cli/output.ts` (`doctorReport`), `src/cli/setup.ts` | `docs/schemas.md` | implemented |
 | Publishes release notes to trackers | — | §18.2 | not implemented (out of MVP) |
