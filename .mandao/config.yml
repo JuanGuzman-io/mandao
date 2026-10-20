@@ -22,5 +22,5 @@ harnesses:
   - claude
   - copilot
   - codex
-# Integration branch of the MVP iterations until it is merged into main (ADR 0023).
-branching: { model: feature-branch, base: feat/mvp-iteration-1 }
+# Feature branches from main, PRs to main (ADR 0023).
+branching: { model: feature-branch, base: main }
