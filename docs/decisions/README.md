@@ -21,3 +21,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0012](0012-dogfooding-corrections.md) | Corrections from the first dogfooding run | Accepted |
 | [0013](0013-impacted-tests-and-resource-budget.md) | Impacted tests and a resource budget | Accepted |
 | [0014](0014-pin-claude-5-5-models.md) | Pin the Claude 5.5 family by model ID | Accepted |
+| [0015](0015-iteration-2-decisions.md) | Iteration 2 decisions: tasks format, Leader, MCP scope, branches, agent settings | Accepted |
