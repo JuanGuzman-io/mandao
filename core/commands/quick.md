@@ -43,7 +43,7 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 ## 2. Branch and worktree
 
 With **one** confirmation, create the branch and worktree from
-`{{script:spec-new}} "quick <name>" --id quick --type <story|bug>` (run its `command`, which starts from
+`{{script:spec-new}} "<name>" --id quick --type <story|bug>` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
 the branching model's `base`; show its `issues` first), and make the
 change there, after installing the project's dependencies inside the worktree (no symlinks). Skip this
 when the session already runs on a quick branch.
