@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 
@@ -32,6 +33,39 @@ export const isTestFile = (path: string) =>
   /\.(test|spec)\.[cm]?[jt]sx?$/.test(path) ||
   /(^|\/)test_[^/]+\.py$/.test(path) ||
   /_test\.(go|py)$/.test(path);
+
+export interface Scanner {
+  test: string;
+  /** Path prefixes the test reads, relative to the repository root (`test/`, `src/`). */
+  paths: string[];
+}
+
+const SCANS = /mandao-scans:\s*([^\n*]+)/;
+
+/**
+ * Tests that declare `mandao-scans: <paths>` in a comment: architecture guards and the like, which read
+ * files by path, so the code graph never links them to what they check (MDO-0007).
+ */
+export function findScanners(repo: string, projectPath: string): Scanner[] {
+  let files: string[];
+  try {
+    files = execFileSync('git', ['ls-files', '--', projectPath === '.' ? '.' : projectPath], { cwd: repo, encoding: 'utf8' })
+      .split('\n')
+      .filter((f) => f && isTestFile(f));
+  } catch {
+    return [];
+  }
+  return files.flatMap((test) => {
+    const m = SCANS.exec(readFileSync(join(repo, test), 'utf8'));
+    const paths = m
+      ? m[1]!
+          .trim()
+          .split(/\s+/)
+          .filter((t) => t.includes('/') && /^[\w./-]+$/.test(t))
+      : [];
+    return paths.length ? [{ test, paths }] : [];
+  });
+}
 
 /** File-level dependency edges from graphify's graph.json (imports, calls, re-exports…). */
 export interface FileGraph {
@@ -96,13 +130,16 @@ export function selectImpact(input: {
   configured?: string;
   runner?: Runner;
   graph?: FileGraph;
+  /** Tests that read the tree by path, with what they scan (a `mandao-scans:` comment): no import links them. */
+  scanners?: Scanner[];
 }): ImpactSelection {
   const { changed, projectPath, configured, runner, graph } = input;
   const rel = (f: string) => (projectPath === '.' ? f : posix.relative(projectPath, f));
   const inProject = changed.filter((f) => projectPath === '.' || f.startsWith(`${projectPath}/`));
   const graphTests = graph ? reverseDependents(graph, inProject).filter(isTestFile) : [];
   const directTests = inProject.filter(isTestFile);
-  const tests = [...new Set([...directTests, ...graphTests])].map(rel);
+  const scanTests = (input.scanners ?? []).filter((s) => inProject.some((f) => s.paths.some((p) => f.startsWith(p)))).map((s) => s.test);
+  const tests = [...new Set([...directTests, ...graphTests, ...scanTests])].map(rel);
   const notes = graph ? [] : ['no code graph: reverse dependents not used'];
   if (configured)
     return {
