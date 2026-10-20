@@ -11,7 +11,7 @@ status: draft           # draft | approved | in-progress | blocked | verified | 
 ## Functional requirements
 
 ### FR-1 — <name>
-Serves: AC-1
+Serves: AC-1, AC-1/C1
 Projects: <project>
 
 <Requirement statement.>
@@ -20,8 +20,8 @@ Projects: <project>
 - **Given** …
 - **When** …
 - **Then** …
-- **BUT it must NOT** …   <!-- clause C1 -->
-- **AND IT MUST** …       <!-- clause C2 -->
+- **BUT it must NOT** … (C1)
+- **AND IT MUST** … (C2)
 
 ## Non-functional requirements
 

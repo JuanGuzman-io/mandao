@@ -37,14 +37,20 @@ describe('core content', () => {
     });
     const { resolution } = buildOutputs(config, {}, layers, '0.0.0', 'project');
     const status = Object.fromEntries(resolution.commands.map((c) => [c.meta.id, c.meta.status]));
-    expect(status).toMatchObject({
+    expect(status).toEqual({
       constitution: 'stable',
       specify: 'stable',
       quick: 'stable',
       init: 'stable',
-      story: 'stub',
-      tasks: 'stub',
-      implement: 'stub',
+      story: 'stable',
+      clarify: 'stable',
+      tasks: 'stable',
+      implement: 'stable',
+      resume: 'stable',
+      verify: 'stub',
+      close: 'stub',
+      audit: 'stub',
+      perf: 'stub',
     });
     expect(resolution.personas.map((p) => p.meta.id)).toEqual(['implementer', 'leader', 'reviewer', 'tester']);
   });

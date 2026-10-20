@@ -22,7 +22,7 @@ templates:
   - rules/review.md
   - rules/commits.md
   - spec/quick-log.md
-scripts: [quick-check]
+scripts: [quick-check, spec-new]
 approval: none
 ---
 
@@ -39,13 +39,19 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 3. If any condition fails, do not edit anything. Explain which one and recommend {{command:story}} or
    {{command:specify}}, passing along what you found.
 
-## 2. Change
+## 2. Branch and worktree
+
+With **one** confirmation, create the branch and worktree from
+`{{script:spec-new}} "quick <name>" --id quick --type <story|bug>` (run its `command`), and make the
+change there. Skip this when the session already runs on a quick branch.
+
+## 3. Change
 
 - Edit only what the change needs. No refactors, no drive-by fixes; report opportunities instead.
 - Follow `standards.md` and the module's `AGENTS.md`. Update that `AGENTS.md` if behavior or
   conventions changed.
 
-## 3. Post-check
+## 4. Post-check
 
 Run `{{script:quick-check}}` and read its JSON.
 
@@ -53,7 +59,7 @@ Run `{{script:quick-check}}` and read its JSON.
   and escalate to {{command:story}} or {{command:specify}} with the `reasons` and what you learned.
 - Otherwise continue.
 
-## 4. Gates and lite review
+## 5. Gates and lite review
 
 1. Run the level 0 gates configured in `projects[].gates` for the touched project (format, lint,
    typecheck, impacted tests, secrets, audit when dependencies changed, sast, metrics). Report any
@@ -64,7 +70,7 @@ Run `{{script:quick-check}}` and read its JSON.
    model). Otherwise record `reduced independence` in the log. A blocking finding means fix it or
    escalate.
 
-## 5. Record and commit
+## 6. Record and commit
 
 1. Append a row to `{{paths.specs}}/quick/quick-log.md` (create it from
    `{{template:spec/quick-log.md}}` if missing): date, name, project, files, lines, gates, review,

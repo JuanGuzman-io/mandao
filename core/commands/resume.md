@@ -2,26 +2,47 @@
 schema_version: 1
 id: resume
 title: Resume
-description: "Dashboard of active specs with their state and the next recommended mandao."
-status: stub
-flow: { after: [], next: [] }
+description: "Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness."
+status: stable
+flow: { after: [], next: [implement] }
+arguments:
+  - name: spec
+    description: "Spec id to continue (empty for the dashboard)"
 inputs:
   - { path: "{{paths.specs}}/" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
 outputs:
-  - { path: "(chat only)" }
-capabilities: [read, search]
+  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/execution.md" }
+capabilities: [read, search, edit, shell, agents]
+templates: [rules/review.md]
+scripts: [where, models, tasks, loop, checkpoint]
 ---
 
 # /mandao-resume
 
-> **Not implemented yet** in this Mandao version. This file declares the command's contract
-> (arguments, inputs, outputs) so other mandaos and `AGENTS.md` can reference it.
+Spec: {{arg:spec}}
 
-Arguments: {{args}}
+## Without a spec id: dashboard
 
-Tell the user this mandao is not available yet, summarize what it will do (below), and suggest the
-closest available step.
+For each folder in `{{paths.specs}}/` with a `story.md`, show: id, title, status, the task in progress
+and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_TO_CI`), and the next
+mandao to run. Stop there.
 
-## Planned behavior
+## With a spec id: continue
 
-- Scans `{{paths.specs}}/` for active specs and reports state, blockers (`OPEN`, critical findings, HALT) and the next command.
+1. **Place.** `{{script:where}} {{arg:spec}}`. Outside the spec's worktree: stop and give the path.
+2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening,
+   in which harness and on which model, the open questions and the recorded next step.
+3. **Models.** Use `models.yml` for **this** harness: `{{script:models}} --harness <this harness>`.
+   Never assume the previous harness's models are available here.
+4. **Uncommitted work.** If `git status` shows changes and the checkpoint has a task in progress, show
+   the diff summary and offer exactly three options:
+   - **review the diff as it is** → checkpoint `--verdict REPORTED` and go to the review step;
+   - **continue implementing** → brief the implementer with the diff as the starting point;
+   - **discard and redo the task** → only after confirming, restore the files and start the task again.
+5. **Provider independence.** When the task was implemented in another harness and is reviewed here,
+   add `provider independence` to the review row's notes. `{{script:loop}} {{arg:spec}} <Tn> --harness <h>`
+   reports it.
+6. **Continue** with the `/mandao-implement` loop from that step, checkpointing as it does
+   (`{{script:checkpoint}}`).

@@ -1,0 +1,12 @@
+# Written by `mandao run checkpoint` after every Leader step (ADR 0018). Do not edit by hand.
+schema_version: 1
+spec: <ID>-<slug>
+updated_at: <ISO timestamp>
+current:
+  task: T1
+  phase: implementing        # implementing | awaiting-review | rework-n
+  harness: claude
+  model: <model>
+open_questions: []
+next_step: <what the next session does first>
+deferred_to_ci: []           # [{ task, tests, reason }]

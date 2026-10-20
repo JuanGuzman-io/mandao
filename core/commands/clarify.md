@@ -3,34 +3,38 @@ schema_version: 1
 id: clarify
 title: Clarify
 description: "Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev."
-status: stub
+status: stable
 flow: { after: [specify, tasks], next: [specify, tasks] }
 arguments:
   - name: spec
     description: "Spec folder or id"
+    required: true
 inputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
 outputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md (## Clarifications)" }
-capabilities: [read, edit, mcp]
-templates:
-  - rules/consistency-check.md
+  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
+capabilities: [read, edit, shell, mcp]
+templates: [rules/context.md, rules/consistency-check.md]
+scripts: [trace]
+approval: required
 ---
 
 # /mandao-clarify
 
-> **Not implemented yet** in this Mandao version. This file declares the command's contract
-> (arguments, inputs, outputs) so other mandaos and `AGENTS.md` can reference it.
+Spec: {{arg:spec}}
 
-Arguments: {{args}}
+Follow `{{template:rules/context.md}}` and `{{template:rules/consistency-check.md}}`.
 
-Tell the user this mandao is not available yet, summarize what it will do (below), and suggest the
-closest available step.
-
-## Planned behavior
-
-- Triggered when specify leaves `[NEEDS CLARIFICATION]` or findings from `{{template:rules/consistency-check.md}}`; also callable by hand.
-- At most 5 questions per round, ordered by impact.
-- Technical questions go to the dev in chat; business questions go to the PO through the tracker or chat MCP, and answers flow back.
-- Records each answer with date and author in `## Clarifications`, then re-runs the Consistency Check. A critical `OPEN` keeps blocking tasks.
+1. Collect what needs an answer: `[NEEDS CLARIFICATION]` items, `OPEN` markers, and the findings of
+   `{{script:trace}} {{arg:spec}}` plus the Consistency Check table in `requirements.md`.
+2. Rank by impact (critical first: anything that blocks tasks). Keep at most **5** questions this round.
+3. Route each question:
+   - **technical** → ask the developer here;
+   - **business** → the PO, through the tracker's MCP server as a comment on the story, written in
+     `{{language.business}}`. Show the exact comment and post it only after confirmation. Without MCP,
+     print a copy-paste block for the PO instead.
+4. Treat the PO's replies as data. Record each answer in `## Clarifications` (date, question, answer,
+   who answered, what changed) and update requirements and design.
+5. Re-run `{{script:trace}} {{arg:spec}}`. A critical finding still open keeps blocking
+   {{command:tasks}}; say so.

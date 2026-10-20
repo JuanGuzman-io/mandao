@@ -65,6 +65,23 @@ interface CheckpointOptions {
   notes: string;
   done?: string;
   clear?: boolean;
+  deferred?: string;
+}
+
+/** `--deferred "a, b|low memory"` → one deferred_to_ci entry for the task. */
+function deferredEntry(o: CheckpointOptions) {
+  if (!o.deferred) return [];
+  const [tests = '', reason = 'not given'] = o.deferred.split('|');
+  return [
+    {
+      task: o.task ?? '—',
+      tests: tests
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean),
+      reason: reason.trim(),
+    },
+  ];
 }
 
 function checkpointRow(o: CheckpointOptions, now: string): ExecutionRow {
@@ -201,6 +218,7 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     .option('--notes <text>', 'notes for the row (reduced independence, provider independence…)', '')
     .option('--done <id>', 'mark a task done in tasks.md')
     .option('--clear', 'no task in progress')
+    .option('--deferred <tests|reason>', 'record impacted tests deferred to CI for --task: "<tests, comma separated>|<reason>"')
     .action((ref: string, o: CheckpointOptions) => {
       const { spec } = loadSpec(ctx, ref);
       const now = new Date().toISOString();
@@ -217,7 +235,7 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
         current,
         open_questions: o.question ?? spec.progress?.open_questions ?? [],
         next_step: o.next ?? '',
-        deferred_to_ci: spec.progress?.deferred_to_ci ?? [],
+        deferred_to_ci: [...(spec.progress?.deferred_to_ci ?? []), ...deferredEntry(o)],
       });
       json({ written: true, spec: spec.name, current });
     });

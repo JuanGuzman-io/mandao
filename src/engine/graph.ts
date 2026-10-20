@@ -42,7 +42,15 @@ export function gitIgnoreBlock(childRepos: string[], version: string): Generated
   const path = '.gitignore';
   return {
     path,
-    content: wrapBlock(path, [`# Managed by mandao ${version}.`, 'graphify-out/', ...childRepos.map((p) => `/${p}/`)]),
+    content: wrapBlock(path, [
+      `# Managed by mandao ${version}.`,
+      'graphify-out/',
+      // One heavy test run at a time (ADR 0013); the lock belongs to this machine.
+      '.mandao/run.lock',
+      // Machine-specific agent settings (ADR 0015).
+      '.claude/settings.local.json',
+      ...childRepos.map((p) => `/${p}/`),
+    ]),
     ownership: 'managed-block',
     from: 'block:gitignore',
     harness: 'mandao',

@@ -7,19 +7,24 @@ status: draft           # draft | approved | in-progress | blocked | verified | 
 # Tasks — <title>
 
 <!--
-Order by dependencies. Multi-project: contract → back and front in parallel against a mock →
-integration → e2e. Tests follow rules/test-policy.md; tiers: fast | standard | strong.
+One heading per task with a status checkbox, then a YAML block (ADR 0015). Order by dependencies;
+multi-project: contract → back and front in parallel against a mock → integration → e2e.
+Tests follow rules/test-policy.md; tier: fast | standard | strong; risk_tags from rules/review.md.
 -->
 
-### T-1 — <name>
-- **Project:** <project>
-- **Tier:** standard
-- **Files / modules:** …
-- **Exemplar:** <file to mimic>
-- **Risk tags:** …
-- **AC / scenarios:** AC-1 · S-1.1 (C1, C2)
-- **Tests:** unit: …; e2e: … (only when required)
-- **DoD:** … and the module's AGENTS.md is created or updated
-- **Verify:** `<command>`
-- **Depends on:** — · **Parallel-safe:** yes
-- **Status:** pending
+### [ ] T1 — <name>
+
+```yaml
+project: <project>
+tier: standard
+files: [path/to/file.ts]
+exemplar: path/to/similar.ts
+risk_tags: []
+ac: [AC-1, AC-1/C1]
+scenarios: [S-1.1, S-1.1/C1]
+tests: { unit: [what the unit test proves], e2e: [] }
+dod: [module AGENTS.md (and CLAUDE.md pointer) created or updated]
+verify: <command>
+depends_on: []
+parallel_safe: false
+```
