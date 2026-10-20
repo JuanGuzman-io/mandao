@@ -138,17 +138,31 @@ describe('test runs', () => {
     );
   });
 
-  test("the runner's output goes to stderr, never into the JSON on stdout", async () => {
+  test("the runner's output streams to stderr live, never into the JSON on stdout", async () => {
     const out = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-    const err = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const seen: number[] = [];
+    const err = vi.spyOn(process.stderr, 'write').mockImplementation(() => {
+      seen.push(Date.now());
+      return true;
+    });
     try {
-      await runTests(makeTree({}), 't', 'node -e "console.log(42)"', budget);
+      const cmd = 'node -e "console.log(42); setTimeout(() => {}, 400)"';
+      const run = await runTests(makeTree({}), 't', cmd, budget);
+      const finished = Date.now();
+      expect(run.status).toBe('PASS');
       expect(out).not.toHaveBeenCalled();
       expect(String(err.mock.calls[0]?.[0])).toBe('42\n');
+      // Written while the runner was still going, not buffered until it exited.
+      expect(finished - seen[0]!).toBeGreaterThanOrEqual(250);
     } finally {
       out.mockRestore();
       err.mockRestore();
     }
+  });
+
+  test('a run over its time budget is killed and reported as TIMEOUT', async () => {
+    const run = await runTests(makeTree({}), 't', 'node -e "setTimeout(() => {}, 5000)"', { ...budget, timeoutS: 0.3 });
+    expect(run.status).toBe('TIMEOUT');
   });
 
   test('one heavy run at a time: a live holder keeps others queued', async () => {

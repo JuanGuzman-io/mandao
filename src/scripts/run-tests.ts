@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { acquireLock, readHolder, releaseLock } from '../writer/lock.js';
 import type { Budget } from './resources.js';
@@ -17,6 +17,39 @@ export interface TestRun {
 /** Wraps a command so it runs at low priority where the OS allows it. */
 export function withPriority(command: string, priority: Budget['priority']): string {
   return priority === 'low' && process.platform !== 'win32' ? `nice -n 10 ${command}` : command;
+}
+
+/**
+ * Runs the command, streaming its stdout to our stderr as it comes: stdout carries only the JSON
+ * result. Resolves with the exit code, or `timeout` after killing the process group.
+ */
+function streamRun(command: string, root: string, env: NodeJS.ProcessEnv, timeoutMs: number): Promise<number | 'timeout'> {
+  return new Promise((resolve) => {
+    const child = spawn(command, {
+      cwd: root,
+      shell: true,
+      env,
+      stdio: ['inherit', 'pipe', 'inherit'],
+      detached: process.platform !== 'win32',
+    });
+    child.stdout.on('data', (chunk: Buffer) => process.stderr.write(chunk));
+    const timer = setTimeout(() => {
+      try {
+        if (child.pid) process.kill(process.platform === 'win32' ? child.pid : -child.pid, 'SIGTERM');
+      } catch {
+        child.kill('SIGTERM');
+      }
+      resolve('timeout');
+    }, timeoutMs);
+    child.on('error', () => {
+      clearTimeout(timer);
+      resolve(1);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve(code ?? 1);
+    });
+  });
 }
 
 /**
@@ -46,22 +79,12 @@ export async function runTests(
     };
   }
   try {
-    const result = spawnSync(withPriority(command, budget.priority), {
-      cwd: root,
-      shell: true,
-      // stdout carries only the JSON result: the runner's own output goes to stderr.
-      stdio: ['inherit', 'pipe', 'inherit'],
-      maxBuffer: 64 * 1024 * 1024,
-      timeout: budget.timeoutS * 1000,
-      env: { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) },
-    });
-    if (result.stdout?.length) process.stderr.write(result.stdout);
+    const env = { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) };
+    const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000);
     const durationMs = Date.now() - started;
-    if (result.error && (result.error as NodeJS.ErrnoException).code === 'ETIMEDOUT') {
+    if (exit === 'timeout')
       return { status: 'TIMEOUT', command, workers: budget.workers, durationMs, reason: `exceeded ${budget.timeoutS}s` };
-    }
-    const exitCode = result.status ?? 1;
-    return { status: exitCode === 0 ? 'PASS' : 'FAIL', command, workers: budget.workers, exitCode, durationMs, reason: budget.reason };
+    return { status: exit === 0 ? 'PASS' : 'FAIL', command, workers: budget.workers, exitCode: exit, durationMs, reason: budget.reason };
   } finally {
     releaseLock(lock);
   }
