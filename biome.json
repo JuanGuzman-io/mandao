@@ -87,21 +87,6 @@
       }
     },
     {
-      "includes": ["src/cli/index.ts"],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": {
-              "level": "error",
-              "options": {
-                "maxAllowedComplexity": 31
-              }
-            }
-          }
-        }
-      }
-    },
-    {
       "includes": ["src/cli/init.ts"],
       "linter": {
         "rules": {
