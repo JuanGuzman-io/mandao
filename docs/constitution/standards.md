@@ -21,7 +21,8 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
   are camelCase.
 - Commits: `.mandao/templates/<profile>/rules/commits.md`.
 - Tests create temporary folders only through `makeTree` (`test/helpers.ts`), which removes them when
-  the test file finishes, and never write next to a workspace through `join(<folder>, '..', …)`.
+  the test file finishes, and never build a path with a `..` segment through `join` or `resolve`, nor
+  take `dirname` of a workspace, except calls named in the guard's `ALLOWED` list.
   Enforced by `test/unit/architecture.test.ts`.
 
 ### Exemplar files
