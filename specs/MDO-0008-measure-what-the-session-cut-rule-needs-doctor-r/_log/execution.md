@@ -26,3 +26,7 @@ spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
 | 2026-10-20 | T1 | 1 | strong | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/doctor-cache.test.ts; advisories: A1 high: gray-matter default engines eval ---js front matter in .claude/agents (doctor-cache.ts:99), restrict engines as close-summary.ts:36; A2 FORCE skips warning on invalid later values; A3 no tests for settings env over shell, CLAUDE_CONFIG_DIR, unreadable settings; A4 module reads node:fs directly |
 | 2026-10-20 | T2 | 2 | strong | claude | claude-opus-5-5 | — | REPORTED |  |
 | 2026-10-20 | T2 | 1 | strong | claude | — | claude-opus-5-5 | PASS | advisories: A-b Task tool name untested; A-c pauses counted over whole transcript, not record windows; A-d commits-times test depends on global git config (gpgsign/hooksPath); A-e t>0 guard untested |
+| 2026-10-20 | T3 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-20 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts; `npx vitest run test/integration/close.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-20 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-20 | T3 | 1 | standard | claude | — | claude-opus-5-5 | PASS | advisories: A1 redundant /sessions/ assertion close.test.ts:326; A2 S-3.1 declared unit but is integration; A3 long line close.md:53; A4 absent pauses/verify/afterTasks not spelled out; OPEN repo's own generated harness files need regenerating before close |

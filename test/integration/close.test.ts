@@ -1,11 +1,11 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { configSchema } from '../../src/schemas/index.js';
 import { fixCommitsAfter, releaseBranchesContaining } from '../../src/scripts/close.js';
 import { parseCloseSummary, renderCloseSummary, withEnvironment, withPublication } from '../../src/spec/index.js';
-import { makeTree } from '../helpers.js';
+import { makeTree, pkg } from '../helpers.js';
 
 const trailers = configSchema.parse({ schema_version: 1, workspace: 'single', projects: [{ name: 'p', path: '.' }], harnesses: ['claude'] })
   .commits.trailers;
@@ -124,5 +124,85 @@ describe('mandao run diagram-drift', () => {
     const built = JSON.parse(readFileSync(join(spec, 'diagrams/implemented.graph.json'), 'utf8'));
     expect(built.nodes.map((n: { id: string }) => n.id)).toEqual(['src/cli', 'src/engine']);
     vi.restoreAllMocks();
+  });
+});
+
+describe('Kaizen shows the sessions (MDO-0008 S-3.1)', () => {
+  // Synthetic session: T1 committed at minute 2.5, implement recorded at 4.5, verify at 6.5, close at 9.5.
+  const T0 = Date.parse('2026-01-05T10:00:00.000Z');
+  const at = (minutes: number) => new Date(T0 + minutes * 60_000).toISOString();
+  const usage = { input_tokens: 2, cache_read_input_tokens: 1000, cache_creation_input_tokens: 10, output_tokens: 5 };
+  const reply = (id: string, minutes: number) =>
+    JSON.stringify({ type: 'assistant', timestamp: at(minutes), message: { id, model: 'claude-opus-5-5', usage } });
+  const prompt = (minutes: number) =>
+    JSON.stringify({ type: 'user', timestamp: at(minutes), message: { role: 'user', content: 'synthetic prompt' } });
+  const record = (command: string, minutes: number, session: string) =>
+    `  - at: ${at(minutes)}\n    command: ${command}\n    harness: claude\n    session: ${session}\n    usd: 0.5\n    source: claude-code\n`;
+  const transcript = [
+    prompt(0),
+    reply('a1', 0.5),
+    reply('a2', 1.5),
+    reply('a3', 2.0),
+    reply('a4', 3.5),
+    reply('a5', 4.0),
+    prompt(5), // 1 minute after a5
+    reply('b1', 5.5),
+    reply('b2', 6.0),
+    prompt(7), // 1 minute after b2
+    reply('c1', 8.0),
+    reply('c2', 9.0),
+  ].join('\n');
+
+  test('mandao run kaizen has sessions: pauses, turns per task, verify, close, after tasks and the missing sessions', async () => {
+    const { buildProgram } = await import('../../src/cli/program.js');
+    const { writeYaml } = await import('../../src/engine/files.js');
+    vi.stubEnv('CLAUDE_CONFIG_DIR', makeTree({ 'projects/-synthetic-repo/sess-one.jsonl': transcript }));
+    const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
+    git(root, 'init', '-q', '-b', 'main');
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'p', path: '.' }],
+      harnesses: ['claude'],
+    });
+    const spec = join(root, 'specs/MDO-0001-skills-list');
+    cpSync(join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list'), spec, { recursive: true });
+    mkdirSync(join(spec, '_log'), { recursive: true });
+    writeFileSync(
+      join(spec, '_log/costs.yml'),
+      `costs:\n${record('specify', 0, 'sess-gone')}${record('implement', 4.5, 'sess-one')}${record('verify', 6.5, 'sess-one')}${record('close', 9.5, 'sess-one')}`,
+    );
+    git(root, 'add', '.');
+    commit(root, 'src.ts', '✨ feat(cli): add x\n\nRefs: MDO-0001\nMandao-Task: T1', at(2.5));
+    const out: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((s: string) => void out.push(s));
+    await buildProgram(() => root).parseAsync(['node', 'mandao', 'run', 'kaizen', 'MDO-0001']);
+    vi.restoreAllMocks();
+    expect(JSON.parse(out.at(-1)!).sessions).toMatchObject({
+      missing: ['sess-gone'],
+      pauses: { count: 2, medianMinutes: 1, atMost5: 2, between5And60: 0, over60: 0 },
+      tasks: { T1: 3 },
+      verify: 2,
+      close: 2,
+      afterTasks: 6,
+    });
+  });
+
+  test('after mandao sync the close command carries the step and the Kaizen template has a Sessions section', async () => {
+    const { syncProject } = await import('../../src/engine/sync.js');
+    const { writeYaml } = await import('../../src/engine/files.js');
+    vi.stubEnv('MANDAO_HOME', makeTree({}));
+    const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.' }],
+      harnesses: ['claude'],
+    });
+    syncProject(root);
+    const closeCommand = readFileSync(join(root, '.claude/skills/mandao-close/SKILL.md'), 'utf8');
+    expect(closeCommand).toContain('## Sessions');
+    expect(closeCommand).toMatch(/sessions/);
+    expect(readFileSync(join(root, '.mandao/templates/app/close/kaizen.md'), 'utf8')).toContain('## Sessions');
   });
 });

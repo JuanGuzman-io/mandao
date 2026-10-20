@@ -87,7 +87,7 @@ parallel_safe: true
 verify: npx vitest run test/unit/session-turns.test.ts test/unit/session-cut.test.ts
 ```
 
-### [ ] T3 — Kaizen shows a spec's pauses and turns
+### [x] T3 — Kaizen shows a spec's pauses and turns
 
 - **What:** `sessions` in `mandao run kaizen <spec>` from T2's measurement, close step 1 telling Kaizen
   to show it, and `## Sessions` in the Kaizen template ([FR-3](spec.md#fr3)).

@@ -50,7 +50,10 @@ instructions.
    the story after the close and pass `--tracker-bugs <n>`. Then `{{script:kaizen-compare}}` for the TDD
    comparison: report both groups with their sample size; below the minimum per group write
    "insufficient data" and draw no conclusion.
-2. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
+2. **Sessions:** show `sessions` from that JSON under `## Sessions` in the Kaizen document: the pauses, the turns per task, verify, close and after
+   tasks, and the missing sessions. A missing session is never shown as zero; `'not recorded'` and
+   `'not measured'` are shown as that text.
+3. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
    approval. Write `docs/kaizen/<ID>.md` from `{{template:close/kaizen.md}}`.
 
 ## 2. Constitution and product impacts (single writer)
