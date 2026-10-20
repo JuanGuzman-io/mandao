@@ -4,6 +4,7 @@ import { readConfig } from '../engine/files.js';
 import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
+import { activeSpecDir, recordFullRun } from '../scripts/forced.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
@@ -182,20 +183,43 @@ function registerTestRuns(run: Command, ctx: CliContext) {
   run
     .command('tests <project> [files...]')
     .description('Run the impacted tests under the resource budget, one heavy run at a time (queued)')
-    .option('--full', 'run the full suite (normally CI only)')
+    .option('--full', 'run the full suite (normally CI only); needs --reason, recorded in the spec log')
+    .option('--reason <text>', 'why the full suite has to run here and not in CI')
     .option('--queue-wait <s>', 'seconds to wait in the queue', '1800')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
-    .action(async (name: string, files: string[], opts: { full?: boolean; queueWait: string; force?: boolean }) => {
-      const config = readConfig(ctx.root());
-      const project = projectNamed(ctx, name);
-      const budget = budgetFor(ctx.root(), config, project, 'unit', `${name} tests`, opts.force);
-      const impact = impactFor(ctx, project, files);
-      const template = opts.full ? project.gates.test : impact.command;
-      const command = template ? fillCommand(template, opts.full ? [] : impact.files, Math.max(1, budget.workers)) : undefined;
-      const result = await runTests(ctx.root(), `${name} tests`, command, budget, Number(opts.queueWait) * 1000);
-      json({ ...result, impact: opts.full ? 'full suite' : impact.source });
+    .action(async (name: string, files: string[], opts: TestsOptions) => {
+      const result = await runTestsCommand(ctx, name, files, opts);
+      json(result);
       if (result.status !== 'PASS') process.exitCode = 1;
     });
+}
+
+interface TestsOptions {
+  full?: boolean;
+  reason?: string;
+  queueWait: string;
+  force?: boolean;
+}
+
+/** MDO-0007: the Leader ran the whole suite locally. Without files there is nothing to select. */
+export function checkTestsRequest(files: string[], opts: Pick<TestsOptions, 'full' | 'reason'>) {
+  if (!opts.full && !files.length) throw new Error('give the changed files: the full suite runs in CI, or here with --full --reason');
+  if (opts.full && !opts.reason?.trim()) throw new Error('--full needs --reason "<why the full suite must run here, not in CI>"');
+}
+
+async function runTestsCommand(ctx: CliContext, name: string, files: string[], opts: TestsOptions) {
+  checkTestsRequest(files, opts);
+  const config = readConfig(ctx.root());
+  const project = projectNamed(ctx, name);
+  const budget = budgetFor(ctx.root(), config, project, 'unit', `${name} tests`, opts.force);
+  const impact = impactFor(ctx, project, files);
+  const template = opts.full ? project.gates.test : impact.command;
+  const command = template ? fillCommand(template, opts.full ? [] : impact.files, Math.max(1, budget.workers)) : undefined;
+  const result = await runTests(ctx.root(), `${name} tests`, command, budget, Number(opts.queueWait) * 1000);
+  if (!opts.full) return { ...result, impact: impact.source };
+  const record = { at: new Date().toISOString(), project: name, reason: opts.reason?.trim() ?? '', status: result.status };
+  recordFullRun(ctx.root(), record, activeSpecDir(ctx.root(), config));
+  return { ...result, impact: 'full suite' };
 }
 
 /**

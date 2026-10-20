@@ -169,4 +169,12 @@ describe('Leader scripts', () => {
     expect((await run(root, 'implement-summary', 'MDO-0001')).advisories).toBe(2);
   });
 
+  test('MDO-0007: run tests refuses the full suite without --full, and --full without --reason', async () => {
+    const root = repo();
+    await expect(run(root, 'tests', 'mandao')).rejects.toThrow(/full suite runs in CI/);
+    await expect(run(root, 'tests', 'mandao', '--full')).rejects.toThrow(/--full needs --reason/);
+    await expect(run(root, 'tests', 'mandao', '--full', '--reason', '  ')).rejects.toThrow(/--full needs --reason/);
+    expect(await run(root, 'tests', 'mandao', '--full', '--reason', 'CI is down')).toMatchObject({ impact: 'full suite' });
+    expect(readFileSync(logPath(join(root, SPEC), 'full-runs.md'), 'utf8')).toMatch(/· mandao · \w+ · CI is down/);
+  });
 });

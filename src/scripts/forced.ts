@@ -73,3 +73,17 @@ function appendToSection(text: string, line: string): string {
   const end = next < 0 ? text.length : next;
   return `${text.slice(0, end).trimEnd()}\n${line}\n${next < 0 ? '' : `\n${text.slice(next + 1)}`}`;
 }
+
+/**
+ * A full-suite run outside CI (`mandao run tests --full --reason …`): always in the CLI log, and in the
+ * active spec's `_log/full-runs.md` with its reason, so Kaizen and the Reviewer see it (MDO-0007).
+ */
+export function recordFullRun(root: string, run: { at: string; project: string; reason: string; status: string }, specDir?: string): void {
+  const log = join(root, CLI_LOG);
+  const before = existsSync(log) ? readFileSync(log, 'utf8') : '';
+  writeText(log, `${before}${JSON.stringify({ event: 'full-run', ...run })}\n`);
+  if (!specDir) return;
+  const file = logPath(specDir, 'full-runs.md');
+  const text = existsSync(file) ? readFileSync(file, 'utf8') : '# Full-suite runs outside CI\n\n';
+  writeText(file, `${text}- ${run.at} · ${run.project} · ${run.status} · ${run.reason}\n`);
+}
