@@ -77,6 +77,8 @@ interface PendingInput {
   progress: Progress;
   /** Extra trailers, e.g. the harness's `Co-Authored-By`. */
   trailers?: string[];
+  /** `branching.protected`: Mandao never commits there (ADR 0023). */
+  protectedBranches?: string[];
 }
 
 /** A later pending task touching the same file would end up in the earlier commit. */
@@ -101,6 +103,10 @@ export function commitPending(input: PendingInput): CommitRun {
   const run: CommitRun = { committed: [], pending: queue.map((e) => e.task) };
   const clash = overlap(queue);
   if (clash) return { ...run, error: clash };
+  const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
+  if (input.protectedBranches?.includes(branch)) {
+    return { ...run, error: `${branch} is a protected branch: Mandao never commits there. Commit from the spec's branch and worktree` };
+  }
   let progress = input.progress;
   for (const entry of queue) {
     const task = input.tasks.find((t) => t.id === entry.task);

@@ -16,6 +16,7 @@ import {
   type Story,
   type Task,
 } from '../spec/index.js';
+import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -144,27 +145,44 @@ export interface SpecProposal {
   slug: string;
   folder: string;
   branch: string;
+  /** Where the branch starts and where its PR targets (ADR 0023). */
+  base: string;
   worktree: string;
   /** Run after the user confirms; Mandao does not run it for the agent. */
   command: string;
+  /** Problems to show the user before confirming (e.g. the base branch does not exist). */
+  issues: string[];
 }
 
-/** Proposes the spec folder, branch and worktree for `specify` or `quick` (ADR 0015). */
-export function proposeSpec(root: string, config: Config, title: string, opts: { id?: string; type?: string } = {}): SpecProposal {
+export interface ProposalOptions {
+  id?: string;
+  type?: string;
+  /** Polyrepo: the project whose branching model applies. */
+  project?: string;
+  /** Hotfix lane: start from `hotfix.from` with the hotfix prefix. */
+  hotfix?: boolean;
+}
+
+/** Proposes the spec folder, branch, base and worktree for `specify` or `quick` (ADR 0015, ADR 0023). */
+export function proposeSpec(root: string, config: Config, title: string, opts: ProposalOptions = {}): SpecProposal {
   const id = opts.id ?? nextLocalId(root, config);
   const slug = slugify(title);
-  const branch = config.spec.branch
-    .replace('{type}', opts.type === 'bug' ? 'fix' : 'feat')
-    .replace('{id}', id)
-    .replace('{slug}', slug);
+  const b = branchingFor(config, opts.project);
+  const branch = specBranch(config, b, { id, slug, ...(opts.type ? { type: opts.type } : {}), ...(opts.hotfix ? { hotfix: true } : {}) });
+  const base = startPoint(b, opts.hotfix);
   const worktree = join(worktreesDir(root, config), `${id}-${slug}`);
+  const issues = branchExists(root, base)
+    ? []
+    : [`base branch "${base}" does not exist here: create it, or set branching.base in .mandao/config.yml (model ${b.model})`];
   return {
     id,
     slug,
     folder: join(config.paths.specs, `${id}-${slug}`),
     branch,
+    base,
     worktree,
-    command: `git worktree add -b ${branch} ${JSON.stringify(worktree)}`,
+    command: `git worktree add -b ${branch} ${JSON.stringify(worktree)} ${base}`,
+    issues,
   };
 }
 
@@ -229,11 +247,8 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
 
 /** The branch and worktree a spec folder belongs to, from its folder name and story type. */
 export function expectedPlace(root: string, config: Config, spec: SpecFolder): { branch: string; worktree: string } {
-  const type = spec.story?.meta.type === 'bug' ? 'fix' : 'feat';
   const [id, ...slug] = spec.name.split(/-(?=[a-z])/);
-  const branch = config.spec.branch
-    .replace('{type}', type)
-    .replace('{id}', id ?? spec.name)
-    .replace('{slug}', slug.join('-'));
+  const type = spec.story?.meta.type;
+  const branch = specBranch(config, branchingFor(config), { id: id ?? spec.name, slug: slug.join('-'), ...(type ? { type } : {}) });
   return { branch, worktree: join(worktreesDir(root, config), spec.name) };
 }

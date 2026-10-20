@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
+import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, commitPending, repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell, identityNotes } from '../scripts/identity.js';
@@ -161,6 +162,7 @@ function registerCommit(run: Command, ctx: CliContext) {
         tasks: spec.tasks,
         progress: spec.progress,
         trailers: opts.trailer ?? [],
+        protectedBranches: branchingFor(config).protected,
       });
       json(result);
       if (result.error) process.exitCode = 1;

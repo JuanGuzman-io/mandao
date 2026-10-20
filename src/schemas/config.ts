@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { branchingInput } from './branching.js';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
 
 /** Test-run budget (ADR 0013). Every key is optional so a project can override only what differs. */
@@ -66,6 +67,8 @@ const project = z.object({
     .partial()
     .default({}),
   resources: resourcesSchema.default({}),
+  /** Polyrepo: this repository's own branching model; otherwise the workspace's applies (ADR 0023). */
+  branching: branchingInput.optional(),
 });
 export type ProjectConfig = z.infer<typeof project>;
 
@@ -124,13 +127,15 @@ export const configSchema = z
       })
       .prefault({}),
     projects: z.array(project).min(1),
+    /** The team's branching model (ADR 0023): preset plus overrides. */
+    branching: branchingInput.default({ model: 'feature-branch' }),
     harnesses: z.array(harnessId).min(1),
     presets: z.array(z.string().min(1)).default([]),
     skill_packs: z.array(kebabId).default([]),
     spec: z
       .object({
-        /** Branch naming; `{type}` is feat or fix. */
-        branch: z.string().default('{type}/{id}-{slug}'),
+        /** Branch naming; `{prefix}` comes from `branching.prefixes` by spec type (`{type}`, feat or fix, still works). */
+        branch: z.string().default('{prefix}{id}-{slug}'),
         /** Prefix for local ids when there is no tracker: MDO-0001. */
         local_prefix: z
           .string()

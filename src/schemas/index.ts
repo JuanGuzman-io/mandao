@@ -1,3 +1,4 @@
+export * from './branching.js';
 export * from './catalog.js';
 export * from './command.js';
 export * from './common.js';

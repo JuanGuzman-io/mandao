@@ -14,7 +14,7 @@ import { planChanges } from '../writer/plan.js';
 import { readCatalog } from './catalog.js';
 import { harnessFindings } from './doctor-harness.js';
 import { modelFindings } from './doctor-models.js';
-import { pendingCommitFindings } from './doctor-specs.js';
+import { branchingFindings, pendingCommitFindings } from './doctor-specs.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildProject } from './sync.js';
@@ -82,7 +82,7 @@ function workspaceFindings(root: string, config: Config): Finding[] {
       out.push({ level: 'warn', message: 'workspace artifacts are local only (local_only: true) and not versioned' });
     }
   }
-  return [...out, ...pendingCommitFindings(root, config)];
+  return [...out, ...pendingCommitFindings(root, config), ...branchingFindings(root, config)];
 }
 
 function sourcesFindings(root: string): Finding[] {

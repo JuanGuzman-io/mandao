@@ -19,7 +19,8 @@ describe('config', () => {
       releases: 'docs/releases',
       worktrees: '../{repo}.worktrees',
     });
-    expect(cfg.spec.branch).toBe('{type}/{id}-{slug}');
+    expect(cfg.spec.branch).toBe('{prefix}{id}-{slug}');
+    expect(cfg.branching).toEqual({ model: 'feature-branch' });
     expect(cfg.commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);
     expect(cfg.commits.max_subject_length).toBe(72);
   });

@@ -2,6 +2,7 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
+import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
 import { detectRunner, fillCommand, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
@@ -73,12 +74,23 @@ function impactFor(ctx: CliContext, project: ReturnType<typeof projectNamed>, fi
 function registerPlanning(run: Command, ctx: CliContext) {
   run
     .command('spec-new <title...>')
-    .description('Propose the id, folder, branch and worktree for a new spec')
+    .description('Propose the id, folder, branch, base and worktree for a new spec')
     .option('--id <id>', 'tracker id (default: the next local id)')
     .option('--type <type>', 'story | bug | …', 'story')
-    .action((title: string[], opts: { id?: string; type: string }) =>
+    .option('--project <name>', "polyrepo: use this project's branching model")
+    .option('--hotfix', 'hotfix lane: start from branching.hotfix.from with the hotfix prefix')
+    .action((title: string[], opts: { id?: string; type: string; project?: string; hotfix?: boolean }) =>
       json(proposeSpec(ctx.root(), readConfig(ctx.root()), title.join(' '), opts)),
     );
+
+  run
+    .command('branching')
+    .description('The branching model in force, and the model the existing branches suggest (ADR 0023)')
+    .option('--project <name>', "polyrepo: this project's model")
+    .action((opts: { project?: string }) => {
+      const config = readConfig(ctx.root());
+      json({ resolved: branchingFor(config, opts.project), detected: detectBranching(branchNames(ctx.root())) });
+    });
 
   run
     .command('trace <spec>')
@@ -169,7 +181,9 @@ function registerState(run: Command, ctx: CliContext) {
     .description('Is this session inside the spec worktree, on its branch?')
     .action((ref: string) => {
       const { config, spec } = loadSpec(ctx, ref);
-      json(whereAmI(process.cwd(), expectedPlace(ctx.root(), config, spec)));
+      const branch = currentBranch(process.cwd());
+      const isProtected = Boolean(branch && branchingFor(config).protected.includes(branch));
+      json({ ...whereAmI(process.cwd(), expectedPlace(ctx.root(), config, spec)), protected: isProtected });
     });
 }
 
