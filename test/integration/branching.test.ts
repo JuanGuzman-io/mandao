@@ -92,6 +92,7 @@ describe('branching in a repository', () => {
         open_questions: [],
         next_step: '',
         deferred_to_ci: [],
+        red_tests: [],
         pending_commits: [{ task: 'T1', subject: 's', files: [] }],
       },
       protectedBranches: ['main'],

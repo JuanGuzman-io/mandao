@@ -2,7 +2,16 @@ import { type Choice, independence, type ResolvedModels, TIER_RANK } from '../mo
 import { TIERS, type Tier } from '../schemas/index.js';
 import type { ExecutionRow } from './execution.js';
 
-export type LoopAction = 'implement' | 'resume-implementation' | 'review' | 'rework' | 'commit' | 'done' | 'halt' | 'pivot';
+export type LoopAction =
+  | 'write-red-tests'
+  | 'implement'
+  | 'resume-implementation'
+  | 'review'
+  | 'rework'
+  | 'commit'
+  | 'done'
+  | 'halt'
+  | 'pivot';
 
 export interface LoopState {
   task: string;
@@ -20,7 +29,26 @@ export interface LoopState {
    * read-only process by `mandao run review --via <harness>`, never below the Implementer's tier (ADR 0021).
    */
   crossReview?: { harness: string; model: string; effort?: string };
+  /**
+   * TDD (ADR 0022): required when the task declares tests; the red tests are written by the Tester for
+   * tasks with risk tags or tier strong, by the Implementer otherwise; `red` once `mandao run red` recorded them.
+   */
+  tdd: { required: boolean; testsBy: 'tester' | 'implementer'; red: boolean };
   reason: string;
+}
+
+/** What loop needs from a task: tier, and for TDD its declared tests and risk tags. */
+export interface LoopTask {
+  id: string;
+  tier: Tier;
+  tests?: { unit: string[]; e2e: string[] };
+  risk_tags?: string[];
+}
+
+function tddFor(task: LoopTask, own: ExecutionRow[]): LoopState['tdd'] {
+  const required = Boolean(task.tests && task.tests.unit.length + task.tests.e2e.length > 0);
+  const testsBy = required && (task.risk_tags?.length || task.tier === 'strong') ? 'tester' : 'implementer';
+  return { required, testsBy, red: own.some((r) => r.verdict === 'RED') };
 }
 
 /** A reviewer another installed harness offers, with Mandao's tier for its model. */
@@ -101,7 +129,7 @@ function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefin
  * escalation after 2 FAILs per tier, HALT after 3 at strong, reviewer chosen by the independence rule.
  */
 export function loopState(
-  task: { id: string; tier: Tier },
+  task: LoopTask,
   rows: ExecutionRow[],
   models: ResolvedModels | undefined,
   harness: string,
@@ -111,19 +139,25 @@ export function loopState(
   const last = own.at(-1);
   const { tier, fails } = currentTier(task.tier, own);
   const attempt = Math.max(1, ...own.map((r) => r.attempt));
-  const base = { task: task.id, tier, attempt, failsAtTier: fails, ...roles(tier, own, models, harness, alternatives) };
+  const tdd = tddFor(task, own);
+  const base = { task: task.id, tier, attempt, failsAtTier: fails, tdd, ...roles(tier, own, models, harness, alternatives) };
   const failsAtStrong = own.filter((r) => r.verdict === 'FAIL' && r.tier === 'strong').length;
   if (failsAtStrong >= MAX_FAILS_AT_STRONG) return { ...base, action: 'halt', reason: `${failsAtStrong} FAILs at strong` };
+  const testerFirst = tdd.required && tdd.testsBy === 'tester' && !tdd.red;
   switch (last?.verdict) {
     case undefined:
-      return { ...base, action: 'implement', reason: 'not started' };
     case 'STARTED':
+      if (testerFirst) return { ...base, action: 'write-red-tests', reason: 'the Tester writes the red tests from the spec first' };
+      if (!last) return { ...base, action: 'implement', reason: tdd.required ? 'not started: red test first' : 'not started' };
       return {
         ...base,
         action: 'resume-implementation',
         reason: 'implementation started and not reported yet (in progress or interrupted)',
       };
+    case 'RED':
+      return { ...base, action: 'implement', reason: 'red tests recorded: make them pass with the minimum code' };
     case 'REPORTED':
+      if (tdd.required && !tdd.red) base.notes.push('no red evidence');
       return { ...base, action: 'review', reason: 'implementation reported, awaiting review' };
     case 'FAIL':
       return { ...base, action: 'rework', attempt: attempt + 1, reason: `FAIL ${fails} at ${tier}` };

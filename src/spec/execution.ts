@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
-export const VERDICTS = ['STARTED', 'REPORTED', 'PASS', 'FAIL', 'HALT', 'PIVOT', 'DEFERRED_TO_CI'] as const;
+/** `RED`: the task's tests failed for the expected reason before implementing (TDD, ADR 0022). */
+export const VERDICTS = ['STARTED', 'RED', 'REPORTED', 'PASS', 'FAIL', 'HALT', 'PIVOT', 'DEFERRED_TO_CI'] as const;
 export const verdict = z.enum(VERDICTS);
 export type Verdict = z.infer<typeof verdict>;
 
@@ -24,6 +25,10 @@ export const NOTE_FLAGS = {
   providerIndependence: 'provider independence',
   /** The model said it was someone other than the process the script invoked. */
   identityMismatch: 'identity mismatch',
+  /** A test recorded red changed afterwards: a discrepancy the Reviewer judges (ADR 0022). */
+  redTestChanged: 'red test changed',
+  /** A task with mandatory tests reached review without red evidence: the Reviewer FAILs it. */
+  noRedEvidence: 'no red evidence',
 } as const;
 
 const cell = (s: string) => s.trim().replace(/^`|`$/g, '').replace(/\\\|/g, '|');

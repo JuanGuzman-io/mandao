@@ -26,6 +26,10 @@ export const progressSchema = z.object({
    * Tasks that passed review and still need their commit (a sandbox blocked it, or the session ended):
    * `mandao run commit` makes one commit per entry, in order (ADR 0021).
    */
+  /** Tests recorded red per task, with their hashes then: a later change is flagged (ADR 0022). */
+  red_tests: z
+    .array(z.object({ task: z.string().regex(/^T\d+$/), files: z.array(z.object({ path: z.string(), sha256: z.string() })) }))
+    .default([]),
   pending_commits: z
     .array(z.object({ task: z.string().regex(/^T\d+$/), subject: z.string().min(1), files: z.array(z.string()).default([]) }))
     .default([]),

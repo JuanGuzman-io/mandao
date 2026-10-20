@@ -7,11 +7,13 @@ import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, commitPending, repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell, identityNotes } from '../scripts/identity.js';
+import { changedRedTests } from '../scripts/red.js';
 import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { registerRed } from './run-red.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
@@ -53,8 +55,15 @@ function deferredEntry(o: CheckpointOptions) {
   return [{ task: o.task ?? '—', tests: list, reason: reason.trim() }];
 }
 
+/** On REPORTED and on a verdict: red tests that changed since they were recorded red (ADR 0022). */
+function redNotes(spec: SpecFolder, o: CheckpointOptions): string[] {
+  if (!o.task || !o.verdict || o.verdict === 'STARTED' || o.verdict === 'RED') return [];
+  const changed = changedRedTests(repoRoot(spec.dir), spec.progress, o.task);
+  return changed.length ? [`${NOTE_FLAGS.redTestChanged}: ${changed.join(', ')}`] : [];
+}
+
 /** Implementer and reviewer cells come from the agent files the harness loads, never from a model's claim. */
-function checkpointRow(root: string, o: CheckpointOptions, now: string): ExecutionRow {
+function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now: string): ExecutionRow {
   const harness = o.harness ?? '—';
   const implementer = o.implementer ? agentIdentity(root, o.implementer, harness) : undefined;
   const reviewer = o.reviewer ? agentIdentity(root, o.reviewer, harness) : undefined;
@@ -62,6 +71,7 @@ function checkpointRow(root: string, o: CheckpointOptions, now: string): Executi
     ...identityNotes('implementer', implementer, o.claimedImplementer),
     ...identityNotes('reviewer', reviewer, o.claimedReviewer),
     ...(implementer && reviewer && implementer.harness !== reviewer.harness ? [NOTE_FLAGS.providerIndependence] : []),
+    ...redNotes(spec, o),
     ...(o.notes ? [o.notes] : []),
   ];
   return {
@@ -90,7 +100,7 @@ function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending
 function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
   const pending = pendingEntry(spec, o);
-  if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), o, now));
+  if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, o, now));
   if (o.done) markTask(spec.dir, o.done, true);
   const inProgress = o.nextTask ?? o.task;
   const current =
@@ -226,4 +236,5 @@ export function registerLedger(run: Command, ctx: CliContext) {
   registerCheckpoint(run, ctx);
   registerCommit(run, ctx);
   registerReview(run, ctx);
+  registerRed(run, ctx);
 }

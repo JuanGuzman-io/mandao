@@ -13,6 +13,7 @@ import {
   reverseDependents,
   selectImpact,
 } from './impact.js';
+import { changedRedTests } from './red.js';
 import type { SpecFolder } from './spec.js';
 
 /** Risk tags → review lenses (rules/review.md). */
@@ -44,6 +45,13 @@ export interface Brief {
    * depend directly on the task's files. Absent when there is no graph (ADR 0021).
    */
   graph?: { source: 'graphify'; dependents: string[] };
+  /** Tests recorded red for this task and those changed since (ADR 0022); the Reviewer judges changes. */
+  redTests?: { files: string[]; changed: string[] };
+}
+
+function redTests(root: string, spec: SpecFolder, task: string): Pick<Brief, 'redTests'> {
+  const entry = spec.progress?.red_tests.find((r) => r.task === task);
+  return entry ? { redTests: { files: entry.files.map((f) => f.path), changed: changedRedTests(root, spec.progress, task) } } : {};
 }
 
 /** Rows of the `## Skill Map` table in the root AGENTS.md. */
@@ -107,5 +115,6 @@ export function composeBrief(
     loop: loopState(task, spec.execution, models, harness, loop),
     impact: { ...impact, ...(impact.command ? { commandForBudget: fillCommand(impact.command, impact.files, workers) } : {}) },
     ...(graph ? { graph: { source: 'graphify' as const, dependents: reverseDependents(graph, task.files, 1) } } : {}),
+    ...redTests(root, spec, task.id),
   };
 }
