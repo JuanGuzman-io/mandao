@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
+import { readRecommendations } from '../models/load.js';
 import { composeBrief } from '../scripts/brief.js';
 import { changedFiles, commitState, repoRoot } from '../scripts/commits.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed } from '../scripts/gates.js';
@@ -8,6 +9,8 @@ import { fillCommand } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
+import { findClaudeTranscript } from '../scripts/session-cost.js';
+import { type CutAdvice, cutAdvice, sessionContext } from '../scripts/session-cut.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
 import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task } from '../spec/index.js';
@@ -98,6 +101,20 @@ function registerGates(run: Command, ctx: CliContext) {
     });
 }
 
+/**
+ * At a task boundary in Claude Code (the task has no row past STARTED): whether to end the session and resume from
+ * the checkpoint in a new one, from this session's transcript (ADR 0038). Other harnesses: no advice.
+ */
+function sessionCut(spec: SpecFolder, id: string, harness: string): CutAdvice | undefined {
+  const session = process.env.CLAUDE_CODE_SESSION_ID;
+  if (harness !== 'claude' || !session || spec.execution.some((r) => r.task === id && r.verdict !== 'STARTED')) return undefined;
+  const transcript = findClaudeTranscript(session);
+  const context = transcript ? sessionContext(transcript) : undefined;
+  const price = context && readRecommendations().harnesses.claude?.prices?.per_mtok?.[context.model];
+  if (!context || !price) return undefined;
+  return cutAdvice(context, spec.tasks.filter((t) => !t.done).length, price);
+}
+
 /** Actions after which the Leader delegates to an Implementer or Tester and needs the brief. */
 const NEEDS_BRIEF: LoopState['action'][] = ['write-red-tests', 'implement', 'resume-implementation', 'rework'];
 
@@ -121,9 +138,11 @@ function registerStep(run: Command, ctx: CliContext) {
       const withBrief = o.brief && NEEDS_BRIEF.includes(loop.action);
       const project = config.projects.find((p) => p.name === task.project);
       const workers = Math.max(1, decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit').workers);
+      const cut = NEEDS_BRIEF.includes(loop.action) ? sessionCut(spec, id, harness) : undefined;
       json({
         ...(checkpoint ? { checkpoint: { written: true, pendingCommits: checkpoint.pendingCommits } } : {}),
         loop,
+        ...(cut ? { session: cut } : {}),
         ...(withBrief ? { brief: composeBrief(ctx.root(), config, spec, task, models, harness, workers, context) } : {}),
       });
     });

@@ -177,4 +177,26 @@ describe('Leader scripts', () => {
     expect(await run(root, 'tests', 'mandao', '--full', '--reason', 'CI is down')).toMatchObject({ impact: 'full suite' });
     expect(readFileSync(logPath(join(root, SPEC), 'full-runs.md'), 'utf8')).toMatch(/· mandao · \w+ · CI is down/);
   });
+  test('step at a task boundary in Claude Code says whether to cut the session (ADR 0038)', async () => {
+    const root = repo();
+    const session = 'cut-session';
+    const usage = (read: number, write: number) => ({
+      input_tokens: 0,
+      cache_read_input_tokens: read,
+      cache_creation_input_tokens: write,
+      cache_creation: { ephemeral_1h_input_tokens: write },
+    });
+    const turn = (id: string, read: number, write: number) =>
+      JSON.stringify({ timestamp: new Date().toISOString(), message: { id, model: 'claude-opus-5-5', usage: usage(read, write) } });
+    const home = makeTree({ [`projects/x/${session}.jsonl`]: `${turn('a', 0, 34_000)}\n${turn('b', 34_000, 126_000)}\n` });
+    vi.stubEnv('CLAUDE_CONFIG_DIR', home);
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', session);
+    const step = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
+    expect(step.session).toMatchObject({ cut: true, reason: expect.stringMatching(/context 160k vs 44k/) });
+    // Mid-task (a RED row, the next action delegates the implementation): no advice.
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'RED');
+    const mid = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
+    expect(mid.loop.action).toBe('implement');
+    expect(mid.session).toBeUndefined();
+  });
 });
