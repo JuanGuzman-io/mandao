@@ -5,7 +5,7 @@
 MDO-0005 (prove the doctor's crash path end to end) re-ran every command for real after the MDO-0004
 fixes. It closed with both criteria met. `specify` and `verify` ran clean. `implement`, `close` and `quick`
 showed new defects, fixed here, each with a test (`test/integration/mdo-0005-defects.test.ts`,
-`test/integration/characterization.test.ts`). Cost: 10.67 USD, plus 1.03 USD for two `quick` runs
+`test/integration/characterization.test.ts`). Cost: 7.06 USD (corrected: resumed sessions report a cumulative cost), plus 1.03 USD for two `quick` runs
 (`docs/pilot/plan.md`).
 
 ## Defects fixed

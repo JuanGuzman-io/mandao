@@ -4,7 +4,7 @@
 
 MDO-0004 (`mandao doctor --json`) was run end to end by invoking each mandao in its own Claude Code
 session: story → specify → clarify → tasks → implement → verify → close. It closed with every
-criterion met. Cost: 17.18 USD (recorded in `docs/pilot/plan.md`).
+criterion met. Cost: 8.58 USD (corrected from 17.18, which added up the cumulative figures of resumed sessions; recorded in `docs/pilot/plan.md`).
 
 ## Defects found, each fixed with a test
 
