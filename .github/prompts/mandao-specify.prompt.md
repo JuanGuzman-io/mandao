@@ -99,11 +99,15 @@ did not exist), `optional` (lite).
   new endpoint or integration → `sequence` · pipeline, RAG, ETL → `data-flow` · new module or service →
   `architecture` · user or approval process → `workflow` · entity states → `lifecycle` · changes to
   existing behavior → `before-after`.
-- Generate it with the Archify skill when it is available, into `diagrams/proposed.html` in the spec
-  folder (plus a PNG export), then record it:
-  `node .mandao/bin/mandao.mjs run diagram <ID> --stamp --tool archify --type <type> --file diagrams/proposed.html`.
-  Without Archify, write Mermaid to a file and run
-  `node .mandao/bin/mandao.mjs run diagram <ID> --stamp --tool mermaid --type <type> --mermaid <file>`, which embeds it.
+- First write its structured source, `diagrams/proposed.graph.json` (`schema_version: 1`, `nodes` with
+  `id`, `label`, `kind` module | contract | external | actor, and `edges` with `from`, `to`). A node's
+  `id` is the **module path** (`src/billing`) or the **contract identifier** (`POST /api/tokens`,
+  `event:user.created`), never its label: `close` compares diagrams by id, so renaming a box is not drift.
+- Render it with the Archify skill when it is available, into `diagrams/proposed.html` (plus a PNG
+  export), then record it:
+  `node .mandao/bin/mandao.mjs run diagram <ID> --stamp --tool archify --type <type> --file diagrams/proposed.html --graph diagrams/proposed.graph.json`.
+  Without Archify, write Mermaid to a file and stamp with `--tool mermaid --mermaid <file>` and the same
+  `--graph`.
 - The stamp records which `design.md` it came from. Whenever `design.md` changes, `node .mandao/bin/mandao.mjs run diagram`
   reports `stale: true`: regenerate it before asking for approval.
 - With a tracker MCP, offer to attach the PNG to the story — only after the user confirms.

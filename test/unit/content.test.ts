@@ -48,7 +48,7 @@ describe('core content', () => {
       implement: 'stable',
       resume: 'stable',
       verify: 'stable',
-      close: 'stub',
+      close: 'stable',
       audit: 'stub',
       perf: 'stub',
     });

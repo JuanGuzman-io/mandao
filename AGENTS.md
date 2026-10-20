@@ -21,6 +21,7 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 ### Commands
 
 - `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev.
+- `/mandao-close` — Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram.
 - `/mandao-constitution` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
 - `/mandao-implement` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
 - `/mandao-init` — Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution.
@@ -31,7 +32,7 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 - `/mandao-tasks` — Break an approved spec into Tn tasks with project, tier, files, risk tags, tests, AC, DoD and dependencies.
 - `/mandao-verify` — Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
 
-Not implemented yet: `/mandao-audit`, `/mandao-close`, `/mandao-perf`.
+Not implemented yet: `/mandao-audit`, `/mandao-perf`.
 
 ### Rules
 
