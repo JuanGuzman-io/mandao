@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 import type { CliContext } from './context.js';
 
 /** True for a Claude Code subagent whose definition gives it no shell (the Reviewer). */
@@ -10,7 +10,12 @@ export function agentWithoutShell(root: string, agentType: string | undefined): 
   if (!agentType || !/^[\w-]+$/.test(agentType)) return false;
   const file = join(root, '.claude/agents', `${agentType}.md`);
   if (!existsSync(file)) return false;
-  const tools = (matter(readFileSync(file, 'utf8')).data as { tools?: string | string[] }).tools;
+  let tools: string | string[] | undefined;
+  try {
+    tools = (parseFrontmatter(readFileSync(file, 'utf8')).data as { tools?: string | string[] }).tools;
+  } catch {
+    return false; // front matter Mandao refuses to parse (not YAML): treat it as an agent with a shell
+  }
   if (tools === undefined) return false; // no list: the agent inherits every tool, shell included
   return !(Array.isArray(tools) ? tools : tools.split(',')).some((t) => t.trim() === 'Bash');
 }

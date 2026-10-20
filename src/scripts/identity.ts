@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 import type { HarnessId } from '../schemas/index.js';
 
 /** Who did a step, as the script established it, never as the model described itself (ADR 0021). */
@@ -28,7 +28,7 @@ const tomlValue = (text: string, key: string) => text.match(new RegExp(`^${key}\
 function readAgentFile(file: string): { model?: string; effort?: string } {
   const text = readFileSync(file, 'utf8');
   if (file.endsWith('.toml')) return { model: tomlValue(text, 'model'), effort: tomlValue(text, 'model_reasoning_effort') };
-  const data = matter(text).data as { model?: string; effort?: string };
+  const data = parseFrontmatter(text).data as { model?: string; effort?: string };
   return { model: data.model, effort: data.effort };
 }
 
