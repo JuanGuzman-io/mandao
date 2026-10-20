@@ -136,8 +136,10 @@ Example for a workspace with a config but no `.mandao/mandao.lock` (the messages
   finding keys are only `level`, `message` and `fix`. Any change to that set of keys, or to the meaning of
   a key, bumps `schema_version`. A unit test asserts the exact top-level and `counts` keys and limits
   finding keys to `level`, `message` and `fix`, so the contract cannot change silently.
-- A config-validation error names the file and the field path (for example `config.yml: projects[0].path`)
-  and has no `fix`. When `config.yml` is invalid the doctor stops there, so no later findings are reported.
+- A config-validation error names the file, the dot-joined field path and the zod message (for example
+  `<root>/.mandao/config.yml: projects.0.path: <zod message>`) and has no `fix`. A YAML syntax error names
+  only the file and the parser message. When `config.yml` is invalid the doctor stops there, so no later
+  findings are reported.
 
 ## `core/catalog/skills.yml` — curated skills
 
