@@ -6,21 +6,38 @@ status: approved
 
 # Tasks — Prove that a crashing doctor never sends garbage to CI
 
-<!--
-The code graph (graphify-out/graph.json) only holds the spec documents of this worktree, so files and
-modules come from design.md § Changes by project and module. Test-only spec: no change under src/,
-core/, docs/ or CI. test/ has no AGENTS.md (design § Module Docs Impact), so no module guide is due.
-The constitution impact (exemplar row) is applied at /mandao-close.
-ASSUMPTION (test-policy.md, TDD): the new tests characterize behavior that already exists (P1, P3),
-so they pass on their first run and cannot give red evidence against unchanged code. Instead the
-Implementer shows each assertion can fail with a local, uncommitted mutation and records it in
-execution.md; the Leader confirms or overrides this at /mandao-implement.
--->
+What work, in what order: a single test-only task adds the process-level doctor test and points the
+old in-process test to it. Nothing under `src/`, `core/`, `docs/` or CI changes.
+
+| Task | Title | Kind | Tier | Depends on | AC | Status |
+|---|---|---|---|---|---|---|
+| T1 | Process-level doctor test | test | standard | — | AC-1, AC-2 | done |
+
+**Waves:** Wave 1: T1.
+
+## Notes
+
+- **Where the files come from:** the code graph (`graphify-out/graph.json`) held only the spec
+  documents of the worktree, so files and modules come from
+  [design, Changes by project and module](design.md#changes-by-project-and-module).
+- **No module guide is due:** `test/` has no `AGENTS.md` ([design, Module Docs Impact](design.md#module-docs-impact)).
+- **Constitution impact:** the exemplar row is applied at `/mandao-close`
+  ([design, Constitution Impact](design.md#constitution-impact)).
+- **ASSUMPTION (test-policy.md, TDD):** the new tests characterize behavior that already exists
+  ([P1](design.md#p1--an-invalid-lock-reaches-the-cli-catch),
+  [P3](design.md#p3--an-invalid-modelsyml-is-a-finding-not-a-crash)), so they pass on their first run
+  and cannot give red evidence against unchanged code. Instead the Implementer shows that each
+  assertion can fail with a local, uncommitted mutation and records it in
+  [the execution log](_log/execution.md#mutation-evidence-t1). The Leader decides at
+  `/mandao-implement`; the decision (mutation evidence in place of red) is recorded in that log.
+
+## Task details
 
 ### [x] T1 — Process-level doctor test in `test/integration/doctor-process.test.ts`
 
 ```yaml
 project: mandao
+kind: test
 tier: standard
 files: [test/integration/doctor-process.test.ts, test/integration/doctor-cli.test.ts]
 exemplar: test/unit/launcher.test.ts
@@ -35,3 +52,29 @@ depends_on: []
 parallel_safe: false
 ```
 
+#### What
+Add `test/integration/doctor-process.test.ts`. It builds the real CLI once, then runs
+`doctor --json` as a separate process in four throwaway workspaces:
+
+- a lock with broken YAML (S-1.1) and a lock that fails the lock schema (S-1.2): exit 1, nothing on
+  stdout, an error naming `.mandao/mandao.lock` on stderr;
+- a `models.yml` with broken YAML (S-2.1) and one that fails the models schema (S-2.2): exit 1, nothing
+  on stderr, one JSON report with an `error` finding naming `.mandao/models.yml`.
+
+Also update one comment in `test/integration/doctor-cli.test.ts` so it points to the new test.
+
+#### Done when
+- The CLI is built in `beforeAll` with tsup into a fresh directory under `node_modules/.cache/` (D1).
+- Each case runs in its own workspace with an isolated `MANDAO_HOME` (D4).
+- The checks follow D3: no snapshots, no parser wording.
+- `afterAll` removes only the build directory (D5).
+- No mocks and no spies (D2).
+- Every assertion was shown to fail once with a local mutation (see the ASSUMPTION in Notes).
+- The S-2.2 comment in `doctor-cli.test.ts` points to the new test (D6).
+- Nothing changes under `src/`, `core/`, `docs/` or `.github/`; lint and typecheck are green.
+- The new file runs in under 5 s, build included (NFR-1).
+
+#### How to verify
+```sh
+npx vitest run test/integration/doctor-process.test.ts test/integration/doctor-cli.test.ts
+```
