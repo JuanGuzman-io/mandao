@@ -1,4 +1,3 @@
-import { join } from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { type ExecutionRow, executionRow, type ProgressInput, progressSchema, setTaskDone } from '../spec/index.js';
 import { snapshot, writeFromSnapshot, writeText } from '../writer/files.js';
