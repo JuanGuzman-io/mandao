@@ -1,0 +1,10 @@
+schema_version: 1
+spec: MDO-0001-skills-list
+updated_at: 2026-10-20T10:00:00Z
+current:
+  task: T2
+  phase: implementing
+  harness: claude
+  model: claude-sonnet-5-5
+open_questions: []
+next_step: implement T2, then send it to the Reviewer
