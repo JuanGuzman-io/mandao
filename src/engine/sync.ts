@@ -74,6 +74,18 @@ export function buildOutputs(
   return { files, warnings, layers, resolution };
 }
 
+/** What `sync` writes for a workspace. `doctor` compares the disk against exactly this. */
+export function buildProject(root: string, config: Config, layers: Layer[], version: string): BuildResult {
+  return buildOutputs(
+    config,
+    resolveWorkspaceModels(root, config, readRecommendations()),
+    layers,
+    version,
+    'project',
+    findModuleGuides(root, config),
+  );
+}
+
 export interface SyncOptions {
   force?: boolean;
   dryRun?: boolean;
@@ -102,14 +114,7 @@ export function syncProject(root: string, opts: SyncOptions = {}): SyncResult {
   const config = readConfig(root);
   const { version } = packageInfo();
   const layers = loadLayers(root, config.presets);
-  const build = buildOutputs(
-    config,
-    resolveWorkspaceModels(root, config, readRecommendations()),
-    layers,
-    version,
-    'project',
-    findModuleGuides(root, config),
-  );
+  const build = buildProject(root, config, layers, version);
   const lockPath = join(root, LOCK_FILE);
   const previous = readLock(lockPath);
   const changes = planChanges(build.files, previous?.files ?? [], { project: root }, opts.force);

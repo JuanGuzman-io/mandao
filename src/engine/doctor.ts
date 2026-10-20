@@ -14,7 +14,7 @@ import { planChanges } from '../writer/plan.js';
 import { readCatalog } from './catalog.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
-import { buildOutputs } from './sync.js';
+import { buildProject } from './sync.js';
 import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
 export type Level = 'error' | 'warn' | 'info' | 'ok';
@@ -198,15 +198,9 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   findings.push(...workspaceFindings(root, config));
 
   const lockForTools = readLock(join(root, LOCK_FILE));
-  let build: ReturnType<typeof buildOutputs>;
+  let build: ReturnType<typeof buildProject>;
   try {
-    build = buildOutputs(
-      config,
-      resolveWorkspaceModels(root, config, readRecommendations()),
-      loadLayers(root, config.presets),
-      version,
-      'project',
-    );
+    build = buildProject(root, config, loadLayers(root, config.presets), version);
   } catch (e) {
     if (e instanceof ResolveError) {
       findings.push(...e.issues.map((m) => ({ level: 'error' as const, message: m })));

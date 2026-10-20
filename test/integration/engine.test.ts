@@ -181,3 +181,11 @@ describe('generated support files', () => {
     expect(existsSync(join(root, 'src/billing/CLAUDE.md'))).toBe(false);
   });
 });
+
+test('doctor sees exactly what sync writes, module pointers included', () => {
+  const root = workspace();
+  mkdirSync(join(root, 'src/billing'), { recursive: true });
+  writeFileSync(join(root, 'src/billing/AGENTS.md'), '# Billing\n');
+  syncProject(root);
+  expect(runDoctor(root, { probe }).filter((f) => f.message.includes('out of date'))).toEqual([]);
+});
