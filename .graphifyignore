@@ -52,6 +52,7 @@
 .codex/agents/mandao-reviewer-alt.toml
 .codex/agents/mandao-reviewer.toml
 .codex/agents/mandao-tester.toml
+.codex/rules/mandao.rules
 .github/agents/mandao-implementer-fast.agent.md
 .github/agents/mandao-implementer-standard.agent.md
 .github/agents/mandao-implementer-strong.agent.md

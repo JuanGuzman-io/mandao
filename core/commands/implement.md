@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, tasks, brief, loop, checkpoint, tests, commit-msg]
+scripts: [where, models, tasks, brief, loop, checkpoint, tests, review, commit]
 ---
 
 # /mandao-implement
@@ -46,8 +46,13 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
 `{{script:loop}} {{arg:spec}} <Tn> --harness <this harness>` at every step:
 
 1. **Checkpoint** before anything else:
-   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --model <implementer model> --verdict STARTED --tier <tier> --attempt <n> --implementer <model> --next "<what comes next>"`.
+   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --model <your model> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
    Checkpoints are the only memory between sessions: write one after every step below.
+   **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
+   (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
+   `self` when it ran in your own context); the script reads its model and effort from the agent file the
+   harness loads. Pass what the agent said about itself as `--claimed-implementer` / `--claimed-reviewer`:
+   a difference is recorded as `identity mismatch`.
 2. **Brief:** `{{script:brief}} {{arg:spec}} <Tn> --harness <h>` gives the clauses, files, exemplar,
    gates, skills, lenses, models and impacted tests.
 3. **Implement** in a fresh context with the implementer for the tier:
@@ -62,34 +67,49 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    `.codex/agents/` only in a trusted project; when the agent is not available, say so and record
    `reduced independence` with your own model as the implementer.
 <!-- mandao:endif -->
-   Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED`.
+   Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED
+   --implementer <agent>`.
 4. **Gates and impacted tests** (`{{template:rules/test-policy.md}}`): run the project's level 0 gates,
    and the impacted tests with `{{script:tests}} <project> <changed files>` — never the full suite.
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
-5. **Review** in a separate agent or process — never in your own context — by the reviewer `loop`
-   names (`reviewer` or `reviewer_alt`), with only the diff, the brief, the step 4 results (a read-only
-   reviewer may not be able to run tests) and the active lenses
-   (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`).
+5. **Review** in a separate agent or process — never in your own context — with only the diff, the brief
+   (its `graph` field is the code-graph context: the Reviewer has no shell for `graphify query`), the
+   step 4 results (a read-only reviewer cannot run tests) and the active lenses
+   (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`). Who reviews comes from `loop`:
+   - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
+     and records itself: save the brief and the step 4 results to files, then
+     `{{script:review}} {{arg:spec}} <Tn> --via <harness> --brief <file> --gates <file>`. It writes the
+     execution row (PASS or FAIL) with the identity it launched; do not checkpoint the verdict again.
+     If it fails (not logged in, no verdict), fall back to the next option and say why.
+   - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>`.
 <!-- mandao:if harness=codex -->
-   In Codex: the `mandao_reviewer` custom agent; if custom agents are not loaded, run the review as a
-   separate process: `codex exec -m <reviewer model> -s read-only "<brief, diff and rules>"`.
+   In Codex: the `mandao_reviewer` custom agent. If custom agents are not loaded (untrusted project),
+   use `{{script:review}} … --via codex`, which runs `codex exec` read-only on the reviewer model.
 <!-- mandao:endif -->
-   The execution row records the model that **actually** reviewed. If the review could only run in your
-   own context, it is not independent: record `reduced independence` and your own model, never the
-   configured one. The Reviewer never runs on a lower tier or effort than the Implementer.
+   With neither, review in your own context: `--reviewer self`, which the script records as `reduced
+   independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
    - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
    - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
-7. **Commit** locally, no confirmation needed, never push. If the harness sandbox blocks writing git
-   metadata, do not work around it: checkpoint `--verdict PASS --commit —` with the next step
-   "commit <Tn>", and stop; the next session or another harness commits. Otherwise: message from
-   `{{script:commit-msg}} {{arg:spec}} <Tn> <subject>` (`{{template:rules/commits.md}}`), with `tasks.md`
-   updated in the same commit (`--done <Tn>` on the checkpoint before committing). Then checkpoint
-   `--verdict PASS --commit <sha> --clear` (or the next task) so `execution.md` records the hash.
+7. **Commit** locally, no confirmation needed, never push. Hashes are never recorded: the commit is
+   found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
+   1. Checkpoint the PASS and queue the commit:
+      `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
+      `--next-task`), subject per `{{template:rules/commits.md}}`.
+   2. `{{script:commit}} {{arg:spec}} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
+      per pending task with its trailers.
+<!-- mandao:if harness=codex -->
+   The Codex sandbox keeps `.git` read-only: run step 2 as a command that asks for approval to run
+   outside the sandbox (`.codex/rules/mandao.rules` makes Codex prompt for exactly this command in a
+   trusted project). In `codex exec`, or if the user declines, leave it pending.
+<!-- mandao:endif -->
+   If the commit cannot run, do not work around it: the task stays `PASS · pending-commit`, `resume` and
+   `doctor` show it, and anyone — the user, the next session, another harness — runs
+   `{{script:commit}} {{arg:spec}}`. Start the next task only if it touches none of the pending files.
 
 The Definition of Done includes the module's `AGENTS.md` and, when the workspace uses Claude Code, its
 `CLAUDE.md` pointer.

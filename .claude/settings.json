@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "graphify hook-guard search"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard search"
           }
         ]
       },
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "graphify hook-guard read"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard read"
           }
         ]
       }

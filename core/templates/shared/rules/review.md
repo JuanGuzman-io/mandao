@@ -35,11 +35,19 @@ invented.
 ## Independence
 
 The Reviewer always works in a context separate from the author's, and on a different model when one
-is available (`reviewer`, or `reviewer_alt` when the Implementer ran on the Reviewer's model). The
-Reviewer **never runs on a lower tier or effort than the Implementer** (ADR 0020): a weaker model on
-another vendor is not an acceptable substitute. When no
-different model is available, the review still happens in a clean context and `execution.md` (or
-`quick-log.md`) records `reduced independence`. It never blocks.
+is available, in this order (ADR 0021):
+
+1. `reviewer`, or `reviewer_alt` when the Implementer ran on the Reviewer's model;
+2. when that would be the Implementer's own model (e.g. strong tasks in Claude Code): the reviewer of
+   **another installed and logged-in harness**, run by Mandao as a read-only process
+   (`mandao run review --via <harness>`) with the Leader's gate results;
+3. otherwise the review runs in a clean context on the same model and records `reduced independence`.
+
+The Reviewer **never runs on a lower tier or effort than the Implementer** (ADR 0020): a weaker model on
+another vendor is not an acceptable substitute. Independence never blocks.
+
+Who reviewed is recorded by the scripts from the agent or process actually invoked, never from what a
+model says about itself; a different claim is recorded as `identity mismatch`.
 
 ## Quick changes
 
