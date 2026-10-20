@@ -25,6 +25,7 @@ import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerLedger } from './run-ledger.js';
+import { specPremiseFindings } from './run-premise.js';
 import { registerVerify } from './run-verify.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
 
@@ -57,7 +58,8 @@ function registerPlanning(run: Command, ctx: CliContext) {
       const { spec } = loadSpec(ctx, ref);
       if (!spec.story || !spec.requirements) return json({ issues: [...spec.issues, 'trace needs story.md and requirements.md'] });
       const { config } = loadSpec(ctx, ref);
-      json({ ...trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers)), issues: spec.issues });
+      const t = trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers));
+      json({ ...t, findings: [...t.findings, ...specPremiseFindings(spec.dir)], issues: spec.issues });
     });
 
   run

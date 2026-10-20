@@ -10,6 +10,7 @@ import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { isHarness, resolveForCli } from './models.js';
 import { registerLeader } from './run-leader.js';
+import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 
@@ -20,6 +21,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerSpecWriters(run, ctx);
   registerQuickLog(run, ctx);
   registerLeader(run, ctx);
+  registerPremise(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

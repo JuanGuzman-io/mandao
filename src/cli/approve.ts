@@ -21,6 +21,7 @@ import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { SPEC_STEPS } from './run-ledger.js';
+import { specPremiseFindings } from './run-premise.js';
 
 /** Who approves: the person at the terminal, as git knows them; never a model. */
 function approver(cwd: string, by?: string): string {
@@ -41,7 +42,7 @@ function blockers(spec: SpecFolder, step: ApprovalStep): string[] {
   if (step === 'story') return spec.story ? open : ['story.md is missing'];
   if (step === 'design' || step === 'spec') {
     if (!spec.requirements) return [`${step === 'spec' ? LITE_DOC : 'requirements.md'} is missing`];
-    return open;
+    return [...open, ...specPremiseFindings(spec.dir).map((f) => f.message)];
   }
   if (step === 'tasks') {
     if (!spec.tasks.length) return ['no tasks to approve'];

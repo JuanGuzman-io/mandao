@@ -90,8 +90,11 @@ From `.mandao/templates/app/spec/design.md`:
 
 - **Premise Ledger** (at the end of the design): one entry per claim about existing code that the
   design depends on, with evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before
-  relying on it`. If there are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
-  reading code (MDO-0004 read one and was wrong): cite the command and an excerpt of its output. Only
+  relying on it`. If there are none, write that explicitly. A premise of **High** impact is verified only by
+  **running** it with `node .mandao/bin/mandao.mjs run premise <ID> <Pn> -- <command>`, which records the run in
+  `_log/premises/`; reading code or searching never counts (MDO-0004 read one and MDO-0006 searched one,
+  and both were wrong). Cite the recorded excerpt in the ledger's evidence block. `node .mandao/bin/mandao.mjs run trace` reports
+  `PREMISE_UNPROVEN` for a High premise with neither a recorded run nor `UNVERIFIED`. Only
   safe runs: read-only, inside the worktree or a sandbox, no writes to real systems and no external
   effects, with a timeout, and through `node .mandao/bin/mandao.mjs run resources` when it builds or tests (never force the
   guard). If it cannot run safely, it stays `UNVERIFIED`.

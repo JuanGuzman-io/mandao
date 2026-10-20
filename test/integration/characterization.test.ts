@@ -136,7 +136,7 @@ describe('decision 2: high-impact premises are executed in specify', () => {
   test('specify and the design template require an executed, safe run for High premises', () => {
     const core = join(import.meta.dirname, '../../core');
     const specify = readFileSync(join(core, 'commands/specify.md'), 'utf8');
-    expect(specify).toMatch(/\*\*High\*\* impact is verified by \*\*running\*\* it/);
+    expect(specify).toMatch(/\*\*High\*\* impact is verified only by\s+\*\*running\*\* it with `{{script:premise}}/);
     expect(specify).toMatch(/read-only, inside the worktree or a sandbox, no writes to real systems/);
     expect(specify).toContain('{{script:resources}}');
     expect(readFileSync(join(core, 'templates/shared/rules/spec-docs.md'), 'utf8')).toMatch(
