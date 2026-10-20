@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.6 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.7 · **Last updated:** 2026-10-20
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -95,6 +95,7 @@ mandao/
 - Adapters are **pure functions**: canonical command in → target files out.
 - Each adapter has **snapshot tests**. This is the part that breaks when a harness changes its format.
 - Every adapter records the date its target format was last verified against official docs.
+- **DECIDED (ADR 0018) — adapters:** Claude Code and GitHub Copilot exist. Pending, each verified against its vendor's official docs in its own ADR before it is written: **Codex** (OpenAI), **OpenCode** (provider-agnostic) and **Antigravity** (Google). Order and reasons: see the iteration plan.
 
 ### 4.4 Resolution stack
 
@@ -132,7 +133,7 @@ Use `pnpm dlx`, not the deprecated `pnpx`.
 ### 5.2 `init` (interactive)
 
 1. **Scope:** global (user machine) or project (this repo).
-2. **Harnesses** (multi-select): Claude Code, GitHub Copilot, Cursor, Codex CLI, OpenCode, Gemini CLI, Antigravity, Windsurf…
+2. **Harnesses** (multi-select): every harness the person uses, not just one (Claude Code, GitHub Copilot, Codex, OpenCode, Antigravity…). **DECIDED (ADR 0018):** `mandao harness add <tool>` adds one later, generated from the existing config, without repeating `init`.
 3. **Workspace:** mode (single, monorepo, polyrepo) and projects are detected and confirmed.
 4. **Profile:** a workspace default (`app` | `ai` | `data`), then one profile per project, pre-filled from detection (ADR 0011).
 5. **Languages:** `language.business` and `language.technical` (§3).
@@ -157,6 +158,7 @@ A global install exposes **`/mandao-init`** in every installed harness. Run insi
 - `mandao update` detects the package manager that installed Mandao (npm, pnpm, bun) and uses the same one.
 - **DECIDED (ADR 0012) — runner:** generated commands call `node .mandao/bin/mandao.mjs`, which resolves Mandao from local `node_modules/.bin`, then a global install, then `npx -y mandao@<lock version>`. `scripts.runner` (`auto | local | global | npx`) forces one; `doctor` checks it resolves. Before publishing, use `npm link`.
 - `AGENTS.md` is the universal fallback for harnesses without skills support.
+- **DECIDED (ADR 0018) — switching harness:** `mandao doctor` reports, per installed harness, whether its generated files are up to date, the model assigned to each role, and whether the harness's minimum version is met, so a person knows in advance whether they can switch mid-work.
 - **DECIDED (ADR 0015) — shared vs local agent settings:** committed harness settings (e.g. `.claude/settings.json`) are portable: tools resolve through PATH or the Mandao runner, never absolute paths. Machine-specific settings go in `settings.local.json`, which is git-ignored; a hook that needs an absolute path lives only there. `sync` and `doctor` respect this split.
 
 ## 6. Workspace modes
@@ -309,7 +311,7 @@ Utilities: `quick`, `perf`, `audit`, `resume`.
 | `/mandao-quick` | Dev | Edit + `quick-log.md` entry + commit |
 | `/mandao-perf` | Dev | `perf-report.md` + perf spec (see §19) |
 | `/mandao-audit` | Lead | `docs/audits/<date>.md` |
-| `/mandao-resume` | Anyone | Dashboard of active specs |
+| `/mandao-resume` | Anyone | Dashboard of active specs; `/mandao-resume <ID>` continues one spec in any harness (§14.6) |
 
 ### 10.1 constitution
 
@@ -520,6 +522,20 @@ One story = **one spec, one development**, even across projects.
 - `implement` never creates branches: it checks that it runs inside the spec's worktree and, if not, warns and shows the path.
 - Commits are local and need no confirmation after the Reviewer's PASS. Mandao never pushes.
 - Polyrepo: the same branch name in every touched repo.
+
+### 14.6 Checkpoints and handoff
+
+**DECIDED (ADR 0018).** State lives in files, never only in a session, so work can move between harnesses (or survive an interrupted session) without reinstalling.
+
+- **Checkpoint after every step** — task started, implementation reported, Reviewer verdict, commit. The Leader writes to the spec folder:
+  - the status of each task in `tasks.md` (heading checkbox);
+  - `progress.yml` (machine-readable; `execution.md` keeps the human log): the task in progress, its phase (`implementing | awaiting-review | rework-n`), the harness and model running it, open questions, and the next step.
+- Checkpoints are written eagerly; Mandao never relies on detecting the end of a session's tokens. An interruption loses at most the task in progress.
+- **`/mandao-resume <ID>`** works in any harness:
+  1. reads the checkpoint and checks it runs in the spec's worktree (§14.5);
+  2. on uncommitted changes from an interrupted task, offers: review the diff as it is, continue implementing, or discard and redo the task;
+  3. takes models from `models.yml` for the **current** harness;
+  4. when a task was implemented in one harness and is reviewed in another, `execution.md` records it as **provider independence** (stronger than a different model in the same harness).
 
 ## 15. Review model
 
@@ -881,6 +897,7 @@ Raised in the gap sweep. Each needs a decision (and an ADR) before dependent wor
 - **Format migrations:** `mandao migrate` using `schema_version`.
 - **Testing Mandao itself:** evals of the commands (e.g., does `specify` catch a planted AC↔FR contradiction?).
 - **Multi-repo beyond polyrepo:** `related:` repos outside the workspace.
+- **Cross-harness Reviewer:** implement in one harness and review in another (e.g. implement in Claude Code, review with Codex, or the reverse), as a stronger form of review independence than a different model in the same harness. Open questions: how the Leader hands the diff and brief to another harness's non-interactive mode, credentials and cost of running two harnesses, and how `reduced independence` is recorded when the second harness is unavailable.
 
 ## 24. MVP
 

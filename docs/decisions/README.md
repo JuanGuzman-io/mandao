@@ -22,3 +22,7 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0013](0013-impacted-tests-and-resource-budget.md) | Impacted tests and a resource budget | Accepted |
 | [0014](0014-pin-claude-5-5-models.md) | Pin the Claude 5.5 family by model ID | Accepted |
 | [0015](0015-iteration-2-decisions.md) | Iteration 2 decisions: tasks format, Leader, MCP scope, branches, agent settings | Accepted |
+| [0018](0018-multi-harness-and-handoff.md) | Real multi-harness: switch harness mid-work without reinstalling | Accepted |
+| [0016](0016-codex-adapter.md) | Codex adapter (OpenAI) | Accepted for iteration 2 |
+| [0017](0017-opencode-adapter.md) | OpenCode adapter (provider-agnostic) | Accepted for iteration 2 |
+| [0019](0019-antigravity-adapter.md) | Antigravity adapter (Google) | Accepted for a later slice |
