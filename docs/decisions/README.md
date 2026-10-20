@@ -40,6 +40,6 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0031](0031-work-types.md) | Work types beyond software and AI | Proposed |
 | [0032](0032-mdo-0004-command-run-and-statuses.md) | Commands run for real (MDO-0004): defects fixed and command statuses | Accepted |
 | [0033](0033-mdo-0005-run-identity-kind-characterization.md) | The MDO-0005 re-run: deterministic identity, task kind, characterization tests, executed premises | Accepted |
-| [0034](0034-specify-data-model-and-diagram-by-change.md) | specify: a conditional data model, and the diagram chosen by what is built | Proposed |
+| [0034](0034-specify-data-model-and-diagram-by-change.md) | specify: a conditional data model, and the diagram chosen by what is built | Accepted |
 | [0035](0035-readable-specs-and-cost-levers.md) | Readable spec documents, a real lite, Leader scripts, approvals and recorded premises | Accepted |
 | [0036](0036-cost-conscious-by-design.md) | Cost-conscious by design | Accepted |

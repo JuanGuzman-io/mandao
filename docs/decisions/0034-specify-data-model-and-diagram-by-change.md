@@ -1,7 +1,7 @@
 # 0034 — specify: a conditional data model, and the diagram chosen by what is built
 
-**Status:** Proposed · 2026-10-20 · implementation waits for approval, together with the readability
-pass of the spec documents
+**Status:** Accepted · 2026-10-20 · implemented in `rules/doc-data-model.md`, `rules/diagram.md` and
+`spec/data-model.md`, loaded by `specify` only when they apply
 
 ## 1. `data-model.md`, only when data changes
 
