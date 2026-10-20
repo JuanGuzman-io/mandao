@@ -21,7 +21,7 @@ Applies the principles in `spec-docs.md`.
   the worktree or a sandbox, with a timeout, through the resource guard); a search or a read is not
   enough. The run is recorded with `mandao run premise <spec> <Pn> -- <command>`, from the worktree: probe
   scripts go in the spec's `_log/premises/probes/`, never in a home folder or outside the repository; the
-  command may not name a path outside the worktree, and its temporary files (`TMPDIR`) stay in
-  `_log/premises/tmp/`, removed after the run; without a recorded
+  command may not name a path outside the worktree, and its temporary files (`TMPDIR`) and its `HOME`
+  stay in `_log/premises/tmp/`, removed after the run; without a recorded
   run it is `UNVERIFIED`, and `trace` reports `PREMISE_UNPROVEN` otherwise. The outputs go in the
   evidence block.

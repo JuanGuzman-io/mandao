@@ -84,12 +84,15 @@ export function registerPremise(run: Command, ctx: CliContext) {
       const budget = budgetFor(ctx.root(), config, project, 'unit', `${id} premise`, o.force, spec.dir);
       // Temporary files the probe makes go inside the spec's log, and are removed after the run.
       const scratch = join(logPath(spec.dir, 'premises'), 'tmp', id);
+      const home = join(logPath(spec.dir, 'premises'), 'tmp', `${id}-home`);
       ensureDir(scratch);
+      ensureDir(home);
       let result: Awaited<ReturnType<typeof runTests>>;
       try {
         result = await runTests(cwd, `${id} premise`, `${command} 2>&1`, { ...budget, timeoutS: Number(o.timeout) }, undefined, {
           keepOutput: true,
-          env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch },
+          // HOME too: a probe that writes to `~` from its own code lands in the spec's log, not the real home.
+          env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch, HOME: home, USERPROFILE: home },
         });
       } finally {
         removeScratchDir(join(logPath(spec.dir, 'premises'), 'tmp'), spec.dir);

@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -125,6 +126,17 @@ describe('premises are verified only by a recorded run', () => {
     const r = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', rel);
     expect(r).toMatchObject({ recorded: true, exitCode: 0 });
     expect(r.excerpt).toContain(join(root, SPEC));
+    expect(existsSync(join(logPath(join(root, SPEC), 'premises'), 'tmp'))).toBe(false);
+    // A probe that writes to ~ from its own code: HOME points inside the spec's log, never the real home.
+    const marker = `mandao-premise-${Date.now()}.txt`;
+    writeFileSync(
+      join(probes, 'p2.mjs'),
+      `import { writeFileSync } from 'node:fs'; import { homedir } from 'node:os'; import { join } from 'node:path'; const f = join(homedir(), '${marker}'); writeFileSync(f, 'x'); console.log('home ' + f);`,
+    );
+    const h = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', `${SPEC}/premises/probes/p2.mjs`);
+    expect(h).toMatchObject({ recorded: true, exitCode: 0 });
+    expect(h.excerpt).toContain(join(root, SPEC));
+    expect(existsSync(join(homedir(), marker))).toBe(false);
     expect(existsSync(join(logPath(join(root, SPEC), 'premises'), 'tmp'))).toBe(false);
     const record = readFileSync(join(logPath(join(root, SPEC), 'premises'), 'P1.md'), 'utf8');
     expect(record.split('```')[0]).not.toContain(root);
