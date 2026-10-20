@@ -50,6 +50,10 @@ export const modelsSchema = z.object({
 export type Models = z.infer<typeof modelsSchema>;
 export const emptyModels = (): Models => ({ schema_version: 1, harnesses: {} });
 
+const price = z.number().nonnegative();
+const priceSchema = z.object({ input: price, cache_write_5m: price, cache_write_1h: price, cache_read: price, output: price });
+export type ModelPrice = z.infer<typeof priceSchema> & { long_context?: z.infer<typeof priceSchema> & { above_tokens: number } };
+
 const routedModels = z.object({ leader: model, reviewer: model, reviewer_alt: model.optional(), implementer: tierModels, tester: model });
 const simpleModels = z.object({ implementer: model, reviewer: model });
 
@@ -97,6 +101,17 @@ export const recommendationsSchema = z.object({
         .optional(),
       /** Reasoning effort per role, for harnesses that support it. */
       effort: roleEfforts.optional(),
+      /** USD per million tokens per model, from the official pricing page (ADR 0036). */
+      prices: z
+        .object({
+          source: z.url(),
+          reviewed: z.iso.date(),
+          per_mtok: z.record(
+            model,
+            priceSchema.extend({ long_context: priceSchema.extend({ above_tokens: z.number().int().positive() }).optional() }),
+          ),
+        })
+        .optional(),
       /** The cheaper profiles: role overrides over `routed`/`simple`, with the reason for each choice. */
       profiles: z
         .object({ balanced: roleModels.extend({ why: z.string().min(1) }), economy: roleModels.extend({ why: z.string().min(1) }) })

@@ -13,6 +13,8 @@ disable-model-invocation: true
 
 # /mandao-specify
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Arguments: $ARGUMENTS
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,

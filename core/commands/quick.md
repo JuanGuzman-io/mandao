@@ -21,11 +21,14 @@ templates:
   - rules/quick-gate.md
   - rules/review.md
   - rules/commits.md
+  - rules/budget.md
 scripts: [quick-check, spec-new, quick-log]
 approval: none
 ---
 
 # /mandao-quick
+
+Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 
 Change: {{arg:change}}
 

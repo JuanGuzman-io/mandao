@@ -76,6 +76,7 @@ Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
 | `mandao skills list` | List skills pinned in the workspace lock |
 | `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session |
+| `mandao run cost <spec>` | Spend per command and role against `budget.per_spec`; commands record their own spend (Claude Code reads its session record at official prices) |
 | `mandao run …` | Helper scripts the commands call, compact JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
 
 ## Customizing

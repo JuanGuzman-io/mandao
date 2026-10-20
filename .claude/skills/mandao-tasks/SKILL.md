@@ -11,6 +11,8 @@ disable-model-invocation: true
 
 # /mandao-tasks
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: $spec
 
 Write task content in `en`; headings, ids and YAML keys stay in English.

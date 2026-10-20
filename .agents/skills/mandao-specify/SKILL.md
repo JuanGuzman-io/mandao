@@ -6,6 +6,8 @@ description: Turn a story into requirements and design at lite, standard or full
 
 # /mandao-specify
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Arguments: the text the user wrote after the skill name
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,

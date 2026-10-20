@@ -6,6 +6,8 @@ description: "Create or enrich a user story with enough business context: suffic
 
 # /mandao-story
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Input: the text the user wrote after the skill name
 
 Write the story in `en`, in business language. Follow

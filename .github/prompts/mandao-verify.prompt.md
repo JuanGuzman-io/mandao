@@ -13,6 +13,8 @@ tools:
 
 # /mandao-verify
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: ${input:spec:Spec folder or id}
 
 You verify that what was built is what the spec asked for, with evidence. Write the report in

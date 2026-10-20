@@ -11,6 +11,8 @@ disable-model-invocation: true
 
 # /mandao-quick
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Change: $change
 
 Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templates/app/rules/quick-gate.md`.

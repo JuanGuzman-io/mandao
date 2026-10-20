@@ -24,10 +24,13 @@ templates:
   - rules/consistency-check.md
   - rules/doc-verify.md
   - rules/doc-quickstart.md
+  - rules/budget.md
 scripts: [where, verify-plan, tests, build, status, trace, commit-spec]
 ---
 
 # /mandao-verify
+
+Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 
 Spec: {{arg:spec}}
 

@@ -1,7 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import type { Command } from 'commander';
-import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
+import { LOCK_FILE, readConfig, readLock, readModels } from '../engine/files.js';
+import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
+import { resolveModels } from '../models/resolve.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitsSize, fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
@@ -15,12 +17,16 @@ import {
   type CloseLink,
   type CloseSummary,
   compareTdd,
+  costKaizen,
   impactItems,
+  type LeaderSwitch,
   parseCloseSummary,
+  parseCosts,
   planTasks,
   prPlan,
   renderCloseSummary,
   specMetrics,
+  summarizeCosts,
   verifyResults,
   withEnvironment,
   withPublication,
@@ -48,6 +54,26 @@ function bugsAfterMerge(config: ReturnType<typeof readConfig>, spec: SpecFolder,
   };
 }
 
+const specCosts = (dir: string) => {
+  const file = logPath(dir, 'costs.yml');
+  return parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
+};
+
+/** What switching to the next cheaper profile would do to the Leader, priced with the official table. */
+function leaderSwitch(root: string, config: ReturnType<typeof readConfig>): LeaderSwitch | undefined {
+  const harness = config.harnesses[0];
+  if (!harness) return undefined;
+  const recs = readRecommendations();
+  const prices = recs.harnesses[harness]?.prices?.per_mtok ?? {};
+  const current = readModels(root).profile ?? 'peak';
+  const next = current === 'peak' ? 'balanced' : current === 'balanced' ? 'economy' : undefined;
+  if (!next) return undefined;
+  const from = resolveWorkspaceModels(root, config, recs)[harness]?.leader?.model;
+  const to = resolveModels(harness, 'routed', recs, [], next).leader?.model;
+  if (!from || !to || from === to || !prices[from] || !prices[to]) return undefined;
+  return { profile: next, model: to, priceRatio: prices[to]!.input / prices[from]!.input };
+}
+
 function metricsOf(config: ReturnType<typeof readConfig>, spec: SpecFolder, trackerBugs?: number) {
   const bugs = bugsAfterMerge(config, spec, trackerBugs);
   return specMetrics(spec.name, spec.tasks, spec.execution, forcedRunCount(readIf(logPath(spec.dir, 'execution.md'))), bugs);
@@ -61,7 +87,10 @@ function registerKaizen(run: Command, ctx: CliContext) {
     .action((ref: string, o: { trackerBugs?: string }) => {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
-      json(metricsOf(config, spec, o.trackerBugs === undefined ? undefined : Number(o.trackerBugs)));
+      json({
+        ...metricsOf(config, spec, o.trackerBugs === undefined ? undefined : Number(o.trackerBugs)),
+        costs: summarizeCosts(specCosts(spec.dir), config.budget.per_spec),
+      });
     });
 
   run
@@ -71,8 +100,13 @@ function registerKaizen(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const dir = join(ctx.root(), config.paths.specs);
       const specs = existsSync(dir) ? readdirSync(dir).filter((d) => hasExecutionLog(join(dir, d))) : [];
-      const metrics = specs.map((d) => metricsOf(config, readSpec(join(dir, d))));
-      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), specs: metrics });
+      const folders = specs.map((d) => readSpec(join(dir, d)));
+      const metrics = folders.map((s) => metricsOf(config, s));
+      const costs = costKaizen(
+        folders.map((s) => ({ spec: s.name, costs: specCosts(s.dir), tasks: s.tasks, rows: s.execution })),
+        leaderSwitch(ctx.root(), config),
+      );
+      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, specs: metrics });
     });
 }
 

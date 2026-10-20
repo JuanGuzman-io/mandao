@@ -6,6 +6,8 @@ description: Kaizen, apply approved constitution and product impacts, sync AGENT
 
 # /mandao-close
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: <spec>
 
 You close a verified spec: measure, learn, update the foundation, document, publish. Nothing leaves the

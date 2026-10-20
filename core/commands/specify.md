@@ -41,11 +41,14 @@ templates:
   - rules/doc-lite.md
   - rules/doc-quickstart.md
   - rules/doc-tasks.md
+  - rules/budget.md
 scripts: [spec-new, trace, diagram, branching, commit-spec, resources, premise]
 approval: required
 ---
 
 # /mandao-specify
+
+Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 
 Arguments: {{args}}
 

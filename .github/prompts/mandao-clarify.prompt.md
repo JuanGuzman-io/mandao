@@ -12,6 +12,8 @@ tools:
 
 # /mandao-clarify
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: ${input:spec:Spec folder or id}
 
 Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules/consistency-check.md`.
