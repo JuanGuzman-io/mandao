@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: approved
+status: in-progress
 sources:
   - { ref: "user request (/mandao-story input)", kind: chat, date: 2026-10-20 }
   - { ref: "specs/quick/quick-log.md:10 (restore-mandao-home) and commit 893722f", kind: repo, date: 2026-10-20 }
