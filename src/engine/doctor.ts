@@ -11,9 +11,11 @@ import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
+import { readCatalog } from './catalog.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildOutputs } from './sync.js';
+import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
 export type Level = 'error' | 'warn' | 'info' | 'ok';
 
@@ -53,6 +55,16 @@ function workspaceFindings(root: string, config: Config): Finding[] {
         message: `project "${p.name}" has no remote yet (repo: local)`,
         fix: 'set projects[].repo to its remote URL so close can link PRs',
       });
+    for (const [gate, command] of Object.entries(p.gates)) {
+      const bin = command.trim().split(/\s+/)[0] ?? '';
+      if (bin && !onPath(bin)) {
+        out.push({
+          level: 'info',
+          message: `project "${p.name}": gate ${gate} needs ${bin}, which is not installed here`,
+          fix: `install ${bin} to run the gate locally`,
+        });
+      }
+    }
     const missing = GATES.filter((g) => !p.gates[g]);
     if (missing.length) {
       out.push({
@@ -95,7 +107,10 @@ export function modelFindings(root: string, config: Config, recs: Recommendation
       }
       const rec = recs.harnesses[harness];
       for (const { role, choice } of usedModels(m)) {
-        if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
+        const optional = rec?.optional.find((o) => o.model === choice.model);
+        if (optional) {
+          out.push({ level: 'info', message: `${harness}${where}: ${role} uses "${choice.model}", which ${optional.note}` });
+        } else if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
           out.push({
             level: 'warn',
             message: `${harness}${where}: ${role} uses "${choice.model}", which is not among Mandao's recommendations (reviewed ${rec.reviewed})`,
@@ -134,7 +149,13 @@ function graphHookFindings(root: string, config: Config): Finding[] {
   return out;
 }
 
-export function runDoctor(root: string): Finding[] {
+export interface DoctorOptions {
+  /** Runs shell probes (tool versions, npm registry); injectable for tests. */
+  probe?: Probe;
+}
+
+export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
+  const probe = opts.probe ?? shellProbe;
   const findings: Finding[] = [];
   const { version } = packageInfo();
 
@@ -176,6 +197,7 @@ export function runDoctor(root: string): Finding[] {
 
   findings.push(...workspaceFindings(root, config));
 
+  const lockForTools = readLock(join(root, LOCK_FILE));
   let build: ReturnType<typeof buildOutputs>;
   try {
     build = buildOutputs(
@@ -195,6 +217,10 @@ export function runDoctor(root: string): Finding[] {
   }
   findings.push(...build.warnings.map((m) => ({ level: 'warn' as const, message: m })));
   findings.push(...modelFindings(root, config, readRecommendations()));
+  const catalog = readCatalog();
+  findings.push(
+    ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...(lockForTools?.skills ?? []).map((s) => s.id)])], probe),
+  );
   findings.push(...graphHookFindings(root, config));
 
   const lock = readLock(join(root, LOCK_FILE));
@@ -202,6 +228,7 @@ export function runDoctor(root: string): Finding[] {
     findings.push({ level: 'error', message: 'no .mandao/mandao.lock', fix: 'run `mandao sync`' });
     return findings;
   }
+  findings.push(...runnerFindings(root, lock.mandao, probe));
   if (lock.mandao !== version) {
     findings.push({
       level: 'warn',

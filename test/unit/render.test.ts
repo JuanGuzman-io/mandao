@@ -10,7 +10,6 @@ const ctx = (over: Partial<RenderContext> = {}): RenderContext => ({
   mode: 'single',
   paths: { specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases' },
   version: '0.1.0',
-  scriptRunner: 'npx',
   language: { business: 'es', technical: 'en' },
   ...over,
 });
@@ -84,7 +83,9 @@ describe('tokens', () => {
       ctx(),
       syntax,
     );
-    expect(out).toBe('ARGS ARG(spec) /mandao-tasks .mandao/templates/app/design.md npx -y mandao@0.1.0 run quick-check specs 0.1.0');
+    expect(out).toBe(
+      'ARGS ARG(spec) /mandao-tasks .mandao/templates/app/design.md node .mandao/bin/mandao.mjs run quick-check specs 0.1.0',
+    );
   });
 
   test('template paths use a <profile> placeholder when the workspace mixes profiles', () => {
@@ -93,10 +94,8 @@ describe('tokens', () => {
     );
   });
 
-  test('the local runner avoids the network', () => {
-    expect(renderBody(meta, '{{script:quick-check}}', ctx({ scriptRunner: 'local' }), syntax)).toBe(
-      'npx --no-install mandao run quick-check',
-    );
+  test('{{mandao}} invokes the launcher', () => {
+    expect(renderBody(meta, '{{mandao}} skills add x', ctx(), syntax)).toBe('node .mandao/bin/mandao.mjs skills add x');
   });
 
   test.each([

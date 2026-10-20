@@ -13,6 +13,9 @@ import { applyChanges } from '../writer/apply.js';
 import { type Change, planChanges } from '../writer/plan.js';
 import { inputsText, LOCK_FILE, LOCK_HEADER, readConfig, readLock, writeYaml } from './files.js';
 import { globalLockFile, globalRoots } from './global.js';
+import { gitIgnoreBlock, graphIgnoreBlock } from './graph.js';
+import { LAUNCHER_PATH, launcherScript } from './launcher.js';
+import { findModuleGuides } from './modules.js';
 
 export interface BuildResult {
   files: GeneratedFile[];
@@ -28,9 +31,10 @@ export function buildOutputs(
   layers: Layer[],
   version: string,
   scope: InstallScope,
+  moduleDirs: string[] = [],
 ): BuildResult {
   const resolution = resolve(layers);
-  const input: AdapterInput = { resolution, config, models, version, scope };
+  const input: AdapterInput = { resolution, config, models, version, scope, moduleDirs };
   const files: GeneratedFile[] = [];
   const warnings: string[] = [];
 
@@ -47,6 +51,14 @@ export function buildOutputs(
       files.push({ path: t.path, content: t.content, ownership: 'owned', from: t.from, harness: 'mandao', scope: 'project' });
     }
     files.push({
+      path: LAUNCHER_PATH,
+      content: launcherScript(version, config.scripts.runner),
+      ownership: 'owned',
+      from: 'config:scripts',
+      harness: 'mandao',
+      scope: 'project',
+    });
+    files.push({
       path: COMMITLINT_PATH,
       content: commitlintConfig(config, version),
       ownership: 'owned',
@@ -54,6 +66,9 @@ export function buildOutputs(
       harness: 'mandao',
       scope: 'project',
     });
+    const childRepos = config.workspace === 'polyrepo' ? config.projects.map((p) => p.path) : [];
+    files.push(gitIgnoreBlock(childRepos, version));
+    files.push(graphIgnoreBlock(files, version));
   }
 
   return { files, warnings, layers, resolution };
@@ -87,7 +102,14 @@ export function syncProject(root: string, opts: SyncOptions = {}): SyncResult {
   const config = readConfig(root);
   const { version } = packageInfo();
   const layers = loadLayers(root, config.presets);
-  const build = buildOutputs(config, resolveWorkspaceModels(root, config, readRecommendations()), layers, version, 'project');
+  const build = buildOutputs(
+    config,
+    resolveWorkspaceModels(root, config, readRecommendations()),
+    layers,
+    version,
+    'project',
+    findModuleGuides(root, config),
+  );
   const lockPath = join(root, LOCK_FILE);
   const previous = readLock(lockPath);
   const changes = planChanges(build.files, previous?.files ?? [], { project: root }, opts.force);

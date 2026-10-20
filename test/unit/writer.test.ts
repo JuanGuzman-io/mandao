@@ -96,11 +96,42 @@ describe('managed blocks', () => {
   });
 
   test('an orphan block is removed and the file deleted only if nothing else is left', () => {
-    expect(removeBlock(`${block('x')}\n`)).toBeUndefined();
-    expect(removeBlock(`# Mine\n\n${block('x')}\n`)).toBe('# Mine\n');
+    expect(removeBlock('AGENTS.md', `${block('x')}\n`)).toBeUndefined();
+    expect(removeBlock('AGENTS.md', `# Mine\n\n${block('x')}\n`)).toBe('# Mine\n');
   });
 });
 
 test('upsertBlock replaces in place even if the block contains $ patterns', () => {
-  expect(upsertBlock(`a\n${block('old')}\nb`, block('cost $1 $&'))).toBe(`a\n${block('cost $1 $&')}\nb`);
+  expect(upsertBlock('AGENTS.md', `a\n${block('old')}\nb`, block('cost $1 $&'))).toBe(`a\n${block('cost $1 $&')}\nb`);
+});
+
+test('non-Markdown files use hash comments for the managed block', () => {
+  const root = makeTree({ '.gitignore': 'node_modules/\n' });
+  const gitignore: GeneratedFile = {
+    path: '.gitignore',
+    content: '# mandao:begin\ngraphify-out/\n# mandao:end',
+    ownership: 'managed-block',
+    from: 'block:x',
+    harness: 'mandao',
+    scope: 'project',
+  };
+  sync(root, [gitignore], []);
+  expect(readFileSync(join(root, '.gitignore'), 'utf8')).toBe('node_modules/\n\n# mandao:begin\ngraphify-out/\n# mandao:end\n');
+});
+
+describe('editYaml', () => {
+  test('keeps comments and refuses to overwrite a concurrent edit', async () => {
+    const { editYaml, ConcurrentEditError } = await import('../../src/writer/files.js');
+    const root = makeTree({ 'c.yml': '# keep me\na: 1\n' });
+    expect(editYaml(join(root, 'c.yml'), (d) => d.set('b', 2))).toBe('updated');
+    expect(readFileSync(join(root, 'c.yml'), 'utf8')).toBe('# keep me\na: 1\nb: 2\n');
+    expect(editYaml(join(root, 'c.yml'), (d) => d.set('b', 2))).toBe('unchanged');
+    expect(() =>
+      editYaml(join(root, 'c.yml'), (d) => {
+        writeFileSync(join(root, 'c.yml'), 'a: 9\n'); // someone edits the file meanwhile
+        d.set('b', 3);
+      }),
+    ).toThrow(ConcurrentEditError);
+    expect(readFileSync(join(root, 'c.yml'), 'utf8')).toBe('a: 9\n');
+  });
 });

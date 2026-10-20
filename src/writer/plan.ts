@@ -62,12 +62,12 @@ export function planChanges(files: GeneratedFile[], previous: LockFile[], roots:
       continue;
     }
 
-    const current = disk === undefined ? undefined : extractBlock(disk);
-    if (disk === undefined) changes.push({ ...base, action: 'create', write: upsertBlock(undefined, file.content), lock });
+    const current = disk === undefined ? undefined : extractBlock(file.path, disk);
+    if (disk === undefined) changes.push({ ...base, action: 'create', write: upsertBlock(file.path, undefined, file.content), lock });
     else if (current !== undefined && sha256(current) === hash) changes.push({ ...base, action: 'unchanged', lock });
     else if (!force && current !== undefined && recorded && sha256(current) !== recorded.hash)
       changes.push({ ...base, action: 'drift', lock: recorded });
-    else changes.push({ ...base, action: 'update', write: upsertBlock(disk, file.content), lock });
+    else changes.push({ ...base, action: 'update', write: upsertBlock(file.path, disk, file.content), lock });
   }
 
   const wanted = new Set(files.map(key));
@@ -77,14 +77,14 @@ export function planChanges(files: GeneratedFile[], previous: LockFile[], roots:
     const disk = read(abs);
     const base = { path: old.path, scope: old.scope, abs };
     if (disk === undefined) continue;
-    const current = old.ownership === 'owned' ? disk : extractBlock(disk);
+    const current = old.ownership === 'owned' ? disk : extractBlock(old.path, disk);
     if (current === undefined) continue;
     if (!force && sha256(current) !== old.hash) {
       changes.push({ ...base, action: 'drift-orphan', lock: old });
     } else if (old.ownership === 'owned') {
       changes.push({ ...base, action: 'delete' });
     } else {
-      const rest = removeBlock(disk);
+      const rest = removeBlock(old.path, disk);
       changes.push({ ...base, action: 'delete', ...(rest !== undefined ? { write: rest } : {}) });
     }
   }

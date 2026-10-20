@@ -11,6 +11,8 @@ export interface AdapterInput {
   models: Partial<Record<HarnessId, ResolvedModels>>;
   version: string;
   scope: InstallScope;
+  /** Folders below projects that hold an `AGENTS.md` (module guides), found by the engine. */
+  moduleDirs?: string[];
 }
 
 export interface GeneratedFile {

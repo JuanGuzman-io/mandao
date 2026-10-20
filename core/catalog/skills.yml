@@ -18,6 +18,7 @@ skills:
       type: command
       repo: https://github.com/Graphify-Labs/graphify
       install: ["uv tool install graphifyy==0.9.92", "graphify install --project"]
+      version_command: graphify --version
     version: 0.9.92
     author: Safi Shamsi and the Graphify contributors
     license: Apache-2.0

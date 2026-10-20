@@ -1,5 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import type { z } from 'zod';
 import {
@@ -14,6 +14,7 @@ import {
   type Sources,
   sourcesSchema,
 } from '../schemas/index.js';
+import { writeText } from '../writer/files.js';
 
 export const MANDAO_DIR = '.mandao';
 export const CONFIG_FILE = `${MANDAO_DIR}/config.yml`;
@@ -54,6 +55,5 @@ export function readLock(file: string): Lock | undefined {
 }
 
 export function writeYaml(file: string, data: unknown, header?: string) {
-  mkdirSync(dirname(file), { recursive: true });
-  writeFileSync(file, `${header ? `${header}\n` : ''}${stringifyYaml(data, { lineWidth: 0 })}`);
+  return writeText(file, `${header ? `${header}\n` : ''}${stringifyYaml(data, { lineWidth: 0 })}`);
 }

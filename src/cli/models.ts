@@ -1,12 +1,14 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
-import { parseDocument } from 'yaml';
 import { MODELS_FILE, readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { independence, type ModelLayer, missingRoles, type ResolvedModels, usedModels } from '../models/resolve.js';
 import { HARNESS_IDS, type HarnessId, MODEL_MODES, type ModelMode, ROLES, type RoleModels, TIERS, type Tier } from '../schemas/index.js';
+import { editYaml } from '../writer/files.js';
 import { c } from './output.js';
+
+const EMPTY_MODELS = 'schema_version: 1\nharnesses: {}\n';
 
 /** Parses `--set reviewer=sonnet --set implementer.strong=opus` into a flag layer. */
 export function flagLayer(sets: string[] = []): ModelLayer {
@@ -87,25 +89,27 @@ export function setModel(root: string, opts: { role: string; model: string; harn
   const project = opts.project ? config.projects.find((p) => p.name === opts.project) : undefined;
   if (opts.project && !project) throw new Error(`Unknown project "${opts.project}"`);
   const file = modelsFile(root, project?.path === '.' ? undefined : project?.path);
-  const doc = parseDocument(existsSync(file) ? readFileSync(file, 'utf8') : 'schema_version: 1\nharnesses: {}\n');
-  for (const h of harnesses) {
-    const path = ['harnesses', h, opts.role, ...(opts.tier ? [opts.tier] : [])];
-    // A string implementer cannot take a per-tier value: expand it first.
-    if (opts.tier) {
-      const current = doc.getIn(['harnesses', h, 'implementer']);
-      if (typeof current === 'string') doc.setIn(['harnesses', h, 'implementer'], Object.fromEntries(TIERS.map((t) => [t, current])));
-    }
-    doc.setIn(path, opts.model);
-  }
-  writeFileSync(file, doc.toString({ lineWidth: 0 }));
+  editYaml(
+    file,
+    (doc) => {
+      for (const h of harnesses) {
+        const path = ['harnesses', h, opts.role, ...(opts.tier ? [opts.tier] : [])];
+        // A string implementer cannot take a per-tier value: expand it first.
+        if (opts.tier) {
+          const current = doc.getIn(['harnesses', h, 'implementer']);
+          if (typeof current === 'string') doc.setIn(['harnesses', h, 'implementer'], Object.fromEntries(TIERS.map((t) => [t, current])));
+        }
+        doc.setIn(path, opts.model);
+      }
+    },
+    EMPTY_MODELS,
+  );
 }
 
 export function setMode(root: string, mode: string) {
   if (!(MODEL_MODES as readonly string[]).includes(mode)) throw new Error(`Mode must be one of ${MODEL_MODES.join(', ')}`);
   const file = modelsFile(root);
-  const doc = parseDocument(existsSync(file) ? readFileSync(file, 'utf8') : 'schema_version: 1\nharnesses: {}\n');
-  doc.set('mode', mode as ModelMode);
-  writeFileSync(file, doc.toString({ lineWidth: 0 }));
+  editYaml(file, (doc) => doc.set('mode', mode as ModelMode), EMPTY_MODELS);
 }
 
 export const isHarness = (h: string): h is HarnessId => (HARNESS_IDS as readonly string[]).includes(h);

@@ -26,6 +26,8 @@ export const commandFrontmatterSchema = z
           description: z.string().min(1),
           required: z.boolean().default(false),
           default: z.string().optional(),
+          /** A switch such as `--product`, shown as `[--name]` in hints. */
+          flag: z.boolean().default(false),
         }),
       )
       .default([]),

@@ -105,8 +105,8 @@ export const configSchema = z
       })
       .prefault({}),
     commits,
-    /** How generated commands invoke Mandao scripts: `npx` pins the version, `local` uses a devDependency. */
-    scripts: z.object({ runner: z.enum(['npx', 'local']).default('npx') }).prefault({}),
+    /** How the launcher finds Mandao: auto = local node_modules → global → npx with the locked version. */
+    scripts: z.object({ runner: z.enum(['auto', 'local', 'global', 'npx']).default('auto') }).prefault({}),
   })
   .transform((cfg) => ({ ...cfg, projects: cfg.projects.map((p) => ({ ...p, profile: p.profile ?? cfg.default_profile })) }))
   .superRefine((cfg, ctx) => {

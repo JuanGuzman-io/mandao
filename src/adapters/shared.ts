@@ -18,7 +18,7 @@ export function frontmatter(data: Record<string, unknown>): string {
 
 export function argumentHint(cmd: ResolvedCommand): string | undefined {
   if (!cmd.meta.arguments.length) return undefined;
-  return cmd.meta.arguments.map((a) => (a.required ? `<${a.name}>` : `[${a.name}]`)).join(' ');
+  return cmd.meta.arguments.map((a) => (a.flag ? `[--${a.name}]` : a.required ? `<${a.name}>` : `[${a.name}]`)).join(' ');
 }
 
 /** Commands installed for this scope and for at least one profile in use. */

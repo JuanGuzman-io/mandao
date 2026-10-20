@@ -1,8 +1,7 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import { Command } from 'commander';
-import { parseDocument } from 'yaml';
+import type { Document } from 'yaml';
 import { readCatalog } from '../engine/catalog.js';
 import { runDoctor } from '../engine/doctor.js';
 import { CONFIG_FILE, ConfigError, LOCK_FILE, LOCK_HEADER, readConfig, readLock, readModels, writeYaml } from '../engine/files.js';
@@ -18,6 +17,7 @@ import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
 import { analyzeDiff, collectDiff, DEFAULT_LIMITS } from '../scripts/quick-check.js';
 import { installSkills, installStep, pinSkills, shellRunner } from '../skills/install.js';
 import { packageInfo } from '../util/package-root.js';
+import { editYaml } from '../writer/files.js';
 import { type InitOptions, runInit } from './init.js';
 import { isHarness, printModels, resolveForCli, setMode, setModel } from './models.js';
 import { c, printChanges, printFindings, printWarnings } from './output.js';
@@ -25,11 +25,8 @@ import { c, printChanges, printFindings, printWarnings } from './output.js';
 const root = () => process.cwd();
 
 /** Edits config.yml in place, keeping the user's comments and ordering. */
-function editConfig(mutate: (doc: ReturnType<typeof parseDocument>) => void) {
-  const file = join(root(), CONFIG_FILE);
-  const doc = parseDocument(readFileSync(file, 'utf8'));
-  mutate(doc);
-  writeFileSync(file, doc.toString({ lineWidth: 0 }));
+function editConfig(mutate: (doc: Document) => void) {
+  editYaml(join(root(), CONFIG_FILE), mutate);
 }
 
 function sync(opts: { force?: boolean; dryRun?: boolean; verbose?: boolean }) {

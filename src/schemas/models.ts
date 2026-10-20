@@ -44,6 +44,8 @@ export const recommendationsSchema = z.object({
       available: z.array(model).min(1),
       routed: z.object({ leader: model, reviewer: model, reviewer_alt: model, implementer: tierModels, tester: model }),
       simple: z.object({ implementer: model, reviewer: model }),
+      /** Good choices that depend on the plan or an administrator: offered, never defaults. */
+      optional: z.array(z.object({ model, roles: z.array(z.enum(ROLES)).min(1), note: z.string().min(1) })).default([]),
     }),
   ),
 });

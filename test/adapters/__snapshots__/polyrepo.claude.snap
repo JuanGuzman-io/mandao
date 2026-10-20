@@ -46,7 +46,7 @@ Input: $ARGUMENTS
 
 Write `workspace/specs/$spec/design.md` from `.mandao/templates/app/design.md`.
 Add a `## Contract` section.
-Run `npx -y mandao@0.1.0 run quick-check` and continue with /mandao-tasks.
+Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.
 ",
   ".claude/skills/mandao-tasks/SKILL.md": "---
 name: mandao-tasks

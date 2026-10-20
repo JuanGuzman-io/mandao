@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { launcherCommand } from '../engine/launcher.js';
 import type { CommandFrontmatter, Config, Profile, WorkspaceMode } from '../schemas/index.js';
 import { PROFILES, WORKSPACE_MODES } from '../schemas/index.js';
 
@@ -10,7 +11,6 @@ export interface RenderContext {
   mode: WorkspaceMode;
   paths: Config['paths'];
   version: string;
-  scriptRunner: Config['scripts']['runner'];
   language: Config['language'];
   /** Known command ids; when set, `{{command:x}}` must reference one of them. */
   commands?: ReadonlySet<string>;
@@ -34,13 +34,13 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     // Paths are relative to `workspace.home`; agents run from the workspace root.
     paths: Object.fromEntries(Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)])) as Config['paths'],
     version,
-    scriptRunner: config.scripts.runner,
     language: config.language,
   };
 }
 
-export function scriptCommand(ctx: RenderContext, name: string): string {
-  return ctx.scriptRunner === 'local' ? `npx --no-install mandao run ${name}` : `npx -y mandao@${ctx.version} run ${name}`;
+/** Scripts run through the launcher, which resolves local → global → `npx mandao@<locked version>`. */
+export function scriptCommand(name: string): string {
+  return `${launcherCommand()} run ${name}`;
 }
 
 /**
@@ -140,7 +140,10 @@ export function renderBody(meta: CommandFrontmatter, body: string, ctx: RenderCo
         return templateReference(ctx, arg);
       case 'script':
         if (!arg || !meta.scripts.includes(arg)) throw new RenderError(`"${whole}" is not listed in frontmatter scripts`);
-        return scriptCommand(ctx, arg);
+        return scriptCommand(arg);
+      case 'mandao':
+        if (arg !== undefined) throw new RenderError(`unknown token "${whole}"`);
+        return launcherCommand();
       case 'command':
         if (!arg) throw new RenderError(`"${whole}" needs a command id`);
         if (ctx.commands && !ctx.commands.has(arg)) throw new RenderError(`"${whole}" references an unknown command`);

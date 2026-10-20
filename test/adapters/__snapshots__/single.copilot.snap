@@ -51,7 +51,7 @@ tools:
 Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, depth: ${input:depth:lite | standard | full}
 
 Write `specs/${input:spec:Spec id, e.g. PROJ-1-login}/design.md` from `.mandao/templates/app/design.md`.
-Run `npx -y mandao@0.1.0 run quick-check` and continue with /mandao-tasks.
+Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.
 ",
   ".github/prompts/mandao-tasks.prompt.md": "---
 name: mandao-tasks

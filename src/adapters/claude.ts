@@ -1,7 +1,7 @@
 import { posix } from 'node:path';
 import type { TokenSyntax } from '../render/render.js';
 import type { Capability } from '../schemas/index.js';
-import { BLOCK_BEGIN, BLOCK_END } from './agents-md.js';
+import { wrapBlock } from '../writer/blocks.js';
 import {
   argumentHint,
   commandName,
@@ -16,12 +16,12 @@ import {
 } from './shared.js';
 import type { Adapter, AdapterInput, GeneratedFile } from './types.js';
 
-/** CLAUDE.md is only a pointer to AGENTS.md, next to every AGENTS.md that Mandao manages. */
+/** CLAUDE.md is only a pointer to AGENTS.md: next to the workspace, project and module guides. */
 function claudeMdPointers(input: AdapterInput): GeneratedFile[] {
-  const dirs = new Set([input.config.home, ...input.config.projects.map((p) => p.path)]);
+  const dirs = new Set([input.config.home, ...input.config.projects.map((p) => p.path), ...(input.moduleDirs ?? [])]);
   return [...dirs].sort().map((dir) => ({
     path: posix.join(dir, 'CLAUDE.md'),
-    content: `${BLOCK_BEGIN}\n@AGENTS.md\n${BLOCK_END}`,
+    content: wrapBlock('CLAUDE.md', ['@AGENTS.md']),
     ownership: 'managed-block' as const,
     from: 'block:claude-pointer',
     harness: 'claude' as const,

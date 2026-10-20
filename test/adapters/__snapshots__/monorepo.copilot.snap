@@ -64,7 +64,7 @@ Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, depth: ${input:depth:lite
 Write `specs/${input:spec:Spec id, e.g. PROJ-1-login}/design.md` from `.mandao/templates/<profile>/design.md`.
 Criteria are eval thresholds.
 Add a `## Contract` section.
-Run `npx --no-install mandao run quick-check` and continue with /mandao-tasks.
+Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.
 ",
   ".github/prompts/mandao-tasks.prompt.md": "---
 name: mandao-tasks

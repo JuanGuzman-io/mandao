@@ -21,7 +21,7 @@ export interface DetectedWorkspace {
   projects: DetectedProject[];
 }
 
-const IGNORED_DIRS = new Set([
+export const IGNORED_DIRS = new Set([
   'node_modules',
   '.git',
   'dist',

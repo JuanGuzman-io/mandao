@@ -7,6 +7,8 @@ export const MAX_PROJECT_SKILLS = 10;
 const repo = z.url();
 /** Shell command whose success proves the skill is installed, e.g. `graphify --version`. */
 const verify = z.string().min(1).optional();
+/** Shell command that prints the installed version, compared by doctor with the pinned `version`. */
+const versionCommand = z.string().min(1).optional();
 
 const source = z.discriminatedUnion('type', [
   z.object({ type: z.literal('git'), url: repo, ref: z.string().min(1), path: z.string().optional(), verify }),
@@ -14,7 +16,7 @@ const source = z.discriminatedUnion('type', [
   /** Installed through the skills CLI: `npx skills add <ref>`. */
   z.object({ type: z.literal('skills'), ref: z.string().min(1), repo: repo.optional(), verify }),
   /** A shell installer documented upstream, run as is after confirmation. */
-  z.object({ type: z.literal('command'), install: z.array(z.string().min(1)).min(1), repo, verify }),
+  z.object({ type: z.literal('command'), install: z.array(z.string().min(1)).min(1), repo, verify, version_command: versionCommand }),
   /** An agent-side install (e.g. `/plugin install …`): Mandao prints it, the user runs it in the agent. */
   z.object({ type: z.literal('plugin'), install: z.array(z.string().min(1)).min(1), repo, verify }),
   z.object({ type: z.literal('bundled'), path: z.string().min(1) }),

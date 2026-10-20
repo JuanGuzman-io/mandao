@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
@@ -16,10 +16,13 @@ import {
   type Models,
   PROFILES,
   type Profile,
+  type Recommendations,
+  type Role,
   type RoleModels,
   TIERS,
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
+import { createIfMissing } from '../writer/files.js';
 import { c, printChanges, printWarnings } from './output.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
@@ -169,10 +172,10 @@ async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<
     for (const [role, value] of Object.entries(recommended) as [keyof RoleModels, RoleModels[keyof RoleModels]][]) {
       if (typeof value === 'object') {
         const tiers: Record<string, string> = {};
-        for (const tier of TIERS) tiers[tier] = await askModel(`${role} (${tier} tasks)`, value[tier]!, rec.available);
+        for (const tier of TIERS) tiers[tier] = await askModel(`${role} (${tier} tasks)`, value[tier]!, rec);
         chosen.implementer = tiers;
       } else if (value) {
-        (chosen as Record<string, string>)[role] = await askModel(role, value, rec.available);
+        (chosen as Record<string, string>)[role] = await askModel(role, value, rec);
       }
     }
     out.harnesses[harness] = chosen;
@@ -188,13 +191,16 @@ function rolesTable(models: RoleModels): string {
     .join('\n');
 }
 
-async function askModel(role: string, recommended: string, available: string[]): Promise<string> {
-  const others = available.filter((m) => m !== recommended);
+async function askModel(role: string, recommended: string, rec: NonNullable<Recommendations['harnesses'][HarnessId]>): Promise<string> {
+  const baseRole = role.split(' ')[0] as Role;
+  const others = rec.available.filter((m) => m !== recommended);
+  const optional = rec.optional.filter((o) => o.roles.includes(baseRole) && o.model !== recommended);
   const picked = await p.select({
     message: `Model for ${role}`,
     options: [
       { value: recommended, label: recommended, hint: 'recommended' },
       ...others.map((m) => ({ value: m, label: m })),
+      ...optional.map((o) => ({ value: o.model, label: o.model, hint: o.note })),
       { value: '__other', label: 'Other…' },
     ],
     initialValue: recommended,
@@ -228,16 +234,9 @@ async function choosePolyrepoStrategy(ws: DetectedWorkspace, opts: InitOptions):
   return { strategy: 'home', home: home as string };
 }
 
-function initWorkspaceRepo(root: string, projects: DetectedProject[]) {
+/** The child repositories are ignored through the managed block that `sync` writes into .gitignore. */
+function initWorkspaceRepo(root: string) {
   execFileSync('git', ['init', '--quiet'], { cwd: root });
-  const ignore = join(root, '.gitignore');
-  const existing = existsSync(ignore) ? readFileSync(ignore, 'utf8') : '';
-  const lines = projects.map((pr) => `/${pr.path}/`).filter((l) => !existing.split('\n').includes(l));
-  if (lines.length)
-    appendFileSync(
-      ignore,
-      `${existing && !existing.endsWith('\n') ? '\n' : ''}# Child repositories (Mandao polyrepo workspace)\n${lines.join('\n')}\n`,
-    );
 }
 
 const OVERRIDES_README = `# Overrides
@@ -306,7 +305,7 @@ export async function runInit(root: string, opts: InitOptions) {
   if (ws.mode === 'polyrepo' && !ws.rootIsRepo) {
     const choice = await choosePolyrepoStrategy(ws, opts);
     home = choice.home;
-    if (choice.strategy === 'workspace-repo') initWorkspaceRepo(root, projects);
+    if (choice.strategy === 'workspace-repo') initWorkspaceRepo(root);
     if (choice.strategy === 'local') localOnly = true;
   }
 
@@ -341,8 +340,7 @@ export async function runInit(root: string, opts: InitOptions) {
     writeYaml(join(root, SOURCES_FILE), SOURCES_TEMPLATE, '# Where business context lives: tracker, docs, chat, design, transcripts.');
   }
   const overrides = join(root, '.mandao', 'overrides');
-  mkdirSync(overrides, { recursive: true });
-  if (!existsSync(join(overrides, 'README.md'))) writeFileSync(join(overrides, 'README.md'), OVERRIDES_README);
+  createIfMissing(join(overrides, 'README.md'), OVERRIDES_README);
 
   const result = syncProject(root, { force: opts.force });
   printChanges(result.changes);

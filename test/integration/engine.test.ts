@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test } from 'vitest';
 import { runDoctor } from '../../src/engine/doctor.js';
@@ -17,6 +17,9 @@ function workspace() {
   writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { claude: { reviewer: 'opus' } } });
   return root;
 }
+
+/** Offline probe: the registry knows every mandao version; no external tools are installed. */
+const probe = (cmd: string) => (cmd.startsWith('npm view mandao@') ? '0.1.0\n' : undefined);
 
 const actions = (r: ReturnType<typeof syncProject>) => [...new Set(r.changes.map((c) => c.action))].sort();
 
@@ -67,11 +70,11 @@ describe('doctor', () => {
   test('clean after sync; reports drift and config changes', () => {
     const root = workspace();
     syncProject(root);
-    expect(runDoctor(root).filter((f) => f.level === 'error' || f.level === 'warn')).toEqual([]);
+    expect(runDoctor(root, { probe }).filter((f) => f.level === 'error' || f.level === 'warn')).toEqual([]);
 
     writeFileSync(join(root, '.claude/skills/mandao-specify/SKILL.md'), 'hand edit');
     writeFileSync(join(root, '.mandao/models.yml'), 'schema_version: 1\nharnesses: { claude: { reviewer: sonnet } }\n');
-    const warns = runDoctor(root)
+    const warns = runDoctor(root, { probe })
       .filter((f) => f.level === 'warn')
       .map((f) => f.message);
     expect(warns).toEqual(
@@ -85,7 +88,7 @@ describe('doctor', () => {
   test('invalid config is an error with the field path', () => {
     const root = workspace();
     writeFileSync(join(root, '.mandao/config.yml'), 'schema_version: 1\nworkspace: galaxy\nprojects: []\nharnesses: [claude]\n');
-    const errors = runDoctor(root)
+    const errors = runDoctor(root, { probe })
       .filter((f) => f.level === 'error')
       .map((f) => f.message);
     expect(errors.some((m) => m.includes('workspace:'))).toBe(true);
@@ -120,7 +123,7 @@ describe('models in doctor', () => {
       harnesses: { claude: { implementer: 'my-model', reviewer: 'my-model', reviewer_alt: 'my-model' } },
     });
     syncProject(root);
-    const warns = runDoctor(root)
+    const warns = runDoctor(root, { probe })
       .filter((f) => f.level === 'warn')
       .map((f) => f.message);
     expect(warns).toEqual(
@@ -144,11 +147,37 @@ describe('models in doctor', () => {
     });
     writeYaml(join(root, 'apps/b/.mandao/models.yml'), { schema_version: 1, harnesses: { claude: { reviewer: 'nonexistent' } } });
     syncProject(root);
-    const messages = runDoctor(root).map((f) => f.message);
+    const messages = runDoctor(root, { probe }).map((f) => f.message);
     expect(messages.filter((m) => m.includes('nonexistent'))).toEqual([
       expect.stringMatching(/^claude \(project b\): reviewer uses "nonexistent"/),
     ]);
     // Generated agents follow the workspace; project choices apply at run time through `mandao run models`.
     expect(readFileSync(join(root, '.claude/agents/mandao-reviewer.md'), 'utf8')).toMatch(/^model: opus$/m);
+  });
+});
+
+describe('generated support files', () => {
+  test('graph exclusions follow the adapters and module guides get CLAUDE.md pointers', () => {
+    const root = workspace();
+    writeFileSync(join(root, '.gitignore'), 'node_modules/\n');
+    mkdirSync(join(root, 'src/billing'), { recursive: true });
+    writeFileSync(join(root, 'src/billing/AGENTS.md'), '# Billing\n');
+    syncProject(root);
+
+    const graphignore = readFileSync(join(root, '.graphifyignore'), 'utf8');
+    expect(graphignore).toContain('.mandao/templates/');
+    expect(graphignore).toContain('.claude/skills/mandao-specify/');
+    expect(graphignore).toContain('.github/prompts/mandao-specify.prompt.md');
+    expect(graphignore).toContain('dist/');
+    expect(graphignore).not.toContain('AGENTS.md');
+    expect(readFileSync(join(root, '.gitignore'), 'utf8')).toMatch(
+      /^node_modules\/\n\n# mandao:begin\n.*\ngraphify-out\/\n# mandao:end\n$/s,
+    );
+    expect(readFileSync(join(root, 'src/billing/CLAUDE.md'), 'utf8')).toBe('<!-- mandao:begin -->\n@AGENTS.md\n<!-- mandao:end -->\n');
+
+    // Removing the module guide removes its pointer on the next sync.
+    rmSync(join(root, 'src/billing/AGENTS.md'));
+    syncProject(root);
+    expect(existsSync(join(root, 'src/billing/CLAUDE.md'))).toBe(false);
   });
 });
