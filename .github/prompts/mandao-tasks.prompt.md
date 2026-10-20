@@ -17,6 +17,9 @@ Spec: ${input:spec:Spec folder or id}
 
 Write task content in `en`; headings, ids and YAML keys stay in English.
 
+At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
+nothing to do here. Otherwise:
+
 1. **Gate.** Run `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id}`; work in the spec's worktree. Run
    `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend /mandao-clarify.

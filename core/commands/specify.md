@@ -2,9 +2,9 @@
 schema_version: 1
 id: specify
 title: Specify
-description: "Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check."
+description: "Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story, spec and tasks in one session."
 status: stable
-flow: { after: [story], next: [clarify, tasks] }
+flow: { after: [story], next: [clarify, tasks, implement] }
 arguments:
   - name: ref
     description: "Spec folder, tracker id (PROJ-123) or item URL; empty to choose"
@@ -18,8 +18,9 @@ inputs:
   - { path: "{{paths.constitution}}/", required: true }
   - { path: .mandao/sources.yml }
 outputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: standard and full }
+  - { path: "{{paths.specs}}/<ID>-<slug>/design.md", description: standard and full }
+  - { path: "{{paths.specs}}/<ID>-<slug>/spec.md", description: "lite: requirements, design and up to 3 tasks" }
   - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: only when the spec has behavior a user or PO can see }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
 capabilities: [read, search, edit, shell, mcp]
@@ -33,6 +34,8 @@ templates:
   - spec/requirements.md
   - spec/design.md
   - spec/quickstart.md
+  - spec/spec.md
+  - spec/tasks.md
 scripts: [spec-new, trace, diagram, branching, commit-spec, resources]
 approval: required
 ---
@@ -85,6 +88,21 @@ regression test, lite by default · `enhancement` → requirements as ADDED / MO
 | `full` | high risk, cross-cutting, new architecture | + exhaustive edge cases | + adversarial review of the design before approval |
 
 Use `{{arg:depth}}`; propose a different depth if the risk clearly calls for it.
+
+**Lite is one session** (the cost of a session is mostly loading its context, so lite does not pay it
+four times):
+1. Write `story.md` if there is none (from `{{template:spec/story.md}}`), then `spec.md` from
+   `{{template:spec/spec.md}}` instead of `requirements.md` and `design.md`: the same requirements and
+   design sections, a Premise Ledger with **High premises only**, and the tasks inline under `## Tasks`
+   (Details format of `{{template:spec/tasks.md}}`) when there are 3 or fewer. With more, write the
+   tasks in `tasks.md` as {{command:tasks}} does, in this same session.
+2. Skip {{command:clarify}} unless something is open: a `[NEEDS CLARIFICATION]`, an `OPEN` or a
+   Consistency Check finding.
+3. Ask for **one** approval of story, spec and tasks together; on approval set `status: approved` in
+   each and commit with `{{script:commit-spec}} {{arg:ref}} specify`. Next: {{command:implement}}, in
+   the same session when the user agrees: its context is already loaded.
+
+Sections 4 and 5 below describe the content; at lite it goes into `spec.md`.
 
 ## 3. Impact analysis
 

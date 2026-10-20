@@ -92,11 +92,21 @@ function taskIssues(lines: string[], task: Task): string[] {
   return out;
 }
 
+/** A lite `spec.md` carries its tasks inline, up to this many; more go to `tasks.md`. */
+export const MAX_INLINE_TASKS = 3;
+
 /**
- * Layout rules of the two-layer tasks.md. Files in the older one-layer layout (no `## Details`) are not
- * held to them: they were written before it existed.
+ * Layout rules of the two-layer tasks.md, and of tasks inline in a lite `spec.md` (no Overview there).
+ * Files in the older one-layer layout (no `## Details`) are not held to them: they predate it.
  */
-export function taskLayoutIssues(markdown: string, tasks: Task[], story?: Story): string[] {
+export function taskLayoutIssues(markdown: string, tasks: Task[], story?: Story, opts: { inline?: boolean } = {}): string[] {
+  if (opts.inline) {
+    if (!tasks.length) return [];
+    const lines = markdown.split('\n');
+    const over =
+      tasks.length > MAX_INLINE_TASKS ? [`spec.md: ${tasks.length} tasks inline; more than ${MAX_INLINE_TASKS} go to tasks.md`] : [];
+    return [...over, ...tasks.flatMap((t) => taskIssues(lines, t))];
+  }
   if (section(markdown, DETAILS) === undefined) return [];
   const issues: string[] = [];
   if (/<!--[\s\S]*?\S[\s\S]*?-->/.test(markdown)) issues.push('tasks.md: HTML comments are not allowed; write the text or drop it');

@@ -28,6 +28,7 @@ templates are skeletons and this file says what goes in each section.
 | Document | Question it answers | Written by |
 |---|---|---|
 | `story.md` | What does the user need, and how do we know it is done? | story |
+| `spec.md` (lite only) | What must be true, and how is it built? | specify |
 | `requirements.md` | What must be true? | specify; clarify adds answers |
 | `design.md` | How do we build it? | specify |
 | `data-model.md` | What data changes? (only when data changes; ADR 0034) | specify |
@@ -78,6 +79,15 @@ Where each fact lives:
   premise counts as verified only with an executed command and an excerpt of its output (read-only, in
   the worktree or a sandbox, with a timeout, through the resource guard); a search or a read is not
   enough. Otherwise it is `UNVERIFIED`. The outputs go in the evidence block.
+
+## spec.md (lite depth)
+
+At lite depth one session writes `story.md` and `spec.md`, which replaces `requirements.md`,
+`design.md` and, with 3 tasks or fewer, `tasks.md`. Same ids and the same rules as the documents it
+replaces: FRs and scenarios, the AC → FR matrix, decisions, changes with exemplars, the Consistency
+Check, clarifications, and a Premise Ledger with **High premises only**. Tasks go inline under
+`## Tasks` in the Details format, without an Overview; a fourth task means a separate `tasks.md`.
+Parsers, the Consistency Check and traceability read the same sections from `spec.md`.
 
 ## quickstart.md
 

@@ -26,3 +26,16 @@ const ROOT_MARKERS = ['execution.md', 'progress.yml'];
 /** True when the folder holds a spec's execution log, in `_log/` or (older specs) in the root. */
 export const hasExecutionLog = (specDir: string) =>
   existsSync(join(specDir, LOG_DIR, 'execution.md')) || existsSync(join(specDir, 'execution.md'));
+
+/** The documents of a spec, by role. A lite spec keeps requirements, design and (up to 3) tasks in `spec.md`. */
+export type SpecDoc = 'requirements' | 'design' | 'tasks';
+
+export const LITE_DOC = 'spec.md';
+
+/** The file holding a role: its own document when present, else `spec.md` when present, else its own name. */
+export function docPath(specDir: string, doc: SpecDoc): string {
+  const own = join(specDir, `${doc}.md`);
+  if (existsSync(own)) return own;
+  const lite = join(specDir, LITE_DOC);
+  return existsSync(lite) ? lite : own;
+}

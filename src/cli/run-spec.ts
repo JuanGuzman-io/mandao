@@ -12,6 +12,7 @@ import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from 
 import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
+import { docPath, LITE_DOC } from '../scripts/spec-log.js';
 import {
   blockingMarkers,
   commitMessage,
@@ -126,12 +127,13 @@ function registerPlanning(run: Command, ctx: CliContext) {
     .action((ref: string, o: { index?: boolean; write?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
       if (o.index) {
-        const file = join(spec.dir, 'tasks.md');
+        const file = docPath(spec.dir, 'tasks');
         if (o.write) writeText(file, withIndex(readFileSync(file, 'utf8'), spec.tasks, spec.story));
         return json({ overview: taskIndex(spec.tasks, spec.story), written: Boolean(o.write) });
       }
       const markers = [spec.story?.raw, spec.requirements?.raw].filter(Boolean).map((t) => blockingMarkers(t!));
-      const raw = existsSync(join(spec.dir, 'tasks.md')) ? readFileSync(join(spec.dir, 'tasks.md'), 'utf8') : '';
+      const tasksFile = docPath(spec.dir, 'tasks');
+      const raw = existsSync(tasksFile) ? readFileSync(tasksFile, 'utf8') : '';
       json({
         ...planTasks(
           spec.tasks,
@@ -140,7 +142,7 @@ function registerPlanning(run: Command, ctx: CliContext) {
         issues: [
           ...spec.issues,
           ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`),
-          ...taskLayoutIssues(raw, spec.tasks, spec.story),
+          ...taskLayoutIssues(raw, spec.tasks, spec.story, { inline: tasksFile.endsWith(LITE_DOC) }),
         ],
       });
     });
