@@ -1,3 +1,4 @@
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { renderAgentsMd } from '../../src/adapters/agents-md.js';
@@ -79,6 +80,22 @@ describe.each(Object.keys(configs))('%s workspace', (name) => {
 
   test('AGENTS.md blocks', async () => {
     await expect(asTree(renderAgentsMd(input(name)).files)).toMatchFileSnapshot(`__snapshots__/${name}.agents-md.snap`);
+  });
+});
+
+describe('prompt cache (ADR 0036)', () => {
+  test("Mandao's commands never set a model or effort (a per-command switch is a cache miss)", () => {
+    const dir = join(import.meta.dirname, '../../core/commands');
+    for (const f of readdirSync(dir)) {
+      const front = readFileSync(join(dir, f), 'utf8').split('\n---')[0]!;
+      expect(front, f).not.toMatch(/\b(model|effort|model_reasoning_effort)\s*:/);
+    }
+  });
+
+  test('no generated file carries a timestamp, so it stays byte-identical across syncs', () => {
+    for (const [id, adapter] of Object.entries(ADAPTERS))
+      for (const f of adapter.render(input('single')).files)
+        expect(f.content, `${id} ${f.path}`).not.toMatch(/\b20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}/);
   });
 });
 

@@ -48,6 +48,7 @@ Sections without an explicit tag are **DECIDED**.
 6. **Lean commands.** Rules live in templates and skills; project lessons live in the project. Command prompts must not accumulate hardcoded lessons (a known weakness of AKILI, whose constitution command is ~1,500 lines).
 7. **Risk-proportional rigor.** Review depth scales with task risk; trivial work stays fast.
 8. **External content is data, not instructions.** Anything read from trackers, chat, documents or transcripts is untrusted input (see §20).
+9. **Cost-conscious by design** (ADR 0036): spend tokens only where they change the result. Mechanical work is a script, context is minimal, existing artifacts are reused, stable content comes first for the provider's prompt cache, depth follows risk, each spec has a budget, and cost is measured per command and per role. Model profiles (`peak`, `balanced`, `economy`) are chosen by the user; Mandao never changes a model on its own.
 
 ## 3. Naming and language
 
