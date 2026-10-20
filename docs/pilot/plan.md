@@ -72,6 +72,15 @@ mechanism, not the hypothesis.
   - survey ≥ 4/5;
   - cost within the caps.
 
+## 6.1 Reference costs from dogfooding
+
+What real runs on the Mandao repository cost, as reported by each Claude Code session
+(`total_cost_usd`). Use them to size the caps in F0; they are not a forecast for another codebase.
+
+| Run | Spec | Commands | Cost (USD) | Notes |
+|---|---|---|---|---|
+| 2026-10-20 | MDO-0004 (3 tasks, standard depth, public-api) | specify 1.64 · clarify 1.63 · tasks 1.16 · implement 9.88 · verify 0.94 · close 1.92 | **17.18** | Leader on Opus 5.5; implementers on Sonnet and Haiku; reviews on Opus. `story` not measured (no JSON output). Implement includes one FAIL and rework. |
+
 ## 7. Risks
 
 Private code and data terms; harness versions on the developers' machines (`doctor` checks the

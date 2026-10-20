@@ -18,8 +18,10 @@ export function verifyResults(reportMd: string | undefined): Map<string, string>
   const section = reportMd?.split(/^## Acceptance criteria → tests\s*$/m)[1]?.split(/^## /m)[0] ?? '';
   for (const line of section.split('\n')) {
     const cells = line.split('|').map((c) => c.trim());
-    if (cells.length < 6 || !/^AC-\d+/.test(cells[1] ?? '')) continue;
-    out.set(cells[1]!, (cells[5] ?? '').toUpperCase());
+    // The first cell starts with the id; anything after it (`AC-1 main`) is description.
+    const ref = (cells[1] ?? '').match(/^(AC-\d+(?:\/C\d+)?)\b/)?.[1];
+    if (cells.length < 6 || !ref) continue;
+    out.set(ref, (cells[5] ?? '').toUpperCase());
   }
   return out;
 }
@@ -60,11 +62,26 @@ export function acStatus(
 /** Items proposed under a design.md section (`## Constitution Impact`, `## Product Impact`), comments removed. */
 export function impactItems(designMd: string, section: 'Constitution Impact' | 'Product Impact'): string[] {
   const body = designMd.split(new RegExp(`^## ${section}\\s*$`, 'm'))[1]?.split(/^## /m)[0] ?? '';
-  return body
-    .replace(/<!--[\s\S]*?-->/g, '')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => /^[-*] /.test(l))
-    .map((l) => l.slice(2).trim())
-    .filter((l) => l && !/^none\.?$/i.test(l));
+  const items: string[] = [];
+  let current: string[] | undefined;
+  const flush = () => {
+    if (current?.length) items.push(current.join(' '));
+    current = undefined;
+  };
+  for (const raw of body.replace(/<!--[\s\S]*?-->/g, '').split('\n')) {
+    const line = raw.trim();
+    if (!line) {
+      flush();
+      continue;
+    }
+    if (/^[-*] /.test(line)) {
+      flush();
+      current = [line.slice(2).trim()];
+    } else {
+      // A wrapped bullet line, or a plain paragraph: both belong to the current item.
+      current = [...(current ?? []), line];
+    }
+  }
+  flush();
+  return items.filter((l) => !/^none\.?$/i.test(l));
 }

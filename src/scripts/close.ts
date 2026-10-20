@@ -60,13 +60,17 @@ export function forcedRunCount(executionMd: string | undefined): number {
 }
 
 /** Files and changed lines of the given commits (`git show --numstat`): the real size, never an estimate. */
-export function commitsSize(repo: string, shas: string[]): { files: string[]; changedLines: number } {
+export function commitsSize(
+  repo: string,
+  shas: string[],
+  skip: (path: string) => boolean = () => false,
+): { files: string[]; changedLines: number } {
   const files = new Set<string>();
   let changedLines = 0;
   for (const sha of shas) {
     for (const line of git(repo, ['show', '--numstat', '--format=', sha]).split('\n').filter(Boolean)) {
       const [a, d, path] = line.split('\t');
-      if (!path) continue;
+      if (!path || skip(path)) continue;
       files.add(path);
       changedLines += (a === '-' ? 0 : Number(a)) + (d === '-' ? 0 : Number(d));
     }

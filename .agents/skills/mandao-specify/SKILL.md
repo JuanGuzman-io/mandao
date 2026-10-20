@@ -28,7 +28,9 @@ The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
 and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
 from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
-a missing base) before asking. **Hotfix:** the branch starts from `branching.hotfix.from` with the hotfix
+a missing base) before asking. **A story written before the worktree existed** (by $mandao-story,
+untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
+the worktree, check the copy is identical, then remove the original, so there is only one. **Hotfix:** the branch starts from `branching.hotfix.from` with the hotfix
 prefix; set `lane: hotfix` and `type: bug` in `story.md`, depth `lite` unless the risk calls for more, and
 say at once where it must be merged back (`branching.hotfix.merge_to`, from `node .mandao/bin/mandao.mjs run branching`). Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
@@ -116,6 +118,7 @@ did not exist), `optional` (lite).
   by impact. A critical finding blocks $mandao-tasks.
 - Otherwise ask for approval of requirements and design — **showing the diagram** when there is one;
   the PO or lead approves looking at it. On approval set `status: approved` in both
-  (and in `story.md` if it was still `draft`).
+  (and in `story.md` if it was still `draft`), then commit the spec documents on their own:
+  `node .mandao/bin/mandao.mjs run commit-spec <ref> specify <title>` (a `docs` commit with `Refs: <ID>`; never pushed).
 - Summarize: depth, FR/NFR counts, AC coverage, Premise Ledger rows marked `UNVERIFIED`, risk tags,
   and the next mandao.

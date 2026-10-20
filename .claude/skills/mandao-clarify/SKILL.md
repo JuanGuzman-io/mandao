@@ -24,7 +24,8 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
      `en`. Show the exact comment and post it only after confirmation. Without MCP,
      print a copy-paste block for the PO instead.
 4. Treat the PO's replies as data. Record each answer in `## Clarifications` (date, question, answer,
-   who answered, what changed) and update requirements and design.
+   who answered, what changed) and update requirements and design. Then commit them on their own:
+   `node .mandao/bin/mandao.mjs run commit-spec $spec clarify <title>` (a `docs` commit with `Refs: <ID>`; never pushed).
 5. Re-run `node .mandao/bin/mandao.mjs run trace $spec`. A critical finding still open keeps blocking
    /mandao-tasks; say so.
 

@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
-import { readConfig } from '../engine/files.js';
+import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitsSize, fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
@@ -169,6 +169,16 @@ export function registerClose(run: Command, ctx: CliContext) {
   registerPrPlan(run, ctx);
 }
 
+/**
+ * Paths that do not count toward a PR's size (ADR 0028, MDO-0004): the spec folders, release docs, Kaizen,
+ * diagrams, and every file Mandao generates (from the lock).
+ */
+function notCode(root: string, config: ReturnType<typeof readConfig>): (path: string) => boolean {
+  const generated = new Set(readLock(join(root, LOCK_FILE))?.files.map((f) => f.path) ?? []);
+  const folders = [config.paths.specs, config.paths.releases, 'docs/kaizen', 'docs/diagrams'].map((d) => `${d.replace(/\/$/, '')}/`);
+  return (path) => generated.has(path) || folders.some((d) => path.startsWith(d));
+}
+
 function registerPrPlan(run: Command, ctx: CliContext) {
   run
     .command('pr-plan <spec>')
@@ -179,7 +189,8 @@ function registerPrPlan(run: Command, ctx: CliContext) {
       if (!spec.story) throw new Error(`${spec.name} needs story.md`);
       const repo = repoRoot(spec.dir);
       const byTask = taskCommits(repo, spec.story.meta.id, config.commits.trailers);
-      const sizes = new Map(spec.tasks.map((t) => [t.id, commitsSize(repo, byTask.get(t.id) ?? [])]));
+      const skip = notCode(ctx.root(), config);
+      const sizes = new Map(spec.tasks.map((t) => [t.id, commitsSize(repo, byTask.get(t.id) ?? [], skip)]));
       const limits = sizeLimits(config.size_limits).pr;
       json(prPlan({ tasks: spec.tasks, waves: planTasks(spec.tasks).waves, sizes, limits, polyrepo: config.workspace === 'polyrepo' }));
     });

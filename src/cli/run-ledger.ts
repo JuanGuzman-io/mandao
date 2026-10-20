@@ -5,7 +5,7 @@ import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
-import { changedFiles, commitPending, repoRoot } from '../scripts/commits.js';
+import { changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
 import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
@@ -99,7 +99,10 @@ function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending
     throw new Error('--pending-commit needs --task and a PASS: give --verdict PASS, or record it first with `mandao run review`');
   }
   const queued = new Set(spec.progress?.pending_commits.flatMap((p) => p.files) ?? []);
-  const files = changedFiles(repoRoot(spec.dir), spec.dir).filter((f) => !queued.has(f));
+  // Only the files the task declares: another task's work in progress must not ride along (MDO-0004).
+  const declared = spec.tasks.find((t) => t.id === o.task)?.files ?? [];
+  const mine = (f: string) => !declared.length || declared.includes(f);
+  const files = changedFiles(repoRoot(spec.dir), spec.dir).filter((f) => !queued.has(f) && mine(f));
   return [{ task: o.task, subject: o.pendingCommit, files }];
 }
 
@@ -160,6 +163,31 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     .action((ref: string, o: CheckpointOptions) => {
       const { spec } = loadSpec(ctx, ref);
       json(writeCheckpoint(ctx, spec, o));
+    });
+}
+
+/** `mandao run commit-spec`: the spec documents in their own docs commit (specify, clarify). */
+function registerCommitSpec(run: Command, ctx: CliContext) {
+  run
+    .command('commit-spec <spec> <subject...>')
+    .description('Commit only the spec folder as a docs commit with Refs (specify on approval, clarify after answers)')
+    .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
+    .action((ref: string, subject: string[], opts: { trailer?: string[] }) => {
+      const { config, spec } = loadSpec(ctx, ref);
+      const id = spec.story?.meta.id ?? spec.name;
+      const scope = config.projects.length > 1 ? 'specs' : (spec.story?.meta.projects[0] ?? config.projects[0]!.name);
+      const header = `${config.commits.emoji.docs} docs(${scope}): ${subject.join(' ')}`;
+      const result = commitSpecDocs({
+        repo: repoRoot(spec.dir),
+        specDir: spec.dir,
+        header,
+        specId: id,
+        config,
+        trailers: opts.trailer ?? [],
+        protectedBranches: branchingFor(config).protected,
+      });
+      json({ ...result, header });
+      if (!result.committed && result.reason !== 'nothing to commit in the spec folder') process.exitCode = 1;
     });
 }
 
@@ -243,6 +271,7 @@ function registerReview(run: Command, ctx: CliContext) {
 export function registerLedger(run: Command, ctx: CliContext) {
   registerCheckpoint(run, ctx);
   registerCommit(run, ctx);
+  registerCommitSpec(run, ctx);
   registerReview(run, ctx);
   registerRed(run, ctx);
   registerDiagram(run, ctx);

@@ -111,7 +111,8 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
    1. Checkpoint the PASS and queue the commit:
       `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
-      `--next-task`), subject per `{{template:rules/commits.md}}`. When `{{script:review}}` already wrote
+      `--next-task`). `<subject>` is **only the subject** (`add --json to mandao doctor`): the script
+      adds the emoji, type and scope itself (`{{template:rules/commits.md}}`). When `{{script:review}}` already wrote
       the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
    2. `{{script:commit}} {{arg:spec}} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
       per pending task with its trailers.

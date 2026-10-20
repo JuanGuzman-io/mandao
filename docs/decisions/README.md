@@ -38,3 +38,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0029](0029-opencode-free-models-detection.md) | OpenCode: providers from the models it lists | Accepted |
 | [0030](0030-init-dir-shadow-hotfix-and-sdd-conflicts.md) | init in a new folder, shadow mode, hotfix lane, other SDD frameworks | Accepted |
 | [0031](0031-work-types.md) | Work types beyond software and AI | Proposed |
+| [0032](0032-mdo-0004-command-run-and-statuses.md) | Commands run for real (MDO-0004): defects fixed and command statuses | Accepted |

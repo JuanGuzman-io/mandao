@@ -73,10 +73,30 @@ function readClause(raw: string): { kind: ClauseKind; text: string; id?: string 
  * Reads Given/When/Then bullets. Edge clauses carry an explicit `(Cn)` id; an edge clause without one
  * gets the next free number and an issue, because coverage is tracked per clause.
  */
+/** Bullets with their wrapped continuation lines joined, so an id on the second line is not lost. */
+export function bulletLines(body: string): string[] {
+  const out: string[] = [];
+  let current: string | undefined;
+  for (const line of body.split('\n')) {
+    if (/^\s*[-*]\s+/.test(line)) {
+      if (current !== undefined) out.push(current);
+      current = line;
+    } else if (current !== undefined && /^\s+\S/.test(line)) {
+      current = `${current} ${line.trim()}`;
+    } else {
+      if (current !== undefined) out.push(current);
+      current = undefined;
+      out.push(line);
+    }
+  }
+  if (current !== undefined) out.push(current);
+  return out;
+}
+
 export function readClauses(body: string, where: string, issues: string[]): Clause[] {
   const clauses: Clause[] = [];
   const used = new Set<string>();
-  for (const raw of body.split('\n')) {
+  for (const raw of bulletLines(body)) {
     const clause = readClause(raw);
     if (!clause) continue;
     const edge = clause.kind === 'but-not' || clause.kind === 'and-must';
