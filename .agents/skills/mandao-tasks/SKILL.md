@@ -14,7 +14,8 @@ Write task content in `en`; headings, ids and YAML keys stay in English.
    `node .mandao/bin/mandao.mjs run trace <spec>`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend $mandao-clarify.
 2. **Write `tasks.md`** from `.mandao/templates/app/spec/tasks.md`: `### [ ] Tn — title` plus a YAML block per
-   task with project, tier (`fast | standard | strong`), files and modules from the graph, an exemplar
+   task with project, kind (what the task changes, which becomes its commit type: a task that only
+   adds or changes tests is `test`, only documentation is `docs`), tier (`fast | standard | strong`), files and modules from the graph, an exemplar
    file, risk tags (`.mandao/templates/app/rules/review.md`), the AC and scenario clauses it implements
    (`.mandao/templates/app/rules/traceability.md`), the tests the policy requires
    (`.mandao/templates/app/rules/test-policy.md`), DoD (module `AGENTS.md` and its `CLAUDE.md` pointer), a verify

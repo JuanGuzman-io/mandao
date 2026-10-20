@@ -47,6 +47,7 @@ describe('loop with TDD (ADR 0022)', () => {
       required: false,
       testsBy: 'implementer',
       red: false,
+      evidence: 'red',
     });
     expect(loopState(tested, [], models, 'claude')).toMatchObject({ action: 'implement', reason: 'not started: red test first' });
   });
@@ -175,9 +176,9 @@ describe('mandao run red', () => {
         .execution.filter((r) => r.verdict === 'PASS')
         .map((r) => r.task),
     ).toEqual(['T1', 'T2']);
-    await expect(run(root, 'checkpoint', 'MDO-0001', '--task', 'T1', '--pending-commit', 'x', '--verdict', 'FAIL')).rejects.toThrow(
-      /needs --task and a PASS/,
-    );
+    await expect(
+      run(root, 'checkpoint', 'MDO-0001', '--task', 'T1', '--pending-commit', 'x', '--verdict', 'FAIL', '--reason', 'r'),
+    ).rejects.toThrow(/needs --task and a PASS/);
   });
 
   test('tests that already pass are not red evidence: nothing is recorded', async () => {

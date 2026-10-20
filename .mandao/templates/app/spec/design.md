@@ -17,6 +17,8 @@ status: draft           # draft | approved | in-progress | blocked | verified | 
 One row per claim about the EXISTING system that this design depends on, only when its falsity
 would change a decision, task or scope item. Cite as run, with the commit SHA, or write
 UNVERIFIED — confirm at source before relying on it. If there are none, say so explicitly.
+Impact High: the evidence is an executed command (read-only, worktree or sandbox, timeout) and an
+excerpt of its output; reading the code is not enough. Not safely runnable → UNVERIFIED.
 -->
 
 | # | Claim | Evidence (as run, SHA) or UNVERIFIED | If false | Impact |

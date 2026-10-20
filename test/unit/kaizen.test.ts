@@ -15,6 +15,7 @@ const task = (id: string, tests = true): Task =>
     dod: [],
     depends_on: [],
     parallel_safe: false,
+    characterization: false,
     title: id,
     done: true,
     line: 1,
@@ -53,7 +54,7 @@ describe('Kaizen metrics (ADR 0026)', () => {
       reducedIndependence: 1,
       providerIndependence: 1,
       forcedRuns: 1,
-      tdd: { practice: 'tdd', tasksWithTests: 2, tasksWithRed: 2 },
+      tdd: { practice: 'tdd', tasksWithTests: 2, tasksWithRed: 2, tasksCharacterized: 0, tasksWithMutants: 0 },
     });
     expect(specMetrics('S', [task('T1'), task('T2')], [row('T1', 'RED')]).tdd.practice).toBe('partial');
     expect(specMetrics('S', [task('T1', false)], []).tdd.practice).toBe('not-applicable');

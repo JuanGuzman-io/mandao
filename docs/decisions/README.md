@@ -39,3 +39,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0030](0030-init-dir-shadow-hotfix-and-sdd-conflicts.md) | init in a new folder, shadow mode, hotfix lane, other SDD frameworks | Accepted |
 | [0031](0031-work-types.md) | Work types beyond software and AI | Proposed |
 | [0032](0032-mdo-0004-command-run-and-statuses.md) | Commands run for real (MDO-0004): defects fixed and command statuses | Accepted |
+| [0033](0033-mdo-0005-run-identity-kind-characterization.md) | The MDO-0005 re-run: deterministic identity, task kind, characterization tests, executed premises | Accepted |

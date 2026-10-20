@@ -83,6 +83,15 @@ What real runs on the Mandao repository cost, as reported by each Claude Code se
 | 2026-10-20 | MDO-0005 (1 task, lite depth, test-only) | story 1.20 · specify 2.18 · clarify 2.00 · tasks 1.14 · implement 1.84 · verify 0.67 · close 1.64 | **10.67** | One Reviewer FAIL and rework; specify ran the real CLI to check premises. |
 | 2026-10-20 | Two `quick` changes (docs, test) | quick 0.60 + 0.44 | **1.03** | Gates, separate review, log row and commit each. |
 
+**Where the cost goes.** MDO-0005 was smaller than MDO-0004 but cost more per task (10.67 USD for one
+task against 5.73 per task): the commands before `implement` (story → tasks, 6.52 USD) cost about the same
+whatever the size, so a one-task spec pays them alone. Inside `implement` (1.84 USD) the Leader cost
+1.03, the Reviewer 0.57 and the Implementer 0.24.
+
+From now on every run reports its cost **per command and, inside `implement`, per role**: per model from
+the session's `modelUsage` (exact), and within one model split between the main session (the Leader) and
+each subagent by price-weighted tokens from the transcripts (an allocation, labelled as such).
+
 ## 7. Risks
 
 Private code and data terms; harness versions on the developers' machines (`doctor` checks the

@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { relative } from 'node:path';
+import { existsSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
@@ -48,9 +49,9 @@ export function taskCommits(repo: string, specId: string, trailers: Config['comm
 }
 
 /** Paths with uncommitted changes, relative to `repo`, except those under `exclude`. */
-export function changedFiles(repo: string, exclude: string): string[] {
+export function changedFiles(repo: string, exclude?: string): string[] {
   const status = git(repo, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
-  const skip = relative(repo, exclude).replace(/\\/g, '/');
+  const skip = exclude ? relative(repo, exclude).replace(/\\/g, '/') : '';
   const paths: string[] = [];
   const entries = status.split('\0');
   for (let i = 0; i < entries.length; i++) {
@@ -111,7 +112,7 @@ export function commitPending(input: PendingInput): CommitRun {
   for (const entry of queue) {
     const task = input.tasks.find((t) => t.id === entry.task);
     if (!task) return { ...run, error: `${entry.task} is not in tasks.md` };
-    const msg = commitMessage(input.config, input.story, task, entry.subject);
+    const msg = commitMessage(input.config, input.story, task, entry.subject, false, entry.files);
     if (msg.issues.length) return { ...run, error: `${entry.task}: ${msg.issues.join('; ')}` };
     const next = { ...progress, pending_commits: progress.pending_commits.filter((e) => e !== entry) };
     writeProgress(input.specDir, next);
@@ -153,7 +154,8 @@ export interface SpecCommit {
 
 /**
  * Commits only the spec folder (`📝 docs(<scope>): <subject>` with `Refs: <id>`): specify on approval,
- * clarify after recording answers. Local only, never on a protected branch.
+ * clarify after recording answers. `extraPaths` adds the close documents (release, Kaizen, constitution,
+ * module guides); nothing else is ever staged. Local only, never on a protected branch.
  */
 export function commitSpecDocs(input: {
   repo: string;
@@ -163,17 +165,19 @@ export function commitSpecDocs(input: {
   config: Config;
   trailers?: string[];
   protectedBranches?: string[];
+  extraPaths?: string[];
 }): SpecCommit {
   const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
   if (input.protectedBranches?.includes(branch))
     return { committed: false, reason: `${branch} is a protected branch: commit from the spec's worktree` };
   const folder = relative(input.repo, input.specDir) || '.';
-  git(input.repo, ['add', '--', folder]);
-  if (!git(input.repo, ['diff', '--cached', '--name-only', '--', folder]).trim())
+  const paths = [folder, ...(input.extraPaths ?? []).filter((p) => existsSync(join(input.repo, p)))];
+  git(input.repo, ['add', '--', ...paths]);
+  if (!git(input.repo, ['diff', '--cached', '--name-only', '--', ...paths]).trim())
     return { committed: false, reason: 'nothing to commit in the spec folder' };
   const message = [input.header, '', `${input.config.commits.trailers.refs}: ${input.specId}`, ...(input.trailers ?? [])].join('\n');
   try {
-    git(input.repo, ['commit', '-q', '-m', message, '--', folder]);
+    git(input.repo, ['commit', '-q', '-m', message, '--', ...paths]);
   } catch (e) {
     return { committed: false, reason: String((e as { stderr?: string }).stderr || (e as Error).message).trim() };
   }

@@ -85,5 +85,7 @@ release notes as a block the user can paste.
 
 ## 8. Finish
 
-`node .mandao/bin/mandao.mjs run close-summary ${input:spec:Spec folder or id} --closed`, set `status: closed` in story.md, and report: Kaizen
-headline, impacts applied, drift, where it was published.
+`node .mandao/bin/mandao.mjs run close-summary ${input:spec:Spec folder or id} --closed`, set `status: closed` in story.md, then commit everything
+close wrote on its own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} close` (the spec folder, `docs/releases/<ID>/`,
+`docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
+never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.

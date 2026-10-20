@@ -14,6 +14,7 @@ const task = (id: string, project: string, depends_on: string[] = []): Task =>
     dod: [],
     depends_on,
     parallel_safe: false,
+    characterization: false,
     title: id,
     done: true,
     line: 1,

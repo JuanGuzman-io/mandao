@@ -1,12 +1,18 @@
 import { parse as parseYaml } from 'yaml';
 import { z } from 'zod';
-import { formatIssues, riskTag, tier } from '../schemas/index.js';
+import { COMMIT_TYPES, formatIssues, riskTag, tier } from '../schemas/index.js';
 
 export const TASK_ID = /^T\d+$/;
+
+/** What a task changes: its commit type (MDO-0005). `revert` is never planned. */
+export const TASK_KINDS = COMMIT_TYPES.filter((t) => t !== 'revert');
+export type TaskKind = (typeof TASK_KINDS)[number];
 
 export const taskFieldsSchema = z
   .object({
     project: z.string().min(1),
+    // Optional for specs planned before it existed; `mandao run tasks` reports a task without one.
+    kind: z.enum(TASK_KINDS).optional(),
     tier,
     files: z.array(z.string()).default([]),
     exemplar: z.string().optional(),
@@ -17,6 +23,8 @@ export const taskFieldsSchema = z
     dod: z.array(z.string()).default([]),
     verify: z.string().optional(),
     depends_on: z.array(z.string().regex(TASK_ID)).default([]),
+    // Pins down behavior that already exists: mutation evidence replaces the red test (ADR 0022).
+    characterization: z.boolean().default(false),
     parallel_safe: z.boolean().default(false),
   })
   .strict();

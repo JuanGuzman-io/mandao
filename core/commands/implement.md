@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit, pr-plan]
+scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit, pr-plan, mutation]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -51,19 +51,23 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
 `{{script:loop}} {{arg:spec}} <Tn> --harness <this harness>` at every step:
 
 1. **Checkpoint** before anything else:
-   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --model <your model> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
    Checkpoints are the only memory between sessions: write one after every step below.
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
    (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
    `self` when it ran in your own context); the script reads its model and effort from the agent file the
-   harness loads. Pass what the agent said about itself as `--claimed-implementer` / `--claimed-reviewer`:
-   a difference is recorded as `identity mismatch`.
+   harness loads, and the Leader's model from `models.yml`. Pass what the agent said about itself, verbatim,
+   as `--claimed-implementer` / `--claimed-reviewer`: it is only compared, never recorded as the identity,
+   and only a claim that names a different model is recorded as `identity mismatch`.
 2. **Brief:** `{{script:brief}} {{arg:spec}} <Tn> --harness <h>` gives the clauses, files, exemplar,
    gates, skills, lenses, models and impacted tests.
 3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
    has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
    spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
    tasks with declared tests, the Implementer writes the red test first and records it the same way.
+   A `characterization: true` task (`tdd.evidence: mutation`) has no red step: its tests pin down existing
+   behavior, and the Implementer proves each assertion with `{{script:mutation}}` (rules/test-policy.md)
+   before reporting.
    **Implement** in a fresh context with the implementer for the tier:
 <!-- mandao:if harness=claude -->
    the `mandao-implementer-<tier>` agent (or `mandao-implementer` in simple mode).
@@ -101,7 +105,8 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    With neither, review in your own context: `--reviewer self`, which the script records as `reduced
    independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
-   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
+   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n> --reason "<the first blocking finding>"`
+     (required: the log keeps why the task failed); back to step 3. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
    - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.

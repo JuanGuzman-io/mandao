@@ -33,7 +33,7 @@ export interface LoopState {
    * TDD (ADR 0022): required when the task declares tests; the red tests are written by the Tester for
    * tasks with risk tags or tier strong, by the Implementer otherwise; `red` once `mandao run red` recorded them.
    */
-  tdd: { required: boolean; testsBy: 'tester' | 'implementer'; red: boolean };
+  tdd: { required: boolean; testsBy: 'tester' | 'implementer'; red: boolean; evidence: 'red' | 'mutation' };
   reason: string;
 }
 
@@ -43,12 +43,15 @@ export interface LoopTask {
   tier: Tier;
   tests?: { unit: string[]; e2e: string[] };
   risk_tags?: string[];
+  /** Pins down existing behavior: evidence is a recorded mutation (`MUTANT`), not a red run. */
+  characterization?: boolean;
 }
 
 function tddFor(task: LoopTask, own: ExecutionRow[]): LoopState['tdd'] {
   const required = Boolean(task.tests && task.tests.unit.length + task.tests.e2e.length > 0);
   const testsBy = required && (task.risk_tags?.length || task.tier === 'strong') ? 'tester' : 'implementer';
-  return { required, testsBy, red: own.some((r) => r.verdict === 'RED') };
+  const evidence = task.characterization ? 'mutation' : 'red';
+  return { required, testsBy, red: own.some((r) => r.verdict === (evidence === 'mutation' ? 'MUTANT' : 'RED')), evidence };
 }
 
 /** A reviewer another installed harness offers, with Mandao's tier for its model. */
@@ -124,6 +127,18 @@ function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefin
   };
 }
 
+type StepBase = Omit<LoopState, 'action' | 'reason'>;
+
+/** Before the implementation is reported: red tests first when the Tester writes them, else implement. */
+function startStep(base: StepBase, started: boolean): LoopState {
+  const { tdd } = base;
+  // Characterization tests pass from the start: nothing to write red first.
+  if (tdd.required && tdd.evidence === 'red' && tdd.testsBy === 'tester' && !tdd.red)
+    return { ...base, action: 'write-red-tests', reason: 'the Tester writes the red tests from the spec first' };
+  if (!started) return { ...base, action: 'implement', reason: tdd.required ? 'not started: red test first' : 'not started' };
+  return { ...base, action: 'resume-implementation', reason: 'implementation started and not reported yet (in progress or interrupted)' };
+}
+
 /**
  * The Leader's next step for one task, from its rows in execution.md (ADR 0018 checkpoints):
  * escalation after 2 FAILs per tier, HALT after 3 at strong, reviewer chosen by the independence rule.
@@ -143,21 +158,16 @@ export function loopState(
   const base = { task: task.id, tier, attempt, failsAtTier: fails, tdd, ...roles(tier, own, models, harness, alternatives) };
   const failsAtStrong = own.filter((r) => r.verdict === 'FAIL' && r.tier === 'strong').length;
   if (failsAtStrong >= MAX_FAILS_AT_STRONG) return { ...base, action: 'halt', reason: `${failsAtStrong} FAILs at strong` };
-  const testerFirst = tdd.required && tdd.testsBy === 'tester' && !tdd.red;
   switch (last?.verdict) {
     case undefined:
     case 'STARTED':
-      if (testerFirst) return { ...base, action: 'write-red-tests', reason: 'the Tester writes the red tests from the spec first' };
-      if (!last) return { ...base, action: 'implement', reason: tdd.required ? 'not started: red test first' : 'not started' };
-      return {
-        ...base,
-        action: 'resume-implementation',
-        reason: 'implementation started and not reported yet (in progress or interrupted)',
-      };
+      return startStep(base, Boolean(last));
     case 'RED':
       return { ...base, action: 'implement', reason: 'red tests recorded: make them pass with the minimum code' };
+    case 'MUTANT':
+      return { ...base, action: 'resume-implementation', reason: 'mutation recorded: report once every assertion has one' };
     case 'REPORTED':
-      if (tdd.required && !tdd.red) base.notes.push('no red evidence');
+      if (tdd.required && !tdd.red) base.notes.push(tdd.evidence === 'mutation' ? 'no mutation evidence' : 'no red evidence');
       return { ...base, action: 'review', reason: 'implementation reported, awaiting review' };
     case 'FAIL':
       return { ...base, action: 'rework', attempt: attempt + 1, reason: `FAIL ${fails} at ${tier}` };

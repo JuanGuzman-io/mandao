@@ -3,6 +3,7 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
+import type { HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
@@ -15,6 +16,7 @@ import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { registerClose } from './run-close.js';
 import { registerDiagram } from './run-diagram.js';
+import { registerMutation } from './run-mutation.js';
 import { registerRed } from './run-red.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
@@ -29,7 +31,6 @@ interface CheckpointOptions {
   nextTask?: string;
   phase?: string;
   harness?: string;
-  model?: string;
   next?: string;
   question?: string[];
   verdict?: (typeof VERDICTS)[number];
@@ -40,6 +41,7 @@ interface CheckpointOptions {
   claimedImplementer?: string;
   claimedReviewer?: string;
   notes: string;
+  reason?: string;
   done?: string;
   clear?: boolean;
   deferred?: string;
@@ -74,6 +76,7 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
     ...identityNotes('reviewer', reviewer, o.claimedReviewer),
     ...(implementer && reviewer && implementer.harness !== reviewer.harness ? [NOTE_FLAGS.providerIndependence] : []),
     ...redNotes(spec, o),
+    ...(o.reason ? [`${o.verdict === 'FAIL' ? 'FAIL' : 'reason'}: ${o.reason}`] : []),
     ...(o.notes ? [o.notes] : []),
   ];
   return {
@@ -106,8 +109,18 @@ function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending
   return [{ task: o.task, subject: o.pendingCommit, files }];
 }
 
+/** The Leader's model from models.yml for the harness, never the model's own account of itself (ADR 0021). */
+function leaderModel(ctx: CliContext, harness: string | undefined): string {
+  if (!harness) return 'unknown';
+  const config = readConfig(ctx.root());
+  const leader = resolveWorkspaceModels(ctx.root(), config, readRecommendations())[harness as HarnessId]?.leader;
+  return leader ? `${leader.model}${leader.effort ? ` (${leader.effort})` : ''}` : 'unknown';
+}
+
 function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
+  // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
+  if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
   const pending = pendingEntry(spec, o);
   if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, o, now));
   if (o.done) markTask(spec.dir, o.done, true);
@@ -115,7 +128,7 @@ function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions
   const current =
     o.clear || !inProgress
       ? null
-      : { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: o.model ?? 'unknown' };
+      : { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: leaderModel(ctx, o.harness) };
   writeProgress(spec.dir, {
     schema_version: 1,
     spec: spec.name,
@@ -145,7 +158,6 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     .option('--next-task <id>', 'after recording the row, the task now in progress (default: --task)')
     .option('--phase <phase>', 'implementing | awaiting-review | rework-n')
     .option('--harness <id>', 'harness running the Leader')
-    .option('--model <model>', 'model running the Leader session')
     .option('--next <text>', 'next step', '')
     .option('--question <text...>', 'open questions')
     .option('--verdict <verdict>', `also append an execution row: ${VERDICTS.join(' | ')}`)
@@ -156,6 +168,7 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     .option('--claimed-implementer <model>', 'model the implementer said it was (a mismatch is flagged)')
     .option('--claimed-reviewer <model>', 'model the reviewer said it was (a mismatch is flagged)')
     .option('--notes <text>', 'notes for the row (advisories, deferred tests…)', '')
+    .option('--reason <text>', 'why the Reviewer failed the task: its first blocking finding (required with FAIL)')
     .option('--done <id>', 'mark a task done in tasks.md')
     .option('--clear', 'no task in progress')
     .option('--deferred <tests|reason>', 'record impacted tests deferred to CI for --task: "<tests, comma separated>|<reason>"')
@@ -166,25 +179,42 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
     });
 }
 
-/** `mandao run commit-spec`: the spec documents in their own docs commit (specify, clarify). */
+/** The steps that commit spec documents, and the subject each one gets (MDO-0005: no free-text subjects). */
+const SPEC_STEPS = {
+  specify: (id: string) => `approve the ${id} requirements and design`,
+  clarify: (id: string) => `record the ${id} clarification answers`,
+  close: (id: string) => `close ${id} with release docs and Kaizen`,
+} as const;
+
+/** What close writes besides the spec folder: release docs, Kaizen, constitution and module guides. */
+function closePaths(ctx: CliContext, config: ReturnType<typeof readConfig>, repo: string, id: string): string[] {
+  const rel = (p: string) => relative(repo, join(ctx.root(), p)).replace(/\\/g, '/');
+  const guides = changedFiles(repo).filter((f) => /(^|\/)(AGENTS|CLAUDE)\.md$/.test(f));
+  return [rel(join(config.paths.releases, id)), rel(join('docs', 'kaizen', `${id}.md`)), rel(config.paths.constitution), ...guides];
+}
+
+/** `mandao run commit-spec`: the spec documents in their own docs commit (specify, clarify, close). */
 function registerCommitSpec(run: Command, ctx: CliContext) {
   run
-    .command('commit-spec <spec> <subject...>')
-    .description('Commit only the spec folder as a docs commit with Refs (specify on approval, clarify after answers)')
+    .command('commit-spec <spec> <step>')
+    .description('Commit the spec documents as a docs commit with Refs: specify on approval, clarify after answers, close at the end')
     .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
-    .action((ref: string, subject: string[], opts: { trailer?: string[] }) => {
+    .action((ref: string, step: string, opts: { trailer?: string[] }) => {
+      if (!(step in SPEC_STEPS)) throw new Error(`step must be one of ${Object.keys(SPEC_STEPS).join(', ')}`);
       const { config, spec } = loadSpec(ctx, ref);
       const id = spec.story?.meta.id ?? spec.name;
+      const repo = repoRoot(spec.dir);
       const scope = config.projects.length > 1 ? 'specs' : (spec.story?.meta.projects[0] ?? config.projects[0]!.name);
-      const header = `${config.commits.emoji.docs} docs(${scope}): ${subject.join(' ')}`;
+      const header = `${config.commits.emoji.docs} docs(${scope}): ${SPEC_STEPS[step as keyof typeof SPEC_STEPS](id)}`;
       const result = commitSpecDocs({
-        repo: repoRoot(spec.dir),
+        repo,
         specDir: spec.dir,
         header,
         specId: id,
         config,
         trailers: opts.trailer ?? [],
         protectedBranches: branchingFor(config).protected,
+        ...(step === 'close' ? { extraPaths: closePaths(ctx, config, repo, id) } : {}),
       });
       json({ ...result, header });
       if (!result.committed && result.reason !== 'nothing to commit in the spec folder') process.exitCode = 1;
@@ -274,6 +304,7 @@ export function registerLedger(run: Command, ctx: CliContext) {
   registerCommitSpec(run, ctx);
   registerReview(run, ctx);
   registerRed(run, ctx);
+  registerMutation(run, ctx);
   registerDiagram(run, ctx);
   registerClose(run, ctx);
 }

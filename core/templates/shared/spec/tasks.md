@@ -16,6 +16,9 @@ Tests follow rules/test-policy.md; tier: fast | standard | strong; risk_tags fro
 
 ```yaml
 project: <project>
+# The commit type: feat | fix | test | docs | refactor | chore | perf | style | build | ci.
+# `mandao run commit` checks it against the real diff (only tests changed → test).
+kind: feat
 tier: standard
 files: [path/to/file.ts]
 exemplar: path/to/similar.ts
@@ -28,4 +31,7 @@ dod: ["module AGENTS.md (and CLAUDE.md pointer) created or updated"]
 verify: <command>
 depends_on: []
 parallel_safe: false
+# true only when the task pins down behavior that already exists (rules/test-policy.md): mutation evidence
+# replaces the red test.
+characterization: false
 ```

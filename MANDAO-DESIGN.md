@@ -468,7 +468,7 @@ No conflict is resolved silently: it goes to `clarify` (business → PO, technic
 
 ### 12.3 Premise Ledger (from AKILI)
 
-`design.md` holds one row per claim about the **existing** system that the design depends on. A claim earns a row only if its falsity would change a decision, task or scope item. Each row has a citation (as run, with commit SHA) or the marker `UNVERIFIED — confirm at source before relying on it`, plus what changes if false and its impact (High/Low). An empty ledger is stated explicitly, never omitted.
+`design.md` holds one row per claim about the **existing** system that the design depends on. A claim earns a row only if its falsity would change a decision, task or scope item. Each row has a citation (as run, with commit SHA) or the marker `UNVERIFIED — confirm at source before relying on it`, plus what changes if false and its impact (High/Low). An empty ledger is stated explicitly, never omitted. **DECIDED (ADR 0033):** a High-impact premise is verified by running it (read-only, in the worktree or a sandbox, with a timeout, through the resource guard), citing the command and an output excerpt; if it cannot run safely it stays `UNVERIFIED`.
 
 ## 13. Spec folder
 
@@ -612,6 +612,7 @@ Declared per task in `tasks.md`.
 - **Red evidence:** the Implementer records in `execution.md`, with the output of `mandao run tests`, that the test failed for the expected reason before implementing. The Reviewer FAILs the task if it is missing.
 - **Weakening a red test is forbidden.** Any change to a test written in the red phase is a discrepancy reported to the Reviewer.
 - **Tests by another agent** for tasks with risk tags or tier strong: the Tester writes the red tests from the spec; the Implementer makes them pass.
+- **DECIDED (ADR 0033) — characterization tests.** A task that only pins down existing behavior (`characterization: true`) proves each assertion with a recorded mutation (`mandao run mutation`: applied, run, always reverted, clean tree checked; a `MUTANT` row plus the diff and failing output). New behavior always needs a red test; the Reviewer checks the classification. Kaizen counts these tasks as `characterization`.
 - **Measurement:** Kaizen compares specs with and without TDD (rework rate, Reviewer FAILs, bugs after merge) to validate the impact with data.
 
 **DECIDED (ADR 0026) — verify.** Suites come from the files the spec's own commits touched (by trailer),
@@ -646,6 +647,7 @@ Mandao-AC: AC-1, AC-3
 ```
 
 - Header: `<emoji> <type>(<scope>): <subject>` — emoji **first**, unicode (not shortcode), present tense/imperative, ≤72 chars excluding the emoji.
+- **DECIDED (ADR 0033):** a task's type is its declared `kind` in `tasks.md`, checked against the real diff (only tests → `test`, only documentation → `docs`).
 - Scope: project (monorepo/polyrepo) or module (single).
 - **Fixed emoji map** (configurable in `config.yml`, never free choice):
 

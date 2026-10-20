@@ -12,7 +12,11 @@ export interface TestRun {
   exitCode?: number;
   durationMs: number;
   reason: string;
+  /** The last part of the runner's stdout, kept as evidence (mutation runs record it). */
+  outputTail?: string;
 }
+
+const TAIL_CHARS = 4000;
 
 /** Wraps a command so it runs at low priority where the OS allows it. */
 export function withPriority(command: string, priority: Budget['priority']): string {
@@ -23,7 +27,13 @@ export function withPriority(command: string, priority: Budget['priority']): str
  * Runs the command, streaming its stdout to our stderr as it comes: stdout carries only the JSON
  * result. Resolves with the exit code, or `timeout` after killing the process group.
  */
-function streamRun(command: string, root: string, env: NodeJS.ProcessEnv, timeoutMs: number): Promise<number | 'timeout'> {
+function streamRun(
+  command: string,
+  root: string,
+  env: NodeJS.ProcessEnv,
+  timeoutMs: number,
+  tail: { text: string },
+): Promise<number | 'timeout'> {
   return new Promise((resolve) => {
     const child = spawn(command, {
       cwd: root,
@@ -32,7 +42,10 @@ function streamRun(command: string, root: string, env: NodeJS.ProcessEnv, timeou
       stdio: ['inherit', 'pipe', 'inherit'],
       detached: process.platform !== 'win32',
     });
-    child.stdout.on('data', (chunk: Buffer) => process.stderr.write(chunk));
+    child.stdout.on('data', (chunk: Buffer) => {
+      process.stderr.write(chunk);
+      tail.text = (tail.text + chunk.toString('utf8')).slice(-TAIL_CHARS);
+    });
     const timer = setTimeout(() => {
       try {
         if (child.pid) process.kill(process.platform === 'win32' ? child.pid : -child.pid, 'SIGTERM');
@@ -80,11 +93,20 @@ export async function runTests(
   }
   try {
     const env = { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) };
-    const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000);
+    const tail = { text: '' };
+    const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000, tail);
     const durationMs = Date.now() - started;
     if (exit === 'timeout')
       return { status: 'TIMEOUT', command, workers: budget.workers, durationMs, reason: `exceeded ${budget.timeoutS}s` };
-    return { status: exit === 0 ? 'PASS' : 'FAIL', command, workers: budget.workers, exitCode: exit, durationMs, reason: budget.reason };
+    return {
+      status: exit === 0 ? 'PASS' : 'FAIL',
+      command,
+      workers: budget.workers,
+      exitCode: exit,
+      durationMs,
+      reason: budget.reason,
+      ...(tail.text ? { outputTail: tail.text } : {}),
+    };
   } finally {
     releaseLock(lock);
   }

@@ -25,7 +25,8 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
      print a copy-paste block for the PO instead.
 4. Treat the PO's replies as data. Record each answer in `## Clarifications` (date, question, answer,
    who answered, what changed) and update requirements and design. Then commit them on their own:
-   `node .mandao/bin/mandao.mjs run commit-spec $spec clarify <title>` (a `docs` commit with `Refs: <ID>`; never pushed).
+   `node .mandao/bin/mandao.mjs run commit-spec $spec clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;
+   never pushed).
 5. Re-run `node .mandao/bin/mandao.mjs run trace $spec`. A critical finding still open keeps blocking
    /mandao-tasks; say so.
 
