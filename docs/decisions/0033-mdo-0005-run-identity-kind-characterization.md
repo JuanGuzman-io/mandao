@@ -76,3 +76,17 @@ Leader 1.03, Reviewer 0.57, Implementer 0.24.
 | stable | `constitution`, `resume`, `story`, `clarify`, `tasks`, `specify`, `verify` | ran clean for real |
 | beta → stable after a short real run | `implement`, `close`, `quick` | their MDO-0005 defects are fixed and tested |
 | planned | `research`, `perf`, `audit` | no real content |
+
+## Addendum — resource slot kept after a command that never ran (MDO-0006, 2026-10-20)
+
+During the MDO-0006 `specify` run, a resource slot was reserved for a command that the permission
+prompt then rejected; the command never ran, but the slot stayed taken until its 12-minute TTL expired
+and blocked the premise probe. **The guard involved is the user's Claude Code hook
+(`~/.claude/resource-guard`), not Mandao:** its `PreToolUse` hook reserves the slot before the
+permission decision, and a rejected call gets no `PostToolUse` or `PostToolUseFailure` to release it.
+The fix for that guard is proposed to its owner; Mandao does not change it.
+
+Mandao's own queue (`.mandao/run.lock`) reserves only right before it spawns the command and releases in
+a `finally`, and a lock held by a dead process is taken over. `test/integration/run-queue.test.ts`
+reproduces the scenario against it: a command that fails, cannot start or times out frees the lock at
+once (the next run gets it with no wait), and a deferred run never reserves one.
