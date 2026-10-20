@@ -7,7 +7,7 @@ url:
 parent: MDO-0004
 projects: [mandao]
 lane: normal
-status: in-progress
+status: closed
 sources:
   - { ref: "approval by the maintainer's delegate for the MDO-0005 command re-run (answers 1-4 accepted as proposed)", kind: conversation, date: 2026-10-20 }
   - { ref: "user request in /mandao-story (tech lead)", kind: conversation, date: 2026-10-20 }
