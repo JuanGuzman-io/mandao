@@ -7,7 +7,9 @@ import type { HarnessId } from '../schemas/index.js';
 import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
 import { analyzeDiff, collectDiff, type FileStat, type ManifestChange, sizeLimits } from '../scripts/quick-check.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 import { isHarness, resolveForCli } from './models.js';
+import { registerLeader } from './run-leader.js';
 import { registerQuickLog } from './run-quick.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 
@@ -17,6 +19,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerSpecScripts(run, ctx);
   registerSpecWriters(run, ctx);
   registerQuickLog(run, ctx);
+  registerLeader(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')
@@ -43,7 +46,7 @@ export function registerRun(program: Command, ctx: CliContext) {
         maxFiles: Number(opts.maxFiles ?? quick.max_files),
         maxChangedLines: Number(opts.maxChangedLines ?? quick.max_changed_lines),
       });
-      console.log(JSON.stringify(report, null, 2));
+      json(report);
     });
   run
     .command('models')
@@ -55,13 +58,7 @@ export function registerRun(program: Command, ctx: CliContext) {
     .action((opts: { project?: string; spec?: string; set?: string[]; harness?: string }) => {
       if (opts.harness && !isHarness(opts.harness)) throw new Error(`Unknown harness "${opts.harness}"`);
       const all = resolveForCli(ctx.root(), { ...opts, harness: opts.harness as HarnessId | undefined });
-      console.log(
-        JSON.stringify(
-          all.map((m) => ({ ...m, independence: independence(m) })),
-          null,
-          2,
-        ),
-      );
+      json(all.map((m) => ({ ...m, independence: independence(m) })));
     });
   run
     .command('fingerprint')
@@ -70,6 +67,6 @@ export function registerRun(program: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const catalog = readCatalog();
       const fingerprints = config.projects.map((p) => fingerprintProject(ctx.root(), p, catalog));
-      console.log(JSON.stringify({ fingerprints, bootstrap: catalog.bootstrap, proposal: proposeSkills(fingerprints, catalog) }, null, 2));
+      json({ fingerprints, bootstrap: catalog.bootstrap, proposal: proposeSkills(fingerprints, catalog) });
     });
 }

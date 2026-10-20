@@ -12,9 +12,8 @@ import { logPath } from '../scripts/spec-log.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 import { routedWriter, testCommand } from './run-red.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 interface MutationOptions {
   patch: string;

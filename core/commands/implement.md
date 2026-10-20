@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit, pr-plan, mutation]
+scripts: [where, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, commit, pr-plan, mutation, implement-summary]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -47,20 +47,24 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 ## 1. For each task
 
 Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (stop if it reports
-`blocked`). Then repeat until the task is done, halted or pivoted, following
-`{{script:loop}} {{arg:spec}} <Tn> --harness <this harness>` at every step:
+`blocked`). Then repeat until the task is done, halted or pivoted. **One call per step:**
+`{{script:step}} {{arg:spec}} <Tn> --harness <this harness> [checkpoint options]` writes the checkpoint
+(when you pass any), returns the next action from `loop`, and adds the brief when the action delegates
+work. The mechanical parts (gates, the review input, the final report) are scripts too: run them, read
+their short JSON, and decide; never paste their full output into the conversation.
 
 1. **Checkpoint** before anything else:
-   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
-   Checkpoints are the only memory between sessions: write one after every step below.
+   `{{script:step}} {{arg:spec}} <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   Checkpoints are the only memory between sessions: write one after every step below (the same
+   options work on `{{script:checkpoint}}` when you need no next action).
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
    (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
    `self` when it ran in your own context); the script reads its model and effort from the agent file the
    harness loads, and the Leader's model from `models.yml`. Pass what the agent said about itself, verbatim,
    as `--claimed-implementer` / `--claimed-reviewer`: it is only compared, never recorded as the identity,
    and only a claim that names a different model is recorded as `identity mismatch`.
-2. **Brief:** `{{script:brief}} {{arg:spec}} <Tn> --harness <h>` gives the clauses, files, exemplar,
-   gates, skills, lenses, models and impacted tests.
+2. **Brief:** the `brief` field of `step` (or `{{script:brief}} {{arg:spec}} <Tn> --harness <h>`) gives
+   the clauses, files, exemplar, gates, skills, lenses, models and impacted tests.
 3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
    has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
    spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
@@ -84,17 +88,21 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    --implementer <agent>`.
 4. **Gates and impacted tests** (`{{template:rules/test-policy.md}}`): before a build, check
    `{{script:resources}} --project <project> --kind build`; when it says `defer`, do not force it — report
-   and wait, unless the user asks (a forced run is recorded). Run the project's level 0 gates,
-   and the impacted tests with `{{script:tests}} <project> <changed files>` — never the full suite.
+   and wait, unless the user asks (a forced run is recorded). `{{script:gates}} {{arg:spec}} <Tn>` runs
+   the project's level 0 gates and the impacted tests (never the full suite), and returns pass/fail per
+   gate with the excerpt of a failure; the whole output stays in `_log/gates/<Tn>-<attempt>.md` for the
+   Reviewer and verify. A gate that is not installed or not configured is reported, never skipped silently.
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
 5. **Review** in a separate agent or process — never in your own context — with only the diff, the brief
    (its `graph` field is the code-graph context: the Reviewer has no shell for `graphify query`), the
    step 4 results (a read-only reviewer cannot run tests) and the active lenses
-   (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`). Who reviews comes from `loop`:
+   (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`):
+   `{{script:review-pack}} {{arg:spec}} <Tn>` writes all of it to one file; send the Reviewer only its
+   path. Who reviews comes from `loop`:
    - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
-     and records itself: save the brief and the step 4 results to files, then
-     `{{script:review}} {{arg:spec}} <Tn> --via <harness> --brief <file> --gates <file>`. It writes the
+     and records itself: save the brief to a file, then
+     `{{script:review}} {{arg:spec}} <Tn> --via <harness> --brief <file> --gates _log/gates/<Tn>-<attempt>.md`. It writes the
      execution row (PASS or FAIL) with the identity it launched; do not checkpoint the verdict again.
      If it fails (not logged in, no verdict), fall back to the next option and say why.
    - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>`.
@@ -135,7 +143,9 @@ The Definition of Done includes the module's `AGENTS.md` and, when the workspace
 
 ## 2. After the last task
 
-Report: tasks done, FAILs and escalations, reduced or provider independence, deferred tests, commits.
+Report from `{{script:implement-summary}} {{arg:spec}}` (verdicts, FAIL reasons, identities, commits,
+deferred tests and advisories, read from the log and git): tasks done, FAILs and escalations, reduced or
+provider independence, deferred tests, commits.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.

@@ -36,7 +36,8 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
   with `node .mandao/bin/mandao.mjs run build <project>` — it respects the `build` memory floor and the test queue. If it
   says `DEFERRED`, do not force it: report that the built artifact was not re-checked (ADR 0026,
   Kaizen of MDO-0002: a stale build hid the real behavior).
-- The Tester traces each test to its AC and clause, re-runs the evidence, and labels a real failure
+- The Tester traces each test to its AC and clause, reads the gate logs the Leader left in
+  `_log/gates/` instead of asking for them again, re-runs the evidence, and labels a real failure
   `PRODUCT_BUG` with the evidence; it fixes only test defects and never weakens an assertion.
 
 ## 3. Report

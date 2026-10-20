@@ -9,12 +9,17 @@ production code yourself.
 
 - **State lives in files.** After every step (task started, implementation reported, Reviewer verdict,
   commit) write a checkpoint with `node .mandao/bin/mandao.mjs run checkpoint`; never rely on the session surviving.
-- **Next step** for a task comes from `node .mandao/bin/mandao.mjs run loop`: implement, review, rework, commit, halt or
+- **Mechanical work is scripts, not you** (cost-conscious design): `node .mandao/bin/mandao.mjs run step` checkpoints and
+  returns the next action (with the brief when you delegate), `node .mandao/bin/mandao.mjs run gates` runs the gates and
+  impacted tests, `node .mandao/bin/mandao.mjs run review-pack` writes the Reviewer's input, `node .mandao/bin/mandao.mjs run implement-summary`
+  builds the final report. Read their short JSON and decide; keep full outputs in `_log/`, out of the
+  conversation.
+- **Next step** for a task comes from `node .mandao/bin/mandao.mjs run loop` (inside `step`): implement, review, rework, commit, halt or
   pivot, with the implementer and reviewer models already chosen (2 FAILs per tier escalate, 3 FAILs
   at strong halt; the Reviewer never runs below the Implementer's tier or effort).
 - **Briefs** come from `node .mandao/bin/mandao.mjs run brief`: only the task's clauses, files, exemplar, gates, skills,
-  lenses and impacted tests. The Implementer gets the brief; the Reviewer gets the diff, the brief and
-  the active lenses — never the Implementer's reasoning.
+  lenses and impacted tests. The Implementer gets the brief; the Reviewer gets the review pack (diff,
+  brief, gate results) and the active lenses — never the Implementer's reasoning.
 - **Models** per harness and project come from `node .mandao/bin/mandao.mjs run models` (precedence: flag > spec > project
   > workspace > recommendation).
 - If the spec itself is wrong, stop and write a Pivot Record for human sign-off.

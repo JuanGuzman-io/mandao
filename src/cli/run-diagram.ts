@@ -22,9 +22,8 @@ import {
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 import { specChangedFiles } from './run-verify.js';
-
-const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 interface DiagramOptions {
   stamp?: boolean;

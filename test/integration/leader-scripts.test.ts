@@ -1,0 +1,161 @@
+import { execFileSync } from 'node:child_process';
+import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { buildProgram } from '../../src/cli/program.js';
+import { writeYaml } from '../../src/engine/files.js';
+import { syncProject } from '../../src/engine/sync.js';
+import { logPath } from '../../src/scripts/spec-log.js';
+import { makeTree, pkg } from '../helpers.js';
+
+const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
+const SPEC = 'specs/MDO-0001-skills-list';
+const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+let out: string[];
+
+beforeEach(() => {
+  process.env.MANDAO_HOME = makeTree({});
+  for (const k of ['GIT_AUTHOR_NAME', 'GIT_COMMITTER_NAME']) vi.stubEnv(k, 'test');
+  for (const k of ['GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_EMAIL']) vi.stubEnv(k, 'test@example.com');
+  out = [];
+  vi.spyOn(console, 'log').mockImplementation((s: string) => void out.push(s));
+  vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.restoreAllMocks();
+  process.exitCode = undefined;
+});
+
+function repo() {
+  const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'src/cli/skills.ts': 'export {};\n' }));
+  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  writeYaml(join(root, '.mandao/config.yml'), {
+    schema_version: 1,
+    workspace: 'single',
+    projects: [
+      {
+        name: 'mandao',
+        path: '.',
+        gates: {
+          lint: 'node -e "process.exit(0)"',
+          typecheck: 'node -e "console.log(\'src/cli/skills.ts(1,1): error TS2304\'); process.exit(2)"',
+          secrets: 'mandao-no-such-scanner detect',
+        },
+        tests: { impacted: 'node -e "process.exit(0)" {files}' },
+      },
+    ],
+    harnesses: ['claude'],
+  });
+  syncProject(root);
+  cpSync(fixture, join(root, SPEC), { recursive: true });
+  git(root, 'add', '.');
+  git(root, 'commit', '-qm', 'base');
+  writeFileSync(join(root, 'src/cli/skills.ts'), 'export const list = () => [];\n');
+  return root;
+}
+const run = async (root: string, ...args: string[]) => {
+  await buildProgram(() => root).parseAsync(['node', 'mandao', 'run', ...args]);
+  return JSON.parse(out.at(-1)!);
+};
+
+describe('Leader scripts', () => {
+  test('script output is compact JSON unless MANDAO_JSON=pretty', async () => {
+    const root = repo();
+    await run(root, 'tasks', 'MDO-0001');
+    expect(out.at(-1)).not.toContain('\n');
+    vi.stubEnv('MANDAO_JSON', 'pretty');
+    await run(root, 'tasks', 'MDO-0001');
+    expect(out.at(-1)).toContain('\n  ');
+  });
+
+  test('gates: pass/fail per gate and the failure excerpt; a missing tool is NOT_INSTALLED; the full output stays in the log', async () => {
+    const root = repo();
+    const r = await run(root, 'gates', 'MDO-0001', 'T2');
+    expect(process.exitCode).toBe(1);
+    const by = Object.fromEntries(r.results.map((g: { gate: string }) => [g.gate, g]));
+    expect(by.lint).toEqual({ gate: 'lint', status: 'PASS', exitCode: 0 });
+    expect(by.typecheck).toMatchObject({ status: 'FAIL', exitCode: 2, excerpt: expect.stringContaining('error TS2304') });
+    expect(by.test).toMatchObject({ status: 'PASS' });
+    expect(by.secrets).toMatchObject({ status: 'NOT_INSTALLED' });
+    expect(by.audit).toMatchObject({ status: 'SKIPPED', reason: 'no dependency change' });
+    expect(r).toMatchObject({ passed: false, notConfigured: ['format', 'build', 'sast', 'metrics'] });
+    expect(by.lint.excerpt).toBeUndefined();
+    const log = readFileSync(join(logPath(join(root, SPEC), 'gates'), 'T2-1.md'), 'utf8');
+    expect(log).toContain('| typecheck | FAIL | 2 |');
+    expect(log).toContain('error TS2304');
+  });
+
+  test('step: the checkpoint, the next action and the brief in one call; the brief only when delegating', async () => {
+    const root = repo();
+    const first = await run(
+      root,
+      'step',
+      'MDO-0001',
+      'T2',
+      '--harness',
+      'claude',
+      '--verdict',
+      'STARTED',
+      '--tier',
+      'standard',
+      '--phase',
+      'implementing',
+    );
+    expect(first.checkpoint).toMatchObject({ written: true });
+    expect(first.loop).toMatchObject({ task: 'T2', action: 'resume-implementation' });
+    expect(first.brief).toMatchObject({ task: expect.objectContaining({ id: 'T2' }) });
+    const lean = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
+    expect(lean.checkpoint).toBeUndefined();
+    expect(lean.brief).toBeUndefined();
+    const review = await run(
+      root,
+      'step',
+      'MDO-0001',
+      'T2',
+      '--harness',
+      'claude',
+      '--verdict',
+      'REPORTED',
+      '--implementer',
+      'mandao-implementer-standard',
+    );
+    expect(review.loop.action).toBe('review');
+    expect(review.brief).toBeUndefined();
+  });
+
+  test('review-pack: brief, gate table and diff in one file for the Reviewer, without the full gate output', async () => {
+    const root = repo();
+    await run(root, 'gates', 'MDO-0001', 'T2');
+    const r = await run(root, 'review-pack', 'MDO-0001', 'T2');
+    expect(r).toMatchObject({ gatesRecorded: true });
+    const pack = readFileSync(join(root, r.pack), 'utf8');
+    expect(pack).toContain('## Brief');
+    expect(pack).toContain('| typecheck | FAIL | 2 |');
+    expect(pack).toContain('+export const list = () => [];');
+    expect(pack).not.toContain('### typecheck — FAIL'); // the output blocks stay in the gates log
+  });
+
+  test('implement-summary: verdicts, FAIL reasons and identities from the log', async () => {
+    const root = repo();
+    await run(
+      root,
+      'checkpoint',
+      'MDO-0001',
+      '--task',
+      'T2',
+      '--harness',
+      'claude',
+      '--verdict',
+      'FAIL',
+      '--reviewer',
+      'mandao-reviewer',
+      '--reason',
+      'the hint is missing',
+    );
+    const s = await run(root, 'implement-summary', 'MDO-0001');
+    const t2 = s.tasks.find((t: { id: string }) => t.id === 'T2');
+    expect(t2).toMatchObject({ verdict: 'FAIL', fails: ['the hint is missing'], committed: false });
+    expect(s.totals).toMatchObject({ tasks: 2, fails: 1 });
+  });
+});

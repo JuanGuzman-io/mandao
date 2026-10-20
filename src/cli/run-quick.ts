@@ -5,6 +5,7 @@ import { agentIdentity } from '../scripts/identity.js';
 import { collectDiff } from '../scripts/quick-check.js';
 import { appendQuickLog } from '../scripts/quick-log.js';
 import type { CliContext } from './context.js';
+import { json } from './json.js';
 
 interface QuickLogOptions {
   project?: string;
@@ -54,6 +55,6 @@ export function registerQuickLog(run: Command, ctx: CliContext) {
         ...(o.claimedReviewer ? { claimedReviewer: o.claimedReviewer } : {}),
         ...(o.reducedIndependence ? { reducedIndependence: true } : {}),
       });
-      console.log(JSON.stringify({ written: relative(root, file), reviewer, files: files.map((f) => f.path) }, null, 2));
+      json({ written: relative(root, file), reviewer, files: files.map((f) => f.path) });
     });
 }
