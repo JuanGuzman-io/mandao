@@ -70,7 +70,8 @@ The Reviewer and `verify` run only the tests a change impacts:
 - **Uncertain impact:** the tests of the touched module, never the full suite.
 - **Tests that scan the tree by path** (architecture guards) are not found through imports. Mark them with
   a first-line comment `mandao-scans: <folder>/ …`; impact selection runs them whenever a file under one
-  of those folders changes.
+  of those folders changes. A test that lists only its own temporary folders says `mandao-scans: none`.
+  The `scan-markers` gate fails a changed test that lists or globs folders without the comment.
 - **Full suite and critical smoke:** in CI; locally only with `--full`.
 
 ## Resource budget

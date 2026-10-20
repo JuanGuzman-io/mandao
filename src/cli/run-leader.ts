@@ -1,16 +1,13 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
-import { readRecommendations } from '../models/load.js';
 import { composeBrief } from '../scripts/brief.js';
 import { changedFiles, commitState, repoRoot } from '../scripts/commits.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed } from '../scripts/gates.js';
-import { fillCommand } from '../scripts/impact.js';
+import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
-import { findClaudeTranscript } from '../scripts/session-cost.js';
-import { type CutAdvice, cutAdvice, sessionContext } from '../scripts/session-cut.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
 import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task } from '../spec/index.js';
@@ -19,6 +16,7 @@ import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { type CheckpointOptions, withCheckpointOptions, writeCheckpoint } from './run-ledger.js';
+import { stepCut, verifyCut } from './session-advice.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor } from './spec-context.js';
 
 /**
@@ -55,6 +53,18 @@ function gateCommand(
 
 const inProject = (cmd: string, path: string) => `${path === '.' ? '' : `cd ${JSON.stringify(path)} && `}${cmd} 2>&1`;
 
+/** Built-in gate: changed tests that list folders must say what they scan (`mandao-scans:`), MDO-0007. */
+function scanMarkers(repo: string, changed: string[]): GateResult | undefined {
+  if (!changed.some(isTestFile)) return undefined;
+  const unmarked = unmarkedScanners(repo, changed);
+  if (!unmarked.length) return { gate: 'scan-markers', status: 'PASS' };
+  const lines = unmarked.map(
+    (u) =>
+      `${u.file}:${u.line} lists folders; add a first-line comment \`mandao-scans: <folders it reads>\` (or \`none\` for its own temp folders)`,
+  );
+  return { gate: 'scan-markers', status: 'FAIL', excerpt: lines.join('\n') };
+}
+
 async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: number, force?: boolean) {
   const { config } = loadSpec(ctx, spec.name);
   const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
@@ -63,6 +73,8 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
   const results: GateResult[] = [];
   const outputs: Record<string, string> = {};
   const notConfigured: string[] = [];
+  const scans = scanMarkers(repoRoot(spec.dir), changed);
+  if (scans) results.push(scans);
   for (const gate of GATE_ORDER) {
     if (gate === 'audit' && !changed.some((f) => DEP_MANIFEST.test(f))) {
       results.push({ gate, status: 'SKIPPED', reason: 'no dependency change' });
@@ -101,20 +113,6 @@ function registerGates(run: Command, ctx: CliContext) {
     });
 }
 
-/**
- * At a task boundary in Claude Code (the task has no row past STARTED): whether to end the session and resume from
- * the checkpoint in a new one, from this session's transcript (ADR 0038). Other harnesses: no advice.
- */
-function sessionCut(spec: SpecFolder, id: string, harness: string): CutAdvice | undefined {
-  const session = process.env.CLAUDE_CODE_SESSION_ID;
-  if (harness !== 'claude' || !session || spec.execution.some((r) => r.task === id && r.verdict !== 'STARTED')) return undefined;
-  const transcript = findClaudeTranscript(session);
-  const context = transcript ? sessionContext(transcript) : undefined;
-  const price = context && readRecommendations().harnesses.claude?.prices?.per_mtok?.[context.model];
-  if (!context || !price) return undefined;
-  return cutAdvice(context, spec.tasks.filter((t) => !t.done).length, price);
-}
-
 /** Actions after which the Leader delegates to an Implementer or Tester and needs the brief. */
 const NEEDS_BRIEF: LoopState['action'][] = ['write-red-tests', 'implement', 'resume-implementation', 'rework'];
 
@@ -138,7 +136,7 @@ function registerStep(run: Command, ctx: CliContext) {
       const withBrief = o.brief && NEEDS_BRIEF.includes(loop.action);
       const project = config.projects.find((p) => p.name === task.project);
       const workers = Math.max(1, decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit').workers);
-      const cut = NEEDS_BRIEF.includes(loop.action) ? sessionCut(spec, id, harness) : undefined;
+      const cut = NEEDS_BRIEF.includes(loop.action) ? stepCut(config, spec, id, harness) : undefined;
       json({
         ...(checkpoint ? { checkpoint: { written: true, pendingCommits: checkpoint.pendingCommits } } : {}),
         loop,
@@ -263,10 +261,12 @@ function registerImplementSummary(run: Command, ctx: CliContext) {
   run
     .command('implement-summary <spec>')
     .description('The end-of-implement report from the log and git: per task verdicts, FAIL reasons, identities, commits')
-    .action((ref: string) => {
+    .option('--harness <id>', 'harness running the Leader', 'claude')
+    .action((ref: string, o: { harness?: string }) => {
       const { config, spec } = loadSpec(ctx, ref);
       const state = commitState(spec, config.commits.trailers);
-      json(implementSummary(spec, state.committed, state.pending));
+      const cut = verifyCut(config, spec, harnessOption(o.harness));
+      json({ ...implementSummary(spec, state.committed, state.pending), ...(cut ? { session: cut } : {}) });
     });
 }
 

@@ -68,4 +68,4 @@ nothing to do here. Otherwise:
 8. **Approve:** show the overview and the first eligible task. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: {{command:implement}}.
+   available yet. Next: {{command:implement}}, in a new session (`newSession` from `mandao approve`, ADR 0038).

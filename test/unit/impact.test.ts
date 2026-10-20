@@ -10,6 +10,7 @@ import {
   readGraph,
   reverseDependents,
   selectImpact,
+  unmarkedScanners,
 } from '../../src/scripts/impact.js';
 import { decideBudget, effectiveResources } from '../../src/scripts/resources.js';
 import { makeTree, pkg } from '../helpers.js';
@@ -90,6 +91,36 @@ describe('impact', () => {
     execFileSync('git', ['add', 'test/a.test.ts', 'test/b.test.ts'], { cwd: root });
     expect(findScanners(root, '.')).toEqual([{ test: 'test/a.test.ts', paths: ['src/', 'lib/x'] }]);
     expect(findScanners(join(root, 'not-a-repo'), '.')).toEqual([]);
+  });
+
+  test('a changed test that lists folders without a mandao-scans marker is flagged', () => {
+    const root = makeTree({
+      'test/a.test.ts': "const files = readdirSync(join(root, 'src'));\n",
+      'test/b.test.ts': '// mandao-scans: src/\nreaddirSync(src);\n',
+      'test/c.test.ts': '// mandao-scans: none\nreaddirSync(tmp);\n',
+      'tests/test_d.py': 'import os\nfor f in os.listdir("pkg"):\n  pass\n',
+      'test/e.test.ts': "readFileSync('x.json');\n",
+      'src/f.ts': 'readdirSync(src);\n',
+    });
+    const changed = [
+      'test/a.test.ts',
+      'test/b.test.ts',
+      'test/c.test.ts',
+      'tests/test_d.py',
+      'test/e.test.ts',
+      'src/f.ts',
+      'test/gone.test.ts',
+    ];
+    expect(unmarkedScanners(root, changed)).toEqual([
+      { file: 'test/a.test.ts', line: 1 },
+      { file: 'tests/test_d.py', line: 2 },
+    ]);
+  });
+
+  test('every test in Mandao that lists folders says what it scans', () => {
+    const repo = join(import.meta.dirname, '../..');
+    const tests = execFileSync('git', ['ls-files', 'test'], { cwd: repo, encoding: 'utf8' }).split('\n').filter(Boolean);
+    expect(unmarkedScanners(repo, tests)).toEqual([]);
   });
 
   test('graphify edges become file dependencies', () => {

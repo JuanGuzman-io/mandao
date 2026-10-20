@@ -1,6 +1,6 @@
 # 0038 — Cut the session at a task boundary when a new one is cheaper
 
-**Status:** Accepted · 2026-10-20 · design §2 principle 9 (ADR 0036)
+**Status:** Accepted · 2026-10-20, amended the same day (natural boundaries, `cut_min_savings`) · design §2 principle 9 (ADR 0036)
 
 MDO-0007 ran specify, implement, verify and close in one Claude Code session. It started at 34k tokens of
 context and ended at 177k. Every main turn re-reads the whole context from the cache. From T2 on, those
@@ -19,15 +19,26 @@ reads cost more than starting over would have.
 
 ## Decision
 
-- At a task boundary (the task has no row past `STARTED`), `mandao run step` reads this Claude Code
-  session's transcript (`CLAUDE_CODE_SESSION_ID`). It returns `session: { cut, reason, savings }`.
-- **Cut** when `(C − B') × read × N > B' × write`, with C the current context and the write price of the
-  TTL the session uses (1h when it wrote any 1h entry).
-- **Always cut** when the cache has expired since the last turn. Staying would rewrite all of C; a new
-  session writes only B'.
-- The Leader stops before delegating and passes on the reason and the savings. A new session continues
-  from the checkpoint. The user may choose to stay.
-- Other harnesses expose no transcript with cache usage, so they get no advice.
+- **The rule.** Cut when `(C − B') × read × N > B' × write`. C is the current context. The write price is
+  the one for the TTL the session uses (1h when it wrote any 1h entry). **Always cut** when the cache has
+  expired since the last turn: staying would rewrite all of C, while a new session writes only B'.
+- **Cuts go at natural boundaries, where a person pauses anyway.** The Leader is not stopped to ask at
+  every boundary.
+  - **After `mandao approve`** of the spec (lite) or the tasks, `approve` prints `newSession`, the command
+    that opens `/mandao-implement` in the worktree. All tasks plus verify and close are still ahead, so
+    the cut pays as soon as the specify context exceeds B' by about 20k with four tasks (30k with two).
+    MDO-0007, with two tasks, exceeded it by 47k.
+  - **Between implement and verify**, `mandao run implement-summary` applies the rule. When it says cut, it
+    returns the command for `/mandao-verify` in a new session.
+- **Inside implement**, at a task boundary (the task has no row past `STARTED`), `mandao run step` returns
+  `session: { cut, reason, savings, stop, minSavings }`. The Leader stops to suggest a new session only
+  when `stop` is true, which means the saving reaches `session.cut_min_savings`. The default is $1, or
+  15% of `budget.per_spec` when that is lower. Below that, it goes on without asking.
+- **Every estimate is logged.** Each estimate from `step` and from `implement-summary` goes to the
+  spec's `_log/session-cuts.md` with its decision. Kaizen recalibrates the constants from it.
+- **Claude Code only.** The advice reads the session transcript (`CLAUDE_CODE_SESSION_ID`). The other
+  harnesses expose no transcript with cache usage, so they get no advice; `approve` still prints the
+  command for a new session.
 
 ## Consequences
 

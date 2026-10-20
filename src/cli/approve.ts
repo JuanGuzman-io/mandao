@@ -22,6 +22,7 @@ import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
+import { newSessionCommand } from './session-advice.js';
 
 /** Who approves: the person at the terminal, as git knows them; never a model. */
 function approver(cwd: string, by?: string): string {
@@ -148,6 +149,9 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const statusChanged = approveDocuments(spec, s);
       const record = recordApproval(spec, s, o);
       const commit = commitApproval(config, spec, s);
-      json({ approved: true, ...record, statusChanged, ...(commit ? { commit } : {}), next: NEXT[s] });
+      // A natural boundary with a human pause, and the most turns still ahead: implement starts in a new
+      // session from the checkpoint instead of re-reading the specify context (ADR 0038).
+      const newSession = s === 'spec' || s === 'tasks' ? { newSession: newSessionCommand(config, spec, 'implement') } : {};
+      json({ approved: true, ...record, statusChanged, ...(commit ? { commit } : {}), next: NEXT[s], ...newSession });
     });
 }

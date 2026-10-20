@@ -1,3 +1,4 @@
+// mandao-scans: core/commands/ — the prompt cache guard reads every command file.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';

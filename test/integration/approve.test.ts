@@ -60,6 +60,7 @@ describe('mandao approve: no model session', () => {
     const root = repo();
     const r = await approve(root, 'MDO-0001', 'design');
     expect(r).toMatchObject({ approved: true, step: 'design', by: 'Ana PO', commit: { committed: true }, next: '/mandao-tasks' });
+    expect(r.newSession).toBeUndefined();
     expect(status(root, 'story.md')).toBe('approved');
     expect(status(root, 'requirements.md')).toBe('approved');
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 requirements and design');
@@ -73,6 +74,8 @@ describe('mandao approve: no model session', () => {
       approved: true,
       commit: { committed: true },
       next: '/mandao-implement',
+      // ADR 0038: implement starts in a new session from the worktree, not in the specify one.
+      newSession: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
     });
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 spec');
   });

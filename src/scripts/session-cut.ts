@@ -1,5 +1,7 @@
-import { readFileSync } from 'node:fs';
-import type { ModelPrice } from '../schemas/index.js';
+import { existsSync, readFileSync } from 'node:fs';
+import type { Config, ModelPrice } from '../schemas/index.js';
+import { writeText } from '../writer/files.js';
+import { logPath } from './spec-log.js';
 
 /**
  * When the Leader should end the session at a task boundary and resume from the checkpoint in a new one
@@ -99,4 +101,30 @@ export function cutAdvice(session: SessionContext, tasksLeft: number, price: Mod
   const savings = usd(saved - base * write);
   const reason = `context ${k(session.last)} vs ${k(base)} in a new session over about ${turns} turns left (${tasksLeft} tasks, verify, close)`;
   return { cut: savings > 0, reason, savings };
+}
+
+/** The default stop threshold inside implement: $1, or 15% of `budget.per_spec` when that is less. */
+const DEFAULT_MIN_SAVINGS = 1;
+const BUDGET_SHARE = 0.15;
+
+/** Above this estimated saving the Leader stops mid-implement to suggest the cut; below it goes on. */
+export function cutMinSavings(config: Pick<Config, 'session' | 'budget'>): number {
+  if (config.session.cut_min_savings !== undefined) return config.session.cut_min_savings;
+  const share = config.budget.per_spec !== undefined ? config.budget.per_spec * BUDGET_SHARE : Number.POSITIVE_INFINITY;
+  return Math.min(DEFAULT_MIN_SAVINGS, share);
+}
+
+const CUTS_HEADER =
+  '# Session cut estimates (ADR 0038)\n\n| At | Task | Context | Base | Turns left | Savings (USD) | Decision |\n|---|---|---|---|---|---|---|\n';
+
+/** Every boundary estimate goes to `_log/session-cuts.md`, so Kaizen can recalibrate the constants. */
+export function recordCutEstimate(
+  specDir: string,
+  row: { at: string; task: string; session: SessionContext; tasksLeft: number; advice: CutAdvice; decision: string },
+): void {
+  const file = logPath(specDir, 'session-cuts.md');
+  const before = existsSync(file) ? readFileSync(file, 'utf8') : CUTS_HEADER;
+  const turns = TURNS_PER_TASK * row.tasksLeft + TURNS_AFTER_TASKS;
+  const cells = [row.at, row.task, row.session.last, row.session.first + RELOAD_TOKENS, turns, row.advice.savings.toFixed(2), row.decision];
+  writeText(file, `${before}| ${cells.join(' | ')} |\n`);
 }
