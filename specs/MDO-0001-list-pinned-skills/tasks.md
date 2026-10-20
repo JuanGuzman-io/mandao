@@ -6,7 +6,7 @@ status: approved
 
 # Tasks — List the skills pinned in a workspace
 
-### [ ] T1 — Format pinned skills
+### [x] T1 — Format pinned skills
 
 ```yaml
 project: mandao

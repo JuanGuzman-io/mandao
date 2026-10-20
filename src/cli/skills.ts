@@ -36,6 +36,16 @@ function printPlan(wanted: string[], catalog: Catalog) {
   }
 }
 
+/** One terminal line per pinned skill, sorted by id. Reads only the lock, never the catalog. Pure. */
+export function formatPinnedSkills(skills: Lock['skills']): string[] {
+  return [...skills]
+    .sort((a, b) => a.id.localeCompare(b.id))
+    .map((s) => {
+      const badge = s.vetted ? c.green('vetted  ') : c.yellow('unvetted');
+      return `  ${badge} ${s.id}@${s.version} ${s.source}`;
+    });
+}
+
 const STATUS_LABEL: Record<SkillResult['status'], string> = {
   installed: c.green('installed'),
   pending: c.yellow('pending  '),
