@@ -44,3 +44,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0035](0035-readable-specs-and-cost-levers.md) | Readable spec documents, a real lite, Leader scripts, approvals and recorded premises | Accepted |
 | [0036](0036-cost-conscious-by-design.md) | Cost-conscious by design | Accepted |
 | [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted |
+| [0038](0038-session-cut-at-task-boundaries.md) | Cut the session at a task boundary when a new one is cheaper | Accepted |
