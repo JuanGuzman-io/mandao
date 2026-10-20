@@ -68,7 +68,8 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
 5. **Review** in a separate agent or process — never in your own context — by the reviewer `loop`
-   names (`reviewer` or `reviewer_alt`), with only the diff, the brief and the active lenses
+   names (`reviewer` or `reviewer_alt`), with only the diff, the brief, the step 4 results (a read-only
+   reviewer may not be able to run tests) and the active lenses
    (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`).
 <!-- mandao:if harness=codex -->
    In Codex: the `mandao_reviewer` custom agent; if custom agents are not loaded, run the review as a

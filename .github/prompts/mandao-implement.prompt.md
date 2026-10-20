@@ -46,7 +46,8 @@ Pick the task: `${input:task:Optional task id (default - the next eligible task)
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
 5. **Review** in a separate agent or process — never in your own context — by the reviewer `loop`
-   names (`reviewer` or `reviewer_alt`), with only the diff, the brief and the active lenses
+   names (`reviewer` or `reviewer_alt`), with only the diff, the brief, the step 4 results (a read-only
+   reviewer may not be able to run tests) and the active lenses
    (`.mandao/templates/app/rules/review.md`, `.mandao/templates/app/rules/clean-code.md`).
    The execution row records the model that **actually** reviewed. If the review could only run in your
    own context, it is not independent: record `reduced independence` and your own model, never the
