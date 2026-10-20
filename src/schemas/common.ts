@@ -50,6 +50,6 @@ export type RiskTag = z.infer<typeof riskTag>;
 export const QUICK_FORBIDDEN_TAGS: readonly RiskTag[] = ['auth', 'payments', 'pii', 'migration'];
 
 /** Deterministic gates (review level 0). Concrete tools are configured per project. */
-export const GATES = ['format', 'lint', 'typecheck', 'test', 'secrets', 'audit', 'sast', 'metrics'] as const;
+export const GATES = ['format', 'lint', 'typecheck', 'test', 'build', 'secrets', 'audit', 'sast', 'metrics'] as const;
 export const gate = z.enum(GATES);
 export type Gate = z.infer<typeof gate>;

@@ -13,6 +13,7 @@ projects:
       lint: npm run lint
       typecheck: npm run typecheck
       test: npm test
+      build: npm run build
       secrets: gitleaks git . --redact --no-banner
       audit: npm audit --omit=dev
       sast: semgrep scan --config p/typescript --config p/javascript --error --metrics=off

@@ -227,6 +227,26 @@ function registerTestRuns(run: Command, ctx: CliContext) {
     });
 }
 
+/**
+ * `mandao run build <project>`: the project's build gate under the `build` memory floor and the same
+ * queue as test runs. Deferred when memory is short; only `--force` (recorded) overrides it (ADR 0024).
+ */
+function registerBuild(run: Command, ctx: CliContext) {
+  run
+    .command('build <project>')
+    .description("Run the project's build gate under the build memory floor, one heavy run at a time")
+    .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
+    .action(async (name: string, opts: { force?: boolean }) => {
+      const config = readConfig(ctx.root());
+      const project = projectNamed(ctx, name);
+      if (!project.gates.build) throw new Error(`project "${name}" has no gates.build in .mandao/config.yml`);
+      const budget = budgetFor(ctx.root(), config, project, 'build', `${name} build`, opts.force);
+      const result = await runTests(ctx.root(), `${name} build`, project.gates.build, budget);
+      json({ ...result, status: result.status === 'DEFERRED_TO_CI' ? 'DEFERRED' : result.status });
+      if (result.status !== 'PASS') process.exitCode = 1;
+    });
+}
+
 /** Read-only spec scripts: JSON on stdout for the commands to read. */
 export function registerSpecScripts(run: Command, ctx: CliContext) {
   registerPlanning(run, ctx);
@@ -239,4 +259,5 @@ export function registerSpecScripts(run: Command, ctx: CliContext) {
 export function registerSpecWriters(run: Command, ctx: CliContext) {
   registerLedger(run, ctx);
   registerTestRuns(run, ctx);
+  registerBuild(run, ctx);
 }

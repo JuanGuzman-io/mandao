@@ -30,6 +30,10 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
 - **Unit:** `node .mandao/bin/mandao.mjs run tests <project> <files>` — impacted tests only, under the resource budget.
 - **E2E:** the flows of the suite's AC with the project's `tests.e2e` command; the full suite and the
   smoke of every critical flow run in CI, locally only with `--full`.
+- **Built binary or app:** before testing what the project builds (a CLI, a bundle, an app), rebuild it
+  with `node .mandao/bin/mandao.mjs run build <project>` — it respects the `build` memory floor and the test queue. If it
+  says `DEFERRED`, do not force it: report that the built artifact was not re-checked (ADR 0026,
+  Kaizen of MDO-0002: a stale build hid the real behavior).
 - The Tester traces each test to its AC and clause, re-runs the evidence, and labels a real failure
   `PRODUCT_BUG` with the evidence; it fixes only test defects and never weakens an assertion.
 

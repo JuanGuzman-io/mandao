@@ -197,3 +197,32 @@ describe('forced runs (ADR 0024)', () => {
     expect(readSpec(join(root, SPEC)).execution.map((r) => r.verdict)).toEqual(['PASS', 'STARTED']);
   });
 });
+
+describe('mandao run build (ADR 0024, ADR 0026)', () => {
+  test('defers under the build floor and runs only when forced, recording it', async () => {
+    const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.', gates: { build: 'node -e "process.exit(0)"' } }],
+      harnesses: ['claude'],
+      resources: { operations: { build: { min_free_memory_mb: 10_000_000 } } },
+    });
+    const out: string[] = [];
+    vi.spyOn(console, 'log').mockImplementation((s: string) => void out.push(s));
+    vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const run = (...args: string[]) => buildProgram(() => root).parseAsync(['node', 'mandao', 'run', ...args]);
+    try {
+      await run('build', 'shop');
+      expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'DEFERRED', workers: 0 });
+      expect(process.exitCode).toBe(1);
+      process.exitCode = undefined;
+      await run('build', 'shop', '--force');
+      expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'PASS', reason: expect.stringMatching(/^forced: /) });
+      expect(readFileSync(join(root, '.mandao/cli.log'), 'utf8')).toContain('"operation":"build"');
+    } finally {
+      process.exitCode = undefined;
+      vi.restoreAllMocks();
+    }
+  });
+});

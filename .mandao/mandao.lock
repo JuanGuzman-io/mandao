@@ -1,7 +1,7 @@
 # Written by mandao. Do not edit by hand.
 schema_version: 1
 mandao: 0.1.0
-config_hash: sha256-SgHQDV0Al7YGnrNsmNU1d1wqvJ2XWISNM03Zx/gamPY=
+config_hash: sha256-CacMmJOC9hvgJVucsLTIkRojIov2lOjFGR4jwttBzZA=
 layers:
   - kind: core
     id: core
@@ -174,7 +174,7 @@ files:
     harness: codex
     from: command:verify
     ownership: owned
-    hash: sha256-txUpRI/6p8sC6uXndeyIFOqNjEU66LBmgrK4yCGR9Kg=
+    hash: sha256-Cd1mhV6n0ZtWOEjZXwqAc5RjloC1RjQZNldiGxQBoCU=
     scope: project
   - path: .claude/agents/mandao-implementer-fast.md
     harness: claude
@@ -288,7 +288,7 @@ files:
     harness: claude
     from: command:verify
     ownership: owned
-    hash: sha256-DAbSZ4oRQ7EC/GpLadnToH4EWk2t1IFYaJYba0XCCQ4=
+    hash: sha256-EPtazmR0cM6lWsdZQ7YjEOzwEMjVyXlCYoIQIGLJoQg=
     scope: project
   - path: .codex/agents/mandao-implementer-fast.toml
     harness: codex
@@ -456,7 +456,7 @@ files:
     harness: copilot
     from: command:verify
     ownership: owned
-    hash: sha256-tP8aIgO5rkLTrtynWgwD/ysdm7H79E9c2brgwosByc8=
+    hash: sha256-klwP0mTCryoj9i/swpHeaZgUVWwkTFfUP+0m0BGS8Mg=
     scope: project
   - path: .gitignore
     harness: mandao
