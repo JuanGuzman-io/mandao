@@ -75,6 +75,7 @@
 .github/prompts/mandao-verify.prompt.md
 .mandao/bin/
 .mandao/commitlint.config.mjs
+.mandao/guide.md
 .mandao/templates/
 dist/
 build/
