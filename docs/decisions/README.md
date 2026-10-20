@@ -27,3 +27,6 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0017](0017-opencode-adapter.md) | OpenCode adapter (provider-agnostic) | Accepted for iteration 2 |
 | [0019](0019-antigravity-adapter.md) | Antigravity adapter (Google) | Accepted for a later slice |
 | [0020](0020-iteration-2a-execution-rules.md) | Iteration 2a: worktrees, impacted tests, test runs, Codex defaults, Reviewer tier rule | Accepted |
+| [0021](0021-iteration-2a-acceptance-lessons.md) | Iteration 2a acceptance: commits by trailer, deterministic identity, cross-harness review | Accepted |
+| [0022](0022-tdd-discipline-and-spec-diagrams.md) | TDD and professional discipline; diagrams to approve in specify | Accepted (design; 2b) |
+| [0023](0023-branching-strategy-presets.md) | Branching strategy that adapts to the team (presets) | Accepted (design; 2b) |
