@@ -1,5 +1,5 @@
 import matter from 'gray-matter';
-import { stringify as stringifyYaml } from 'yaml';
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { z } from 'zod';
 
 /**
@@ -32,7 +32,8 @@ export type CloseSummary = z.infer<typeof closeSummarySchema>;
 
 export function parseCloseSummary(text: string | undefined, spec: string): CloseSummary {
   if (!text) return closeSummarySchema.parse({ schema_version: 1, spec });
-  return closeSummarySchema.parse(matter(text).data);
+  // YAML 1.2 (`yaml`), not gray-matter's default: ISO timestamps stay strings instead of becoming Dates.
+  return closeSummarySchema.parse(matter(text, { engines: { yaml: (s: string) => parseYaml(s) as object } }).data);
 }
 
 /** Frontmatter plus a readable body regenerated from it. */

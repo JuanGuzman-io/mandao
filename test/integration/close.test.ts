@@ -49,6 +49,11 @@ describe('close in a real repository', () => {
     expect(releaseBranchesContaining(root, [t1], '')).toEqual([]);
   });
 
+  test('close-summary keeps real ISO timestamps as text across a round trip', () => {
+    const s = { ...parseCloseSummary(undefined, 'MDO-0002'), closed_at: '2026-10-20T16:02:26.756Z' };
+    expect(parseCloseSummary(renderCloseSummary(s), 'MDO-0002').closed_at).toBe('2026-10-20T16:02:26.756Z');
+  });
+
   test('close-summary is idempotent: an environment or a publication is recorded once and updated', () => {
     let s = parseCloseSummary(undefined, 'MDO-0001');
     s = withEnvironment(s, 'staging', 'ci', 't1');
