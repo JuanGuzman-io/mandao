@@ -20,6 +20,9 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 - User-facing YAML keys are snake_case (`schema_version`, `default_profile`); TypeScript identifiers
   are camelCase.
 - Commits: `.mandao/templates/<profile>/rules/commits.md`.
+- Tests create temporary folders only through `makeTree` (`test/helpers.ts`), which removes them when
+  the test file finishes, and never write next to a workspace through `join(<folder>, '..', …)`.
+  Enforced by `test/unit/architecture.test.ts`.
 
 ### Exemplar files
 
