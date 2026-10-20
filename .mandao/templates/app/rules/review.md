@@ -35,7 +35,9 @@ invented.
 ## Independence
 
 The Reviewer always works in a context separate from the author's, and on a different model when one
-is available (`reviewer`, or `reviewer_alt` when the Implementer ran on the Reviewer's model). When no
+is available (`reviewer`, or `reviewer_alt` when the Implementer ran on the Reviewer's model). The
+Reviewer **never runs on a lower tier or effort than the Implementer** (ADR 0020): a weaker model on
+another vendor is not an acceptable substitute. When no
 different model is available, the review still happens in a clean context and `execution.md` (or
 `quick-log.md`) records `reduced independence`. It never blocks.
 

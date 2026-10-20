@@ -20,3 +20,4 @@ projects:
 harnesses:
   - claude
   - copilot
+  - codex

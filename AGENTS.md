@@ -20,12 +20,17 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 
 ### Commands
 
+- `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev.
 - `/mandao-constitution` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
+- `/mandao-implement` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
 - `/mandao-init` — Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution.
 - `/mandao-quick` — Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial.
+- `/mandao-resume` — Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness.
 - `/mandao-specify` — Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check.
+- `/mandao-story` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
+- `/mandao-tasks` — Break an approved spec into Tn tasks with project, tier, files, risk tags, tests, AC, DoD and dependencies.
 
-Not implemented yet: `/mandao-audit`, `/mandao-clarify`, `/mandao-close`, `/mandao-implement`, `/mandao-perf`, `/mandao-resume`, `/mandao-story`, `/mandao-tasks`, `/mandao-verify`.
+Not implemented yet: `/mandao-audit`, `/mandao-close`, `/mandao-perf`, `/mandao-verify`.
 
 ### Rules
 

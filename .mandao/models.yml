@@ -5,7 +5,6 @@ harnesses:
   claude:
     leader: claude-opus-5-5
     reviewer: claude-opus-5-5
-    reviewer_alt: claude-sonnet-5-5
     implementer:
       fast: claude-haiku-5-5
       standard: claude-sonnet-5-5

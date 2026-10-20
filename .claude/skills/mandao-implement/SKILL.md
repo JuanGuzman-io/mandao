@@ -1,7 +1,7 @@
 ---
 name: mandao-implement
-description: Run the Leader → Implementer → Reviewer loop task by task, committing each task after a Reviewer PASS.
-argument-hint: "[spec] [task]"
+description: Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
+argument-hint: <spec> [task]
 arguments:
   - spec
   - task
@@ -12,20 +12,56 @@ disable-model-invocation: true
 
 # /mandao-implement
 
-> **Not implemented yet** in this Mandao version. This file declares the command's contract
-> (arguments, inputs, outputs) so other mandaos and `AGENTS.md` can reference it.
+Spec: $spec · task: $task
 
-Arguments: $ARGUMENTS
+You are the **Leader** for this spec, in this session (subagents cannot start subagents). You do not
+write production code yourself. Use `en` for notes; code and commits are English.
 
-Tell the user this mandao is not available yet, summarize what it will do (below), and suggest the
-closest available step.
+## 0. Before the first task
 
-## Planned behavior
+1. `node .mandao/bin/mandao.mjs run where $spec` — if this session is not in the spec's worktree, stop and tell the user
+   the path to open. Mandao never creates branches here.
+2. `node .mandao/bin/mandao.mjs run models --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
+   warn (the Leader should run on `<leader>`) and continue.
+3. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
 
-- Model flags `--leader-model`, `--implementer-model`, `--reviewer-model`, `--tester-model` override every other source for this run; then the spec frontmatter, the project and workspace `models.yml`, and Mandao's recommendation.
-- When the Reviewer cannot run on a different model than the Implementer, the review still runs in a clean context and `execution.md` records `reduced independence`.
-- The Leader picks the next eligible task, builds a scoped brief from the graph with an exemplar file, and delegates to an Implementer at the task's tier.
-- The Reviewer (`strong`, a different model from the Implementer) audits only the diff, the brief and the active lens rules per `.mandao/templates/app/rules/review.md` and `.mandao/templates/app/rules/clean-code.md`.
-- Escalation: 2 FAILs at a tier → one tier up; 3 FAILs at `strong` → HALT. A wrong spec opens a Pivot Record instead of consuming retries.
-- After PASS: one commit per task per `.mandao/templates/app/rules/commits.md`; `tasks.md` updated in the same commit; `execution.md` (from `.mandao/templates/app/spec/execution.md`) records the hash. Advisories are logged and never reopen the loop.
-- Tests follow `.mandao/templates/app/rules/test-policy.md`; the module's `AGENTS.md` update is part of the DoD.
+## 1. For each task
+
+Pick the task: `$task` or `next` from `node .mandao/bin/mandao.mjs run tasks $spec` (stop if it reports
+`blocked`). Then repeat until the task is done, halted or pivoted, following
+`node .mandao/bin/mandao.mjs run loop $spec <Tn> --harness <this harness>` at every step:
+
+1. **Checkpoint** before anything else:
+   `node .mandao/bin/mandao.mjs run checkpoint $spec --task <Tn> --phase implementing --harness <h> --model <implementer model> --verdict STARTED --tier <tier> --attempt <n> --implementer <model> --next "<what comes next>"`.
+   Checkpoints are the only memory between sessions: write one after every step below.
+2. **Brief:** `node .mandao/bin/mandao.mjs run brief $spec <Tn> --harness <h>` gives the clauses, files, exemplar,
+   gates, skills, lenses, models and impacted tests.
+3. **Implement** in a fresh context with the implementer for the tier:
+   the `mandao-implementer-<tier>` agent (or `mandao-implementer` in simple mode).
+   Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED`.
+4. **Gates and impacted tests** (`.mandao/templates/app/rules/test-policy.md`): run the project's level 0 gates,
+   and the impacted tests with `node .mandao/bin/mandao.mjs run tests <project> <changed files>` — never the full suite.
+   `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
+   `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
+5. **Review** in a separate, clean context, by the reviewer `loop` names (`reviewer` or
+   `reviewer_alt`), with only the diff, the brief and the active lenses (`.mandao/templates/app/rules/review.md`,
+   `.mandao/templates/app/rules/clean-code.md`). The Reviewer never runs on a lower tier or effort than the
+   Implementer; if `loop` reports `reduced independence`, say so and record it in the notes.
+6. **Verdict:**
+   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
+     moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
+   - **The spec is wrong** → write a Pivot Record (`.mandao/templates/app/spec/pivot-record.md`) in `execution.md`,
+     checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
+   - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
+7. **Commit** locally, no confirmation needed, never push: message from
+   `node .mandao/bin/mandao.mjs run commit-msg $spec <Tn> <subject>` (`.mandao/templates/app/rules/commits.md`), with `tasks.md`
+   updated in the same commit (`--done <Tn>` on the checkpoint before committing). Then checkpoint
+   `--verdict PASS --commit <sha> --clear` (or the next task) so `execution.md` records the hash.
+
+The Definition of Done includes the module's `AGENTS.md` and, when the workspace uses Claude Code, its
+`CLAUDE.md` pointer.
+
+## 2. After the last task
+
+Report: tasks done, FAILs and escalations, reduced or provider independence, deferred tests, commits.
+Next: /mandao-verify.

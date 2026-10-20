@@ -9,4 +9,6 @@ coverage/
 # mandao:begin
 # Managed by mandao 0.1.0.
 graphify-out/
+.mandao/run.lock
+.claude/settings.local.json
 # mandao:end

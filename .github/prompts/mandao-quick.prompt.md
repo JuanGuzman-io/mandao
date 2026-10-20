@@ -25,13 +25,19 @@ Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templat
 3. If any condition fails, do not edit anything. Explain which one and recommend /mandao-story or
    /mandao-specify, passing along what you found.
 
-## 2. Change
+## 2. Branch and worktree
+
+With **one** confirmation, create the branch and worktree from
+`node .mandao/bin/mandao.mjs run spec-new "quick <name>" --id quick --type <story|bug>` (run its `command`), and make the
+change there. Skip this when the session already runs on a quick branch.
+
+## 3. Change
 
 - Edit only what the change needs. No refactors, no drive-by fixes; report opportunities instead.
 - Follow `standards.md` and the module's `AGENTS.md`. Update that `AGENTS.md` if behavior or
   conventions changed.
 
-## 3. Post-check
+## 4. Post-check
 
 Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
 
@@ -39,7 +45,7 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
   and escalate to /mandao-story or /mandao-specify with the `reasons` and what you learned.
 - Otherwise continue.
 
-## 4. Gates and lite review
+## 5. Gates and lite review
 
 1. Run the level 0 gates configured in `projects[].gates` for the touched project (format, lint,
    typecheck, impacted tests, secrets, audit when dependencies changed, sast, metrics). Report any
@@ -50,7 +56,7 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
    model). Otherwise record `reduced independence` in the log. A blocking finding means fix it or
    escalate.
 
-## 5. Record and commit
+## 6. Record and commit
 
 1. Append a row to `specs/quick/quick-log.md` (create it from
    `.mandao/templates/app/spec/quick-log.md` if missing): date, name, project, files, lines, gates, review,

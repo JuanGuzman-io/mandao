@@ -30,7 +30,10 @@ Write requirements and design content in `en` and anything addressed to the PO
 3. **Nothing given**: ask once — *I have the ID* (validate and fetch) · *Create it* (via MCP, after
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
-The folder is `specs/<ID>-<slug>/`. If there is no `story.md`, write one from
+The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
+`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type>` and, with **one** confirmation, run the
+`command` it returns (`git worktree add -b <branch> <path>`); write every artifact of the spec inside
+that worktree. Skip this when the session already runs in it. If there is no `story.md`, write one from
 `.mandao/templates/app/spec/story.md` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the
 story blocks specify: stop and say so.
 
@@ -79,7 +82,8 @@ From `.mandao/templates/app/spec/design.md`:
 
 ## 6. Consistency Check
 
-Run `.mandao/templates/app/rules/consistency-check.md` over story, requirements and design. Write the table in
+Run `node .mandao/bin/mandao.mjs run trace <ID>` for the structural part (GAP, ORPHAN, broken references, clause coverage)
+and `.mandao/templates/app/rules/consistency-check.md` for the semantic part, over story, requirements and design. Write the table in
 `requirements.md` even when it is empty.
 
 ## 7. Close

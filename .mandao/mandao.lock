@@ -1,7 +1,7 @@
 # Written by mandao. Do not edit by hand.
 schema_version: 1
 mandao: 0.1.0
-config_hash: sha256-Zk9m9WpStfgELmWgACRZhhQm3Tjay8ZnlSYIhkjHRRM=
+config_hash: sha256-ah3EIx8Yxk+nHXXNrXj6F2UUZ/dYv0VFRBJYtTiDQd0=
 layers:
   - kind: core
     id: core
@@ -14,6 +14,162 @@ recommendations:
   copilot: sha256-gkDFlhvXwuhNbQ7SNJht6xdi37mthr1PSTu7A1wQ07E=
 skills: []
 files:
+  - path: .agents/skills/mandao-audit/agents/openai.yaml
+    harness: codex
+    from: command:audit
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-audit/SKILL.md
+    harness: codex
+    from: command:audit
+    ownership: owned
+    hash: sha256-91e5c/BpwsSyhvw1pnmwtbg6GR3dYTMR9IkpZQCEvIM=
+    scope: project
+  - path: .agents/skills/mandao-clarify/agents/openai.yaml
+    harness: codex
+    from: command:clarify
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-clarify/SKILL.md
+    harness: codex
+    from: command:clarify
+    ownership: owned
+    hash: sha256-VKM1Uac/KYpLM36OckUdCpEhxk1CNaaCOWydFaP8C7U=
+    scope: project
+  - path: .agents/skills/mandao-close/agents/openai.yaml
+    harness: codex
+    from: command:close
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-close/SKILL.md
+    harness: codex
+    from: command:close
+    ownership: owned
+    hash: sha256-GcnwiwiBGUMca+t0sdQtOvmLIO/0mWihYoVHd2GqgrM=
+    scope: project
+  - path: .agents/skills/mandao-constitution/agents/openai.yaml
+    harness: codex
+    from: command:constitution
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-constitution/SKILL.md
+    harness: codex
+    from: command:constitution
+    ownership: owned
+    hash: sha256-famice6irJRVFgZdO1tmLgT5TIiZpiRBDlUV5wn4Yjs=
+    scope: project
+  - path: .agents/skills/mandao-implement/agents/openai.yaml
+    harness: codex
+    from: command:implement
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-implement/SKILL.md
+    harness: codex
+    from: command:implement
+    ownership: owned
+    hash: sha256-Th0JfrIfnXDtAjayTsEKKhwmZSDFFf5uFEpg5jQCaWw=
+    scope: project
+  - path: .agents/skills/mandao-init/agents/openai.yaml
+    harness: codex
+    from: command:init
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-init/SKILL.md
+    harness: codex
+    from: command:init
+    ownership: owned
+    hash: sha256-wfb6z7za/7/VPprJoHS/3kLAutCI1NZ1iI0zHDttr/w=
+    scope: project
+  - path: .agents/skills/mandao-perf/agents/openai.yaml
+    harness: codex
+    from: command:perf
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-perf/SKILL.md
+    harness: codex
+    from: command:perf
+    ownership: owned
+    hash: sha256-cjqJ7KkynsF9Eb5k2ViEt+wQH5bryPTjWipumiMSv8I=
+    scope: project
+  - path: .agents/skills/mandao-quick/agents/openai.yaml
+    harness: codex
+    from: command:quick
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-quick/SKILL.md
+    harness: codex
+    from: command:quick
+    ownership: owned
+    hash: sha256-boQh21ud12bLkEtoABwWWEpVJS7SMxCgs7LE2g/F0Ys=
+    scope: project
+  - path: .agents/skills/mandao-resume/agents/openai.yaml
+    harness: codex
+    from: command:resume
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-resume/SKILL.md
+    harness: codex
+    from: command:resume
+    ownership: owned
+    hash: sha256-AdMhQ4HZY5X+10sg7/tdXCZl2kHqUH7ZlkXGMzYN/Gs=
+    scope: project
+  - path: .agents/skills/mandao-specify/agents/openai.yaml
+    harness: codex
+    from: command:specify
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-specify/SKILL.md
+    harness: codex
+    from: command:specify
+    ownership: owned
+    hash: sha256-pMLMEcGehC8X5u4DrpF0MzlHKhTbCjtzs3Rlx+tTClk=
+    scope: project
+  - path: .agents/skills/mandao-story/agents/openai.yaml
+    harness: codex
+    from: command:story
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-story/SKILL.md
+    harness: codex
+    from: command:story
+    ownership: owned
+    hash: sha256-yLmJ9fr6NwyI06yxUPGDRMbeLVRUOtQt0Hyp6A+Ru9w=
+    scope: project
+  - path: .agents/skills/mandao-tasks/agents/openai.yaml
+    harness: codex
+    from: command:tasks
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-tasks/SKILL.md
+    harness: codex
+    from: command:tasks
+    ownership: owned
+    hash: sha256-h2oHZ162uK6ClRJZc3VmOmNbA+Je1hOv7fmQ4dZK7Hg=
+    scope: project
+  - path: .agents/skills/mandao-verify/agents/openai.yaml
+    harness: codex
+    from: command:verify
+    ownership: owned
+    hash: sha256-OBsGcHU3nFT1YfFaIQZmyykC4iMxonV5XW+bkbab5Ys=
+    scope: project
+  - path: .agents/skills/mandao-verify/SKILL.md
+    harness: codex
+    from: command:verify
+    ownership: owned
+    hash: sha256-5oZ0umsIVd/8sRhck6i737JdOGg2xJHrwbed+iw9bkE=
+    scope: project
   - path: .claude/agents/mandao-implementer-fast.md
     harness: claude
     from: persona:implementer:fast
@@ -36,13 +192,7 @@ files:
     harness: claude
     from: persona:leader
     ownership: owned
-    hash: sha256-7sRuvJ50nLYxRy35TBloctMCDgBepUBcx7eRqJrBqqs=
-    scope: project
-  - path: .claude/agents/mandao-reviewer-alt.md
-    harness: claude
-    from: persona:reviewer:alt
-    ownership: owned
-    hash: sha256-bI9tVgTspkUvsNUtsNhEE8YVJRb5qpXmEkKncUblONo=
+    hash: sha256-QRGnoh2rybrrjj0+Rgr1hhPMqc5Ov7xD8e8WJKoQ7Pc=
     scope: project
   - path: .claude/agents/mandao-reviewer.md
     harness: claude
@@ -66,7 +216,7 @@ files:
     harness: claude
     from: command:clarify
     ownership: owned
-    hash: sha256-PLyA7V79Mrwjv+5IH+08VKcg9DLUl78QOmUnCKu33T8=
+    hash: sha256-NJlFSk6+OHm9IxsgroQeSCksY08X9uwjzSq9QWbQqk4=
     scope: project
   - path: .claude/skills/mandao-close/SKILL.md
     harness: claude
@@ -84,7 +234,7 @@ files:
     harness: claude
     from: command:implement
     ownership: owned
-    hash: sha256-fQAUf0v+hCynLeqD05RXGxPGpbYxxleFfQ3vCvDqrY0=
+    hash: sha256-/3/BtQy+YKxQS5p/5FiUyBmbQCvKAelpMwUA5nI55TI=
     scope: project
   - path: .claude/skills/mandao-init/SKILL.md
     harness: claude
@@ -102,37 +252,79 @@ files:
     harness: claude
     from: command:quick
     ownership: owned
-    hash: sha256-3iP7tGJlSu2xg6eDQxjN6SlLxDLajGu/rCOlpbxKdws=
+    hash: sha256-LXoQs8h3hgvLAH0DOoAWwas6cH8vh9qq0f/hCdS0ozI=
     scope: project
   - path: .claude/skills/mandao-resume/SKILL.md
     harness: claude
     from: command:resume
     ownership: owned
-    hash: sha256-96o/aNQO6cqr1OmjyecCB8uTZ46et6eNwKKzP6MXW98=
+    hash: sha256-RwT6AyOjpBr2Hjnjlx7HqagsHnPowylkSxYNBGKqR50=
     scope: project
   - path: .claude/skills/mandao-specify/SKILL.md
     harness: claude
     from: command:specify
     ownership: owned
-    hash: sha256-16/SliRhvPTwBnQl/FCUEC6qdZ/exvBAKm/VvrjeJU4=
+    hash: sha256-aKdhDEP33BEcX4cqDBYdE83h39xhXbkk3x2mjFZhpiE=
     scope: project
   - path: .claude/skills/mandao-story/SKILL.md
     harness: claude
     from: command:story
     ownership: owned
-    hash: sha256-QkzJNinmCLmkSnj2m+XzDTFuQtuld1pw0nmUL7ZwVvA=
+    hash: sha256-FsBw11rLijR5jZKXU7PsuwIPpyEpXhuou2H8dOg3RtI=
     scope: project
   - path: .claude/skills/mandao-tasks/SKILL.md
     harness: claude
     from: command:tasks
     ownership: owned
-    hash: sha256-Zg+GL+XcZkebF8E6ZiplTgFoNQmKoUq3frhSGXN/gkA=
+    hash: sha256-Z98Iq9BTJt21fdSoLtkORnzy0ilhWsqksS0F9HyTqbg=
     scope: project
   - path: .claude/skills/mandao-verify/SKILL.md
     harness: claude
     from: command:verify
     ownership: owned
     hash: sha256-b2nPUYtc7+0uKWdzzTW/xfL9unqO7Mcq7vsjzeDxeCE=
+    scope: project
+  - path: .codex/agents/mandao-implementer-fast.toml
+    harness: codex
+    from: persona:implementer:fast
+    ownership: owned
+    hash: sha256-sFMF5dx74r1odqYcPkhPinbbL6gcBbFRlyxWjJZFGig=
+    scope: project
+  - path: .codex/agents/mandao-implementer-standard.toml
+    harness: codex
+    from: persona:implementer:standard
+    ownership: owned
+    hash: sha256-e6x89pX8Ex5LVFrypdbmYl8Jxf5gwrQ6H2yAGgvzuQ0=
+    scope: project
+  - path: .codex/agents/mandao-implementer-strong.toml
+    harness: codex
+    from: persona:implementer:strong
+    ownership: owned
+    hash: sha256-1OJugUJH4GvuSTuSfu1/R94dDPGi4Zz/uNrkF69S8q4=
+    scope: project
+  - path: .codex/agents/mandao-leader.toml
+    harness: codex
+    from: persona:leader
+    ownership: owned
+    hash: sha256-YRRDbF2K9+1tclwbamYMyQpVGWmjoTZG8d8hUbvQmU8=
+    scope: project
+  - path: .codex/agents/mandao-reviewer-alt.toml
+    harness: codex
+    from: persona:reviewer:alt
+    ownership: owned
+    hash: sha256-6B4Qi2kDOA+XlKlBi8Fr8iRde9OxsTGP8wHb5+bRzoI=
+    scope: project
+  - path: .codex/agents/mandao-reviewer.toml
+    harness: codex
+    from: persona:reviewer
+    ownership: owned
+    hash: sha256-00hsPkqSuLlR6gz8Z6xnsiDiK0NSfXo6fxJwQ+J1RpQ=
+    scope: project
+  - path: .codex/agents/mandao-tester.toml
+    harness: codex
+    from: persona:tester
+    ownership: owned
+    hash: sha256-mDThCywoAzC0rlIzghtaN+qwEBUb9OUndoymK5hPOsA=
     scope: project
   - path: .github/agents/mandao-implementer-fast.agent.md
     harness: copilot
@@ -156,7 +348,7 @@ files:
     harness: copilot
     from: persona:leader
     ownership: owned
-    hash: sha256-0AcUYMRjLDnjqtDNMjzedzwSt0vscsuSC+lTX0Q7oK4=
+    hash: sha256-nRz5M2PpLy+Kji9wUSTdiIRsOoxH9JLYcgOXtDYzci8=
     scope: project
   - path: .github/agents/mandao-reviewer-alt.agent.md
     harness: copilot
@@ -186,7 +378,7 @@ files:
     harness: copilot
     from: command:clarify
     ownership: owned
-    hash: sha256-Mio3ZBg51i6PfcJ1NkE9FEXO6Hn9sSWo5OI2EXIDXLk=
+    hash: sha256-80eSUZqORVZpRPDXqb/UqNWa4jIYrQWcbJypwgTAvyk=
     scope: project
   - path: .github/prompts/mandao-close.prompt.md
     harness: copilot
@@ -204,7 +396,7 @@ files:
     harness: copilot
     from: command:implement
     ownership: owned
-    hash: sha256-Zn9B7sR7LrVrBA22Aw0TZMsqTF0t6qrMnINbwhxwNJM=
+    hash: sha256-+qCo1jEFzXJs2n42nNc99+koZIVlqNcEkw1rWysxxRY=
     scope: project
   - path: .github/prompts/mandao-init.prompt.md
     harness: copilot
@@ -222,31 +414,31 @@ files:
     harness: copilot
     from: command:quick
     ownership: owned
-    hash: sha256-y/FiKm7ezNsc3qJ7N2C4ZlAxZt0/C3Ewgdpgfo17yYg=
+    hash: sha256-SZxwWCc2epGY+fk0uGbibVchXI2xVRcVcqTu635E8Qo=
     scope: project
   - path: .github/prompts/mandao-resume.prompt.md
     harness: copilot
     from: command:resume
     ownership: owned
-    hash: sha256-e4SmsVMstlH3hFVkGHqsuCXFr+i3W0Nz9d4LisR0n6k=
+    hash: sha256-TKR8j/rKHBmNmlEtcZkejgu0AwlqJArjQSrqjGAfows=
     scope: project
   - path: .github/prompts/mandao-specify.prompt.md
     harness: copilot
     from: command:specify
     ownership: owned
-    hash: sha256-VYOBm5MMF82Vrxg/ABJ3kdu4HArSNZgGv7GR4FfsnHs=
+    hash: sha256-IgUsFI4AaxIsq+L/X6AtNtGKus+QiWJFTEloSjrfF58=
     scope: project
   - path: .github/prompts/mandao-story.prompt.md
     harness: copilot
     from: command:story
     ownership: owned
-    hash: sha256-JnFIxSKFdzpoPsKok+s7vtcXIcG8x4t5u+7QSt0hX5Q=
+    hash: sha256-70nF0uyxZEa9rj4Avp8hLDmNSROx6wJ3djTxgvR6+n0=
     scope: project
   - path: .github/prompts/mandao-tasks.prompt.md
     harness: copilot
     from: command:tasks
     ownership: owned
-    hash: sha256-43XuecuWZoBpHTf13Dpzi7cB6IAndShjq2FVIOc5qnA=
+    hash: sha256-9Ns7VFpsY5O8iZNNxhUBTY9xrZywVzZYRtGhfCiMMb0=
     scope: project
   - path: .github/prompts/mandao-verify.prompt.md
     harness: copilot
@@ -258,13 +450,13 @@ files:
     harness: mandao
     from: block:gitignore
     ownership: managed-block
-    hash: sha256-IDYViSVtCMZ2NtPmnphhhmqLSPW/yhSvXd/DXnMJmqI=
+    hash: sha256-bD7ZInm9wXv4RJ8vHkPoh15EewtJ7n189WIHE2rlqRw=
     scope: project
   - path: .graphifyignore
     harness: mandao
     from: block:graph-ignore
     ownership: managed-block
-    hash: sha256-fmvlUGZD0f5Gb7CLCNzOUs/R+z06P6tZtoWLBjM6pNM=
+    hash: sha256-9Ucn/wm+FMO0JFqk0NBEQGhXceV6xTemFNqUPqZ3Cl0=
     scope: project
   - path: .mandao/bin/mandao.mjs
     harness: mandao
@@ -378,7 +570,7 @@ files:
     harness: mandao
     from: template:shared/rules/review.md
     ownership: owned
-    hash: sha256-x+P3u67OtVlLdYdM99BwsytY7Tp8ywxgL/8DJ+Khh90=
+    hash: sha256-WBcRsPCIEtbEOdsRf2ZH9eoaQuWVwCb3B6sjbZNsBiQ=
     scope: project
   - path: .mandao/templates/app/rules/test-policy.md
     harness: mandao
@@ -390,7 +582,7 @@ files:
     harness: mandao
     from: template:shared/rules/traceability.md
     ownership: owned
-    hash: sha256-8NaOW+Qi1MECwEITrifzMrOV4q2vXRoVTzJpvs/8R1M=
+    hash: sha256-Zr+N28HQBp9T5U5aopncwnElNwBq4OZAK1JPeqVT/q0=
     scope: project
   - path: .mandao/templates/app/spec/design.md
     harness: mandao
@@ -402,7 +594,19 @@ files:
     harness: mandao
     from: template:shared/spec/execution.md
     ownership: owned
-    hash: sha256-vDvc3oSiNV6G+/j+pZwculCBhhPs3nnRVJDe/U34m1o=
+    hash: sha256-HD4Qs2xe0Lxrdsb9HVjCnhx2XiE5DFniL1cKcfLylT4=
+    scope: project
+  - path: .mandao/templates/app/spec/pivot-record.md
+    harness: mandao
+    from: template:shared/spec/pivot-record.md
+    ownership: owned
+    hash: sha256-stu7uqAbt7bh+pRnCLhPASMtaKCiFQ1ali57f98AnzE=
+    scope: project
+  - path: .mandao/templates/app/spec/progress.yml
+    harness: mandao
+    from: template:shared/spec/progress.yml
+    ownership: owned
+    hash: sha256-Iq8xB4+u707v5n2T1nqDU0xj3+gSGhBrh22AHnSechU=
     scope: project
   - path: .mandao/templates/app/spec/quick-log.md
     harness: mandao
@@ -414,25 +618,25 @@ files:
     harness: mandao
     from: template:shared/spec/requirements.md
     ownership: owned
-    hash: sha256-KOkDeT3ZgUrtsDQHbnjkM1vA6RjN4ZU7OQBcKD6qV3k=
+    hash: sha256-6aylij3YC2esDt7vBZauklLjXKrVZd2eppXT2SXmqAQ=
     scope: project
   - path: .mandao/templates/app/spec/story.md
     harness: mandao
     from: template:shared/spec/story.md
     ownership: owned
-    hash: sha256-4vl33f9MMQxPHS7VDiuu42avGb0Qdo1MUAwFN+Fv340=
+    hash: sha256-RAP+9ONPhR8Vz86Hhtz9iPdm00qpoALP232nZBDjpRc=
     scope: project
   - path: .mandao/templates/app/spec/tasks.md
     harness: mandao
     from: template:shared/spec/tasks.md
     ownership: owned
-    hash: sha256-vnWpDsomofTaZ24lqPalM4xJyB2c+P89/h9/5Z5IMcs=
+    hash: sha256-gogb0HasYT4w9HZuXn11T8C+G+xzlQJ4XPpe/GHZi14=
     scope: project
   - path: AGENTS.md
     harness: agents-md
     from: block:mandao
     ownership: managed-block
-    hash: sha256-RUbm1V+R57HTpS0ej3PWZag9O2j+tuumURnt46Qg1BM=
+    hash: sha256-ZlqFGsAsCIHbLlElzb3P7lwGAccMFqo6Bxqphtwh6KY=
     scope: project
   - path: CLAUDE.md
     harness: claude
