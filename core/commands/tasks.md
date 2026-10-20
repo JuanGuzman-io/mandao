@@ -16,7 +16,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md", description: polyrepo slices }
 capabilities: [read, search, edit, shell]
-templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md]
+templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md]
 scripts: [where, trace, tasks, commit-spec]
 approval: required
 ---
@@ -34,7 +34,7 @@ nothing to do here. Otherwise:
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend {{command:clarify}}.
 2. **Write `## Details`** in `tasks.md` from `{{template:spec/tasks.md}}`, following
-   `{{template:rules/spec-docs.md}}`. Per task: `### [ ] Tn — <result>` (never a file path), **What**
+   `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-tasks.md}}`. Per task: `### [ ] Tn — <result>` (never a file path), **What**
    (1–2 sentences, linking the design for the how), **Done when** (3–5 behavior bullets citing scenarios
    by id), **Notes** only for a visible exception, and the YAML block without prose:
    - `kind`: what the task changes, which becomes its commit type (only tests → `test`, only

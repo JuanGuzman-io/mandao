@@ -23,6 +23,7 @@ templates:
   - close/release-notes.md
   - close/technical.md
   - close/kaizen.md
+  - rules/doc-close.md
 scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
 approval: required
 ---
@@ -75,7 +76,7 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-Following `{{template:rules/spec-docs.md}}` (summary first, evidence at the end), in `{{paths.releases}}/<ID>/`:
+Following `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-close.md}}` (summary first, evidence at the end), in `{{paths.releases}}/<ID>/`:
 - `technical.md` from `{{template:close/technical.md}}`, in `{{language.technical}}`.
 - `release-notes.md` from `{{template:close/release-notes.md}}`, in `{{language.business}}`, one row per
   criterion with the status from `{{script:release-status}} {{arg:spec}}` — never upgraded by hand.

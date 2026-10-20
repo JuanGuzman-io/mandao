@@ -161,7 +161,7 @@ describe('content defects found by MDO-0004', () => {
   });
 
   test('#5 the verify report asks for the bare AC id in the first column', () => {
-    expect(core('templates/shared/rules/spec-docs.md')).toContain('bare `AC-n` / `AC-n/Cn` in the first column');
+    expect(core('templates/shared/rules/doc-verify.md')).toContain('bare `AC-n` / `AC-n/Cn` in the first column');
     expect(core('templates/shared/spec/verify-report.md')).toContain('| AC / clause | Critical | Tests | Level | Result |');
   });
 

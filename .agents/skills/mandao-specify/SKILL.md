@@ -10,7 +10,10 @@ Arguments: the text the user wrote after the skill name
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,
 `.mandao/templates/app/rules/traceability.md`, `.mandao/templates/app/rules/test-policy.md` and, for how each document
-reads, `.mandao/templates/app/rules/spec-docs.md`.
+reads, `.mandao/templates/app/rules/spec-docs.md`, `.mandao/templates/app/rules/doc-requirements.md` and
+`.mandao/templates/app/rules/doc-design.md`. Load the other document rules only when they apply:
+`.mandao/templates/app/rules/doc-lite.md` and `.mandao/templates/app/rules/doc-tasks.md` at lite depth,
+`.mandao/templates/app/rules/doc-quickstart.md` when the spec has visible behavior.
 
 Write requirements and design content in `en` and anything addressed to the PO
 (story text, business questions) in `en`. Headings and keywords stay in English.

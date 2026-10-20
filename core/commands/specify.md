@@ -36,6 +36,11 @@ templates:
   - spec/quickstart.md
   - spec/spec.md
   - spec/tasks.md
+  - rules/doc-requirements.md
+  - rules/doc-design.md
+  - rules/doc-lite.md
+  - rules/doc-quickstart.md
+  - rules/doc-tasks.md
 scripts: [spec-new, trace, diagram, branching, commit-spec, resources, premise]
 approval: required
 ---
@@ -46,7 +51,10 @@ Arguments: {{args}}
 
 Produce `requirements.md` and `design.md` for one spec. Follow `{{template:rules/context.md}}`,
 `{{template:rules/traceability.md}}`, `{{template:rules/test-policy.md}}` and, for how each document
-reads, `{{template:rules/spec-docs.md}}`.
+reads, `{{template:rules/spec-docs.md}}`, `{{template:rules/doc-requirements.md}}` and
+`{{template:rules/doc-design.md}}`. Load the other document rules only when they apply:
+`{{template:rules/doc-lite.md}}` and `{{template:rules/doc-tasks.md}}` at lite depth,
+`{{template:rules/doc-quickstart.md}}` when the spec has visible behavior.
 
 Write requirements and design content in `{{language.technical}}` and anything addressed to the PO
 (story text, business questions) in `{{language.business}}`. Headings and keywords stay in English.
