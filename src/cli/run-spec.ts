@@ -15,6 +15,7 @@ import { onPath } from '../util/which.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { registerLedger } from './run-ledger.js';
+import { registerVerify } from './run-verify.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
@@ -231,6 +232,7 @@ export function registerSpecScripts(run: Command, ctx: CliContext) {
   registerPlanning(run, ctx);
   registerTaskScripts(run, ctx);
   registerState(run, ctx);
+  registerVerify(run, ctx);
 }
 
 /** Scripts that write, commit or execute: the documented exceptions (ADR 0020, ADR 0021). */
