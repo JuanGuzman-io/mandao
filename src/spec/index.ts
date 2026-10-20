@@ -1,4 +1,5 @@
 export * from './commit.js';
+export * from './diagram.js';
 export * from './execution.js';
 export * from './loop.js';
 export * from './markdown.js';

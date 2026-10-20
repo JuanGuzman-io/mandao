@@ -13,6 +13,7 @@ import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { registerDiagram } from './run-diagram.js';
 import { registerRed } from './run-red.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
@@ -237,4 +238,5 @@ export function registerLedger(run: Command, ctx: CliContext) {
   registerCommit(run, ctx);
   registerReview(run, ctx);
   registerRed(run, ctx);
+  registerDiagram(run, ctx);
 }

@@ -129,6 +129,24 @@ describe('mandao run red', () => {
     expect(readSpec(join(root, SPEC)).execution.at(-1)!.notes).toBe('red test changed: test/a.test.ts');
   });
 
+  test('mandao run diagram stamps a Mermaid fallback into design.md and reports it stale after an edit', async () => {
+    const root = workspace();
+    const design = join(root, SPEC, 'design.md');
+    writeFileSync(
+      design,
+      '---\nschema_version: 1\nspec: MDO-0001-skills-list\ndepth: standard\nprojects: [shop]\n---\n\n# Design\n\n## Decisions\n\nList from the lock.\n',
+    );
+    const mermaid = join(root, 'flow.mmd');
+    writeFileSync(mermaid, 'flowchart LR\n  CLI --> Lock');
+    await run(root, 'diagram', 'MDO-0001', '--stamp', '--tool', 'mermaid', '--type', 'workflow', '--mermaid', mermaid);
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ required: 'if-new-flow', stale: false, stamp: { tool: 'mermaid', type: 'workflow' } });
+    expect(readFileSync(design, 'utf8')).toContain('```mermaid\nflowchart LR');
+    writeFileSync(design, readFileSync(design, 'utf8').replace('List from the lock.', 'List from the catalog.'));
+    await run(root, 'diagram', 'MDO-0001');
+    expect(JSON.parse(out.at(-1)!).stale).toBe(true);
+    await expect(run(root, 'diagram', 'MDO-0001', '--stamp', '--tool', 'archify', '--type', 'workflow')).rejects.toThrow(/needs --file/);
+  });
+
   test('tests that already pass are not red evidence: nothing is recorded', async () => {
     const root = workspace();
     vi.stubEnv('RED', '0');
