@@ -62,7 +62,7 @@ export function printFindings(findings: Finding[]) {
 /** Steps a harness needs from the user after its files are generated (ADR 0021). */
 export function harnessSetupNotes(harnesses: readonly string[]): string[] {
   const notes = harnesses.includes('antigravity')
-    ? ['Antigravity support is experimental (ADR 0019): `mandao doctor` lists what is not verified.']
+    ? ['Antigravity support is experimental and not live-tested: only snapshot tests cover it (ADR 0019, ADR 0027).']
     : [];
   if (!harnesses.includes('codex')) return notes;
   return [

@@ -38,12 +38,16 @@ step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it a
 
 ## Harnesses
 
-| Harness | Commands | Personas | Verified |
-|---|---|---|---|
-| Claude Code | `.claude/skills/mandao-*/SKILL.md` | `.claude/agents/mandao-*.md` | 2026-10-19 |
-| GitHub Copilot (VS Code) | `.github/prompts/mandao-*.prompt.md` | `.github/agents/mandao-*.agent.md` | 2026-10-19 |
-| Codex (OpenAI) | `.agents/skills/mandao-*/SKILL.md` (`$mandao-<id>`) | `.codex/agents/mandao-*.toml` | 2026-10-20 |
-| Any other agent | `AGENTS.md` (managed block) | — | — |
+| Harness | Commands | Personas | Verified | Tested |
+|---|---|---|---|---|
+| Claude Code | `.claude/skills/mandao-*/SKILL.md` | `.claude/agents/mandao-*.md` | 2026-10-19 | live |
+| GitHub Copilot (VS Code) | `.github/prompts/mandao-*.prompt.md` | `.github/agents/mandao-*.agent.md` | 2026-10-19 | snapshots |
+| Codex (OpenAI) | `.agents/skills/mandao-*/SKILL.md` (`$mandao-<id>`) | `.codex/agents/mandao-*.toml` | 2026-10-20 | live |
+| OpenCode (2.1.1 – 2.x) | `.opencode/commands/mandao-*.md` | `.opencode/agents/mandao-*.md` | 2026-10-20 | snapshots; live run pending |
+| Antigravity (Google) — **experimental** | `.agents/skills/mandao-*/SKILL.md`, shared with Codex | `.agents/agents/mandao-*.md` | 2026-10-20 | **not live-tested**: snapshots only |
+| Any other agent | `AGENTS.md` (managed block) | — | — | — |
+
+Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 
 ## CLI
 

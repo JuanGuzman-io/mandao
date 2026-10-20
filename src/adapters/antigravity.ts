@@ -40,7 +40,7 @@ export const antigravityAdapter: Adapter = {
   id: 'antigravity',
   name: 'Antigravity',
   experimental:
-    'its formats moved this month (workflows became skills on 2026-10-19), skill arguments and agent tool names are not documented, and it was not verified live',
+    'not live-tested: covered by snapshot tests only (no Antigravity account); its formats moved this month (workflows became skills on 2026-10-19) and skill arguments and agent tool names are not documented',
   verified: {
     date: '2026-10-20',
     docs: [

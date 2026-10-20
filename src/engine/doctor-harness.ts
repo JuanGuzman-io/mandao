@@ -121,6 +121,7 @@ export function harnessFindings(
     const why = ADAPTERS[h].experimental;
     if (why) out.push({ level: 'info', message: `${h} is experimental: ${why}` });
   }
-  if (config.harnesses.includes('opencode')) out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode));
+  if (config.harnesses.includes('opencode'))
+    out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode, recs.harnesses.opencode?.provider_sets));
   return out;
 }

@@ -80,6 +80,10 @@ export const recommendationsSchema = z.object({
             routed: routedModels,
             simple: simpleModels,
             note: z.string().optional(),
+            /** Offered, never chosen by provider detection (e.g. free models with data terms to accept). */
+            optional: z.boolean().default(false),
+            source: z.url().optional(),
+            reviewed: z.iso.date().optional(),
           }),
         )
         .optional(),

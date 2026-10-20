@@ -44,6 +44,21 @@ describe('OpenCode providers (ADR 0017)', () => {
     expect(detectProviders({ env, configs: ['{ "$schema": "https://opencode.ai/config.json" }'] })).toEqual(['anthropic', 'openai']);
   });
 
+  test('optional sets are never chosen by detection, only offered with their terms (ADR 0027)', async () => {
+    const { readRecommendations } = await import('../../src/models/load.js');
+    const { optionalSetFindings } = await import('../../src/engine/doctor-opencode.js');
+    const sets = readRecommendations().harnesses.opencode!.provider_sets!;
+    expect(chooseProviderSet(sets, ['opencode'])).toBeUndefined();
+    const [offer] = optionalSetFindings(sets, ['opencode']);
+    expect(offer).toMatchObject({
+      level: 'info',
+      message: expect.stringContaining('free for a limited time; free models may use data for training'),
+    });
+    expect(offer!.fix).toContain('mandao models set reviewer opencode/beam-free --harness opencode');
+    expect(sets['opencode-zen']!.simple.implementer).not.toBe(sets['opencode-zen']!.simple.reviewer);
+    expect(optionalSetFindings(sets, ['anthropic'])).toEqual([]);
+  });
+
   test('the largest recommended set that every detected provider covers', () => {
     expect(chooseProviderSet(sets, ['anthropic', 'openai', 'ollama'])).toBe('anthropic+openai');
     expect(chooseProviderSet(sets, ['openai'])).toBe('openai');

@@ -216,6 +216,21 @@ harnesses:
           implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
           tester: anthropic/claude-sonnet-5-5
         simple: { implementer: anthropic/claude-sonnet-5-5, reviewer: openai/gpt-6-astra }
+      # Offered, never auto-selected: free models through OpenCode Zen (`/connect` → OpenCode Zen, provider
+      # `opencode`). Two different models so Implementer and Reviewer differ; both providers state they do
+      # not train on your data today, but terms change with each free period. Use them on public code only.
+      opencode-zen:
+        optional: true
+        providers: [opencode]
+        routed:
+          leader: opencode/glm-5.3-flash-free
+          reviewer: opencode/beam-free
+          implementer: { fast: opencode/glm-5.3-flash-free, standard: opencode/glm-5.3-flash-free, strong: opencode/glm-5.3-flash-free }
+          tester: opencode/glm-5.3-flash-free
+        simple: { implementer: opencode/glm-5.3-flash-free, reviewer: opencode/beam-free }
+        note: "free for a limited time; free models may use data for training"
+        source: https://opencode.ai/docs/zen/
+        reviewed: 2026-10-20
     tiers:
       anthropic/claude-haiku-5-5: fast
       anthropic/claude-sonnet-5-5: standard

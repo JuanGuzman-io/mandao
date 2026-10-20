@@ -1,5 +1,6 @@
 import { detectProviders, openCodeSources, type ProviderSources } from '../models/providers.js';
 import { type ResolvedModels, usedModels } from '../models/resolve.js';
+import type { Recommendations } from '../schemas/index.js';
 import type { Finding } from './doctor.js';
 
 /** Local providers run without credentials. */
@@ -34,4 +35,20 @@ export function opencodeFindings(models: ResolvedModels | undefined, src: Provid
   return out;
 }
 
-export const opencodeDoctor = (root: string, models: ResolvedModels | undefined) => opencodeFindings(models, openCodeSources(root));
+type ProviderSets = NonNullable<NonNullable<Recommendations['harnesses']['opencode']>['provider_sets']>;
+
+/** Optional sets the configured providers cover, offered with their terms, never applied (ADR 0027). */
+export function optionalSetFindings(sets: ProviderSets | undefined, providers: string[]): Finding[] {
+  return Object.entries(sets ?? {})
+    .filter(([, set]) => set.optional && set.providers.every((p) => providers.includes(p)))
+    .map(([name, set]) => ({
+      level: 'info' as const,
+      message: `opencode: optional set ${name} fits the configured providers (${set.note ?? 'see recommendations'}; ${set.source ?? 'no source'}, reviewed ${set.reviewed ?? '?'})`,
+      fix: `apply it only for public code: \`mandao models set implementer ${set.simple.implementer} --harness opencode\` and \`mandao models set reviewer ${set.simple.reviewer} --harness opencode\``,
+    }));
+}
+
+export const opencodeDoctor = (root: string, models: ResolvedModels | undefined, sets?: ProviderSets) => {
+  const src = openCodeSources(root);
+  return [...opencodeFindings(models, src), ...optionalSetFindings(sets, detectProviders(src))];
+};

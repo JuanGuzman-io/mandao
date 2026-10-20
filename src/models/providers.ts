@@ -63,9 +63,12 @@ function authListIds(text: string | undefined): string[] {
   }
 }
 
-/** The largest recommended set whose providers are all configured. */
-export function chooseProviderSet(sets: Record<string, { providers: string[] }>, providers: string[]): string | undefined {
-  const fits = Object.entries(sets).filter(([, s]) => s.providers.every((p) => providers.includes(p)));
+/** The largest recommended set whose providers are all configured; optional sets are only offered. */
+export function chooseProviderSet(
+  sets: Record<string, { providers: string[]; optional?: boolean }>,
+  providers: string[],
+): string | undefined {
+  const fits = Object.entries(sets).filter(([, s]) => !s.optional && s.providers.every((p) => providers.includes(p)));
   return fits.sort((a, b) => b[1].providers.length - a[1].providers.length)[0]?.[0];
 }
 
