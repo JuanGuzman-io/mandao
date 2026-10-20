@@ -3,7 +3,7 @@ schema_version: 1
 spec: MDO-0006-leave-no-temporary-folders-behind-after-the-test
 depth: lite
 projects: [mandao]
-status: draft
+status: approved
 ---
 
 # Requirements — Leave no temporary folders behind after the test run
