@@ -79,7 +79,8 @@ Pick the task: `<task>` or `next` from `node .mandao/bin/mandao.mjs run tasks <s
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
    1. Checkpoint the PASS and queue the commit:
       `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
-      `--next-task`), subject per `.mandao/templates/app/rules/commits.md`. When `node .mandao/bin/mandao.mjs run review` already wrote
+      `--next-task`). `<subject>` is **only the subject** (`add --json to mandao doctor`): the script
+      adds the emoji, type and scope itself (`.mandao/templates/app/rules/commits.md`). When `node .mandao/bin/mandao.mjs run review` already wrote
       the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
    2. `node .mandao/bin/mandao.mjs run commit <spec> --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
       per pending task with its trailers.

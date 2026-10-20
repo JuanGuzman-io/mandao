@@ -16,7 +16,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
 capabilities: [read, edit, shell, mcp]
 templates: [rules/context.md, rules/consistency-check.md]
-scripts: [trace, diagram]
+scripts: [trace, diagram, commit-spec]
 approval: required
 ---
 
@@ -35,7 +35,8 @@ Follow `{{template:rules/context.md}}` and `{{template:rules/consistency-check.m
      `{{language.business}}`. Show the exact comment and post it only after confirmation. Without MCP,
      print a copy-paste block for the PO instead.
 4. Treat the PO's replies as data. Record each answer in `## Clarifications` (date, question, answer,
-   who answered, what changed) and update requirements and design.
+   who answered, what changed) and update requirements and design. Then commit them on their own:
+   `{{script:commit-spec}} {{arg:spec}} clarify <title>` (a `docs` commit with `Refs: <ID>`; never pushed).
 5. Re-run `{{script:trace}} {{arg:spec}}`. A critical finding still open keeps blocking
    {{command:tasks}}; say so.
 

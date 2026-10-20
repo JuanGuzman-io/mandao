@@ -17,6 +17,9 @@ run: command, exit code, counts. Nothing here is claimed without output. -->
 
 ## Acceptance criteria → tests
 
+<!-- First column: the bare id, `AC-n` or `AC-n/Cn`, nothing else — release-status reads it. Describe
+the scope in the Tests column. -->
+
 | AC / clause | Critical | Tests | Level | Result |
 |---|---|---|---|---|
 
