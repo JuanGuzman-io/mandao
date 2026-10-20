@@ -94,7 +94,7 @@
             "noExcessiveCognitiveComplexity": {
               "level": "error",
               "options": {
-                "maxAllowedComplexity": 24
+                "maxAllowedComplexity": 22
               }
             },
             "noExcessiveLinesPerFunction": {
@@ -131,13 +131,13 @@
             "noExcessiveCognitiveComplexity": {
               "level": "error",
               "options": {
-                "maxAllowedComplexity": 35
+                "maxAllowedComplexity": 29
               }
             },
             "noExcessiveLinesPerFunction": {
               "level": "error",
               "options": {
-                "maxLines": 93,
+                "maxLines": 82,
                 "skipBlankLines": true
               }
             }
@@ -168,22 +168,7 @@
             "noExcessiveCognitiveComplexity": {
               "level": "error",
               "options": {
-                "maxAllowedComplexity": 33
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "includes": ["src/models/resolve.ts"],
-      "linter": {
-        "rules": {
-          "complexity": {
-            "noExcessiveCognitiveComplexity": {
-              "level": "error",
-              "options": {
-                "maxAllowedComplexity": 35
+                "maxAllowedComplexity": 17
               }
             }
           }

@@ -51,6 +51,7 @@ function impactFor(ctx: CliContext, project: ReturnType<typeof projectNamed>, fi
 
 interface CheckpointOptions {
   task?: string;
+  nextTask?: string;
   phase?: string;
   harness?: string;
   model?: string;
@@ -203,7 +204,8 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
   run
     .command('checkpoint <spec>')
     .description('Write the checkpoint after a Leader step: progress.yml, an execution row, a task checkbox')
-    .option('--task <id>', 'task in progress')
+    .option('--task <id>', 'the task this step is about (the execution row and the task in progress)')
+    .option('--next-task <id>', 'after recording the row, the task now in progress (default: --task)')
     .option('--phase <phase>', 'implementing | awaiting-review | rework-n')
     .option('--harness <id>', 'harness running the task')
     .option('--model <model>', 'model running the task')
@@ -224,10 +226,11 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
       const now = new Date().toISOString();
       if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(o, now));
       if (o.done) markTask(spec.dir, o.done, true);
+      const inProgress = o.nextTask ?? o.task;
       const current =
-        o.clear || !o.task
+        o.clear || !inProgress
           ? null
-          : { task: o.task, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: o.model ?? 'unknown' };
+          : { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: o.model ?? 'unknown' };
       writeProgress(spec.dir, {
         schema_version: 1,
         spec: spec.name,
