@@ -87,4 +87,6 @@ Generated commands call `node .mandao/bin/mandao.mjs`, which runs Mandao from lo
 Force one with `scripts.runner` in `.mandao/config.yml`; `mandao doctor` shows which one it uses.
 Undo the link with `npm rm -g mandao`.
 
+Contributing and releasing (trusted publishing with OIDC, no npm token): [CONTRIBUTING.md](CONTRIBUTING.md).
+
 Requires Node ≥ 22.18. Commits follow the format in `core/templates/shared/rules/commits.md`.

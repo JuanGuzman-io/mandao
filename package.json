@@ -37,7 +37,7 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm test",
     "changeset": "changeset",
-    "release": "npm run build && changeset publish",
+    "release": "npm run build && changeset publish --provenance",
     "prepublishOnly": "npm run check && npm run build",
     "smoke": "node scripts/smoke.mjs"
   },
