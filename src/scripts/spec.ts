@@ -127,16 +127,39 @@ function gitBranches(root: string): string[] {
   }
 }
 
-/** The next local id: the highest `<prefix>-NNNN` in specs, worktrees or branches, plus one. */
-export function nextLocalId(root: string, config: Config): string {
-  const prefix = config.spec.local_prefix;
-  const re = new RegExp(`${prefix}-(\\d+)`);
-  const seen = [
+const gitLines = (root: string, args: string[]) => {
+  try {
+    return execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'ignore'] })
+      .split('\n')
+      .filter(Boolean);
+  } catch {
+    return []; // not a repository yet, or no commits
+  }
+};
+
+/**
+ * Every place a local id may already be taken, beyond this checkout's spec folder (MDO-0004 reused
+ * MDO-0003 after its branch was deleted): spec folders on every local branch, active worktrees, branch
+ * names, `Refs` trailers anywhere in history (reflog included) and tracked paths that carry an id.
+ */
+function idsInUse(root: string, config: Config): string[] {
+  const specs = config.paths.specs;
+  const branches = gitLines(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']);
+  return [
     ...(existsSync(specsDir(root, config)) ? readdirSync(specsDir(root, config)) : []),
     ...(existsSync(worktreesDir(root, config)) ? readdirSync(worktreesDir(root, config)) : []),
     ...gitBranches(root),
+    ...branches.flatMap((b) => gitLines(root, ['ls-tree', '--name-only', b, '--', `${specs}/`])),
+    ...gitLines(root, ['log', '--all', '--reflog', `--format=%(trailers:key=${config.commits.trailers.refs},valueonly)`]),
+    ...gitLines(root, ['ls-files']),
   ];
-  const max = Math.max(0, ...seen.map((s) => Number(s.match(re)?.[1] ?? 0)));
+}
+
+/** The next local id: the highest `<prefix>-NNNN` already in use anywhere (see `idsInUse`), plus one. */
+export function nextLocalId(root: string, config: Config): string {
+  const prefix = config.spec.local_prefix;
+  const re = new RegExp(`${prefix}-(\\d+)`, 'g');
+  const max = Math.max(0, ...idsInUse(root, config).flatMap((s) => [...s.matchAll(re)].map((m) => Number(m[1]))));
   return `${prefix}-${String(max + 1).padStart(4, '0')}`;
 }
 

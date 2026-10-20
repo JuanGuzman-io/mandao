@@ -144,3 +144,38 @@ export function commitState(spec: SpecFolder, trailers: Config['commits']['trail
 
 /** The repository holding `dir` (a spec folder or a project). */
 export const repoRoot = (dir: string) => git(dir, ['rev-parse', '--show-toplevel']).trim();
+
+export interface SpecCommit {
+  committed: boolean;
+  sha?: string;
+  reason?: string;
+}
+
+/**
+ * Commits only the spec folder (`📝 docs(<scope>): <subject>` with `Refs: <id>`): specify on approval,
+ * clarify after recording answers. Local only, never on a protected branch.
+ */
+export function commitSpecDocs(input: {
+  repo: string;
+  specDir: string;
+  header: string;
+  specId: string;
+  config: Config;
+  trailers?: string[];
+  protectedBranches?: string[];
+}): SpecCommit {
+  const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
+  if (input.protectedBranches?.includes(branch))
+    return { committed: false, reason: `${branch} is a protected branch: commit from the spec's worktree` };
+  const folder = relative(input.repo, input.specDir) || '.';
+  git(input.repo, ['add', '--', folder]);
+  if (!git(input.repo, ['diff', '--cached', '--name-only', '--', folder]).trim())
+    return { committed: false, reason: 'nothing to commit in the spec folder' };
+  const message = [input.header, '', `${input.config.commits.trailers.refs}: ${input.specId}`, ...(input.trailers ?? [])].join('\n');
+  try {
+    git(input.repo, ['commit', '-q', '-m', message, '--', folder]);
+  } catch (e) {
+    return { committed: false, reason: String((e as { stderr?: string }).stderr || (e as Error).message).trim() };
+  }
+  return { committed: true, sha: git(input.repo, ['rev-parse', '--short', 'HEAD']).trim() };
+}
