@@ -49,10 +49,13 @@ export async function runTests(
     const result = spawnSync(withPriority(command, budget.priority), {
       cwd: root,
       shell: true,
-      stdio: 'inherit',
+      // stdout carries only the JSON result: the runner's own output goes to stderr.
+      stdio: ['inherit', 'pipe', 'inherit'],
+      maxBuffer: 64 * 1024 * 1024,
       timeout: budget.timeoutS * 1000,
       env: { ...process.env, MANDAO_TEST_WORKERS: String(budget.workers) },
     });
+    if (result.stdout?.length) process.stderr.write(result.stdout);
     const durationMs = Date.now() - started;
     if (result.error && (result.error as NodeJS.ErrnoException).code === 'ETIMEDOUT') {
       return { status: 'TIMEOUT', command, workers: budget.workers, durationMs, reason: `exceeded ${budget.timeoutS}s` };

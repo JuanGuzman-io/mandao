@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import { configSchema } from '../../src/schemas/index.js';
 import { appendExecutionRow, markTask, writeProgress } from '../../src/scripts/checkpoint.js';
@@ -136,6 +136,19 @@ describe('test runs', () => {
     expect((await runTests(root, 't', 'node -e "process.exit(0)"', { ...budget, decision: 'defer', workers: 0 })).status).toBe(
       'DEFERRED_TO_CI',
     );
+  });
+
+  test("the runner's output goes to stderr, never into the JSON on stdout", async () => {
+    const out = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+    const err = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    try {
+      await runTests(makeTree({}), 't', 'node -e "console.log(42)"', budget);
+      expect(out).not.toHaveBeenCalled();
+      expect(String(err.mock.calls[0]?.[0])).toBe('42\n');
+    } finally {
+      out.mockRestore();
+      err.mockRestore();
+    }
   });
 
   test('one heavy run at a time: a live holder keeps others queued', async () => {
