@@ -39,7 +39,8 @@
     "changeset": "changeset",
     "release": "npm run build && changeset publish --provenance",
     "prepublishOnly": "npm run check && npm run build",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "prepare": "node scripts/install-hooks.mjs"
   },
   "keywords": [
     "agents",
