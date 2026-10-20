@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.4 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.5 · **Last updated:** 2026-10-20
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -473,7 +473,7 @@ One story = **one spec, one development**, even across projects.
   - Two modes: `simple` (one model to implement, another to review) and `routed` (the Implementer follows each task's tier).
   - `init` asks for each role's model, showing Mandao's recommendation and the option to type another. `mandao models set <role> <model>` changes it; `mandao models` shows the result and its source.
   - Precedence: command flag (`--reviewer-model`, …) > spec frontmatter (`models:` in `story.md`) > project `models.yml` > workspace `models.yml` > Mandao's recommendation.
-  - Recommendations live in `core/models/recommendations.yml`, per harness, with a review date and the official documentation they come from (never from memory). **Defaults must be available on every plan of the harness** (ADR 0012); plan- or admin-dependent models are listed as `optional` with the note "requires availability on your plan". Claude Code: `reviewer_alt` defaults to `sonnet`, Fable is optional. Copilot Free and Student only get auto model selection. `mandao update` refreshes them without touching the user's choices and only offers the new recommendation.
+  - Recommendations live in `core/models/recommendations.yml`, per harness, with a review date and the official documentation they come from (never from memory). **Defaults must be available on every plan of the harness** (ADR 0012); plan- or admin-dependent models are listed as `optional` with the note "requires availability on your plan". Claude Code (ADR 0014): pinned to the 5.5 family by full ID — `claude-opus-5-5` for leader, reviewer and strong implementer; `claude-sonnet-5-5` for reviewer_alt, standard implementer and tester; `claude-haiku-5-5` for fast implementer — requiring Claude Code ≥ 2.1.293, which `doctor` checks; aliases and `claude-fable-5-1` are optional. Copilot Free and Student only get auto model selection. `mandao update` refreshes them without touching the user's choices and only offers the new recommendation.
   - `reviewer_alt` reviews when the Implementer ended on the Reviewer's model (for example after escalating to `strong`). If no different model is available, or the user picks the same model for both roles: warn, review in a clean context, and record `reduced independence` in `execution.md`. Never block.
   - `mandao doctor` checks that every role has a model in each active harness and warns when a chosen model is not among the recommendations.
 - **Escalation:** 2 FAILs at a tier → retry one tier up → 3 FAILs at `strong` → HALT.
