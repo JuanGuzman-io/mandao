@@ -12,7 +12,7 @@ arguments:
   - name: task
     description: "Optional task id (default: the next eligible task)"
 inputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true }
+  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true, description: "spec.md § Tasks at lite depth with 3 tasks or fewer" }
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
 outputs:
   - { path: "(code)", description: one local commit per task after PASS }

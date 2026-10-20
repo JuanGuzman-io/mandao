@@ -17,7 +17,7 @@ import {
   type Task,
 } from '../spec/index.js';
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
-import { logPath } from './spec-log.js';
+import { docPath, logPath } from './spec-log.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -54,13 +54,13 @@ export function readSpec(dir: string): SpecFolder {
     issues.push(...r.issues);
     if (r.story) out.story = r.story;
   } else issues.push('story.md is missing');
-  const reqs = readIf(join(dir, 'requirements.md'));
+  const reqs = readIf(docPath(dir, 'requirements'));
   if (reqs) {
     const r = parseRequirements(reqs);
     issues.push(...r.issues);
     out.requirements = r.requirements;
   }
-  const tasks = readIf(join(dir, 'tasks.md'));
+  const tasks = readIf(docPath(dir, 'tasks'));
   if (tasks) {
     const r = parseTasks(tasks);
     issues.push(...r.issues);

@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { type ExecutionRow, executionRow, type ProgressInput, progressSchema, setTaskDone } from '../spec/index.js';
 import { snapshot, writeFromSnapshot, writeText } from '../writer/files.js';
-import { logPath } from './spec-log.js';
+import { docPath, logPath } from './spec-log.js';
 
 const EXECUTION_TEMPLATE = (spec: string) => `---
 schema_version: 1
@@ -41,7 +41,7 @@ export function writeProgress(dir: string, progress: ProgressInput): void {
 
 /** Flips a task's checkbox in tasks.md, leaving everything else as it was. */
 export function markTask(dir: string, task: string, done: boolean): void {
-  const file = join(dir, 'tasks.md');
+  const file = docPath(dir, 'tasks');
   const snap = snapshot(file);
   if (snap.content === undefined) throw new Error(`${file} does not exist`);
   writeFromSnapshot(snap, setTaskDone(snap.content, task, done));

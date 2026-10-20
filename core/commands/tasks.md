@@ -10,7 +10,7 @@ arguments:
     description: "Spec folder or id"
     required: true
 inputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true }
+  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true, description: "spec.md at lite depth" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md", required: true }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
@@ -26,6 +26,9 @@ approval: required
 Spec: {{arg:spec}}
 
 Write task content in `{{language.technical}}`; headings, ids and YAML keys stay in English.
+
+At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
+nothing to do here. Otherwise:
 
 1. **Gate.** Run `{{script:where}} {{arg:spec}}`; work in the spec's worktree. Run
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this

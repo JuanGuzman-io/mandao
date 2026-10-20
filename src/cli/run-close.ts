@@ -8,7 +8,7 @@ import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { hasExecutionLog, logPath } from '../scripts/spec-log.js';
+import { docPath, hasExecutionLog, logPath } from '../scripts/spec-log.js';
 import {
   acStatus,
   type BugsAfterMerge,
@@ -172,7 +172,7 @@ function registerReleaseStatus(run: Command, ctx: CliContext) {
     .action((ref: string) => {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
-      const design = readIf(join(spec.dir, 'design.md')) ?? '';
+      const design = readIf(docPath(spec.dir, 'design')) ?? '';
       json({ constitution: impactItems(design, 'Constitution Impact'), product: impactItems(design, 'Product Impact') });
     });
 }

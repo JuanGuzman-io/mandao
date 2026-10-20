@@ -10,7 +10,7 @@ arguments:
     description: "Spec folder or id"
     required: true
 inputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true }
+  - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true, description: "spec.md at lite depth" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
