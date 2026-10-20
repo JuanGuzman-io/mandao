@@ -26,7 +26,8 @@ a new session's cache (32%), not output (26%).
    - Claude Code caches automatically on an exact prefix (system, then project context, then the
      conversation); skills and commands are appended as user messages; a subagent starts its own cache;
      a skill whose frontmatter names a `model` is a model switch, a cache miss for that turn. Minimum
-     512 tokens on the 5.5 models; 5-minute TTL by default.
+     512 tokens on the 5.5 models. Default TTL: 1 hour for the main conversation on a subscription within
+     plan usage, 5 minutes with an API key, a cloud provider or usage credits, and 5 minutes for subagents.
    - OpenAI (Codex) caches automatically on the whole rendered prefix, from 1,024 tokens; `AGENTS.md` is
      an early user message built once per session; skills are listed by name and description first.
    - Copilot: provider-dependent; editing instructions or custom agents mid-session breaks reuse.
@@ -40,6 +41,9 @@ a new session's cache (32%), not output (26%).
    adversarial review only at `full`.
 6. **A budget per spec** (`budget.per_spec` in `.mandao/config.yml`, USD): a warning at 80%; at 100% the
    command asks to continue, inside its grouped confirmation (with external or irreversible actions).
+   Only a person, or a rule they approved, sets the budget; an agent never picks or suggests a number.
+   `init` asks for it with no default, and without one there is no cap: the spend is recorded and
+   reported. (Amended 2026-10-20: the dogfood run had an 8 USD budget an agent chose; it was removed.)
 
 ## Model profiles
 
@@ -52,7 +56,9 @@ without the user's explicit command.
 
 ## Measurement
 
-Cost is recorded per command and per role in each spec (`_log/costs.yml`). Kaizen shows it and recommends
+Cost is recorded per command and per role in each spec (`_log/costs.yml`), with its basis: `billed` for an
+API key or a cloud provider, `equivalent` for a Claude subscription (the same tokens at API list prices, not
+what was charged). The two never add up as one total. Kaizen shows it and recommends
 adjustments with data (for example the first-pass approval rate per tier, the Leader's share) with the
 estimated saving; it never changes the profile or a model.
 
