@@ -7,6 +7,7 @@ Every Mandao command is one Markdown file in `core/commands/<id>.md` (or in a pr
 
 ```yaml
 ---
+schema_version: 1
 id: specify                 # kebab-case, unique; installed as /mandao-<id>
 title: Specify
 description: Turn an approved story into requirements and design at the chosen depth.
@@ -40,6 +41,7 @@ harness:                    # optional, per-adapter frontmatter passthrough
 
 | Field | Required | Notes |
 |---|---|---|
+| `schema_version` | yes | `1`. |
 | `id` | yes | Kebab-case. Must match the file name. |
 | `title`, `description` | yes | `description` is shown in every harness command picker. |
 | `status` | yes | A `stub` declares its contract but is not implemented yet. |
@@ -62,7 +64,7 @@ The token language is closed. An unknown token fails validation.
 |---|---|
 | `{{args}}` | All the arguments the user typed. |
 | `{{arg:name}}` | One declared argument. |
-| `{{template:x}}` | Path to the resolved template `x` (installed under `.mandao/templates/`). |
+| `{{template:x}}` | Path to the resolved template `x`, e.g. `rules/review.md`. Installed per profile under `.mandao/templates/<profile>/`; the path is concrete when the workspace uses one profile. |
 | `{{script:x}}` | Shell command that runs the Mandao script `x`. |
 | `{{paths.specs}}`, `{{paths.constitution}}`, `{{paths.releases}}` | Configured paths. |
 | `{{command:x}}` | How to invoke another mandao in this harness, e.g. `/mandao-tasks`. |
@@ -73,8 +75,8 @@ How each harness renders them:
 | Token | Claude Code | GitHub Copilot |
 |---|---|---|
 | `{{args}}` | `$ARGUMENTS` | one `${input:name:description}` per argument |
-| `{{arg:spec}}` | `$ARGUMENTS` (the agent parses it) | `${input:spec:...}` |
-| `{{template:x}}` | `.mandao/templates/x` | `.mandao/templates/x` |
+| `{{arg:spec}}` | `$spec` (declared in `arguments:`) | `${input:spec:...}` |
+| `{{template:x}}` | `.mandao/templates/<profile>/x` | same |
 | `{{script:x}}` | `npx -y mandao@<version> run x` | same |
 | `{{command:x}}` | `/mandao-x` | `/mandao-x` |
 
@@ -99,4 +101,4 @@ Blocks may nest. An unclosed or unknown condition fails validation.
 ## Personas
 
 `core/personas/<id>.md` uses the same idea with a smaller frontmatter: `id`, `title`, `description`,
-`tier`, `capabilities`, and optionally `must_differ_from` (another persona whose model must differ).
+`schema_version`, `tier`, `capabilities`, and optionally `must_differ_from` (another persona whose model must differ).

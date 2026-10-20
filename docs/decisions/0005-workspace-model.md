@@ -8,8 +8,8 @@ that special-cases "one repo" leaks everywhere later.
 
 ## Decision
 - `config.yml` always declares `projects: [{ name, path, profile }]`. A simple repo is one project at `.`.
-- `workspace.mode` is `single`, `monorepo` or `polyrepo`, detected by `init` and confirmed by the user.
-- `workspace.home` holds the canonical specs, the workspace constitution and the root `AGENTS.md`.
+- `workspace` is `single`, `monorepo` or `polyrepo`, detected by `init` and confirmed by the user.
+- `home` holds the canonical specs, the workspace constitution and the root `AGENTS.md`.
   `paths.*` are relative to it. Harness folders (`.claude/`, `.github/`) live at the workspace root.
 - Constitution has two levels: workspace (`docs/constitution/`) and project
   (`<project>/docs/constitution/`), and the project inherits from the workspace.
