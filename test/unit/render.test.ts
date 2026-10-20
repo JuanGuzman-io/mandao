@@ -11,6 +11,7 @@ const ctx = (over: Partial<RenderContext> = {}): RenderContext => ({
   paths: { specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases' },
   version: '0.1.0',
   scriptRunner: 'npx',
+  language: { business: 'es', technical: 'en' },
   ...over,
 });
 
@@ -28,7 +29,6 @@ const meta = commandFrontmatterSchema.parse({
   status: 'stable',
   inputs: [],
   outputs: [],
-  tier: 'fast',
   capabilities: ['read'],
   arguments: [{ name: 'spec', description: 's' }],
   templates: ['design.md'],
@@ -114,7 +114,11 @@ describe('tokens', () => {
     expect(renderBody(meta, '<!-- mandao:if profile=ai -->\n{{whoami}}\n<!-- mandao:endif -->\nok', ctx(), syntax)).toBe('ok');
   });
 
-  test('renderInline only accepts path and version tokens', () => {
+  test('language tokens render the configured languages', () => {
+    expect(renderInline('{{language.business}}/{{language.technical}}', ctx())).toBe('es/en');
+  });
+
+  test('renderInline only accepts path, version and language tokens', () => {
     expect(renderInline('{{paths.specs}}/<spec>/story.md', ctx())).toBe('specs/<spec>/story.md');
     expect(() => renderInline('{{args}}', ctx())).toThrow('not allowed here');
   });

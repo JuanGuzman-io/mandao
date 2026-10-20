@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { capability, harnessId, kebabId, PROFILES, profile, schemaVersion, tier } from './common.js';
+import { capability, harnessId, kebabId, PROFILES, profile, schemaVersion } from './common.js';
 
 const io = z.object({
   path: z.string().min(1),
@@ -31,7 +31,6 @@ export const commandFrontmatterSchema = z
       .default([]),
     inputs: z.array(io),
     outputs: z.array(io),
-    tier,
     capabilities: z.array(capability).min(1),
     templates: z.array(z.string().min(1)).default([]),
     scripts: z.array(kebabId).default([]),
@@ -49,8 +48,8 @@ export const personaFrontmatterSchema = z
     id: kebabId,
     title: z.string().min(1),
     description: z.string().min(1).max(300),
-    tier,
     capabilities: z.array(capability).min(1),
+    scripts: z.array(kebabId).default([]),
     /** Another persona whose model must differ (e.g. reviewer vs implementer). */
     must_differ_from: kebabId.optional(),
     harness: z.partialRecord(harnessId, z.record(z.string(), z.unknown())).default({}),

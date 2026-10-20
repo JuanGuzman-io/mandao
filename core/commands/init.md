@@ -9,7 +9,6 @@ inputs: []
 outputs:
   - { path: .mandao/ }
   - { path: AGENTS.md }
-tier: fast
 capabilities: [read, shell]
 scope: both
 ---

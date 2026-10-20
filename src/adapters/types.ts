@@ -1,12 +1,14 @@
+import type { ResolvedModels } from '../models/resolve.js';
 import type { Resolution } from '../resolver/resolve.js';
-import type { Config, HarnessId, Models } from '../schemas/index.js';
+import type { Config, HarnessId } from '../schemas/index.js';
 
 export type InstallScope = 'project' | 'global';
 
 export interface AdapterInput {
   resolution: Resolution;
   config: Config;
-  models: Models;
+  /** Resolved role → model per harness (recommendation < workspace models.yml). */
+  models: Partial<Record<HarnessId, ResolvedModels>>;
   version: string;
   scope: InstallScope;
 }

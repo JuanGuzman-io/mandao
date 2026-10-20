@@ -14,7 +14,6 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md (polyrepo slices)" }
-tier: strong
 capabilities: [read, search, edit, mcp]
 templates:
   - spec/tasks.md

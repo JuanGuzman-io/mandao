@@ -19,7 +19,6 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
-tier: strong
 capabilities: [read, search, edit, shell, mcp]
 templates:
   - rules/context.md
@@ -38,6 +37,9 @@ Arguments: {{args}}
 
 Produce `requirements.md` and `design.md` for one spec. Follow `{{template:rules/context.md}}`,
 `{{template:rules/traceability.md}}` and `{{template:rules/test-policy.md}}`.
+
+Write requirements and design content in `{{language.technical}}` and anything addressed to the PO
+(story text, business questions) in `{{language.business}}`. Headings and keywords stay in English.
 
 ## 1. Resolve the spec
 
@@ -117,6 +119,7 @@ Run `{{template:rules/consistency-check.md}}` over story, requirements and desig
 
 - If there are `[NEEDS CLARIFICATION]` items or findings, recommend {{command:clarify}} and list them
   by impact. A critical finding blocks {{command:tasks}}.
-- Otherwise ask for approval of requirements and design. On approval set `status: approved` in both.
+- Otherwise ask for approval of requirements and design. On approval set `status: approved` in both
+  (and in `story.md` if it was still `draft`).
 - Summarize: depth, FR/NFR counts, AC coverage, Premise Ledger rows marked `UNVERIFIED`, risk tags,
   and the next mandao.

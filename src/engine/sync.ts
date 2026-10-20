@@ -2,15 +2,16 @@ import { join } from 'node:path';
 import { renderAgentsMd } from '../adapters/agents-md.js';
 import { ADAPTERS, type AdapterInput, type GeneratedFile, type InstallScope } from '../adapters/index.js';
 import { COMMITLINT_PATH, commitlintConfig } from '../commits/commitlint.js';
+import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { installTemplates } from '../render/templates.js';
 import { type Layer, layerHash, loadLayers } from '../resolver/layers.js';
 import { type Resolution, resolve } from '../resolver/resolve.js';
-import { type Config, configSchema, emptyModels, type HarnessId, type Lock, type LockFile, type Models } from '../schemas/index.js';
+import { type Config, configSchema, type HarnessId, type Lock, type LockFile } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { applyChanges } from '../writer/apply.js';
 import { type Change, planChanges } from '../writer/plan.js';
-import { inputsText, LOCK_FILE, readConfig, readLock, readModels, writeYaml } from './files.js';
+import { inputsText, LOCK_FILE, LOCK_HEADER, readConfig, readLock, writeYaml } from './files.js';
 import { globalLockFile, globalRoots } from './global.js';
 
 export interface BuildResult {
@@ -21,7 +22,13 @@ export interface BuildResult {
 }
 
 /** Everything a sync would write, computed without touching the disk (apart from reading layers). */
-export function buildOutputs(config: Config, models: Models, layers: Layer[], version: string, scope: InstallScope): BuildResult {
+export function buildOutputs(
+  config: Config,
+  models: AdapterInput['models'],
+  layers: Layer[],
+  version: string,
+  scope: InstallScope,
+): BuildResult {
   const resolution = resolve(layers);
   const input: AdapterInput = { resolution, config, models, version, scope };
   const files: GeneratedFile[] = [];
@@ -69,6 +76,7 @@ function lockFrom(previous: Lock | undefined, entries: LockFile[], layers: Layer
     mandao: version,
     config_hash: configHash,
     layers: layers.map((l) => (l.kind === 'core' ? { kind: l.kind, id: l.id, version } : { kind: l.kind, id: l.id, hash: layerHash(l) })),
+    recommendations: previous?.recommendations ?? {},
     skills: previous?.skills ?? [],
     files: entries.sort((a, b) => a.path.localeCompare(b.path)),
   };
@@ -79,14 +87,14 @@ export function syncProject(root: string, opts: SyncOptions = {}): SyncResult {
   const config = readConfig(root);
   const { version } = packageInfo();
   const layers = loadLayers(root, config.presets);
-  const build = buildOutputs(config, readModels(root), layers, version, 'project');
+  const build = buildOutputs(config, resolveWorkspaceModels(root, config, readRecommendations()), layers, version, 'project');
   const lockPath = join(root, LOCK_FILE);
   const previous = readLock(lockPath);
   const changes = planChanges(build.files, previous?.files ?? [], { project: root }, opts.force);
 
   const entries = opts.dryRun ? changes.flatMap((c) => (c.lock ? [c.lock] : [])) : applyChanges(changes, [root]);
   const lock = lockFrom(previous, entries, layers, sha256(inputsText(root)), version);
-  if (!opts.dryRun) writeYaml(lockPath, lock, '# Written by mandao. Do not edit by hand.');
+  if (!opts.dryRun) writeYaml(lockPath, lock, LOCK_HEADER);
   return { changes, warnings: build.warnings, lock };
 }
 
@@ -105,7 +113,7 @@ export function syncGlobal(harnesses: HarnessId[], opts: SyncOptions = {}): Sync
   const { version } = packageInfo();
   const config = globalConfig(harnesses);
   const layers = loadLayers(process.cwd(), []).filter((l) => l.kind === 'core');
-  const build = buildOutputs(config, emptyModels(), layers, version, 'global');
+  const build = buildOutputs(config, {}, layers, version, 'global');
   const roots = globalRoots();
   const lockPath = globalLockFile();
   const previous = readLock(lockPath);
@@ -119,6 +127,6 @@ export function syncGlobal(harnesses: HarnessId[], opts: SyncOptions = {}): Sync
   );
   const entries = opts.dryRun ? changes.flatMap((c) => (c.lock ? [c.lock] : [])) : applyChanges(changes, Object.values(roots));
   const lock = lockFrom(previous, [...kept, ...entries], layers, sha256(JSON.stringify(harnesses)), version);
-  if (!opts.dryRun) writeYaml(lockPath, lock, '# Written by mandao. Do not edit by hand.');
+  if (!opts.dryRun) writeYaml(lockPath, lock, LOCK_HEADER);
   return { changes, warnings: build.warnings, lock };
 }

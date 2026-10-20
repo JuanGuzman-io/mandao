@@ -1,7 +1,8 @@
 import { stringify as stringifyYaml } from 'yaml';
+import type { ResolvedModels } from '../models/resolve.js';
 import { applyConditionals, contextFromConfig, type RenderContext, renderBody, type TokenSyntax } from '../render/render.js';
 import type { ResolvedCommand, ResolvedPersona } from '../resolver/resolve.js';
-import type { Capability, HarnessId, Tier } from '../schemas/index.js';
+import { type Capability, type HarnessId, TIERS } from '../schemas/index.js';
 import type { AdapterInput } from './types.js';
 
 export const commandName = (id: string) => `mandao-${id}`;
@@ -33,10 +34,6 @@ export function mapCapabilities(caps: Capability[], table: Record<Capability, st
   return [...new Set(caps.flatMap((c) => table[c]))];
 }
 
-export function modelFor(input: AdapterInput, harness: HarnessId, tier: Tier): string | undefined {
-  return input.models.harnesses[harness]?.[tier];
-}
-
 export function renderContext(input: AdapterInput, harness: HarnessId): RenderContext {
   return { ...contextFromConfig(input.config, harness, input.version), commands: new Set(input.resolution.commands.map((c) => c.meta.id)) };
 }
@@ -49,13 +46,13 @@ export function renderCommandBody(cmd: ResolvedCommand, ctx: RenderContext, synt
   }
 }
 
-/** Personas accept conditionals, paths, version and command tokens, but no arguments, templates or scripts. */
+/** Personas accept conditionals, paths, version, command and script tokens, but no arguments or templates. */
 export function renderPersonaBody(persona: ResolvedPersona, ctx: RenderContext, syntax: TokenSyntax): string {
   const meta = {
     id: persona.meta.id,
     arguments: [],
     templates: [],
-    scripts: [],
+    scripts: persona.meta.scripts,
   } as unknown as ResolvedCommand['meta'];
   try {
     return `${renderBody(meta, applyConditionals(persona.body, ctx), ctx, syntax).trimEnd()}\n`;
@@ -64,23 +61,49 @@ export function renderPersonaBody(persona: ResolvedPersona, ctx: RenderContext, 
   }
 }
 
-/** Warns when a persona that must differ from another resolves to the same model. */
-export function modelSeparationWarnings(input: AdapterInput, harness: HarnessId): string[] {
-  const warnings: string[] = [];
-  const byId = new Map(input.resolution.personas.map((p) => [p.meta.id, p]));
-  for (const p of input.resolution.personas) {
-    const otherId = p.meta.must_differ_from;
-    const other = otherId ? byId.get(otherId) : undefined;
-    if (!other) continue;
-    const a = modelFor(input, harness, p.meta.tier);
-    const b = modelFor(input, harness, other.meta.tier);
-    if (!a || !b) {
-      warnings.push(
-        `${harness}: "${p.meta.id}" must use a different model than "${other.meta.id}", but .mandao/models.yml has no models for ${harness}; the rule is enforced by instruction only`,
-      );
-    } else if (a === b) {
-      warnings.push(`${harness}: "${p.meta.id}" and "${other.meta.id}" both resolve to model "${a}"`);
+/** One generated agent file per persona variant: implementers per tier (routed mode), reviewer plus its alternative. */
+export interface PersonaVariant {
+  name: string;
+  from: string;
+  description: string;
+  model?: string;
+  /** Prepended to the persona body to tell the variant apart. */
+  preface?: string;
+}
+
+export function personaVariants(persona: ResolvedPersona, models: ResolvedModels | undefined): PersonaVariant[] {
+  const { id, description } = persona.meta;
+  const from = `persona:${id}`;
+  const base = { name: commandName(id), from, description };
+  switch (id) {
+    case 'implementer':
+      if (models?.mode === 'simple' || !models) return [{ ...base, model: models?.implementer.standard?.model }];
+      return TIERS.map((tier) => ({
+        name: commandName(`${id}-${tier}`),
+        from: `${from}:${tier}`,
+        description: `${description} Tier: ${tier}.`,
+        model: models.implementer[tier]?.model,
+        preface: `This Implementer runs tasks whose tier is \`${tier}\`.`,
+      }));
+    case 'reviewer': {
+      const variants: PersonaVariant[] = [{ ...base, model: models?.reviewer?.model }];
+      const alt = models?.reviewer_alt?.model;
+      if (alt) {
+        variants.push({
+          name: commandName(`${id}-alt`),
+          from: `${from}:alt`,
+          description: `${description} Used when the Implementer ran on the Reviewer's model.`,
+          model: alt,
+          preface: "You are the alternative Reviewer: the Leader calls you when the Implementer ran on the main Reviewer's model.",
+        });
+      }
+      return variants;
     }
+    case 'leader':
+      return [{ ...base, model: models?.leader?.model }];
+    case 'tester':
+      return [{ ...base, model: models?.tester?.model }];
+    default:
+      return [base];
   }
-  return warnings;
 }

@@ -15,8 +15,7 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/quick/quick-log.md" }
   - { path: "(code)", description: the change itself, in one commit with a Mandao-Quick trailer }
-tier: standard
-capabilities: [read, search, edit, shell]
+capabilities: [read, search, edit, shell, agents]
 templates:
   - rules/context.md
   - rules/quick-gate.md
@@ -59,8 +58,11 @@ Run `{{script:quick-check}}` and read its JSON.
 1. Run the level 0 gates configured in `projects[].gates` for the touched project (format, lint,
    typecheck, test for the area, secrets, audit when dependencies changed, sast, metrics). Report any
    gate that is not configured; never skip silently.
-2. Lite review against `{{template:rules/review.md}}`, core checklist only, on the diff. A blocking
-   finding means fix it or escalate.
+2. Lite review per `{{template:rules/review.md}}`: the core checklist on the diff, without lenses,
+   run by the `mandao-reviewer` agent in a separate context, never by you. Use a model different from
+   the one that made the change when available (`mandao-reviewer-alt` if the reviewer shares your
+   model). Otherwise record `reduced independence` in the log. A blocking finding means fix it or
+   escalate.
 
 ## 5. Record and commit
 

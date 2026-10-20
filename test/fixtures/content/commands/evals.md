@@ -7,7 +7,6 @@ status: stub
 profiles: [ai]
 inputs: []
 outputs: []
-tier: standard
 capabilities: [read]
 ---
 Evals.

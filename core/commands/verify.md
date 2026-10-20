@@ -12,7 +12,6 @@ inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/verify-report.md" }
-tier: strong
 capabilities: [read, search, shell, agents]
 templates:
   - rules/test-policy.md

@@ -16,7 +16,7 @@ description: ${id} command
 status: stable
 inputs: []
 outputs: []
-tier: standard
+scope: project
 capabilities: [read]
 ${extra}---
 ${body}
@@ -38,10 +38,10 @@ describe('resolve', () => {
   test('patches from higher layers merge frontmatter and keep the body', () => {
     const r = resolve([
       layer('core', { 'commands/a.md': command('a', 'approval: none\nharness:\n  claude: { x: 1, y: 2 }\n') }),
-      layer('overrides', { 'commands/a.patch.yml': 'tier: strong\napproval: required\nharness:\n  claude: { y: null, z: 3 }\n' }),
+      layer('overrides', { 'commands/a.patch.yml': 'approval: required\nstatus: stub\nharness:\n  claude: { y: null, z: 3 }\n' }),
     ]);
     const a = r.commands[0]!;
-    expect(a.meta.tier).toBe('strong');
+    expect(a.meta.status).toBe('stub');
     expect(a.meta.approval).toBe('required');
     expect(a.meta.harness.claude).toEqual({ x: 1, z: 3 });
     expect(a.body.trim()).toBe('Body');
@@ -51,10 +51,10 @@ describe('resolve', () => {
   test('a patch in a layer below the full replacement is ignored', () => {
     const r = resolve([
       layer('core', { 'commands/a.md': command('a') }),
-      layer('preset', { 'commands/a.patch.yml': 'tier: fast\n' }),
+      layer('preset', { 'commands/a.patch.yml': 'approval: required\n' }),
       layer('overrides', { 'commands/a.md': command('a') }),
     ]);
-    expect(r.commands[0]!.meta.tier).toBe('standard');
+    expect(r.commands[0]!.meta.approval).toBe('none');
   });
 
   test('reports orphan patches, id mismatches, invalid frontmatter and broken references together', () => {
@@ -64,11 +64,11 @@ describe('resolve', () => {
         layer('core', {
           'commands/a.md': command('a', 'flow: { next: [ghost] }\n'),
           'commands/b.md': command('not-b'),
-          'commands/c.md': command('c', 'tier: huge\n').replace('tier: standard\n', ''),
+          'commands/c.md': command('c', 'approval: maybe\n'),
           'personas/reviewer.md':
-            '---\nschema_version: 1\nid: reviewer\ntitle: R\ndescription: r\ntier: strong\ncapabilities: [read]\nmust_differ_from: implementer\n---\n',
+            '---\nschema_version: 1\nid: reviewer\ntitle: R\ndescription: r\ncapabilities: [read]\nmust_differ_from: implementer\n---\n',
         }),
-        layer('overrides', { 'commands/zzz.patch.yml': 'tier: fast\n' }),
+        layer('overrides', { 'commands/zzz.patch.yml': 'approval: required\n' }),
       ]);
     } catch (e) {
       err = e as ResolveError;
@@ -77,7 +77,7 @@ describe('resolve', () => {
     expect(err!.issues).toEqual(
       expect.arrayContaining([
         'core:commands/b.md: id "not-b" does not match the file name "b"',
-        expect.stringMatching(/^core:commands\/c\.md: tier: /),
+        expect.stringMatching(/^core:commands\/c\.md: approval: /),
         'overrides:commands/zzz.patch.yml: patches unknown command "zzz"',
         'command "a": flow references unknown command "ghost"',
         'persona "reviewer": must_differ_from references unknown persona "implementer"',

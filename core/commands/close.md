@@ -15,7 +15,6 @@ outputs:
   - { path: "{{paths.releases}}/<ID>/" }
   - { path: "docs/kaizen/<ID>.md" }
   - { path: "{{paths.constitution}}/CHANGELOG.md" }
-tier: strong
 capabilities: [read, search, edit, shell, mcp]
 templates:
   - rules/context.md

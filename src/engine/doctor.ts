@@ -1,15 +1,17 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { delimiter, join } from 'node:path';
 import semver from 'semver';
 import { ADAPTERS } from '../adapters/index.js';
+import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
+import { independence, missingRoles, usedModels } from '../models/resolve.js';
 import { loadLayers } from '../resolver/layers.js';
 import { ResolveError } from '../resolver/resolve.js';
-import { type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
+import { type Config, GATES, LOCAL_REPO, type Recommendations } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
-import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readModels, readSources, SOURCES_FILE } from './files.js';
+import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildOutputs } from './sync.js';
 
@@ -74,6 +76,64 @@ function workspaceFindings(root: string, config: Config): Finding[] {
   return out;
 }
 
+/** Every role has a model, chosen models are still recommended, and review independence holds. */
+export function modelFindings(root: string, config: Config, recs: Recommendations): Finding[] {
+  const out: Finding[] = [];
+  const scopes = [undefined, ...config.projects.filter((p) => p.path !== '.' && existsSync(join(root, p.path, '.mandao', 'models.yml')))];
+  for (const project of scopes) {
+    const where = project ? ` (project ${project.name})` : '';
+    const resolved = resolveWorkspaceModels(root, config, recs, { project });
+    for (const harness of config.harnesses) {
+      const m = resolved[harness]!;
+      const missing = missingRoles(m);
+      if (missing.length) {
+        out.push({
+          level: 'error',
+          message: `${harness}${where}: no model for ${missing.join(', ')}`,
+          fix: `mandao models set <role> <model> --harness ${harness}`,
+        });
+      }
+      const rec = recs.harnesses[harness];
+      for (const { role, choice } of usedModels(m)) {
+        if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
+          out.push({
+            level: 'warn',
+            message: `${harness}${where}: ${role} uses "${choice.model}", which is not among Mandao's recommendations (reviewed ${rec.reviewed})`,
+            fix: 'check that the model is still available, or `mandao models` to compare',
+          });
+        }
+      }
+      for (const check of independence(m).filter((x) => x.reduced)) {
+        out.push({
+          level: 'warn',
+          message: `${harness}${where}: reduced independence for ${check.tier} tasks: implementer and reviewer both use "${check.implementer}" and no reviewer_alt differs`,
+          fix: 'reviews will run in a clean context and execution.md records "reduced independence"; set reviewer_alt to another model to avoid it',
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** Graphify installs its own hooks; Mandao only checks that they are there. */
+function graphHookFindings(root: string, config: Config): Finding[] {
+  if (!onPath('graphify')) return [];
+  const out: Finding[] = [];
+  const settings = join(root, '.claude', 'settings.json');
+  if (config.harnesses.includes('claude') && !(existsSync(settings) && readFileSync(settings, 'utf8').includes('graphify'))) {
+    out.push({ level: 'info', message: 'graphify is installed but its Claude Code hooks are not', fix: 'run `graphify claude install`' });
+  }
+  const postCommit = join(root, '.git', 'hooks', 'post-commit');
+  if (isRepo(root) && !(existsSync(postCommit) && readFileSync(postCommit, 'utf8').includes('graphify'))) {
+    out.push({
+      level: 'info',
+      message: 'graphify is installed but its git hooks are not (the graph will go stale)',
+      fix: 'run `graphify hook install`',
+    });
+  }
+  return out;
+}
+
 export function runDoctor(root: string): Finding[] {
   const findings: Finding[] = [];
   const { version } = packageInfo();
@@ -118,7 +178,13 @@ export function runDoctor(root: string): Finding[] {
 
   let build: ReturnType<typeof buildOutputs>;
   try {
-    build = buildOutputs(config, readModels(root), loadLayers(root, config.presets), version, 'project');
+    build = buildOutputs(
+      config,
+      resolveWorkspaceModels(root, config, readRecommendations()),
+      loadLayers(root, config.presets),
+      version,
+      'project',
+    );
   } catch (e) {
     if (e instanceof ResolveError) {
       findings.push(...e.issues.map((m) => ({ level: 'error' as const, message: m })));
@@ -128,6 +194,8 @@ export function runDoctor(root: string): Finding[] {
     return findings;
   }
   findings.push(...build.warnings.map((m) => ({ level: 'warn' as const, message: m })));
+  findings.push(...modelFindings(root, config, readRecommendations()));
+  findings.push(...graphHookFindings(root, config));
 
   const lock = readLock(join(root, LOCK_FILE));
   if (!lock) {

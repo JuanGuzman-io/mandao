@@ -13,7 +13,6 @@ inputs:
   - { path: "{{paths.constitution}}/" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
-tier: standard
 capabilities: [read, search, edit, mcp]
 templates:
   - rules/context.md

@@ -25,7 +25,8 @@ export const LOCAL_REPO = 'local';
 const project = z.object({
   name: kebabId,
   path: relPath,
-  profile,
+  /** Falls back to `default_profile`. */
+  profile: profile.optional(),
   tracker_key: z
     .string()
     .regex(/^[A-Z][A-Z0-9_]*$/, 'must be an uppercase tracker key')
@@ -74,6 +75,20 @@ export const configSchema = z
         releases: relPath.default('docs/releases'),
       })
       .prefault({}),
+    /** Profile for projects that do not declare one. */
+    default_profile: profile.default('app'),
+    /**
+     * Language of generated content. Section headings and keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n,
+     * ASSUMPTION/OPEN/CONFLICT) always stay in English; code and commits are always English.
+     */
+    language: z
+      .object({
+        /** story, release notes, questions to the PO, product context. */
+        business: z.string().min(2).default('en'),
+        /** requirements, design, tasks, technical docs. */
+        technical: z.string().min(2).default('en'),
+      })
+      .prefault({}),
     projects: z.array(project).min(1),
     harnesses: z.array(harnessId).min(1),
     presets: z.array(z.string().min(1)).default([]),
@@ -93,6 +108,7 @@ export const configSchema = z
     /** How generated commands invoke Mandao scripts: `npx` pins the version, `local` uses a devDependency. */
     scripts: z.object({ runner: z.enum(['npx', 'local']).default('npx') }).prefault({}),
   })
+  .transform((cfg) => ({ ...cfg, projects: cfg.projects.map((p) => ({ ...p, profile: p.profile ?? cfg.default_profile })) }))
   .superRefine((cfg, ctx) => {
     const names = new Set<string>();
     const paths = new Set<string>();

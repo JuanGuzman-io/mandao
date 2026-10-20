@@ -2,9 +2,10 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { renderAgentsMd } from '../../src/adapters/agents-md.js';
 import { ADAPTERS, type AdapterInput } from '../../src/adapters/index.js';
+import { type ModelLayer, resolveModels } from '../../src/models/resolve.js';
 import { readLayer } from '../../src/resolver/layers.js';
 import { resolve } from '../../src/resolver/resolve.js';
-import { type ConfigInput, configSchema, type Models } from '../../src/schemas/index.js';
+import { type ConfigInput, configSchema, type ModelMode, recommendationsSchema } from '../../src/schemas/index.js';
 
 const resolution = resolve([readLayer('core', 'core', join(import.meta.dirname, '../fixtures/content'))]);
 
@@ -37,12 +38,33 @@ const configs: Record<string, ConfigInput> = {
   },
 };
 
-const claudeModels: Models = { schema_version: 1, harnesses: { claude: { fast: 'haiku', standard: 'sonnet', strong: 'opus' } } };
+const recommendations = recommendationsSchema.parse({
+  schema_version: 1,
+  harnesses: {
+    claude: {
+      reviewed: '2026-10-20',
+      sources: ['https://example.com/claude'],
+      available: ['opus', 'sonnet', 'haiku', 'fable'],
+      routed: {
+        leader: 'opus',
+        reviewer: 'opus',
+        reviewer_alt: 'fable',
+        implementer: { fast: 'haiku', standard: 'sonnet', strong: 'opus' },
+        tester: 'sonnet',
+      },
+      simple: { implementer: 'sonnet', reviewer: 'opus' },
+    },
+  },
+});
 
-const input = (name: string, scope: AdapterInput['scope'] = 'project'): AdapterInput => ({
+const modelsFor = (mode: ModelMode = 'routed', layers: ModelLayer[] = []) => ({
+  claude: resolveModels('claude', mode, recommendations, layers),
+});
+
+const input = (name: string, scope: AdapterInput['scope'] = 'project', models: AdapterInput['models'] = {}): AdapterInput => ({
   resolution,
   config: configSchema.parse(configs[name]),
-  models: name === 'single' ? structuredClone(claudeModels) : { schema_version: 1, harnesses: {} },
+  models: name === 'single' && Object.keys(models).length === 0 ? modelsFor() : models,
   version: '0.1.0',
   scope,
 });
@@ -75,14 +97,36 @@ describe('selection', () => {
   });
 });
 
-describe('model separation', () => {
-  test('warns when the reviewer and implementer resolve to the same model', () => {
-    const i = input('single');
-    i.models.harnesses.claude = { fast: 'x', standard: 'same', strong: 'same' };
-    expect(ADAPTERS.claude.render(i).warnings).toEqual(['claude: "reviewer" and "implementer" both resolve to model "same"']);
+describe('persona variants', () => {
+  const agents = (i: AdapterInput) =>
+    Object.fromEntries(
+      ADAPTERS.claude
+        .render(i)
+        .files.filter((f) => f.path.startsWith('.claude/agents/'))
+        .map((f) => [f.path.slice('.claude/agents/'.length), f.content.match(/^model: (.+)$/m)?.[1]]),
+    );
+
+  test('routed mode generates one implementer per tier and an alternative reviewer', () => {
+    expect(agents(input('single'))).toEqual({
+      'mandao-implementer-fast.md': 'haiku',
+      'mandao-implementer-standard.md': 'sonnet',
+      'mandao-implementer-strong.md': 'opus',
+      'mandao-reviewer.md': 'opus',
+      'mandao-reviewer-alt.md': 'fable',
+    });
   });
 
-  test('warns that the rule is instruction-only when no models are configured', () => {
-    expect(ADAPTERS.copilot.render(input('single')).warnings[0]).toMatch(/enforced by instruction only/);
+  test('simple mode generates a single implementer', () => {
+    expect(agents(input('single', 'project', modelsFor('simple')))).toEqual({
+      'mandao-implementer.md': 'sonnet',
+      'mandao-reviewer.md': 'opus',
+      'mandao-reviewer-alt.md': 'fable',
+    });
+  });
+
+  test('a harness without recommendations gets agents without a model', () => {
+    const copilot = ADAPTERS.copilot.render(input('single')).files.filter((f) => f.path.startsWith('.github/agents/'));
+    expect(copilot.map((f) => f.path)).toEqual(['.github/agents/mandao-implementer.agent.md', '.github/agents/mandao-reviewer.agent.md']);
+    expect(copilot.every((f) => !/^model:/m.test(f.content))).toBe(true);
   });
 });

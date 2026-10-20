@@ -9,7 +9,6 @@ inputs:
   - { path: "{{paths.specs}}/" }
 outputs:
   - { path: "(chat only)" }
-tier: fast
 capabilities: [read, search]
 ---
 

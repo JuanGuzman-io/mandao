@@ -3,7 +3,6 @@ schema_version: 1
 id: reviewer
 title: Reviewer
 description: Read-only audit of one task's diff against the spec, the contract and the rules of the active lenses. Returns PASS or FAIL with evidence.
-tier: strong
 capabilities: [read, search]
 must_differ_from: implementer
 ---

@@ -6,7 +6,6 @@ description: Initialize Mandao in this repository.
 status: stable
 inputs: []
 outputs: []
-tier: fast
 capabilities: [shell]
 scope: both
 ---

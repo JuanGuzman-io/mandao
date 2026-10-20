@@ -13,7 +13,6 @@ inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md (## Clarifications)" }
-tier: standard
 capabilities: [read, edit, mcp]
 templates:
   - rules/consistency-check.md

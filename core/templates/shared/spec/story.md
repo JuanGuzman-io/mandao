@@ -6,8 +6,9 @@ id: MDO-0000             # tracker id, or a local id when there is no tracker
 url:
 parent:
 projects: []             # project names from .mandao/config.yml
-status: draft
+status: draft           # draft | approved | in-progress | blocked | verified | closed | abandoned
 sources: []              # [{ ref, kind, date }] every source consulted
+# models: { claude: { reviewer: opus } }   # optional per-spec model overrides
 ---
 
 # <Title in business language>

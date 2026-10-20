@@ -6,7 +6,8 @@ import { LOCAL_REPO, type Profile, type WorkspaceMode } from '../schemas/index.j
 export interface DetectedProject {
   name: string;
   path: string;
-  profile: Profile;
+  /** Undefined when nothing in the project points to a profile; `init` then applies the workspace default. */
+  profile?: Profile;
   /** Polyrepo: the child repository's origin URL, or `local` when it has no remote. */
   repo?: string;
 }
@@ -145,13 +146,13 @@ export function dependencyNames(dir: string): string[] {
   return names.map((n) => n.toLowerCase());
 }
 
-export function guessProfile(dir: string): Profile {
+export function guessProfile(dir: string): Profile | undefined {
   if (existsSync(join(dir, 'dbt_project.yml'))) return 'data';
   const deps = dependencyNames(dir);
   const has = (markers: string[]) => deps.some((d) => markers.some((m) => (m.endsWith('/') ? d.startsWith(m) : d === m)));
   if (has(AI_MARKERS)) return 'ai';
   if (has(DATA_MARKERS)) return 'data';
-  return 'app';
+  return MANIFESTS.some((m) => existsSync(join(dir, m))) ? 'app' : undefined;
 }
 
 function rootName(root: string): string {
@@ -217,7 +218,8 @@ function toProjects(root: string, paths: string[], repos = false): DetectedProje
     // Disambiguate `apps/web` and `packages/web`.
     if (used.has(name)) name = toProjectName(path);
     used.add(name);
-    return { name, path, profile: guessProfile(join(root, path)), ...(repos ? { repo: originUrl(join(root, path)) } : {}) };
+    const profile = guessProfile(join(root, path));
+    return { name, path, ...(profile ? { profile } : {}), ...(repos ? { repo: originUrl(join(root, path)) } : {}) };
   });
 }
 
@@ -248,10 +250,11 @@ export function detectWorkspace(root: string): DetectedWorkspace {
     };
   }
 
+  const rootProfile = guessProfile(root);
   return {
     mode: 'single',
     rootIsRepo,
     reason: rootIsRepo ? 'single git repository' : 'not a git repository',
-    projects: [{ name: rootName(root), path: '.', profile: guessProfile(root) }],
+    projects: [{ name: rootName(root), path: '.', ...(rootProfile ? { profile: rootProfile } : {}) }],
   };
 }

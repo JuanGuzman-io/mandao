@@ -3,7 +3,6 @@ schema_version: 1
 id: implementer
 title: Implementer
 description: Implements exactly one task from its scoped brief, with the tests the task declares, and runs the verification before reporting.
-tier: standard
 capabilities: [read, search, edit, shell]
 ---
 

@@ -14,10 +14,7 @@ function workspace() {
     projects: [{ name: 'shop', path: '.', profile: 'app' }],
     harnesses: ['claude', 'copilot'],
   });
-  writeYaml(join(root, '.mandao/models.yml'), {
-    schema_version: 1,
-    harnesses: { claude: { fast: 'haiku', standard: 'sonnet', strong: 'opus' } },
-  });
+  writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { claude: { reviewer: 'opus' } } });
   return root;
 }
 
@@ -70,15 +67,10 @@ describe('doctor', () => {
   test('clean after sync; reports drift and config changes', () => {
     const root = workspace();
     syncProject(root);
-    // Copilot has no model registry by default, so model separation is instruction-only.
-    expect(
-      runDoctor(root)
-        .filter((f) => f.level === 'error' || f.level === 'warn')
-        .map((f) => f.message),
-    ).toEqual([expect.stringMatching(/^copilot: "reviewer" must use a different model/)]);
+    expect(runDoctor(root).filter((f) => f.level === 'error' || f.level === 'warn')).toEqual([]);
 
     writeFileSync(join(root, '.claude/skills/mandao-specify/SKILL.md'), 'hand edit');
-    writeFileSync(join(root, '.mandao/models.yml'), 'schema_version: 1\nharnesses: {}\n');
+    writeFileSync(join(root, '.mandao/models.yml'), 'schema_version: 1\nharnesses: { claude: { reviewer: sonnet } }\n');
     const warns = runDoctor(root)
       .filter((f) => f.level === 'warn')
       .map((f) => f.message);
@@ -116,5 +108,47 @@ describe('collectDiff', () => {
     const diff = collectDiff(root, 'HEAD');
     expect(diff.files.map((f) => f.path).sort()).toEqual(['package.json', 'src/a.ts']);
     expect(diff.manifests).toEqual([{ path: 'package.json', before: undefined, after: pkg('x', { zod: '^4' }) }]);
+  });
+});
+
+describe('models in doctor', () => {
+  test('reports reduced independence and models outside the recommendations', () => {
+    const root = workspace();
+    writeYaml(join(root, '.mandao/models.yml'), {
+      schema_version: 1,
+      mode: 'simple',
+      harnesses: { claude: { implementer: 'my-model', reviewer: 'my-model', reviewer_alt: 'my-model' } },
+    });
+    syncProject(root);
+    const warns = runDoctor(root)
+      .filter((f) => f.level === 'warn')
+      .map((f) => f.message);
+    expect(warns).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^claude: implementer\.fast uses "my-model", which is not among Mandao's recommendations/),
+        'claude: reduced independence for strong tasks: implementer and reviewer both use "my-model" and no reviewer_alt differs',
+      ]),
+    );
+  });
+
+  test('a project models.yml applies to that project only', () => {
+    const root = makeTree({ '.git/': '', 'apps/a/package.json': pkg('a'), 'apps/b/package.json': pkg('b') });
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'monorepo',
+      projects: [
+        { name: 'a', path: 'apps/a' },
+        { name: 'b', path: 'apps/b' },
+      ],
+      harnesses: ['claude'],
+    });
+    writeYaml(join(root, 'apps/b/.mandao/models.yml'), { schema_version: 1, harnesses: { claude: { reviewer: 'nonexistent' } } });
+    syncProject(root);
+    const messages = runDoctor(root).map((f) => f.message);
+    expect(messages.filter((m) => m.includes('nonexistent'))).toEqual([
+      expect.stringMatching(/^claude \(project b\): reviewer uses "nonexistent"/),
+    ]);
+    // Generated agents follow the workspace; project choices apply at run time through `mandao run models`.
+    expect(readFileSync(join(root, '.claude/agents/mandao-reviewer.md'), 'utf8')).toMatch(/^model: opus$/m);
   });
 });

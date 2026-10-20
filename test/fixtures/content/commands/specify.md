@@ -16,7 +16,6 @@ inputs:
   - { path: "{{paths.specs}}/<spec>/story.md", required: true }
 outputs:
   - { path: "{{paths.specs}}/<spec>/design.md" }
-tier: strong
 capabilities: [read, search, edit, shell]
 templates: [design.md]
 scripts: [quick-check]

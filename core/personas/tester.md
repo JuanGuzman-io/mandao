@@ -3,7 +3,6 @@ schema_version: 1
 id: tester
 title: Tester
 description: Authors and runs one test suite during /mandao-verify and distinguishes test defects from product bugs.
-tier: standard
 capabilities: [read, search, edit, shell]
 ---
 

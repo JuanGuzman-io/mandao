@@ -11,6 +11,7 @@ export interface RenderContext {
   paths: Config['paths'];
   version: string;
   scriptRunner: Config['scripts']['runner'];
+  language: Config['language'];
   /** Known command ids; when set, `{{command:x}}` must reference one of them. */
   commands?: ReadonlySet<string>;
 }
@@ -34,6 +35,7 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     paths: Object.fromEntries(Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)])) as Config['paths'],
     version,
     scriptRunner: config.scripts.runner,
+    language: config.language,
   };
 }
 
@@ -118,6 +120,7 @@ export function renderInline(text: string, ctx: RenderContext): string {
       return ctx.paths[key];
     }
     if (name === 'version') return ctx.version;
+    if (name === 'language.business' || name === 'language.technical') return ctx.language[name.slice('language.'.length) as 'business'];
     throw new RenderError(`token "${whole}" is not allowed here`);
   });
 }

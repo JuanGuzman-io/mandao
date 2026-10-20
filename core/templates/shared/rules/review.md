@@ -32,6 +32,18 @@ invented.
 
 `auth`, `payments`, `pii` and `migration` never go through quick.
 
+## Independence
+
+The Reviewer always works in a context separate from the author's, and on a different model when one
+is available (`reviewer`, or `reviewer_alt` when the Implementer ran on the Reviewer's model). When no
+different model is available, the review still happens in a clean context and `execution.md` (or
+`quick-log.md`) records `reduced independence`. It never blocks.
+
+## Quick changes
+
+Quick gets a **lite** review: the core Reviewer (level 1) on the diff, without lenses, in a separate
+context. Tasks with risk tags cannot be quick, so no lens applies.
+
 ## Inputs
 
 The Reviewer receives only the diff, the task brief and the rules of the active lenses. It does not

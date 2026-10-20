@@ -20,6 +20,7 @@ export const CONFIG_FILE = `${MANDAO_DIR}/config.yml`;
 export const LOCK_FILE = `${MANDAO_DIR}/mandao.lock`;
 export const SOURCES_FILE = `${MANDAO_DIR}/sources.yml`;
 export const MODELS_FILE = `${MANDAO_DIR}/models.yml`;
+export const LOCK_HEADER = '# Written by mandao. Do not edit by hand.';
 
 export class ConfigError extends Error {
   constructor(readonly issues: string[]) {

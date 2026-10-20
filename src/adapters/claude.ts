@@ -8,8 +8,7 @@ import {
   frontmatter,
   generatedNotice,
   mapCapabilities,
-  modelFor,
-  modelSeparationWarnings,
+  personaVariants,
   renderCommandBody,
   renderContext,
   renderPersonaBody,
@@ -65,7 +64,6 @@ export const claudeAdapter: Adapter = {
         'argument-hint': argumentHint(cmd),
         arguments: cmd.meta.arguments.length ? cmd.meta.arguments.map((a) => a.name) : undefined,
         'allowed-tools': mapCapabilities(cmd.meta.capabilities, TOOLS).join(', ') || undefined,
-        model: modelFor(input, 'claude', cmd.meta.tier),
         // Mandaos are given explicitly; the model should not trigger them on its own.
         'disable-model-invocation': true,
         ...cmd.meta.harness.claude,
@@ -82,27 +80,29 @@ export const claudeAdapter: Adapter = {
 
     if (input.scope === 'project') {
       for (const persona of input.resolution.personas) {
-        const from = `persona:${persona.meta.id}`;
-        const head = frontmatter({
-          name: commandName(persona.meta.id),
-          description: persona.meta.description,
-          tools: mapCapabilities(persona.meta.capabilities, TOOLS).join(', ') || undefined,
-          model: modelFor(input, 'claude', persona.meta.tier),
-          ...persona.meta.harness.claude,
-        });
-        files.push({
-          path: `.claude/agents/${commandName(persona.meta.id)}.md`,
-          content: `${head}${generatedNotice(input.version, from)}\n\n${renderPersonaBody(persona, ctx, syntax)}`,
-          ownership: 'owned',
-          from,
-          harness: 'claude',
-          scope: 'project',
-        });
+        const body = renderPersonaBody(persona, ctx, syntax);
+        for (const v of personaVariants(persona, input.models.claude)) {
+          const head = frontmatter({
+            name: v.name,
+            description: v.description,
+            tools: mapCapabilities(persona.meta.capabilities, TOOLS).join(', ') || undefined,
+            model: v.model,
+            ...persona.meta.harness.claude,
+          });
+          files.push({
+            path: `.claude/agents/${v.name}.md`,
+            content: `${head}${generatedNotice(input.version, v.from)}\n\n${v.preface ? `${v.preface}\n\n` : ''}${body}`,
+            ownership: 'owned',
+            from: v.from,
+            harness: 'claude',
+            scope: 'project',
+          });
+        }
       }
     }
 
     if (input.scope === 'project') files.push(...claudeMdPointers(input));
 
-    return { files, warnings: input.scope === 'project' ? modelSeparationWarnings(input, 'claude') : [] };
+    return { files, warnings: [] };
   },
 };

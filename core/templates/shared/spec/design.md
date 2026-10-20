@@ -3,7 +3,7 @@ schema_version: 1
 spec: <ID>-<slug>
 depth: standard
 projects: []
-status: draft
+status: draft           # draft | approved | in-progress | blocked | verified | closed | abandoned
 ---
 
 # Design — <title>

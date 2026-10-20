@@ -15,7 +15,6 @@ inputs:
   - { path: "{{paths.constitution}}/critical-flows.md" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-perf-<slug>/perf-report.md" }
-tier: strong
 capabilities: [read, search, edit, shell, mcp, web]
 ---
 

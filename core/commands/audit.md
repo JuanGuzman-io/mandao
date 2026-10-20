@@ -12,7 +12,6 @@ inputs:
   - { path: "{{paths.constitution}}/" }
 outputs:
   - { path: "docs/audits/<date>.md" }
-tier: strong
 capabilities: [read, search, shell]
 ---
 

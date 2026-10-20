@@ -4,7 +4,21 @@ import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
 import { syncGlobal, syncProject } from '../engine/sync.js';
-import { type ConfigInput, configSchema, DEFAULT_MODELS, HARNESS_IDS, type HarnessId, PROFILES, type Profile } from '../schemas/index.js';
+import { recommendedChoices } from '../models/defaults.js';
+import { readRecommendations } from '../models/load.js';
+import {
+  type ConfigInput,
+  configSchema,
+  HARNESS_IDS,
+  type HarnessId,
+  MODEL_MODES,
+  type ModelMode,
+  type Models,
+  PROFILES,
+  type Profile,
+  type RoleModels,
+  TIERS,
+} from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { c, printChanges, printWarnings } from './output.js';
 
@@ -14,6 +28,10 @@ export interface InitOptions {
   scope?: 'project' | 'global';
   harness?: string[];
   profile?: Profile;
+  defaultProfile?: Profile;
+  languageBusiness?: string;
+  languageTechnical?: string;
+  modelsMode?: ModelMode;
   polyrepo?: PolyrepoStrategy;
   home?: string;
   yes?: boolean;
@@ -52,8 +70,23 @@ async function chooseHarnesses(opts: InitOptions): Promise<HarnessId[]> {
   return picked as HarnessId[];
 }
 
-async function confirmProjects(ws: DetectedWorkspace, opts: InitOptions): Promise<DetectedProject[]> {
-  const projects = opts.profile ? ws.projects.map((pr) => ({ ...pr, profile: opts.profile! })) : ws.projects;
+async function chooseDefaultProfile(ws: DetectedWorkspace, opts: InitOptions): Promise<Profile> {
+  if (opts.defaultProfile) return opts.defaultProfile;
+  const detected = ws.projects.map((pr) => pr.profile).filter((x): x is Profile => Boolean(x));
+  const common = PROFILES.map((v) => [v, detected.filter((d) => d === v).length] as const).sort((a, b) => b[1] - a[1])[0];
+  const initial = common && common[1] > 0 ? common[0] : 'app';
+  if (opts.yes) return initial;
+  const picked = await p.select({
+    message: 'Default profile for the workspace (projects can differ)',
+    options: PROFILES.map((v) => ({ value: v, label: v })),
+    initialValue: initial,
+  });
+  bail(picked);
+  return picked as Profile;
+}
+
+async function confirmProjects(ws: DetectedWorkspace, defaultProfile: Profile, opts: InitOptions): Promise<DetectedProject[]> {
+  const projects = ws.projects.map((pr) => ({ ...pr, profile: opts.profile ?? pr.profile ?? defaultProfile }));
   if (opts.yes) return projects;
   p.note(
     projects.map((pr) => `${pr.name.padEnd(20)} ${pr.path.padEnd(28)} ${pr.profile}`).join('\n'),
@@ -74,6 +107,103 @@ async function confirmProjects(ws: DetectedWorkspace, opts: InitOptions): Promis
   }
   p.log.info('Edit .mandao/config.yml later to add, remove or rename projects.');
   return out;
+}
+
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'other', label: 'Other…' },
+];
+
+async function chooseLanguage(kind: 'business' | 'technical', preset: string | undefined, yes: boolean | undefined): Promise<string> {
+  if (preset) return preset;
+  if (yes) return 'en';
+  const hint =
+    kind === 'business' ? 'story, release notes, questions to the PO, product context' : 'requirements, design, tasks, technical docs';
+  const picked = await p.select({ message: `Language for ${kind} content (${hint})`, options: LANGUAGES, initialValue: 'en' });
+  bail(picked);
+  if (picked !== 'other') return picked as string;
+  const typed = await p.text({
+    message: 'Language (name or code)',
+    validate: (v) => (v && v.trim().length >= 2 ? undefined : 'Too short'),
+  });
+  bail(typed);
+  return (typed as string).trim();
+}
+
+/** Asks for each role's model, showing Mandao's recommendation with the option to type another. */
+async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
+  if (opts.modelsMode && !MODEL_MODES.includes(opts.modelsMode)) throw new Error(`--models-mode must be one of ${MODEL_MODES.join(', ')}`);
+  const recs = readRecommendations();
+  let mode: ModelMode = opts.modelsMode ?? 'routed';
+  if (!opts.modelsMode && !opts.yes) {
+    const picked = await p.select({
+      message: 'How should Mandao pick models?',
+      options: [
+        { value: 'routed', label: 'Routed', hint: 'the Implementer follows each task tier (fast, standard, strong)' },
+        { value: 'simple', label: 'Simple', hint: 'one model to implement, another to review' },
+      ],
+      initialValue: 'routed',
+    });
+    bail(picked);
+    mode = picked as ModelMode;
+  }
+  const out: Models = { schema_version: 1, mode, harnesses: {} };
+  for (const harness of harnesses) {
+    const rec = recs.harnesses[harness];
+    if (!rec) continue;
+    const recommended = recommendedChoices(rec, mode);
+    if (opts.yes) {
+      out.harnesses[harness] = recommended;
+      continue;
+    }
+    p.note(rolesTable(recommended), `Mandao recommends for ${HARNESS_LABEL[harness]} (reviewed ${rec.reviewed}, from the official docs)`);
+    const accept = await p.confirm({ message: `Use these models for ${HARNESS_LABEL[harness]}?` });
+    bail(accept);
+    if (accept) {
+      out.harnesses[harness] = recommended;
+      continue;
+    }
+    const chosen: RoleModels = {};
+    for (const [role, value] of Object.entries(recommended) as [keyof RoleModels, RoleModels[keyof RoleModels]][]) {
+      if (typeof value === 'object') {
+        const tiers: Record<string, string> = {};
+        for (const tier of TIERS) tiers[tier] = await askModel(`${role} (${tier} tasks)`, value[tier]!, rec.available);
+        chosen.implementer = tiers;
+      } else if (value) {
+        (chosen as Record<string, string>)[role] = await askModel(role, value, rec.available);
+      }
+    }
+    out.harnesses[harness] = chosen;
+  }
+  return out;
+}
+
+function rolesTable(models: RoleModels): string {
+  return Object.entries(models)
+    .flatMap(([role, value]) =>
+      typeof value === 'object' ? TIERS.map((t) => `${`${role}.${t}`.padEnd(22)} ${value[t]}`) : [`${role.padEnd(22)} ${value}`],
+    )
+    .join('\n');
+}
+
+async function askModel(role: string, recommended: string, available: string[]): Promise<string> {
+  const others = available.filter((m) => m !== recommended);
+  const picked = await p.select({
+    message: `Model for ${role}`,
+    options: [
+      { value: recommended, label: recommended, hint: 'recommended' },
+      ...others.map((m) => ({ value: m, label: m })),
+      { value: '__other', label: 'Other…' },
+    ],
+    initialValue: recommended,
+  });
+  bail(picked);
+  if (picked !== '__other') return picked as string;
+  const typed = await p.text({ message: `Model for ${role}`, validate: (v) => (v?.trim() ? undefined : 'Required') });
+  bail(typed);
+  return (typed as string).trim();
 }
 
 async function choosePolyrepoStrategy(ws: DetectedWorkspace, opts: InitOptions): Promise<{ strategy: PolyrepoStrategy; home: string }> {
@@ -166,7 +296,10 @@ export async function runInit(root: string, opts: InitOptions) {
   }
 
   const ws = detectWorkspace(root);
-  const projects = await confirmProjects(ws, opts);
+  const defaultProfile = await chooseDefaultProfile(ws, opts);
+  const projects = await confirmProjects(ws, defaultProfile, opts);
+  const business = await chooseLanguage('business', opts.languageBusiness, opts.yes);
+  const technical = await chooseLanguage('technical', opts.languageTechnical, opts.yes);
 
   let home = '.';
   let localOnly: boolean | undefined;
@@ -182,13 +315,17 @@ export async function runInit(root: string, opts: InitOptions) {
     workspace: ws.mode,
     ...(home !== '.' ? { home } : {}),
     ...(localOnly ? { local_only: localOnly } : {}),
-    projects: projects.map((pr) => ({ name: pr.name, path: pr.path, profile: pr.profile, ...(pr.repo ? { repo: pr.repo } : {}) })),
+    default_profile: defaultProfile,
+    language: { business, technical },
+    projects: projects.map((pr) => ({
+      name: pr.name,
+      path: pr.path,
+      ...(pr.profile !== defaultProfile ? { profile: pr.profile } : {}),
+      ...(pr.repo ? { repo: pr.repo } : {}),
+    })),
     harnesses,
   };
-  const models = {
-    schema_version: 1,
-    harnesses: Object.fromEntries(harnesses.filter((h) => DEFAULT_MODELS[h]).map((h) => [h, DEFAULT_MODELS[h]])),
-  };
+  const models = await chooseModels(harnesses, opts);
   const parsed = configSchema.safeParse(config);
   if (!parsed.success) throw new Error(`Generated config is invalid: ${parsed.error.message}`);
 
@@ -197,7 +334,7 @@ export async function runInit(root: string, opts: InitOptions) {
     writeYaml(
       join(root, MODELS_FILE),
       models,
-      '# Model tier registry per harness: fast | standard | strong. The Reviewer must differ from the Implementer.',
+      '# Model per role and harness. Change with `mandao models set <role> <model>`; see `mandao models`.',
     );
   }
   if (!existsSync(join(root, SOURCES_FILE))) {

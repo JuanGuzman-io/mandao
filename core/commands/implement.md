@@ -16,7 +16,6 @@ outputs:
   - { path: "(code)" }
   - { path: "{{paths.specs}}/<ID>-<slug>/execution.md" }
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
-tier: strong
 capabilities: [read, search, edit, shell, agents]
 templates:
   - rules/review.md
@@ -38,7 +37,9 @@ closest available step.
 
 ## Planned behavior
 
-- The Leader (`strong`) picks the next eligible task, builds a scoped brief from the graph with an exemplar file, and delegates to an Implementer at the task's tier.
+- Model flags `--leader-model`, `--implementer-model`, `--reviewer-model`, `--tester-model` override every other source for this run; then the spec frontmatter, the project and workspace `models.yml`, and Mandao's recommendation.
+- When the Reviewer cannot run on a different model than the Implementer, the review still runs in a clean context and `execution.md` records `reduced independence`.
+- The Leader picks the next eligible task, builds a scoped brief from the graph with an exemplar file, and delegates to an Implementer at the task's tier.
 - The Reviewer (`strong`, a different model from the Implementer) audits only the diff, the brief and the active lens rules per `{{template:rules/review.md}}` and `{{template:rules/clean-code.md}}`.
 - Escalation: 2 FAILs at a tier → one tier up; 3 FAILs at `strong` → HALT. A wrong spec opens a Pivot Record instead of consuming retries.
 - After PASS: one commit per task per `{{template:rules/commits.md}}`; `tasks.md` updated in the same commit; `execution.md` (from `{{template:spec/execution.md}}`) records the hash. Advisories are logged and never reopen the loop.

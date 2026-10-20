@@ -19,7 +19,6 @@ outputs:
   - { path: "{{paths.constitution}}/*.md", description: workspace constitution and product context }
   - { path: "<project>/{{paths.constitution}}/*.md", description: project level, only what differs }
   - { path: AGENTS.md, description: root, project and module levels; root holds the module index and the Skill Map }
-tier: strong
 capabilities: [read, search, edit, shell, mcp, agents]
 templates:
   - rules/context.md
@@ -46,7 +45,9 @@ Build the foundation every other mandao relies on: how the system is built (tech
 owned by the tech lead) and what it does and for whom (product context, owned by the PO). Keep them in
 separate files: different people approve them.
 
-Follow `{{template:rules/context.md}}` throughout.
+Follow `{{template:rules/context.md}}` throughout. Product context is written in
+`{{language.business}}`; the technical constitution in `{{language.technical}}`. Headings, keywords and
+markers stay in English.
 
 ## 1. Read the workspace
 
@@ -62,6 +63,9 @@ Follow `{{template:rules/context.md}}` throughout.
 
 - If a graph engine is available (graphify skill or CLI, or CodeGraph), build or refresh the graph
   following that tool's own instructions. It is mandatory in legacy mode when available.
+- Graph hooks are installed by the tool's own installer, never written by hand: with approval, run
+  `graphify claude install` (agent hooks, merged into `.claude/settings.json`) and
+  `graphify hook install` (git hooks that keep the graph fresh). `mandao doctor` checks they exist.
 - Otherwise map with search and glob: entry points, modules, layers, data models, integrations, tests.
   State "graph engine unavailable: lower confidence" in the summary.
 - Do not commit the graph. Commit only distilled outputs.

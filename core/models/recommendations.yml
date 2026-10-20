@@ -1,0 +1,52 @@
+# Mandao's model recommendations per harness and role.
+#
+# Taken from each harness's official documentation on the `reviewed` date, never from memory.
+# `mandao update` refreshes this file with the package; it never changes the choices in
+# .mandao/models.yml and only offers the new recommendation.
+schema_version: 1
+
+harnesses:
+  claude:
+    reviewed: 2026-10-20
+    sources:
+      - https://code.claude.com/docs/en/model-config
+    # Values accepted today: aliases resolve to the latest model of each family per provider.
+    available: [opus, sonnet, haiku, fable, best, opusplan, inherit, claude-fable-5-1, claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5]
+    routed:
+      leader: opus
+      reviewer: opus
+      # Used when the Implementer lands on the Reviewer's model (e.g. a task escalated to strong).
+      # Fable requires availability on the account; otherwise choose sonnet and accept reduced independence.
+      reviewer_alt: fable
+      implementer: { fast: haiku, standard: sonnet, strong: opus }
+      tester: sonnet
+    simple:
+      implementer: sonnet
+      reviewer: opus
+
+  copilot:
+    reviewed: 2026-10-20
+    sources:
+      - https://docs.github.com/en/copilot/reference/ai-models/supported-models
+      - https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference
+    # Display names from GitHub's supported-models list. Availability per plan and client varies;
+    # Fable models need an administrator to enable them.
+    available:
+      - Claude Opus 5.5
+      - Claude Sonnet 5.5
+      - Claude Haiku 5.5
+      - Claude Fable 5.1
+      - GPT-6.1 Sol
+      - GPT-6 Sol
+      - GPT-5.3-Codex
+      - Gemini 4 Argon
+    routed:
+      leader: Claude Opus 5.5
+      reviewer: Claude Opus 5.5
+      # A different vendor keeps the review independent when the Implementer escalates to strong.
+      reviewer_alt: GPT-6.1 Sol
+      implementer: { fast: Claude Haiku 5.5, standard: Claude Sonnet 5.5, strong: Claude Opus 5.5 }
+      tester: Claude Sonnet 5.5
+    simple:
+      implementer: Claude Sonnet 5.5
+      reviewer: GPT-6.1 Sol

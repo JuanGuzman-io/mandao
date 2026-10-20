@@ -16,6 +16,8 @@ export const lockSchema = z.object({
       hash: hash.optional(),
     }),
   ),
+  /** `reviewed` date of the model recommendations last offered, per harness. */
+  recommendations: z.partialRecord(harnessId, z.string()).default({}),
   skills: z
     .array(
       z.object({

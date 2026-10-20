@@ -6,8 +6,7 @@ import {
   frontmatter,
   generatedNotice,
   mapCapabilities,
-  modelFor,
-  modelSeparationWarnings,
+  personaVariants,
   renderCommandBody,
   renderContext,
   renderPersonaBody,
@@ -63,7 +62,6 @@ export const copilotAdapter: Adapter = {
         description: cmd.meta.description,
         'argument-hint': argumentHint(cmd),
         agent: 'agent',
-        model: modelFor(input, 'copilot', cmd.meta.tier),
         tools: mapCapabilities(cmd.meta.capabilities, TOOLS),
         ...cmd.meta.harness.copilot,
       });
@@ -79,25 +77,27 @@ export const copilotAdapter: Adapter = {
 
     if (input.scope === 'project') {
       for (const persona of input.resolution.personas) {
-        const from = `persona:${persona.meta.id}`;
-        const head = frontmatter({
-          name: commandName(persona.meta.id),
-          description: persona.meta.description,
-          tools: mapCapabilities(persona.meta.capabilities, TOOLS),
-          model: modelFor(input, 'copilot', persona.meta.tier),
-          ...persona.meta.harness.copilot,
-        });
-        files.push({
-          path: `.github/agents/${commandName(persona.meta.id)}.agent.md`,
-          content: `${head}${generatedNotice(input.version, from)}\n\n${renderPersonaBody(persona, ctx, syntax)}`,
-          ownership: 'owned',
-          from,
-          harness: 'copilot',
-          scope: 'project',
-        });
+        const body = renderPersonaBody(persona, ctx, syntax);
+        for (const v of personaVariants(persona, input.models.copilot)) {
+          const head = frontmatter({
+            name: v.name,
+            description: v.description,
+            tools: mapCapabilities(persona.meta.capabilities, TOOLS),
+            model: v.model,
+            ...persona.meta.harness.copilot,
+          });
+          files.push({
+            path: `.github/agents/${v.name}.agent.md`,
+            content: `${head}${generatedNotice(input.version, v.from)}\n\n${v.preface ? `${v.preface}\n\n` : ''}${body}`,
+            ownership: 'owned',
+            from: v.from,
+            harness: 'copilot',
+            scope: 'project',
+          });
+        }
       }
     }
 
-    return { files, warnings: input.scope === 'project' ? modelSeparationWarnings(input, 'copilot') : [] };
+    return { files, warnings: [] };
   },
 };
