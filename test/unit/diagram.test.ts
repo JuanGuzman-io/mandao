@@ -43,9 +43,10 @@ describe('approval diagram (ADR 0022)', () => {
 });
 
 describe('diagram drift by identity (ADR 0026)', () => {
+  const ctx = { edgesKnown: true, exists: () => true };
   const g = (nodes: { id: string; label?: string; kind?: 'module' | 'contract' }[], edges: [string, string][] = []) => ({
     schema_version: 1 as const,
-    nodes: nodes.map((n) => ({ kind: 'module' as const, ...n })),
+    nodes: nodes.map((n) => ({ kind: 'module' as const, role: 'changed' as const, ...n })),
     edges: edges.map(([from, to]) => ({ from, to })),
   });
 
@@ -64,12 +65,12 @@ describe('diagram drift by identity (ADR 0026)', () => {
       ],
       [['src/cli', 'src/engine']],
     );
-    expect(diagramDrift(proposed, renamed)).toMatchObject({
+    expect(diagramDrift(proposed, renamed, ctx)).toMatchObject({
       drift: false,
       relabelled: [{ id: 'src/cli', proposed: 'CLI', implemented: 'Command line' }],
     });
     const built = g([{ id: 'src/cli' }, { id: 'src/writer' }], [['src/cli', 'src/writer']]);
-    expect(diagramDrift(proposed, built)).toMatchObject({
+    expect(diagramDrift(proposed, built, ctx)).toMatchObject({
       drift: true,
       addedNodes: ['src/writer'],
       missingNodes: ['src/engine'],
@@ -80,12 +81,34 @@ describe('diagram drift by identity (ADR 0026)', () => {
 
   test('contracts are compared only when the implemented graph has contract nodes; otherwise unverified', () => {
     const proposed = g([{ id: 'src/api' }, { id: 'POST /tokens', kind: 'contract' }]);
-    expect(diagramDrift(proposed, g([{ id: 'src/api' }]))).toMatchObject({ drift: false, unverifiedContracts: ['POST /tokens'] });
-    expect(diagramDrift(proposed, g([{ id: 'src/api' }, { id: 'POST /token', kind: 'contract' }]))).toMatchObject({
+    expect(diagramDrift(proposed, g([{ id: 'src/api' }]), ctx)).toMatchObject({ drift: false, unverifiedContracts: ['POST /tokens'] });
+    expect(diagramDrift(proposed, g([{ id: 'src/api' }, { id: 'POST /token', kind: 'contract' }]), ctx)).toMatchObject({
       drift: true,
       addedNodes: ['POST /token'],
       missingNodes: ['POST /tokens'],
     });
+  });
+
+  test('context nodes are only checked to exist; without a code graph edges are unverified', () => {
+    const proposed = {
+      schema_version: 1 as const,
+      nodes: [
+        { id: 'src/cli', kind: 'module' as const, role: 'changed' as const },
+        { id: 'src/engine', kind: 'module' as const, role: 'context' as const },
+      ],
+      edges: [{ from: 'src/cli', to: 'src/engine' }],
+    };
+    const built = g([{ id: 'src/cli' }]);
+    expect(diagramDrift(proposed, built, { edgesKnown: false, exists: () => true })).toMatchObject({
+      drift: false,
+      missingNodes: [],
+      unverifiedEdges: ['src/cli -> src/engine'],
+    });
+    expect(diagramDrift(proposed, built, { edgesKnown: false, exists: () => false })).toMatchObject({
+      drift: true,
+      missingContext: ['src/engine'],
+    });
+    expect(diagramDrift(proposed, built, ctx)).toMatchObject({ drift: true, missingEdges: ['src/cli -> src/engine'] });
   });
 
   test('the implemented graph comes from the changed source files and the code graph', () => {
@@ -94,8 +117,8 @@ describe('diagram drift by identity (ADR 0026)', () => {
     expect(implementedGraph(changed, dependents, (f) => f.startsWith('test/'))).toEqual({
       schema_version: 1,
       nodes: [
-        { id: 'src/cli', kind: 'module' },
-        { id: 'src/engine', kind: 'module' },
+        { id: 'src/cli', kind: 'module', role: 'changed' },
+        { id: 'src/engine', kind: 'module', role: 'changed' },
       ],
       edges: [{ from: 'src/cli', to: 'src/engine' }],
     });

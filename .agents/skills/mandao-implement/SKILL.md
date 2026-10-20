@@ -17,7 +17,10 @@ write production code yourself. Use `en` for notes; code and commits are English
    the path to open. Mandao never creates branches here.
 2. `node .mandao/bin/mandao.mjs run models --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
-3. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
+3. **Status.** If `story.md` says `approved`, check `node .mandao/bin/mandao.mjs run status <spec> in-progress` and set
+   `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
+   spec to `verified`.
+4. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
 
 ## 1. For each task
 

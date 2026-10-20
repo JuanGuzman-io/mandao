@@ -100,7 +100,9 @@ did not exist), `optional` (lite).
   `architecture` · user or approval process → `workflow` · entity states → `lifecycle` · changes to
   existing behavior → `before-after`.
 - First write its structured source, `diagrams/proposed.graph.json` (`schema_version: 1`, `nodes` with
-  `id`, `label`, `kind` module | contract | external | actor, and `edges` with `from`, `to`). A node's
+  `id`, `label`, `kind` module | contract | external | actor, `role` changed | context, and `edges` with
+  `from`, `to`). `changed` nodes are what the spec builds or modifies; `context` nodes are only used
+  (close checks they exist, never that they changed). A node's
   `id` is the **module path** (`src/billing`) or the **contract identifier** (`POST /api/tokens`,
   `event:user.created`), never its label: `close` compares diagrams by id, so renaming a box is not drift.
 - Render it with the Archify skill when it is available, into `diagrams/proposed.html` (plus a PNG

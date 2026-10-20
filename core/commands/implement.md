@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, tasks, brief, loop, checkpoint, resources, tests, review, commit]
+scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -39,7 +39,10 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
    the path to open. Mandao never creates branches here.
 2. `{{script:models}} --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
-3. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
+3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
+   `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
+   spec to `verified`.
+4. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
 
 ## 1. For each task
 

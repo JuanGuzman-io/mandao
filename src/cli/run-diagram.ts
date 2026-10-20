@@ -85,7 +85,13 @@ function registerDrift(run: Command, ctx: CliContext) {
       const changed = specChangedFiles(repo, [...taskCommits(repo, spec.story.meta.id, config.commits.trailers).values()].flat());
       const built = implemented(ctx.root(), spec.dir, changed);
       writeText(join(spec.dir, 'diagrams', 'implemented.graph.json'), `${JSON.stringify(built, null, 2)}\n`);
-      json({ ...diagramDrift(proposed, built), implemented: 'diagrams/implemented.graph.json' });
+      const edgesKnown = existsSync(graphFile(ctx.root()));
+      const drift = diagramDrift(proposed, built, { edgesKnown, exists: (id) => existsSync(join(repo, id)) });
+      json({
+        ...drift,
+        implemented: 'diagrams/implemented.graph.json',
+        ...(edgesKnown ? {} : { note: 'no code graph: edges unverified' }),
+      });
     });
 }
 

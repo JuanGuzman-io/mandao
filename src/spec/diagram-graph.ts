@@ -12,6 +12,8 @@ export const diagramGraphSchema = z.object({
       id: z.string().min(1),
       label: z.string().optional(),
       kind: z.enum(['module', 'contract', 'external', 'actor']).default('module'),
+      /** `changed`: the spec builds or modifies it · `context`: it is only used, so close checks it exists. */
+      role: z.enum(['changed', 'context']).default('changed'),
     }),
   ),
   edges: z.array(z.object({ from: z.string().min(1), to: z.string().min(1), label: z.string().optional() })).default([]),
@@ -40,16 +42,24 @@ export function implementedGraph(
       if (from !== to && modules.includes(from)) edges.set(edgeKey({ from, to }), { from, to });
     }
   }
-  return { schema_version: 1, nodes: modules.map((id) => ({ id, kind: 'module' as const })), edges: [...edges.values()] };
+  return {
+    schema_version: 1,
+    nodes: modules.map((id) => ({ id, kind: 'module' as const, role: 'changed' as const })),
+    edges: [...edges.values()],
+  };
 }
 
 export interface DiagramDrift {
   /** Built but not in the approved design. */
   addedNodes: string[];
-  /** Approved but not built. */
+  /** Approved as changed but not built. */
   missingNodes: string[];
+  /** Approved as context (used, not changed) but not found in the repository. */
+  missingContext: string[];
   addedEdges: string[];
   missingEdges: string[];
+  /** Without a code graph, edges cannot be confirmed either way. */
+  unverifiedEdges: string[];
   /** Approved contracts the implemented graph cannot confirm or deny (no contract nodes were derived). */
   unverifiedContracts: string[];
   /** Same identity, different label: reported, never drift. */
@@ -57,24 +67,44 @@ export interface DiagramDrift {
   drift: boolean;
 }
 
+export interface DriftContext {
+  /** False when no code graph was available to derive edges. */
+  edgesKnown: boolean;
+  /** Whether a context node exists (a module path in the repository). */
+  exists: (id: string) => boolean;
+}
+
+type Node = DiagramGraph['nodes'][number];
+
 /** Drift between the approved diagram and what was built, by identity (ADR 0026). */
-export function diagramDrift(proposed: DiagramGraph, implemented: DiagramGraph): DiagramDrift {
+export function diagramDrift(proposed: DiagramGraph, implemented: DiagramGraph, ctx: DriftContext): DiagramDrift {
   const knowsContracts = implemented.nodes.some((n) => n.kind === 'contract');
-  const comparable = (n: DiagramGraph['nodes'][number]) => n.kind === 'module' || (n.kind === 'contract' && knowsContracts);
-  const pIds = new Set(proposed.nodes.filter(comparable).map((n) => n.id));
+  const comparable = (n: Node) => n.kind === 'module' || (n.kind === 'contract' && knowsContracts);
+  const context = proposed.nodes.filter((n) => n.role === 'context');
+  const pIds = new Set(proposed.nodes.filter((n) => n.role === 'changed' && comparable(n)).map((n) => n.id));
   const iIds = new Set(implemented.nodes.filter(comparable).map((n) => n.id));
-  const pEdges = new Set(proposed.edges.filter((e) => pIds.has(e.from) && pIds.has(e.to)).map(edgeKey));
+  const known = new Set([...pIds, ...context.map((n) => n.id)]);
+  const pEdges = new Set(proposed.edges.filter((e) => known.has(e.from) && known.has(e.to)).map(edgeKey));
   const iEdges = new Set(implemented.edges.map(edgeKey));
+  const edges = ctx.edgesKnown
+    ? {
+        addedEdges: [...iEdges].filter((e) => !pEdges.has(e)).sort(),
+        missingEdges: [...pEdges].filter((e) => !iEdges.has(e)).sort(),
+        unverifiedEdges: [],
+      }
+    : { addedEdges: [], missingEdges: [], unverifiedEdges: [...pEdges].sort() };
   const out = {
-    addedNodes: [...iIds].filter((id) => !pIds.has(id)).sort(),
+    addedNodes: [...iIds].filter((id) => !known.has(id)).sort(),
     missingNodes: [...pIds].filter((id) => !iIds.has(id)).sort(),
-    addedEdges: [...iEdges].filter((e) => !pEdges.has(e)).sort(),
-    missingEdges: [...pEdges].filter((e) => !iEdges.has(e)).sort(),
+    missingContext: context.filter((n) => n.kind === 'module' && !ctx.exists(n.id)).map((n) => n.id),
+    ...edges,
     unverifiedContracts: knowsContracts ? [] : proposed.nodes.filter((n) => n.kind === 'contract').map((n) => n.id),
     relabelled: proposed.nodes.flatMap((p) => {
       const i = implemented.nodes.find((n) => n.id === p.id);
       return i?.label && p.label && i.label !== p.label ? [{ id: p.id, proposed: p.label, implemented: i.label }] : [];
     }),
   };
-  return { ...out, drift: out.addedNodes.length + out.missingNodes.length + out.addedEdges.length + out.missingEdges.length > 0 };
+  const drift =
+    out.addedNodes.length + out.missingNodes.length + out.missingContext.length + out.addedEdges.length + out.missingEdges.length > 0;
+  return { ...out, drift };
 }
