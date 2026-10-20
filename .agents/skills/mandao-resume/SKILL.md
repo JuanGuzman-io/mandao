@@ -26,8 +26,10 @@ mandao to run. Stop there.
    - **review the diff as it is** → checkpoint `--verdict REPORTED` and go to the review step;
    - **continue implementing** → brief the implementer with the diff as the starting point;
    - **discard and redo the task** → only after confirming, restore the files and start the task again.
-5. **Provider independence.** When the task was implemented in another harness and is reviewed here,
+5. **Commit pending.** A task whose last row is PASS without a commit (a sandbox blocked it) is
+   committed first, following `/mandao-implement` step 7.
+6. **Provider independence.** When the task was implemented in another harness and is reviewed here,
    add `provider independence` to the review row's notes. `node .mandao/bin/mandao.mjs run loop <spec> <Tn> --harness <h>`
    reports it.
-6. **Continue** with the `/mandao-implement` loop from that step, checkpointing as it does
+7. **Continue** with the `/mandao-implement` loop from that step, checkpointing as it does
    (`node .mandao/bin/mandao.mjs run checkpoint`).

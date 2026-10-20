@@ -21,7 +21,8 @@ Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templat
 
 With **one** confirmation, create the branch and worktree from
 `node .mandao/bin/mandao.mjs run spec-new "quick <name>" --id quick --type <story|bug>` (run its `command`), and make the
-change there. Skip this when the session already runs on a quick branch.
+change there, after installing the project's dependencies inside the worktree (no symlinks). Skip this
+when the session already runs on a quick branch.
 
 ## 3. Change
 

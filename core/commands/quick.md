@@ -43,7 +43,8 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 
 With **one** confirmation, create the branch and worktree from
 `{{script:spec-new}} "quick <name>" --id quick --type <story|bug>` (run its `command`), and make the
-change there. Skip this when the session already runs on a quick branch.
+change there, after installing the project's dependencies inside the worktree (no symlinks). Skip this
+when the session already runs on a quick branch.
 
 ## 3. Change
 

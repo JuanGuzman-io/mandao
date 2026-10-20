@@ -45,17 +45,21 @@ Pick the task: `${input:task:Optional task id (default - the next eligible task)
    and the impacted tests with `node .mandao/bin/mandao.mjs run tests <project> <changed files>` — never the full suite.
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
-5. **Review** in a separate, clean context, by the reviewer `loop` names (`reviewer` or
-   `reviewer_alt`), with only the diff, the brief and the active lenses (`.mandao/templates/app/rules/review.md`,
-   `.mandao/templates/app/rules/clean-code.md`). The Reviewer never runs on a lower tier or effort than the
-   Implementer; if `loop` reports `reduced independence`, say so and record it in the notes.
+5. **Review** in a separate agent or process — never in your own context — by the reviewer `loop`
+   names (`reviewer` or `reviewer_alt`), with only the diff, the brief and the active lenses
+   (`.mandao/templates/app/rules/review.md`, `.mandao/templates/app/rules/clean-code.md`).
+   The execution row records the model that **actually** reviewed. If the review could only run in your
+   own context, it is not independent: record `reduced independence` and your own model, never the
+   configured one. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
    - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
    - **The spec is wrong** → write a Pivot Record (`.mandao/templates/app/spec/pivot-record.md`) in `execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
-7. **Commit** locally, no confirmation needed, never push: message from
+7. **Commit** locally, no confirmation needed, never push. If the harness sandbox blocks writing git
+   metadata, do not work around it: checkpoint `--verdict PASS --commit —` with the next step
+   "commit <Tn>", and stop; the next session or another harness commits. Otherwise: message from
    `node .mandao/bin/mandao.mjs run commit-msg ${input:spec:Spec folder or id} <Tn> <subject>` (`.mandao/templates/app/rules/commits.md`), with `tasks.md`
    updated in the same commit (`--done <Tn>` on the checkpoint before committing). Then checkpoint
    `--verdict PASS --commit <sha> --clear` (or the next task) so `execution.md` records the hash.

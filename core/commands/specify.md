@@ -54,7 +54,9 @@ Write requirements and design content in `{{language.technical}}` and anything a
 The folder is `{{paths.specs}}/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
 `{{script:spec-new}} "<title>" --id <ID> --type <type>` and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path>`); write every artifact of the spec inside
-that worktree. Skip this when the session already runs in it. If there is no `story.md`, write one from
+that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
+a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
+session already runs in the worktree. If there is no `story.md`, write one from
 `{{template:spec/story.md}}` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the
 story blocks specify: stop and say so.
 
