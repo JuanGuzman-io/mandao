@@ -15,7 +15,7 @@ import { readCatalog } from './catalog.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildProject } from './sync.js';
-import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
+import { harnessVersionFindings, type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
 export type Level = 'error' | 'warn' | 'info' | 'ok';
 
@@ -109,7 +109,7 @@ export function modelFindings(root: string, config: Config, recs: Recommendation
       for (const { role, choice } of usedModels(m)) {
         const optional = rec?.optional.find((o) => o.model === choice.model);
         if (optional) {
-          out.push({ level: 'info', message: `${harness}${where}: ${role} uses "${choice.model}", which ${optional.note}` });
+          out.push({ level: 'info', message: `${harness}${where}: ${role} uses "${choice.model}": ${optional.note}` });
         } else if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
           out.push({
             level: 'warn',
@@ -210,7 +210,9 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
     return findings;
   }
   findings.push(...build.warnings.map((m) => ({ level: 'warn' as const, message: m })));
-  findings.push(...modelFindings(root, config, readRecommendations()));
+  const recs = readRecommendations();
+  findings.push(...modelFindings(root, config, recs));
+  findings.push(...harnessVersionFindings(recs, config.harnesses, probe));
   const catalog = readCatalog();
   findings.push(
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...(lockForTools?.skills ?? []).map((s) => s.id)])], probe),

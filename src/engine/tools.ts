@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import semver from 'semver';
-import type { Catalog } from '../schemas/index.js';
+import type { Catalog, HarnessId, Recommendations } from '../schemas/index.js';
 import type { Finding } from './doctor.js';
 import { LAUNCHER_PATH } from './launcher.js';
 
@@ -79,4 +79,25 @@ export function runnerFindings(root: string, lockVersion: string | undefined, pr
       fix: 'before Mandao is published, run `npm link` in the Mandao repository (see README, Development)',
     },
   ];
+}
+
+/** Warns when an installed harness is older than the release the recommended models need. */
+export function harnessVersionFindings(recs: Recommendations, harnesses: HarnessId[], probe: Probe): Finding[] {
+  const out: Finding[] = [];
+  for (const harness of harnesses) {
+    const req = recs.harnesses[harness]?.harness_version;
+    if (!req) continue;
+    const output = probe(req.command);
+    const installed = output === undefined ? undefined : semver.coerce(output)?.version;
+    const min = semver.coerce(req.min)?.version;
+    if (!installed || !min) continue; // harness CLI not on PATH: nothing to compare
+    if (semver.lt(installed, min)) {
+      out.push({
+        level: 'warn',
+        message: `${harness} ${installed} is older than ${min}, which the recommended models need`,
+        fix: `update ${harness} (e.g. \`claude update\`), or choose models it supports with \`mandao models set\``,
+      });
+    }
+  }
+  return out;
 }

@@ -152,7 +152,7 @@ describe('models in doctor', () => {
       expect.stringMatching(/^claude \(project b\): reviewer uses "nonexistent"/),
     ]);
     // Generated agents follow the workspace; project choices apply at run time through `mandao run models`.
-    expect(readFileSync(join(root, '.claude/agents/mandao-reviewer.md'), 'utf8')).toMatch(/^model: opus$/m);
+    expect(readFileSync(join(root, '.claude/agents/mandao-reviewer.md'), 'utf8')).toMatch(/^model: claude-opus-5-5$/m);
   });
 });
 

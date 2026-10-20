@@ -11,23 +11,35 @@ harnesses:
     reviewed: 2026-10-20
     sources:
       - https://code.claude.com/docs/en/model-config
-    # Aliases resolve to the latest model of each family per provider. Opus is the default model on
-    # Pro, Max, Team, Enterprise and the API, so opus, sonnet and haiku are available on every plan.
-    available: [opus, sonnet, haiku]
+      - https://platform.claude.com/docs/en/about-claude/models/overview
+    # Pinned to the 5.5 family by full model ID (ADR 0014): aliases float to newer models, IDs do not.
+    # Claude Code maps these Anthropic IDs to Bedrock and Google Cloud IDs itself. Opus, Sonnet and
+    # Haiku are available on Pro, Max, Team, Enterprise and the API.
+    harness_version: { min: 2.1.293, command: claude --version }
+    available: [claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5]
     routed:
-      leader: opus
-      reviewer: opus
+      leader: claude-opus-5-5
+      reviewer: claude-opus-5-5
       # Reviews when the Implementer ran on the Reviewer's model (a task escalated to strong).
-      reviewer_alt: sonnet
-      implementer: { fast: haiku, standard: sonnet, strong: opus }
-      tester: sonnet
+      reviewer_alt: claude-sonnet-5-5
+      implementer: { fast: claude-haiku-5-5, standard: claude-sonnet-5-5, strong: claude-opus-5-5 }
+      tester: claude-sonnet-5-5
     simple:
-      implementer: sonnet
-      reviewer: opus
+      implementer: claude-sonnet-5-5
+      reviewer: claude-opus-5-5
     optional:
-      - model: fable
+      - model: claude-fable-5-1
         roles: [leader, reviewer, reviewer_alt]
         note: requires availability on your plan (Fable is never a plan default and can bill to usage credits)
+      - model: opus
+        roles: [leader, reviewer, reviewer_alt, implementer, tester]
+        note: alias that moves to the newest Opus on each Claude Code release; not pinned
+      - model: sonnet
+        roles: [leader, reviewer, reviewer_alt, implementer, tester]
+        note: alias that moves to the newest Sonnet on each Claude Code release; not pinned
+      - model: haiku
+        roles: [implementer, tester]
+        note: alias that moves to the newest Haiku on each Claude Code release; not pinned
 
   copilot:
     reviewed: 2026-10-20

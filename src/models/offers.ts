@@ -1,4 +1,15 @@
 import { type HarnessId, type Models, type Recommendations, TIERS } from '../schemas/index.js';
+import { sha256 } from '../util/hash.js';
+
+/** Identifies one harness's recommendation, so a revision on the same day is still offered once. */
+export function recommendationHash(rec: NonNullable<Recommendations['harnesses'][HarnessId]>): string {
+  return sha256(JSON.stringify(rec));
+}
+
+/** What the lock records after offering: one hash per harness. */
+export function seenRecommendations(recommendations: Recommendations): Partial<Record<HarnessId, string>> {
+  return Object.fromEntries(Object.entries(recommendations.harnesses).map(([h, r]) => [h, recommendationHash(r!)]));
+}
 
 export interface Offer {
   harness: HarnessId;
@@ -18,7 +29,7 @@ export function recommendationOffers(models: Models, recommendations: Recommenda
     HarnessId,
     NonNullable<Recommendations['harnesses'][HarnessId]>,
   ][]) {
-    if (seen[harness] === rec.reviewed) continue;
+    if (seen[harness] === recommendationHash(rec)) continue;
     const chosen = models.harnesses[harness];
     if (!chosen) continue;
     const want: Record<string, string> = {

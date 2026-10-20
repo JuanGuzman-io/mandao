@@ -4,7 +4,7 @@ import { runDoctor } from '../engine/doctor.js';
 import { LOCK_FILE, LOCK_HEADER, readLock, readModels, writeYaml } from '../engine/files.js';
 import { detectPackageManager, latestRunner } from '../engine/package-manager.js';
 import { readRecommendations } from '../models/load.js';
-import { recommendationOffers } from '../models/offers.js';
+import { recommendationOffers, seenRecommendations } from '../models/offers.js';
 import { HARNESS_IDS, PROFILES } from '../schemas/index.js';
 import { packageInfo } from '../util/package-root.js';
 import { type CliContext, sync } from './context.js';
@@ -27,8 +27,7 @@ function update(ctx: CliContext, opts: { force?: boolean }) {
   }
   const fresh = readLock(lockPath);
   if (fresh) {
-    const seen = Object.fromEntries(Object.entries(recs.harnesses).map(([h, r]) => [h, r!.reviewed]));
-    writeYaml(lockPath, { ...fresh, recommendations: seen }, LOCK_HEADER);
+    writeYaml(lockPath, { ...fresh, recommendations: seenRecommendations(recs) }, LOCK_HEADER);
   }
 }
 

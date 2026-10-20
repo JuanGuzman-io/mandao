@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { flagLayer } from '../../src/cli/models.js';
-import { recommendationOffers } from '../../src/models/offers.js';
+import { recommendationOffers, seenRecommendations } from '../../src/models/offers.js';
 import { independence, missingRoles, resolveModels } from '../../src/models/resolve.js';
 import { recommendationsSchema } from '../../src/schemas/index.js';
 
@@ -100,7 +100,15 @@ describe('recommendationOffers', () => {
   });
 
   test('stays quiet when the recommendations were already offered', () => {
-    expect(recommendationOffers(chosen, recs, { claude: '2026-10-20' })).toEqual([]);
+    expect(recommendationOffers(chosen, recs, seenRecommendations(recs))).toEqual([]);
+  });
+
+  test('a revision with the same review date is offered again', () => {
+    const revised = recommendationsSchema.parse({
+      ...recs,
+      harnesses: { claude: { ...recs.harnesses.claude, routed: { ...recs.harnesses.claude!.routed, reviewer: 'opus-next' } } },
+    });
+    expect(recommendationOffers(chosen, revised, seenRecommendations(recs)).map((o) => o.role)).toContain('reviewer');
   });
 });
 

@@ -41,6 +41,8 @@ export const recommendationsSchema = z.object({
     z.object({
       reviewed: z.iso.date(),
       sources: z.array(z.url()).min(1),
+      /** Oldest harness release that knows the recommended models, and how to read the installed one. */
+      harness_version: z.object({ min: z.string().min(1), command: z.string().min(1) }).optional(),
       available: z.array(model).min(1),
       routed: z.object({ leader: model, reviewer: model, reviewer_alt: model, implementer: tierModels, tester: model }),
       simple: z.object({ implementer: model, reviewer: model }),
