@@ -62,7 +62,7 @@ parallel_safe: true
 verify: npx vitest run test/unit/doctor-cache.test.ts test/unit/doctor-report.test.ts
 ```
 
-### [ ] T2 — a spec's sessions measured: pauses and turns per task, verify and close
+### [x] T2 — a spec's sessions measured: pauses and turns per task, verify and close
 
 - **What:** `session-turns.ts` and `taskCommitTimes` per [D2](spec.md#d2) and [D3](spec.md#d3), from
   fixture transcripts and cost records.
@@ -75,7 +75,7 @@ verify: npx vitest run test/unit/doctor-cache.test.ts test/unit/doctor-report.te
 project: mandao
 kind: feat
 tier: strong
-files: [src/scripts/session-turns.ts, src/scripts/session-cut.ts, src/scripts/commits.ts, test/unit/session-turns.test.ts]
+files: [src/scripts/session-turns.ts, src/scripts/session-cut.ts, src/scripts/commits.ts, test/unit/session-turns.test.ts, test/unit/commits-times.test.ts]
 exemplar: src/scripts/session-cut.ts
 ac: [AC-2, AC-2/C1, AC-2/C2]
 scenarios: [S-2.1, S-2.1/C1, S-2.2, S-2.2/C1, S-2.3, S-2.3/C1, S-2.4, S-2.4/C2]

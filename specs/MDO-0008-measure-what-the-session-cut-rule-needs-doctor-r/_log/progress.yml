@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
-updated_at: 2026-10-20T23:11:35.565Z
+updated_at: 2026-10-20T23:13:18.812Z
 current: null
 open_questions: []
 next_step: ""
