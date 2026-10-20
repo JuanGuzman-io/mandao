@@ -28,5 +28,5 @@ as a draft, and escalate to `story` or `specify` with what you learned and the s
 
 ## Never skipped
 
-Level 0 gates, the area's tests, a lite review (core checklist only), a `quick-log.md` entry, and a
+Level 0 gates, the impacted tests, a lite review (core checklist only), a `quick-log.md` entry, and a
 commit with the `Mandao-Quick: <name>` trailer.

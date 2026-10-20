@@ -1,6 +1,6 @@
 ---
 name: mandao-verify
-description: Run testers per suite, trace every AC to its tests, check conformance with the spec and run the critical smoke suite.
+description: Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
 argument-hint: "[spec]"
 arguments:
   - spec
@@ -23,6 +23,6 @@ closest available step.
 
 - Testers author and run one suite each and tell test defects from `PRODUCT_BUG`.
 - AC → test traceability per `.mandao/templates/app/rules/traceability.md`, clause by clause.
-- Always runs the existing critical suite as smoke; e2e for critical AC per `.mandao/templates/app/rules/test-policy.md`.
+- Runs only impacted tests under the resource budget in `.mandao/templates/app/rules/test-policy.md`: unit tests related to the touched files, e2e for the spec's AC (critical AC always). The full suite and the smoke of every critical flow run in CI, locally only with `--full`; `DEFERRED_TO_CI` runs keep the spec out of `verified` until CI confirms them.
 - `ai` projects: runs evals against the baseline; a metric drop is a FAIL even when tests pass.
 - Evidence is re-run by a context that did not author it. Ends with the Consistency Check.

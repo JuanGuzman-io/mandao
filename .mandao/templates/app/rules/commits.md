@@ -8,7 +8,7 @@ rule: commits
 ## Cadence
 
 - One commit per task, only after the Reviewer's PASS. Rework attempts are never committed.
-- Each commit leaves lint and the area's tests green.
+- Each commit leaves lint and the impacted tests green.
 - `tasks.md` is updated in the same commit; `execution.md` records the hash.
 
 ## Format
