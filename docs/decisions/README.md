@@ -37,3 +37,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0028](0028-no-size-estimates.md) | No size estimates: measure the real diff | Accepted |
 | [0029](0029-opencode-free-models-detection.md) | OpenCode: providers from the models it lists | Accepted |
 | [0030](0030-init-dir-shadow-hotfix-and-sdd-conflicts.md) | init in a new folder, shadow mode, hotfix lane, other SDD frameworks | Accepted |
+| [0031](0031-work-types.md) | Work types beyond software and AI | Proposed |
