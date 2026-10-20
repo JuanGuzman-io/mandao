@@ -72,6 +72,7 @@ describe('doctor --json with mocked findings', () => {
       throw new Error('boom: invalid preset');
     });
     // index.ts turns the rejection into stderr output and exit code 1 (unchanged); here we prove stdout stays empty.
+    // The stderr message and exit code 1 are proven at process level in doctor-process.test.ts (MDO-0005).
     await expect(run('/unused', 'doctor', '--json')).rejects.toThrow('boom: invalid preset');
     expect(log).not.toHaveBeenCalled();
     expect(write).not.toHaveBeenCalled();

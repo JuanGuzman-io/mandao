@@ -1,0 +1,10 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0005-prove-the-doctor-crash-path-end-to-end
+updated_at: 2026-10-20T18:35:59.503Z
+current: null
+open_questions: []
+next_step: ""
+deferred_to_ci: []
+red_tests: []
+pending_commits: []
