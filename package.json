@@ -4,7 +4,7 @@
   "description": "Spec-Driven Development for coding agents, across harnesses. Every command is a mandao.",
   "type": "module",
   "license": "MIT",
-  "author": "Juan D. Guzmán",
+  "author": "Juan David Delgado Guzmán",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/JuanGuzman-io/mandao.git"
