@@ -24,7 +24,8 @@ const edgeKey = (e: { from: string; to: string }) => `${e.from} -> ${e.to}`;
 
 /**
  * The implemented graph from the diff: one module node per folder of a changed source file, and an edge
- * where one changed module depends on another (`dependents`: file → files that depend on it).
+ * for every dependency a changed file has on another module, changed or only used (`dependents`: file →
+ * files that depend on it).
  */
 export function implementedGraph(
   changed: string[],
@@ -34,12 +35,16 @@ export function implementedGraph(
   const moduleOf = (f: string) => (f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : '.');
   const files = changed.filter((f) => !isTest(f) && /\.[cm]?[jt]sx?$|\.py$|\.go$|\.java$|\.kt$|\.rb$|\.cs$/.test(f));
   const modules = [...new Set(files.map(moduleOf))].sort();
+  const changedFiles = new Set(files);
   const edges = new Map<string, { from: string; to: string }>();
-  for (const target of files) {
-    for (const source of dependents?.get(target) ?? []) {
+  // Every dependency that starts in a changed file, towards changed or merely used modules.
+  for (const [target, sources] of dependents ?? []) {
+    if (isTest(target)) continue;
+    for (const source of sources) {
+      if (!changedFiles.has(source)) continue;
       const from = moduleOf(source);
       const to = moduleOf(target);
-      if (from !== to && modules.includes(from)) edges.set(edgeKey({ from, to }), { from, to });
+      if (from !== to) edges.set(edgeKey({ from, to }), { from, to });
     }
   }
   return {

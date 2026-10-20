@@ -112,7 +112,11 @@ describe('diagram drift by identity (ADR 0026)', () => {
   });
 
   test('the implemented graph comes from the changed source files and the code graph', () => {
-    const dependents = new Map([['src/engine/sync.ts', new Set(['src/cli/run.ts', 'src/engine/doctor.ts'])]]);
+    const dependents = new Map([
+      ['src/engine/sync.ts', new Set(['src/cli/run.ts', 'src/engine/doctor.ts'])],
+      // An unchanged module the changed CLI uses: the edge counts, the module is not a changed node.
+      ['src/writer/files.ts', new Set(['src/cli/run.ts'])],
+    ]);
     const changed = ['src/cli/run.ts', 'src/engine/sync.ts', 'test/unit/x.test.ts', 'README.md'];
     expect(implementedGraph(changed, dependents, (f) => f.startsWith('test/'))).toEqual({
       schema_version: 1,
@@ -120,7 +124,10 @@ describe('diagram drift by identity (ADR 0026)', () => {
         { id: 'src/cli', kind: 'module', role: 'changed' },
         { id: 'src/engine', kind: 'module', role: 'changed' },
       ],
-      edges: [{ from: 'src/cli', to: 'src/engine' }],
+      edges: [
+        { from: 'src/cli', to: 'src/engine' },
+        { from: 'src/cli', to: 'src/writer' },
+      ],
     });
   });
 });
