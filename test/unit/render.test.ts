@@ -123,3 +123,7 @@ test('installTemplates picks the profile variant and falls back to shared', () =
     ['.mandao/templates/app/story.md', 'shared/story.md'],
   ]);
 });
+
+test('command tokens must reference a known command when the context lists them', () => {
+  expect(() => renderBody(meta, '{{command:ghost}}', ctx({ commands: new Set(['tasks']) }), syntax)).toThrow('unknown command');
+});

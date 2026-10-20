@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import type { CommandFrontmatter, Config, Profile, WorkspaceMode } from '../schemas/index.js';
 import { PROFILES, WORKSPACE_MODES } from '../schemas/index.js';
 
@@ -10,6 +11,8 @@ export interface RenderContext {
   paths: Config['paths'];
   version: string;
   scriptRunner: Config['scripts']['runner'];
+  /** Known command ids; when set, `{{command:x}}` must reference one of them. */
+  commands?: ReadonlySet<string>;
 }
 
 /** How a harness spells the parts of a command that differ between harnesses. */
@@ -27,7 +30,10 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     profiles: new Set(config.projects.map((p) => p.profile)),
     multiProject: config.projects.length > 1,
     mode: config.workspace.mode,
-    paths: config.paths,
+    // Paths are relative to `workspace.home`; agents run from the workspace root.
+    paths: Object.fromEntries(
+      Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.workspace.home, v)]),
+    ) as Config['paths'],
     version,
     scriptRunner: config.scripts.runner,
   };
@@ -136,6 +142,7 @@ export function renderBody(meta: CommandFrontmatter, body: string, ctx: RenderCo
         return scriptCommand(ctx, arg);
       case 'command':
         if (!arg) throw new RenderError(`"${whole}" needs a command id`);
+        if (ctx.commands && !ctx.commands.has(arg)) throw new RenderError(`"${whole}" references an unknown command`);
         return syntax.command(arg);
       default:
         if (arg === undefined) return renderInline(whole, ctx);

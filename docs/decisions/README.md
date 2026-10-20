@@ -11,3 +11,6 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0002](0002-canonical-command-format.md) | Canonical command format and token language | Accepted |
 | [0003](0003-config-vs-lock.md) | Config is intent, lock is resolution | Accepted |
 | [0004](0004-layered-resolution.md) | Layered resolution with frontmatter patches | Accepted |
+| [0005](0005-workspace-model.md) | Workspace model: single, monorepo, polyrepo | Accepted |
+| [0007](0007-pure-adapters.md) | Pure adapters, one impure writer | Accepted |
+| [0008](0008-copilot-second-adapter.md) | GitHub Copilot as the second adapter | Accepted |
