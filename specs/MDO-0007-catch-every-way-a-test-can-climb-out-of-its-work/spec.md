@@ -216,7 +216,7 @@ If false: T2's rewrite list and `ALLOWED` change. Evidence: [E3](#e3).
 
 ## Tasks
 
-### [ ] T1 — A detector that reports every climbing path and leaves inside paths alone
+### [x] T1 — A detector that reports every climbing path and leaves inside paths alone
 
 - **What:** `findClimbs` in `test/guards.ts` with the rules of [D1](#d1) and [D2](#d2), and its
   snippet tests ([D3](#d3)).
