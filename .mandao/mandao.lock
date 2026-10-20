@@ -78,7 +78,7 @@ files:
     harness: codex
     from: command:implement
     ownership: owned
-    hash: sha256-KbOmvxoKuLhAmfVAJSzKfSaxtV8l4lWoPuFpyGtAOuA=
+    hash: sha256-c9t40ZjMY1bZZuIEeUcVhM7McHpMNg56JMOirhswDlI=
     scope: project
   - path: .agents/skills/mandao-init/agents/openai.yaml
     harness: codex
@@ -198,7 +198,7 @@ files:
     harness: claude
     from: persona:leader
     ownership: owned
-    hash: sha256-162E2FAnoipuVDTU7Yob1BdSrr06lvp1vUcEMao+7x0=
+    hash: sha256-H3DEBiDkeIPsDLMaivS//5bG2+Iix/lmOGDJwCr0vJw=
     scope: project
   - path: .claude/agents/mandao-reviewer.md
     harness: claude
@@ -240,7 +240,7 @@ files:
     harness: claude
     from: command:implement
     ownership: owned
-    hash: sha256-lLxPapUkqsU63DQLGkgZesFCmfT3Ty611teJUVLjK9o=
+    hash: sha256-EFoILx0t3iBOQbg1bDyHo8HK4uvytRaUvSf//IPORSk=
     scope: project
   - path: .claude/skills/mandao-init/SKILL.md
     harness: claude
@@ -312,7 +312,7 @@ files:
     harness: codex
     from: persona:leader
     ownership: owned
-    hash: sha256-8n1Foo805cx745++rnAcHCJ2hwTqpi1qsnpHzoiVphY=
+    hash: sha256-/xzUWuOJzwb+PBUINhS8rXhGx/vZNCAW8JiRg5UVYKE=
     scope: project
   - path: .codex/agents/mandao-reviewer-alt.toml
     harness: codex
@@ -360,7 +360,7 @@ files:
     harness: copilot
     from: persona:leader
     ownership: owned
-    hash: sha256-o31IKgBxhA+UD8Cv07DVaU2bcuLKGm70BDSJ0S3xgsE=
+    hash: sha256-Vy/up7H306LhA+qqIrJUBDl4KPzyOgMAIaQJV93DV/U=
     scope: project
   - path: .github/agents/mandao-reviewer-alt.agent.md
     harness: copilot
@@ -408,7 +408,7 @@ files:
     harness: copilot
     from: command:implement
     ownership: owned
-    hash: sha256-m28x2QGJ384R33g+ojdsSqkHkCaP51QsdJwPmjtkNNQ=
+    hash: sha256-1OUWbePpFokLcX1o2u0c5ULzsTzCffBTzlhQhh4ikg8=
     scope: project
   - path: .github/prompts/mandao-init.prompt.md
     harness: copilot
@@ -696,7 +696,7 @@ files:
     harness: mandao
     from: template:shared/rules/test-policy.md
     ownership: owned
-    hash: sha256-lDsreoylVjvonab01N3d3VXfEKbWfNnonnnq2FfXFno=
+    hash: sha256-OWVlVWu5UMPz8IZFIt7e/PwvUInvZGtOIFUithw1S9I=
     scope: project
   - path: .mandao/templates/app/rules/traceability.md
     harness: mandao
@@ -756,7 +756,7 @@ files:
     harness: mandao
     from: template:shared/spec/spec.md
     ownership: owned
-    hash: sha256-9ulZT4qjDqZ0Zl2uXNutMSykkbR0IRkcbwP/nYc7AVg=
+    hash: sha256-8IE7c7bxyiMDQ+UFgoCzJby+fjTPA+Ds+LKyap8RZ44=
     scope: project
   - path: .mandao/templates/app/spec/story.md
     harness: mandao

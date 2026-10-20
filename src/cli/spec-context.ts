@@ -3,7 +3,7 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import type { HarnessId } from '../schemas/index.js';
 import { HARNESS_IDS } from '../schemas/index.js';
 import { commitState } from '../scripts/commits.js';
-import { detectRunner, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
+import { detectRunner, findScanners, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
 import { crossReviewers } from '../scripts/review.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
 import type { LoopContext } from '../spec/index.js';
@@ -61,5 +61,6 @@ export function impactFor(ctx: CliContext, project: ReturnType<typeof projectNam
     ...(project.tests.impacted ? { configured: project.tests.impacted } : {}),
     ...(runner ? { runner } : {}),
     ...(graph ? { graph } : {}),
+    scanners: findScanners(ctx.root(), project.path),
   });
 }

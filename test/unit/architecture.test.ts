@@ -1,3 +1,4 @@
+// mandao-scans: src/ test/ — reads these folders by path, so impact selection runs it when they change.
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vitest';

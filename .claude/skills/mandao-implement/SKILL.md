@@ -51,10 +51,11 @@ their short JSON, and decide; never paste their full output into the conversatio
    and only a claim that names a different model is recorded as `identity mismatch`.
 2. **Brief:** the `brief` field of `step` (or `node .mandao/bin/mandao.mjs run brief $spec <Tn> --harness <h>`) gives
    the clauses, files, exemplar, gates, skills, lenses, models and impacted tests.
-3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
-   has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
-   spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
-   tasks with declared tests, the Implementer writes the red test first and records it the same way.
+3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests).
+   Send the brief to the agent `loop` names (`tdd.testsBy`: the `tester` for risk tags or tier strong,
+   else the Implementer) asking **only** for the tests from the spec, recorded with `mandao run red` (a
+   `RED` row, only if they fail). The red run is recorded before any code of the task, including helpers
+   the new tests call. `step` gives no implementation step until that row exists.
    An `evidence: mutation` task (`tdd.evidence: mutation` in `loop`) has no red step: its tests pin down existing
    behavior, and the Implementer proves each assertion with `node .mandao/bin/mandao.mjs run mutation` (rules/test-policy.md)
    before reporting.

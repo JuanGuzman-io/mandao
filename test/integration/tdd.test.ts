@@ -49,7 +49,19 @@ describe('loop with TDD (ADR 0022)', () => {
       red: false,
       evidence: 'red',
     });
-    expect(loopState(tested, [], models, 'claude')).toMatchObject({ action: 'implement', reason: 'not started: red test first' });
+    expect(loopState({ id: 'T1', tier: 'standard' }, [], models, 'claude').action).toBe('implement');
+    expect(loopState(tested, [], models, 'claude')).toMatchObject({ action: 'write-red-tests', tdd: { testsBy: 'implementer' } });
+  });
+
+  test('MDO-0007: no implementation step for an evidence: tdd task until its red run is recorded', () => {
+    for (const rows of [[], [row('STARTED')]]) {
+      const state = loopState(tested, rows, models, 'claude');
+      expect(state.action).toBe('write-red-tests');
+      expect(state.reason).toMatch(/Implementer writes only the red tests.*after the RED row/);
+    }
+    expect(loopState(tested, [row('STARTED'), row('RED')], models, 'claude').action).toBe('implement');
+    expect(loopState({ ...tested, evidence: 'none' as const }, [], models, 'claude').action).toBe('implement');
+    expect(loopState({ ...tested, characterization: true }, [], models, 'claude').action).toBe('implement');
   });
 
   test('risk tags or tier strong: the Tester writes the red tests before anyone implements', () => {

@@ -103,7 +103,7 @@ describe('Leader scripts', () => {
       'implementing',
     );
     expect(first.checkpoint).toMatchObject({ written: true });
-    expect(first.loop).toMatchObject({ task: 'T2', action: 'resume-implementation' });
+    expect(first.loop).toMatchObject({ task: 'T2', action: 'write-red-tests' });
     expect(first.brief).toMatchObject({ task: expect.objectContaining({ id: 'T2' }) });
     const lean = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
     expect(lean.checkpoint).toBeUndefined();
@@ -157,5 +157,24 @@ describe('Leader scripts', () => {
     const t2 = s.tasks.find((t: { id: string }) => t.id === 'T2');
     expect(t2).toMatchObject({ verdict: 'FAIL', fails: ['the hint is missing'], committed: false });
     expect(s.totals).toMatchObject({ tasks: 2, fails: 1 });
+  });
+  test('MDO-0007: rows without --tier take the task tier, and advisories in row notes are counted', async () => {
+    const root = repo();
+    const reviewer = ['--harness', 'claude', '--reviewer', 'mandao-reviewer'];
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'REPORTED');
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', ...reviewer, '--verdict', 'PASS', '--notes', 'Advisories: (1) a. (2) b.');
+    const log = readFileSync(logPath(join(root, SPEC), 'execution.md'), 'utf8');
+    const rows = log.split('\n').filter((l) => l.startsWith('| ') && l.includes('| T2 |'));
+    expect(rows.slice(-2).map((l) => l.split('|')[4]!.trim())).toEqual(['standard', 'standard']);
+    expect((await run(root, 'implement-summary', 'MDO-0001')).advisories).toBe(2);
+  });
+
+  test('MDO-0007: run tests refuses the full suite without --full, and --full without --reason', async () => {
+    const root = repo();
+    await expect(run(root, 'tests', 'mandao')).rejects.toThrow(/full suite runs in CI/);
+    await expect(run(root, 'tests', 'mandao', '--full')).rejects.toThrow(/--full needs --reason/);
+    await expect(run(root, 'tests', 'mandao', '--full', '--reason', '  ')).rejects.toThrow(/--full needs --reason/);
+    expect(await run(root, 'tests', 'mandao', '--full', '--reason', 'CI is down')).toMatchObject({ impact: 'full suite' });
+    expect(readFileSync(logPath(join(root, SPEC), 'full-runs.md'), 'utf8')).toMatch(/· mandao · \w+ · CI is down/);
   });
 });

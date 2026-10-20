@@ -66,6 +66,12 @@ function redNotes(spec: SpecFolder, o: CheckpointOptions): string[] {
   return changed.length ? [`${NOTE_FLAGS.redTestChanged}: ${changed.join(', ')}`] : [];
 }
 
+/** The tier of the attempt being recorded: the task's last recorded tier, else its declared one (MDO-0007). */
+export function rowTier(spec: SpecFolder, task: string | undefined): string {
+  const recorded = spec.execution.filter((r) => r.task === task && r.tier !== '—').at(-1)?.tier;
+  return recorded ?? spec.tasks.find((t) => t.id === task)?.tier ?? '—';
+}
+
 /** Implementer and reviewer cells come from the agent files the harness loads, never from a model's claim. */
 function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now: string): ExecutionRow {
   const harness = o.harness ?? '—';
@@ -83,7 +89,7 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
     date: now.slice(0, 10),
     task: o.task ?? '—',
     attempt: Number(o.attempt),
-    tier: o.tier ?? '—',
+    tier: o.tier ?? rowTier(spec, o.task),
     harness,
     implementer: identityCell(implementer),
     reviewer: identityCell(reviewer),
@@ -266,7 +272,7 @@ function reviewRow(spec: SpecFolder, task: string, identity: Identity, verdict: 
     date: new Date().toISOString().slice(0, 10),
     task,
     attempt: reported?.attempt ?? Math.max(1, ...own.map((r) => r.attempt)),
-    tier: reported?.tier ?? '—',
+    tier: rowTier(spec, task),
     harness: identity.harness,
     implementer: reported?.implementer ?? '—',
     reviewer: identityCell(identity),

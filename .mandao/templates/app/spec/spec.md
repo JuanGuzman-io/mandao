@@ -44,6 +44,12 @@ Projects: <project>
 
 ## Risks and impacts
 
+## Constitution Impact
+
+## Product Impact
+
+## Module Docs Impact
+
 ## Consistency Check
 
 No findings.

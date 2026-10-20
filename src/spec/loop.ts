@@ -142,13 +142,22 @@ function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefin
 
 type StepBase = Omit<LoopState, 'action' | 'reason'>;
 
-/** Before the implementation is reported: red tests first when the Tester writes them, else implement. */
+/**
+ * Before the implementation is reported: no implementation brief until the red run is recorded, whoever
+ * writes the tests (MDO-0007: a brief that mixed both put the code before the red run). Else implement.
+ */
 function startStep(base: StepBase, started: boolean): LoopState {
   const { tdd } = base;
   // Characterization tests pass from the start: nothing to write red first.
-  if (tdd.required && tdd.evidence === 'red' && tdd.testsBy === 'tester' && !tdd.red)
-    return { ...base, action: 'write-red-tests', reason: 'the Tester writes the red tests from the spec first' };
-  if (!started) return { ...base, action: 'implement', reason: tdd.required ? 'not started: red test first' : 'not started' };
+  if (tdd.required && tdd.evidence === 'red' && !tdd.red) {
+    const who = tdd.testsBy === 'tester' ? 'the Tester' : 'the Implementer';
+    return {
+      ...base,
+      action: 'write-red-tests',
+      reason: `${who} writes only the red tests from the spec and records them with \`mandao run red\`; the implementation comes after the RED row`,
+    };
+  }
+  if (!started) return { ...base, action: 'implement', reason: 'not started' };
   return { ...base, action: 'resume-implementation', reason: 'implementation started and not reported yet (in progress or interrupted)' };
 }
 

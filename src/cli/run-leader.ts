@@ -10,7 +10,7 @@ import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
-import { type LoopState, loopState, NOTE_FLAGS, type Task } from '../spec/index.js';
+import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -205,9 +205,7 @@ export function implementSummary(spec: SpecFolder, committed: Set<string>, pendi
       flags,
     };
   });
-  const advisories = (/## Advisories\n([\s\S]*?)(\n## |$)/.exec(readLog(spec))?.[1] ?? '')
-    .split('\n')
-    .filter((l) => /^\s*[-*] /.test(l)).length;
+  const advisories = countAdvisories(readLog(spec), spec.execution);
   return {
     spec: spec.name,
     tasks,
@@ -221,6 +219,20 @@ export function implementSummary(spec: SpecFolder, committed: Set<string>, pendi
     deferredToCi: spec.progress?.deferred_to_ci ?? [],
     advisories,
   };
+}
+
+/**
+ * Advisories in the log's `## Advisories` section plus those reviewers left in row notes
+ * (`Advisories: (1) … (2) …`), which is where MDO-0007 put them all.
+ */
+export function countAdvisories(log: string, rows: ExecutionRow[]): number {
+  const section = (/## Advisories\n([\s\S]*?)(\n## |$)/.exec(log)?.[1] ?? '').split('\n').filter((l) => /^\s*[-*] /.test(l)).length;
+  const inNotes = rows.reduce((n, r) => {
+    const text = /\badvisor(?:y|ies)\s*:\s*(.*)$/i.exec(r.notes)?.[1];
+    if (text === undefined) return n;
+    return n + Math.max(1, text.match(/\(\d+\)/g)?.length ?? 0);
+  }, 0);
+  return section + inNotes;
 }
 
 const readLog = (spec: SpecFolder) => {

@@ -1,7 +1,16 @@
+import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { detectRunner, fillCommand, isTestFile, readGraph, reverseDependents, selectImpact } from '../../src/scripts/impact.js';
+import {
+  detectRunner,
+  fillCommand,
+  findScanners,
+  isTestFile,
+  readGraph,
+  reverseDependents,
+  selectImpact,
+} from '../../src/scripts/impact.js';
 import { decideBudget, effectiveResources } from '../../src/scripts/resources.js';
 import { makeTree, pkg } from '../helpers.js';
 
@@ -54,6 +63,33 @@ describe('impact', () => {
     expect(detectRunner(makeTree({ 'go.mod': 'module x' }))).toBe('go');
     expect(detectRunner(makeTree({ 'pyproject.toml': '' }))).toBe('pytest');
     expect(['a.test.ts', 'tests/x.py', 'test_x.py', 'x_test.go', 'src/a.ts'].map(isTestFile)).toEqual([true, true, true, true, false]);
+  });
+
+  test('MDO-0007: a test that scans the tree by path runs when a file it scans changes, with no import linking them', () => {
+    const repo = join(import.meta.dirname, '../..');
+    const scanners = findScanners(repo, '.');
+    expect(scanners).toContainEqual({ test: 'test/unit/architecture.test.ts', paths: ['src/', 'test/'] });
+    // T1 of MDO-0007 changed only guards.test.ts; the gates ran it alone and skipped the architecture guard.
+    const changed = ['test/unit/guards.test.ts'];
+    expect(selectImpact({ changed, projectPath: '.', runner: 'vitest', graph }).files).not.toContain('test/unit/architecture.test.ts');
+    expect(selectImpact({ changed, projectPath: '.', runner: 'vitest', graph, scanners }).files).toContain(
+      'test/unit/architecture.test.ts',
+    );
+    expect(selectImpact({ changed: ['docs/x.md'], projectPath: '.', runner: 'vitest', graph, scanners }).files).not.toContain(
+      'test/unit/architecture.test.ts',
+    );
+  });
+
+  test('the scan marker keeps only path-like words, and only tracked test files count', () => {
+    const root = makeTree({
+      'test/a.test.ts': '// mandao-scans: src/ lib/x — reads them by path\n',
+      'test/b.test.ts': '// mandao-scans: nothing here\n',
+      'test/c.test.ts': '// mandao-scans: src/\n',
+    });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    execFileSync('git', ['add', 'test/a.test.ts', 'test/b.test.ts'], { cwd: root });
+    expect(findScanners(root, '.')).toEqual([{ test: 'test/a.test.ts', paths: ['src/', 'lib/x'] }]);
+    expect(findScanners(join(root, 'not-a-repo'), '.')).toEqual([]);
   });
 
   test('graphify edges become file dependencies', () => {
