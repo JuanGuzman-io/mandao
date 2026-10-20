@@ -1,0 +1,37 @@
+import { detectProviders, openCodeSources, type ProviderSources } from '../models/providers.js';
+import { type ResolvedModels, usedModels } from '../models/resolve.js';
+import type { Finding } from './doctor.js';
+
+/** Local providers run without credentials. */
+const LOCAL = new Set(['ollama', 'lmstudio']);
+
+/** Every role's provider must be configured in OpenCode, or that role cannot run (ADR 0017). */
+export function opencodeFindings(models: ResolvedModels | undefined, src: ProviderSources): Finding[] {
+  if (!models) return [];
+  const providers = detectProviders(src);
+  const out: Finding[] = [
+    providers.length
+      ? { level: 'ok', message: `opencode: providers configured: ${providers.join(', ')}` }
+      : {
+          level: 'warn',
+          message: 'opencode: no provider configured (no stored credentials or provider environment variables found)',
+          fix: 'run `opencode auth login`, or set ANTHROPIC_API_KEY / OPENAI_API_KEY',
+        },
+  ];
+  const missing = new Map<string, string[]>();
+  for (const { role, choice } of usedModels(models)) {
+    const provider = choice.model.split('/')[0]!;
+    if (!choice.model.includes('/') || LOCAL.has(provider) || providers.includes(provider)) continue;
+    missing.set(provider, [...(missing.get(provider) ?? []), role]);
+  }
+  for (const [provider, roles] of missing) {
+    out.push({
+      level: 'warn',
+      message: `opencode: ${roles.join(', ')} ${roles.length > 1 ? 'use' : 'uses'} ${provider}, which is not configured here`,
+      fix: `run \`opencode auth login\` for ${provider}, or \`mandao models set <role> <model> --harness opencode\``,
+    });
+  }
+  return out;
+}
+
+export const opencodeDoctor = (root: string, models: ResolvedModels | undefined) => opencodeFindings(models, openCodeSources(root));

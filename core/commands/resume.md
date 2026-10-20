@@ -17,6 +17,8 @@ outputs:
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md]
 scripts: [where, models, tasks, loop, checkpoint, commit]
+# OpenCode: the commands run as the Leader agent, so the session uses the leader model.
+harness: { opencode: { agent: mandao-leader } }
 ---
 
 # /mandao-resume

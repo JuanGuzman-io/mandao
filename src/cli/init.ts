@@ -4,8 +4,9 @@ import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
 import { syncGlobal, syncProject } from '../engine/sync.js';
-import { recommendedChoices } from '../models/defaults.js';
+import { forProviders, recommendedChoices } from '../models/defaults.js';
 import { readRecommendations } from '../models/load.js';
+import { detectProviders, openCodeSources } from '../models/providers.js';
 import {
   type ConfigInput,
   configSchema,
@@ -41,7 +42,7 @@ export interface InitOptions {
   force?: boolean;
 }
 
-const HARNESS_LABEL: Record<HarnessId, string> = { claude: 'Claude Code', copilot: 'GitHub Copilot', codex: 'Codex' };
+const HARNESS_LABEL: Record<HarnessId, string> = { claude: 'Claude Code', copilot: 'GitHub Copilot', codex: 'Codex', opencode: 'OpenCode' };
 
 function bail(value: unknown): asserts value is NonNullable<unknown> {
   if (p.isCancel(value)) {
@@ -170,19 +171,23 @@ async function askEveryRole(recommended: RoleModels, rec: NonNullable<Recommenda
 }
 
 /** Asks for each role's model, showing Mandao's recommendation with the option to type another. */
-async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
+async function chooseModels(root: string, harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
   const recs = readRecommendations();
   const mode = await chooseMode(opts);
   const out: Models = { schema_version: 1, mode, harnesses: {} };
   for (const harness of harnesses) {
-    const rec = recs.harnesses[harness];
-    if (!rec) continue;
+    const found = recs.harnesses[harness];
+    if (!found) continue;
+    const { rec, set } = forProviders(found, harness === 'opencode' ? detectProviders(openCodeSources(root)) : undefined);
     const recommended = recommendedChoices(rec, mode);
     if (opts.yes) {
       out.harnesses[harness] = recommended;
       continue;
     }
-    p.note(rolesTable(recommended), `Mandao recommends for ${HARNESS_LABEL[harness]} (reviewed ${rec.reviewed}, from the official docs)`);
+    p.note(
+      rolesTable(recommended),
+      `Mandao recommends for ${HARNESS_LABEL[harness]}${set ? ` with ${set}` : ''} (reviewed ${rec.reviewed}, from the official docs)`,
+    );
     const accept = await p.confirm({ message: `Use these models for ${HARNESS_LABEL[harness]}?` });
     bail(accept);
     out.harnesses[harness] = accept ? recommended : await askEveryRole(recommended, rec);
@@ -341,7 +346,7 @@ export async function runInit(root: string, opts: InitOptions) {
     })),
     harnesses,
   };
-  const models = await chooseModels(harnesses, opts);
+  const models = await chooseModels(root, harnesses, opts);
   const parsed = configSchema.safeParse(config);
   if (!parsed.success) throw new Error(`Generated config is invalid: ${parsed.error.message}`);
 

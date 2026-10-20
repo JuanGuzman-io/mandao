@@ -50,3 +50,27 @@
 - `gpt-6.1-sol` lists Chat Completions "without tool calling"; tool calls need the Responses API. To be
   confirmed against OpenCode's OpenAI provider before making it a default for tool-using roles.
 - `opencode/slash` and `opencode/autoinvoke` skill metadata exist only on OpenCode's `dev` branch.
+
+## Implementation (iteration 2b, 2026-10-20, against v1.19.3 source)
+
+- **Each mandao once.** OpenCode keys skills by name: the copies Claude Code (`.claude/skills/`) and Codex
+  (`.agents/skills/`) need collapse into one entry, and a command of the same name shadows it in the
+  command registry (`command/index.ts`). Mandao's commands in `.opencode/commands/` are what users
+  invoke. To keep the other harnesses' copies out of the skill tool too, Mandao owns
+  `.opencode/opencode.jsonc` with `permission.skill: { "mandao-*": "deny" }`; OpenCode merges config from
+  `.opencode/` directories (`config/config.ts`), so the user's `opencode.json` is never touched. A test
+  renders Claude Code, Codex and OpenCode together and checks each mandao is visible exactly once per
+  harness, with a snapshot of the three.
+- **Agents:** `.opencode/agents/mandao-*.md`; Leader `mode: primary` (the `implement` and `resume`
+  commands run as it: `agent: mandao-leader`), Reviewer `mode: all` (as a `subagent`, `opencode run
+  --agent` falls back to the default agent and drops its permissions), others `subagent`. Permissions
+  deny `edit`, `bash`, `webfetch` and `task` when the persona lacks the capability. An effort becomes the
+  agent's `variant` (OpenCode's variants are effort names).
+- **Cross-harness review:** `mandao run review --via opencode` runs `opencode run --agent mandao-reviewer
+  -m <model> --dir <root>` with the prompt on stdin.
+- **`gpt-6.1-sol` caveat resolved:** OpenCode's `openai` provider always uses the Responses API
+  (`provider/provider.ts`), so tool calling works.
+- **Providers:** `init` detects them (keys of `auth.json` only, provider env vars, enabled/disabled
+  providers in config) and applies the largest matching set; `doctor` warns for a role whose provider is
+  not configured. Local providers (`ollama`, `lmstudio`) need no credentials.
+- Not verified live: OpenCode is not installed on the machine that built this; the acceptance run needs it.

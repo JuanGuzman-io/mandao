@@ -9,7 +9,7 @@ import { changedFiles } from './commits.js';
 import type { Identity } from './identity.js';
 
 /** Harnesses Mandao can launch as a read-only reviewer process (ADR 0021). */
-export const REVIEW_PROCESSES = ['codex', 'claude'] as const;
+export const REVIEW_PROCESSES = ['codex', 'claude', 'opencode'] as const;
 export type ReviewProcess = (typeof REVIEW_PROCESSES)[number];
 export const isReviewProcess = (h: string): h is ReviewProcess => (REVIEW_PROCESSES as readonly string[]).includes(h);
 
@@ -33,6 +33,13 @@ export function reviewArgv(harness: ReviewProcess, root: string, choice: Choice)
       ],
     };
   }
+  if (harness === 'opencode') {
+    // A `mode: all` agent whose permissions deny edit and bash: read-only by its definition.
+    return {
+      bin: 'opencode',
+      args: ['run', '--agent', 'mandao-reviewer', '-m', choice.model, ...(effort ? ['--variant', effort] : []), '--dir', root],
+    };
+  }
   return {
     bin: 'claude',
     args: [
@@ -50,12 +57,18 @@ export function reviewArgv(harness: ReviewProcess, root: string, choice: Choice)
   };
 }
 
+const REVIEWER_FILES: Record<ReviewProcess, string> = {
+  codex: '.codex/agents/mandao-reviewer.toml',
+  claude: '.claude/agents/mandao-reviewer.md',
+  opencode: '.opencode/agents/mandao-reviewer.md',
+};
+
 /** The reviewer persona as that harness renders it, so the separate process reviews like the agent would. */
 export function reviewerInstructions(root: string, harness: ReviewProcess): string {
-  const file = join(root, harness === 'codex' ? '.codex/agents/mandao-reviewer.toml' : '.claude/agents/mandao-reviewer.md');
+  const file = join(root, REVIEWER_FILES[harness]);
   if (!existsSync(file)) throw new Error(`${file} does not exist: add the harness first (\`mandao harness add ${harness}\`)`);
   const text = readFileSync(file, 'utf8');
-  if (harness === 'claude') return matter(text).content.trim();
+  if (harness !== 'codex') return matter(text).content.trim();
   const body = text.match(/developer_instructions\s*=\s*'''\n?([\s\S]*?)'''/)?.[1];
   if (!body) throw new Error(`${file} has no developer_instructions`);
   return body.trim();

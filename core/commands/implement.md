@@ -22,6 +22,8 @@ outputs:
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
 scripts: [where, models, tasks, brief, loop, checkpoint, tests, review, commit]
+# OpenCode: the commands run as the Leader agent, so the session uses the leader model.
+harness: { opencode: { agent: mandao-leader } }
 ---
 
 # /mandao-implement

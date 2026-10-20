@@ -198,3 +198,83 @@ describe('codex', () => {
     expect(tomlString("x'''y")).toBe("\"x'''y\"");
   });
 });
+
+describe('opencode', () => {
+  const ocRecs = recommendationsSchema.parse({
+    schema_version: 1,
+    harnesses: {
+      opencode: {
+        reviewed: '2026-10-20',
+        sources: ['https://example.com/opencode'],
+        available: ['anthropic/claude-opus-5-5'],
+        routed: {
+          leader: 'anthropic/claude-opus-5-5',
+          reviewer: 'openai/gpt-6-astra',
+          implementer: { fast: 'anthropic/claude-haiku-5-5', standard: 'anthropic/claude-sonnet-5-5', strong: 'anthropic/claude-opus-5-5' },
+          tester: 'anthropic/claude-sonnet-5-5',
+        },
+        simple: { implementer: 'anthropic/claude-sonnet-5-5', reviewer: 'openai/gpt-6-astra' },
+        effort: { reviewer: 'high' },
+      },
+    },
+  });
+  const files = () =>
+    asTree(ADAPTERS.opencode.render(input('single', 'project', { opencode: resolveModels('opencode', 'routed', ocRecs, []) })).files);
+
+  test('agents carry provider/model, effort as variant, a mode and permissions from capabilities', () => {
+    const tree = files();
+    const reviewer = tree['.opencode/agents/mandao-reviewer.md']!;
+    expect(reviewer).toMatch(/^mode: all$/m);
+    expect(reviewer).toMatch(/^model: openai\/gpt-6-astra$/m);
+    expect(reviewer).toMatch(/^variant: high$/m);
+    expect(reviewer).toMatch(/permission:\n {2}edit: deny\n {2}bash: deny/);
+    expect(tree['.opencode/agents/mandao-implementer-strong.md']).toMatch(/^mode: subagent$/m);
+    expect(tree['.opencode/agents/mandao-implementer-strong.md']).not.toMatch(/edit: deny|bash: deny/);
+  });
+
+  test('commands take $ARGUMENTS and positional arguments; global installs only /mandao-init', () => {
+    const tree = files();
+    expect(Object.keys(tree).filter((p) => p.startsWith('.opencode/commands/'))).toContain('.opencode/commands/mandao-specify.md');
+    expect(ADAPTERS.opencode.render(input('single', 'global')).files.map((f) => f.path)).toEqual(['commands/mandao-init.md']);
+  });
+});
+
+/**
+ * What each harness shows as mandaos when Claude Code, Codex and OpenCode share a workspace, modelled on
+ * the loaders verified for ADR 0017: OpenCode reads `.opencode/commands`, plus skills from `.claude/skills`
+ * and `.agents/skills` (one entry per name), a command shadows a skill of the same name, and
+ * `permission.skill` deny patterns hide skills from the skill tool.
+ */
+describe('Claude Code + Codex + OpenCode together', () => {
+  const together = () => ['claude', 'codex', 'opencode'].flatMap((h) => ADAPTERS[h as keyof typeof ADAPTERS].render(input('single')).files);
+  const names = (paths: string[], re: RegExp) => paths.flatMap((p) => p.match(re)?.[1] ?? []);
+
+  test('every mandao is visible exactly once per harness', () => {
+    const all = together();
+    const paths = all.map((f) => f.path);
+    const claude = names(paths, /^\.claude\/skills\/(mandao-[^/]+)\/SKILL\.md$/);
+    const codex = names(paths, /^\.agents\/skills\/(mandao-[^/]+)\/SKILL\.md$/);
+    const commands = names(paths, /^\.opencode\/commands\/(mandao-[^/]+)\.md$/);
+    const ids = selectedIds();
+    for (const list of [claude, codex, commands]) expect([...list].sort()).toEqual(ids);
+
+    const config = all.find((f) => f.path === '.opencode/opencode.jsonc')!.content;
+    const denied = JSON.parse(config.replace(/^\s*\/\/.*$/gm, '')).permission.skill as Record<string, string>;
+    const hidden = (name: string) =>
+      Object.entries(denied).some(([pattern, v]) => v === 'deny' && new RegExp(`^${pattern.replace('*', '.*')}$`).test(name));
+    const skillTool = [...new Set([...claude, ...codex])].filter((n) => !commands.includes(n) && !hidden(n));
+    const slashMenu = [...new Set([...commands, ...claude, ...codex])];
+    expect(skillTool).toEqual([]);
+    expect(slashMenu.sort()).toEqual(ids);
+  });
+
+  test('snapshot of the three harnesses in one workspace', async () => {
+    await expect(asTree(together())).toMatchFileSnapshot('__snapshots__/single.claude+codex+opencode.snap');
+  });
+
+  const selectedIds = () =>
+    ADAPTERS.claude
+      .render(input('single'))
+      .files.flatMap((f) => f.path.match(/^\.claude\/skills\/(mandao-[^/]+)\//)?.[1] ?? [])
+      .sort();
+});

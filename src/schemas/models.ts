@@ -42,6 +42,9 @@ export const modelsSchema = z.object({
 export type Models = z.infer<typeof modelsSchema>;
 export const emptyModels = (): Models => ({ schema_version: 1, harnesses: {} });
 
+const routedModels = z.object({ leader: model, reviewer: model, reviewer_alt: model.optional(), implementer: tierModels, tester: model });
+const simpleModels = z.object({ implementer: model, reviewer: model });
+
 /** `core/models/recommendations.yml`: Mandao's recommendation per harness, with its review date and sources. */
 export const recommendationsSchema = z.object({
   schema_version: schemaVersion,
@@ -55,8 +58,23 @@ export const recommendationsSchema = z.object({
       available: z.array(model).min(1),
       /** `simple` when the harness cannot give each role its own model. */
       default_mode: z.enum(MODEL_MODES).default('routed'),
-      routed: z.object({ leader: model, reviewer: model, reviewer_alt: model.optional(), implementer: tierModels, tester: model }),
-      simple: z.object({ implementer: model, reviewer: model }),
+      routed: routedModels,
+      simple: simpleModels,
+      /**
+       * Harnesses that work with any provider (OpenCode): one recommendation per set of configured
+       * providers. `routed`/`simple` above are the set used when detection finds nothing (ADR 0017).
+       */
+      provider_sets: z
+        .record(
+          z.string().min(1),
+          z.object({
+            providers: z.array(z.string().min(1)).min(1),
+            routed: routedModels,
+            simple: simpleModels,
+            note: z.string().optional(),
+          }),
+        )
+        .optional(),
       /** Reasoning effort per role, for harnesses that support it. */
       effort: roleEfforts.optional(),
       /**

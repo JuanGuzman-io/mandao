@@ -19,6 +19,8 @@ export function globalRoots(): Record<HarnessId, string> {
     copilot: join(vscodeUser, 'prompts'),
     // Codex reads user skills from ~/.agents/skills (learn.chatgpt.com/docs/build-skills).
     codex: join(h, '.agents'),
+    // OpenCode reads user commands from ~/.config/opencode/commands (opencode.ai/docs/commands).
+    opencode: join(process.env.XDG_CONFIG_HOME ?? join(h, '.config'), 'opencode'),
   };
 }
 

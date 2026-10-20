@@ -158,3 +158,76 @@ harnesses:
       - model: gpt-5.6-sol
         roles: [reviewer, reviewer_alt, implementer, tester]
         note: kept during the rollout of the GPT-6 family
+
+  opencode:
+    reviewed: 2026-10-20
+    sources:
+      - https://opencode.ai/docs/models/
+      - https://opencode.ai/docs/agents/
+      - https://models.dev/api.json
+      - https://platform.claude.com/docs/en/about-claude/models/overview
+      - https://developers.openai.com/api/docs/models
+    # 1.19.3 is the release whose formats Mandao verified (ADR 0017): commands, agents with permission,
+    # permission.skill and .opencode/opencode.jsonc.
+    harness_version: { min: 1.19.3, command: opencode --version }
+    # OpenCode has no plans of its own: models follow the providers configured here. `init` detects them
+    # (auth.json keys, provider env vars, enabled/disabled providers) and picks the matching set; this
+    # top-level recommendation is the `anthropic` set, used when detection finds nothing.
+    available: [anthropic/claude-opus-5-5, anthropic/claude-sonnet-5-5, anthropic/claude-haiku-5-5]
+    routed:
+      leader: anthropic/claude-opus-5-5
+      reviewer: anthropic/claude-opus-5-5
+      implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+      tester: anthropic/claude-sonnet-5-5
+    simple:
+      implementer: anthropic/claude-sonnet-5-5
+      reviewer: anthropic/claude-opus-5-5
+    provider_sets:
+      anthropic:
+        providers: [anthropic]
+        routed:
+          leader: anthropic/claude-opus-5-5
+          reviewer: anthropic/claude-opus-5-5
+          implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+          tester: anthropic/claude-sonnet-5-5
+        simple: { implementer: anthropic/claude-sonnet-5-5, reviewer: anthropic/claude-opus-5-5 }
+        note: "Strong tasks: Opus implements and reviews in a clean context (reduced independence), as in Claude Code."
+      openai:
+        providers: [openai]
+        routed:
+          leader: openai/gpt-6-astra
+          reviewer: openai/gpt-6-astra
+          reviewer_alt: openai/gpt-6.1-sol
+          implementer: { fast: openai/gpt-6-luna, standard: openai/gpt-6.1-sol, strong: openai/gpt-6-astra }
+          tester: openai/gpt-6.1-sol
+        simple: { implementer: openai/gpt-6.1-sol, reviewer: openai/gpt-6-astra }
+        note: "OpenAI's docs do not state the minimum usage tier per model; check that your API project can use gpt-6-astra."
+      anthropic+openai:
+        providers: [anthropic, openai]
+        routed:
+          leader: anthropic/claude-opus-5-5
+          # The Reviewer runs on the other provider by default.
+          reviewer: openai/gpt-6-astra
+          reviewer_alt: openai/gpt-6.1-sol
+          implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+          tester: anthropic/claude-sonnet-5-5
+        simple: { implementer: anthropic/claude-sonnet-5-5, reviewer: openai/gpt-6-astra }
+    tiers:
+      anthropic/claude-haiku-5-5: fast
+      anthropic/claude-sonnet-5-5: standard
+      anthropic/claude-opus-5-5: strong
+      anthropic/claude-fable-5-1: strong
+      openai/gpt-6-luna: fast
+      openai/gpt-6.1-sol: standard
+      openai/gpt-6-sol: standard
+      openai/gpt-6-astra: strong
+    notes:
+      - "Models follow the providers configured in OpenCode; `mandao doctor` checks that every role's provider is configured here."
+      - "Anthropic subscriptions (Pro/Max) are not a supported way to use OpenCode: use an Anthropic API key."
+    optional:
+      - model: anthropic/claude-fable-5-1
+        roles: [leader, reviewer, reviewer_alt]
+        note: requires availability on your Anthropic account
+      - model: ollama/*
+        roles: [implementer]
+        note: "local models (ollama/*, lmstudio/*), for implementer.fast only: they vary widely in quality and tool use; verify on your tasks before relying on them"

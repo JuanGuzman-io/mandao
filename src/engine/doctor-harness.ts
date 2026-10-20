@@ -9,6 +9,7 @@ import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
 import type { Finding } from './doctor.js';
 import { codexFindings } from './doctor-codex.js';
+import { opencodeDoctor } from './doctor-opencode.js';
 import { harnessVersionFindings, type Probe } from './tools.js';
 
 /** Committed settings that must stay portable (ADR 0015); local variants are git-ignored. */
@@ -113,5 +114,6 @@ export function harnessFindings(
 ): Finding[] {
   const out = [...statusFindings(root, config, files, lock, recs, probe), ...portabilityFindings(root), ...graphHookFindings(root, config)];
   if (config.harnesses.includes('codex')) out.push(...codexFindings(checkoutPaths(root), probe));
+  if (config.harnesses.includes('opencode')) out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode));
   return out;
 }

@@ -49,6 +49,8 @@ describe('review in another harness as a read-only process', () => {
     expect(codex.args).toEqual(expect.arrayContaining(['-s', 'read-only', '-m', 'gpt-6-sol', '-c', 'model_reasoning_effort=high']));
     const claude = reviewArgv('claude', '/r', { model: 'claude-opus-5-5', source: 'recommendation' });
     expect(claude.args.join(' ')).toContain('--tools Read,Grep,Glob --disallowedTools mcp__* --permission-mode plan');
+    const opencode = reviewArgv('opencode', '/r', { model: 'openai/gpt-6-astra', effort: 'high', source: 'recommendation' });
+    expect(opencode.args).toEqual(['run', '--agent', 'mandao-reviewer', '-m', 'openai/gpt-6-astra', '--variant', 'high', '--dir', '/r']);
   });
 
   test('the verdict is the last VERDICT line, emphasis allowed', () => {
