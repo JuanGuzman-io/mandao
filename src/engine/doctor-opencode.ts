@@ -1,4 +1,4 @@
-import { detectProviders, openCodeSources, type ProviderSources } from '../models/providers.js';
+import { availableModels, detectProviders, openCodeSources, type ProviderSources } from '../models/providers.js';
 import { type ResolvedModels, usedModels } from '../models/resolve.js';
 import type { Recommendations } from '../schemas/index.js';
 import type { Finding } from './doctor.js';
@@ -6,25 +6,25 @@ import type { Finding } from './doctor.js';
 /** Local providers run without credentials. */
 const LOCAL = new Set(['ollama', 'lmstudio']);
 
-/** Every role's provider must be configured in OpenCode, or that role cannot run (ADR 0017). */
-export function opencodeFindings(models: ResolvedModels | undefined, src: ProviderSources): Finding[] {
-  if (!models) return [];
-  const providers = detectProviders(src);
-  const out: Finding[] = [
-    providers.length
-      ? { level: 'ok', message: `opencode: providers configured: ${providers.join(', ')}` }
-      : {
-          level: 'warn',
-          message: 'opencode: no provider configured (no stored credentials or provider environment variables found)',
-          fix: 'run `opencode auth login`, or set ANTHROPIC_API_KEY / OPENAI_API_KEY',
-        },
-  ];
+/** Roles whose provider is not configured, and roles whose model OpenCode does not list here. */
+function roleFindings(models: ResolvedModels, providers: string[], available: Set<string>): Finding[] {
   const missing = new Map<string, string[]>();
+  const unlisted: string[] = [];
   for (const { role, choice } of usedModels(models)) {
     const provider = choice.model.split('/')[0]!;
-    if (!choice.model.includes('/') || LOCAL.has(provider) || providers.includes(provider)) continue;
-    missing.set(provider, [...(missing.get(provider) ?? []), role]);
+    if (!choice.model.includes('/') || LOCAL.has(provider)) continue;
+    if (!providers.includes(provider)) missing.set(provider, [...(missing.get(provider) ?? []), role]);
+    else if (available.size && !available.has(choice.model)) unlisted.push(`${role} (${choice.model})`);
   }
+  const out: Finding[] = unlisted.length
+    ? [
+        {
+          level: 'warn',
+          message: `opencode: ${unlisted.join(', ')} not in \`opencode models\` here`,
+          fix: 'pick a listed model with `mandao models set <role> <model> --harness opencode`',
+        },
+      ]
+    : [];
   for (const [provider, roles] of missing) {
     out.push({
       level: 'warn',
@@ -33,6 +33,20 @@ export function opencodeFindings(models: ResolvedModels | undefined, src: Provid
     });
   }
   return out;
+}
+
+/** Every role's provider must be available in OpenCode, and its model listed, or that role cannot run (ADR 0017, ADR 0029). */
+export function opencodeFindings(models: ResolvedModels | undefined, src: ProviderSources): Finding[] {
+  if (!models) return [];
+  const providers = detectProviders(src);
+  const status: Finding = providers.length
+    ? { level: 'ok', message: `opencode: providers configured: ${providers.join(', ')}` }
+    : {
+        level: 'warn',
+        message: 'opencode: no provider available (no listed models, stored credentials or provider environment variables)',
+        fix: 'run `opencode auth login`, or set ANTHROPIC_API_KEY / OPENAI_API_KEY',
+      };
+  return [status, ...roleFindings(models, providers, availableModels(src))];
 }
 
 type ProviderSets = NonNullable<NonNullable<Recommendations['harnesses']['opencode']>['provider_sets']>;

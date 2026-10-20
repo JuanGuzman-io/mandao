@@ -10,6 +10,11 @@ const PROVIDER_ENV: Record<string, string[]> = {
 };
 
 export interface ProviderSources {
+  /**
+   * `opencode models`: one `provider/model` per line, every model OpenCode can use here — including
+   * models that need no credentials, like OpenCode Zen's free ones (ADR 0029).
+   */
+  models?: string;
   /** OpenCode 2: `opencode auth list --format json` — integrations with a connection; only their ids are read. */
   authList?: string;
   /** OpenCode 1: text of `auth.json`; only its keys (provider ids) are read, never the credentials. */
@@ -39,6 +44,7 @@ const list = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => ty
  */
 export function detectProviders(src: ProviderSources): string[] {
   const found = new Set<string>();
+  for (const model of availableModels(src)) found.add(model.split('/')[0]!);
   for (const id of authListIds(src.authList)) found.add(id);
   if (src.authJson) for (const id of Object.keys(parseJsonc(src.authJson))) found.add(id);
   for (const [id, vars] of Object.entries(PROVIDER_ENV)) if (vars.some((v) => src.env[v])) found.add(id);
@@ -50,6 +56,16 @@ export function detectProviders(src: ProviderSources): string[] {
     disabled = list(cfg.disabled_providers) ?? disabled;
   }
   return [...found].filter((p) => (!enabled || enabled.includes(p)) && !disabled.includes(p)).sort();
+}
+
+/** Models OpenCode lists as usable here; empty when the list is unknown. */
+export function availableModels(src: Pick<ProviderSources, 'models'>): Set<string> {
+  return new Set(
+    (src.models ?? '')
+      .split('\n')
+      .map((l) => l.trim())
+      .filter((l) => /^[\w.-]+\/\S+$/.test(l)),
+  );
 }
 
 /** Provider ids from `opencode auth list --format json` (OpenCode 2 stores credentials in its database). */
@@ -74,30 +90,32 @@ export function chooseProviderSet(
 
 const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
 
-/** `opencode auth list --format json`, or undefined when OpenCode is missing or fails. Lists ids, never secrets. */
-function runAuthList(): string | undefined {
+const runOpenCode = (args: string[]) => (): string | undefined => {
   try {
-    return execFileSync('opencode', ['auth', 'list', '--format', 'json'], {
-      encoding: 'utf8',
-      timeout: 20_000,
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
+    return execFileSync('opencode', args, { encoding: 'utf8', timeout: 20_000, stdio: ['ignore', 'pipe', 'ignore'] });
   } catch {
     return undefined;
   }
-}
+};
 
-/** OpenCode's credentials (v2 CLI, v1 auth.json), its config files (XDG paths) and the project's. */
+/** `opencode auth list --format json` (ids, never secrets) and `opencode models`; undefined when OpenCode fails. */
+const runAuthList = runOpenCode(['auth', 'list', '--format', 'json']);
+const runModels = runOpenCode(['models']);
+
+/** OpenCode's listed models, credentials (v2 CLI, v1 auth.json), config files (XDG paths) and the project's. */
 export function openCodeSources(
   root: string,
   env: Record<string, string | undefined> = process.env,
   authList = runAuthList,
+  models = runModels,
 ): ProviderSources {
   const data = env.XDG_DATA_HOME ?? join(homedir(), '.local', 'share');
   const config = env.XDG_CONFIG_HOME ?? join(homedir(), '.config');
   const configFiles = [join(config, 'opencode'), root].flatMap((d) => ['opencode.json', 'opencode.jsonc'].map((f) => join(d, f)));
   const list = authList();
+  const listed = models();
   return {
+    ...(listed ? { models: listed } : {}),
     ...(list ? { authList: list } : {}),
     ...(readIf(join(data, 'opencode', 'auth.json')) ? { authJson: readIf(join(data, 'opencode', 'auth.json')) } : {}),
     env,
