@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -110,4 +111,27 @@ export function claudeSessionCost(transcript: string, mainRole: string, prices: 
   for (const k of Object.keys(out.roles)) out.roles[k] = round(out.roles[k]!);
   for (const k of Object.keys(out.models)) out.models[k] = round(out.models[k]!);
   return out;
+}
+
+export type CostBasis = 'billed' | 'equivalent' | 'unknown';
+
+/**
+ * Whether Claude Code's spend is money billed or an equivalent at list prices, from `claude auth status`:
+ * a claude.ai login is a subscription (equivalent; usage beyond the plan draws credits we cannot see), an
+ * API key or a cloud provider is billed. `MANDAO_COST_BASIS` overrides it.
+ */
+export function claudeCostBasis(
+  status: () => string = () => execFileSync('claude', ['auth', 'status'], { encoding: 'utf8', timeout: 5000 }),
+): CostBasis {
+  const forced = process.env.MANDAO_COST_BASIS;
+  if (forced === 'billed' || forced === 'equivalent' || forced === 'unknown') return forced;
+  try {
+    const s = JSON.parse(status()) as { loggedIn?: boolean; authMethod?: string; apiProvider?: string };
+    if (!s.loggedIn) return 'unknown';
+    if (s.apiProvider && s.apiProvider !== 'firstParty') return 'billed';
+    if (s.authMethod === 'claude.ai') return 'equivalent';
+    return /api.?key|console/i.test(s.authMethod ?? '') ? 'billed' : 'unknown';
+  } catch {
+    return 'unknown';
+  }
 }
