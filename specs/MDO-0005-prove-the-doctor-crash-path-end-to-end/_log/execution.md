@@ -5,10 +5,6 @@ spec: MDO-0005-prove-the-doctor-crash-path-end-to-end
 
 # Execution — MDO-0005-prove-the-doctor-crash-path-end-to-end
 
-Machine log of `/mandao-implement`: one row per Leader step, written by `mandao run checkpoint`, and
-the mutation evidence that stands in for red tests on T1. People read [tasks.md](../tasks.md) and
-[verify-report.md](../verify-report.md) first.
-
 ## Log
 
 | Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Notes |

@@ -24,33 +24,28 @@ sources:
 
 # Prove that a crashing doctor never sends garbage to CI
 
-A tech lead's CI pipeline trusts `mandao doctor --json`. This story adds a test that runs the doctor
-as a real process with a broken lock file or a broken models file and checks exactly what reaches
-standard output, standard error and the exit code, so a regression fails our build instead of theirs.
+CI pipelines trust `mandao doctor --json`. A test runs the doctor as a real process with a broken lock
+or models file and checks stdout, stderr and the exit code, so a regression fails our build first.
 
 ## Who
 A tech lead who relies on `mandao doctor --json` in the team's CI pipeline (the user of MDO-0004).
 
 ## Problem
-MDO-0004 promised that when the doctor itself crashes (for example on an invalid
-`.mandao/mandao.lock`), `mandao doctor --json` writes the error to standard error, leaves standard
-output empty and exits with code 1. Only part of that promise is proven: the existing test shows that
-nothing reaches standard output, but no test or smoke checks the error message on standard error or
-the exit code 1 (MDO-0004 verify report, "Partial: S-2.2", finding CC-V1). A future change to the CLI
-entry point could break them silently, and a CI job would then read an empty or half-written document
-as success or as an unexplained parse failure.
+MDO-0004 promised that when the doctor crashes (e.g. on an invalid `.mandao/mandao.lock`),
+`mandao doctor --json` writes the error to stderr, leaves stdout empty and exits 1. Only the empty
+stdout is tested; no test or smoke checks the stderr message or exit code 1 (MDO-0004 verify report,
+"Partial: S-2.2", finding CC-V1). A change to the CLI entry point could break them silently, and a CI
+job would read an empty or half-written document as success or as an unexplained parse failure.
 
 ## Value
-The crash contract that CI scripts depend on is guarded by a test, so a regression fails the build
-instead of a team's pipeline. It closes the gap that MDO-0004 verify left open (CC-V1).
+The crash contract CI scripts depend on is guarded by a test, so a regression fails the build instead
+of a team's pipeline. Closes CC-V1 of MDO-0004.
 
 ## Scope
-- An end-to-end check that runs `mandao doctor --json` as a real process in a workspace whose
-  `.mandao/mandao.lock` is invalid, and checks standard error, standard output and the exit code.
-- The same kind of check for an invalid `.mandao/models.yml`. An invalid models file does not take the
-  crash path: the doctor reports it as an `error` finding in the JSON report, and the check proves that
-  behavior. Why this differs from MDO-0004: see
-  [Clarification C-1](requirements.md#c-1--modelsyml-does-not-take-the-crash-path).
+- An end-to-end check that runs `mandao doctor --json` as a real process in a workspace with an invalid
+  `.mandao/mandao.lock` and checks stderr, stdout and the exit code.
+- The same check for an invalid `.mandao/models.yml`, which is not a crash: the doctor reports it as an
+  `error` finding in the JSON report, and the check proves that ([C-1](requirements.md#c1)).
 
 ## Out of scope
 - Turning an invalid lock or `models.yml` into doctor findings (deferred by MDO-0004 CC-2; a separate
@@ -89,25 +84,18 @@ critical: false
 - `docs/schemas.md` "`mandao doctor --json` — report" section (MDO-0004 T3).
 
 ## Data involved
-Throwaway test workspaces only: a minimal config plus a deliberately broken lock or models file. No
-user data, no credentials.
+Throwaway test workspaces: a minimal config plus a deliberately broken lock or models file. No user
+data, no credentials.
 
+<a id="assumptions"></a>
 ## Assumptions and open questions
-
-Confirmed by the maintainer's delegate at approval (2026-10-20):
-
-- `models.yml` is in scope (AC-2), which closes CC-2 of MDO-0004 entirely.
-- "Carries an error that names the file" means standard error contains the word `error` and the file
-  path, not the exact header or message, so the test survives YAML parser wording changes. The exact
-  checks are in [requirements FR-1](requirements.md#fr-1--process-level-proof-of-the-invalid-lock-crash-path).
+Confirmed at approval (maintainer's delegate, 2026-10-20):
+- `models.yml` is in scope (AC-2), which closes CC-2 of MDO-0004.
+- "Names the file" means stderr contains the word `error` and the file path, not the exact header or
+  message, so the test survives YAML parser wording changes.
 - Both AC are `critical: false`; the crash path is not part of the "init → sync → doctor clean" flow.
-- The text mode (`mandao doctor` without `--json`) is out of scope.
+- The text mode stays out of scope.
 
-Assumptions for the design:
-
-- `ASSUMPTION(source: .github/workflows, owner: dev)`: CI runs `npm test` before `npm run build`, so
-  the process under test cannot be the built `dist/cli.js`. Confirmed at source in
-  [design P4](design.md#p4--ci-runs-the-tests-before-the-build); how the test starts the real CLI is
-  [design D1](design.md#d1--build-the-cli-inside-the-test-with-tsup).
-
-No critical `OPEN` item.
+`ASSUMPTION(source: .github/workflows, owner: dev)`: CI runs `npm test` before `npm run build`, so the
+process under test cannot be `dist/cli.js`. Confirmed in [design P4](design.md#p4); settled by
+[D1](design.md#d1). No critical `OPEN`.
