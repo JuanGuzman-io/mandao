@@ -57,10 +57,10 @@ their short JSON, and decide; never paste their full output into the conversatio
 
 1. **Checkpoint** before anything else:
    `{{script:step}} {{arg:spec}} <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
-   When the reply has `session.cut: true` (a task boundary where a new session is cheaper than this
-   context, ADR 0038), stop before delegating: tell the user the `reason` and `savings`, and that a new
-   session continues from the checkpoint with `/mandao-implement {{arg:spec}}`. Continue here only if the
-   user says so.
+   When the reply has `session.stop: true` (a new session saves at least `session.cut_min_savings`,
+   ADR 0038), stop before delegating: tell the user the `reason` and `savings`, and that a new session
+   continues from the checkpoint with `/mandao-implement {{arg:spec}}`. Otherwise go on without asking:
+   the estimate is already in `_log/session-cuts.md`.
    Checkpoints are the only memory between sessions: write one after every step below (the same
    options work on `{{script:checkpoint}}` when you need no next action).
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
@@ -156,4 +156,5 @@ provider independence, deferred tests, commits.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: {{command:verify}}.
+Next: {{command:verify}}. When the summary has `session.cut: true`, give its `command`: verify starts in a
+new session (ADR 0038).

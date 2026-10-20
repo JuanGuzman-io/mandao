@@ -48,6 +48,7 @@ commits:
   trailers: { refs: Refs, task: Mandao-Task, acs: Mandao-AC, quick: Mandao-Quick }
 scripts: { runner: npx }       # npx (pinned version) | local (devDependency)
 budget: { per_spec: 10 }        # ADR 0036: USD per spec; a warning at 80%, a confirmation to go on at 100%
+session: { cut_min_savings: 1 } # ADR 0038: mid-implement stop only above this USD saving (default $1 or 15% of per_spec, the lower)
 size_limits:                   # ADR 0028: measured on the real diff only, never estimated; projects override
   quick: { max_files: 3, max_changed_lines: 100 }   # quick post-check (git diff --numstat)
   pr:    { max_files: 25, max_changed_lines: 400 }  # pr-plan proposes splitting above these
