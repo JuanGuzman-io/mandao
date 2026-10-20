@@ -71,7 +71,7 @@ describe('decision 1: characterization tests with recorded mutations (ADR 0022)'
     writeFileSync(join(root, 'src/code.js'), content);
     const diff = execFileSync('git', ['diff', '--', 'src/code.js'], { cwd: root, encoding: 'utf8' });
     git(root, 'checkout', '--', 'src/code.js');
-    const file = join(root, '..', `${Date.now()}-${Math.random()}.patch`);
+    const file = join(makeTree({}), `${Date.now()}-${Math.random()}.patch`);
     writeFileSync(file, diff);
     return file;
   }

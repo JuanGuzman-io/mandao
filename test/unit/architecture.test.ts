@@ -15,3 +15,26 @@ test('only src/writer writes to the filesystem', () => {
     );
   expect(offenders.map((f) => relative(root, f))).toEqual([]);
 });
+
+/** MDO-0006 D4: temporary folders come from makeTree, so test/setup.ts removes them after each file. */
+test('only test/helpers.ts creates temporary folders', () => {
+  const root = join(import.meta.dirname, '../..');
+  // doctor-process.test.ts creates its folder under node_modules/.cache/ and removes it in its own afterAll (D4).
+  const ALLOWED = ['test/integration/doctor-process.test.ts'];
+  const offenders = files(join(root, 'test'))
+    .map((f) => relative(root, f))
+    .filter((f) => f !== 'test/unit/architecture.test.ts' && f !== 'test/helpers.ts')
+    .filter((f) => !ALLOWED.includes(f))
+    .filter((f) => /\bmkdtemp(Sync)?\b|\btmpdir\b/.test(readFileSync(join(root, f), 'utf8')));
+  expect(offenders).toEqual([]);
+});
+
+/** MDO-0006 D4: a file must not write next to a workspace through join(<folder>, '..', …), it leaks outside makeTree. */
+test('no test climbs out of a folder with join(<folder>, "..")', () => {
+  const root = join(import.meta.dirname, '../..');
+  const offenders = files(join(root, 'test'))
+    .map((f) => relative(root, f))
+    .filter((f) => f !== 'test/unit/architecture.test.ts')
+    .filter((f) => /\bjoin\((?!import\.meta\.dirname\b)[^,()]+,\s*['"`]\.\.['"`]/.test(readFileSync(join(root, f), 'utf8')));
+  expect(offenders).toEqual([]);
+});
