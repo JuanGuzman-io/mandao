@@ -9,6 +9,7 @@ import { HARNESS_IDS, PROFILES } from '../schemas/index.js';
 import { packageInfo } from '../util/package-root.js';
 import { type CliContext, sync } from './context.js';
 import { type InitOptions, runInit } from './init.js';
+import { prepareTarget } from './init-target.js';
 import { c, printFindings } from './output.js';
 
 function update(ctx: CliContext, opts: { force?: boolean }) {
@@ -34,8 +35,8 @@ function update(ctx: CliContext, opts: { force?: boolean }) {
 /** init, sync, doctor, update. */
 export function registerSetup(program: Command, ctx: CliContext) {
   program
-    .command('init')
-    .description('Set up Mandao in this workspace, or install /mandao-init globally')
+    .command('init [dir]')
+    .description('Set up Mandao in this workspace (or in [dir], created with git init if needed), or install /mandao-init globally')
     .option('--scope <scope>', 'project | global')
     .option('--harness <ids...>', `harnesses to generate (${HARNESS_IDS.join(', ')})`)
     .option('--profile <profile>', `profile for every detected project (${PROFILES.join(' | ')})`)
@@ -47,7 +48,8 @@ export function registerSetup(program: Command, ctx: CliContext) {
     .option('--home <path>', 'home repository path when --polyrepo home')
     .option('-y, --yes', 'accept detected defaults without prompting')
     .option('--force', 'overwrite an existing config and drifted generated files')
-    .action((opts: InitOptions) => runInit(ctx.root(), opts));
+    .option('--shadow', 'shadow mode for pilots: generated files go to .git/info/exclude and tracked files are never touched')
+    .action((dir: string | undefined, opts: InitOptions) => runInit(prepareTarget(ctx.root(), dir), opts));
 
   program
     .command('sync')

@@ -16,6 +16,7 @@ import { globalLockFile, globalRoots } from './global.js';
 import { gitIgnoreBlock, graphIgnoreBlock } from './graph.js';
 import { LAUNCHER_PATH, launcherScript } from './launcher.js';
 import { findModuleGuides } from './modules.js';
+import { applyShadow } from './shadow.js';
 
 export interface BuildResult {
   files: GeneratedFile[];
@@ -76,7 +77,7 @@ export function buildOutputs(
 
 /** What `sync` writes for a workspace. `doctor` compares the disk against exactly this. */
 export function buildProject(root: string, config: Config, layers: Layer[], version: string): BuildResult {
-  return buildOutputs(
+  const built = buildOutputs(
     config,
     resolveWorkspaceModels(root, config, readRecommendations()),
     layers,
@@ -84,6 +85,8 @@ export function buildProject(root: string, config: Config, layers: Layer[], vers
     'project',
     findModuleGuides(root, config),
   );
+  // Shadow mode is reported by doctor as info; it is a choice, not a warning (ADR 0030).
+  return { ...built, files: applyShadow(root, config, built.files, version).files };
 }
 
 export interface SyncOptions {
