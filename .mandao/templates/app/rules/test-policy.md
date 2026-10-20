@@ -68,6 +68,9 @@ The Reviewer and `verify` run only the tests a change impacts:
   package, `pytest` per path).
 - **E2E:** only the flows tied to the AC of the task (Reviewer) or of the spec (`verify`).
 - **Uncertain impact:** the tests of the touched module, never the full suite.
+- **Tests that scan the tree by path** (architecture guards) are not found through imports. Mark them with
+  a first-line comment `mandao-scans: <folder>/ …`; impact selection runs them whenever a file under one
+  of those folders changes.
 - **Full suite and critical smoke:** in CI; locally only with `--full`.
 
 ## Resource budget
