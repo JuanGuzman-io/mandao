@@ -35,6 +35,10 @@ their short JSON, and decide; never paste their full output into the conversatio
 
 1. **Checkpoint** before anything else:
    `node .mandao/bin/mandao.mjs run step <spec> <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   When the reply has `session.cut: true` (a task boundary where a new session is cheaper than this
+   context, ADR 0038), stop before delegating: tell the user the `reason` and `savings`, and that a new
+   session continues from the checkpoint with `/mandao-implement <spec>`. Continue here only if the
+   user says so.
    Checkpoints are the only memory between sessions: write one after every step below (the same
    options work on `node .mandao/bin/mandao.mjs run checkpoint` when you need no next action).
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
