@@ -94,6 +94,9 @@ describe('OpenCode providers (ADR 0017)', () => {
       message: expect.stringContaining('free for a limited time; free models may use data for training'),
     });
     expect(offer!.fix).toContain('mandao models set reviewer opencode/beam-free --harness opencode');
+    // Every role, so none stays on a provider that is not available.
+    for (const role of ['leader', 'tester', 'implementer'])
+      expect(offer!.fix).toContain(`mandao models set ${role} opencode/glm-5.3-flash-free`);
     expect(sets['opencode-zen']!.simple.implementer).not.toBe(sets['opencode-zen']!.simple.reviewer);
     expect(optionalSetFindings(sets, ['anthropic'])).toEqual([]);
   });

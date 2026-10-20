@@ -18,12 +18,27 @@ import type { Finding } from './doctor.js';
 
 type Rec = NonNullable<Recommendations['harnesses'][keyof Recommendations['harnesses']]>;
 
+/** The provider set a model is recommended in, if any (OpenCode's per-provider sets, ADR 0017/0027). */
+function setOf(rec: Rec | undefined, model: string): [string, NonNullable<Rec['provider_sets']>[string]] | undefined {
+  return Object.entries(rec?.provider_sets ?? {}).find(([, set]) =>
+    [...Object.values(set.routed).flatMap((v) => (typeof v === 'string' ? [v] : Object.values(v))), ...Object.values(set.simple)].includes(
+      model,
+    ),
+  );
+}
+
 function choiceFindings(m: ResolvedModels, rec: Rec | undefined, label: string): Finding[] {
   const out: Finding[] = [];
   for (const { role, choice } of usedModels(m)) {
     const optional = rec?.optional.find((o) => o.model === choice.model);
+    const set = setOf(rec, choice.model);
     if (optional) out.push({ level: 'info', message: `${label}: ${role} uses "${choice.model}": ${optional.note}` });
-    else if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
+    else if (set?.[1].optional)
+      out.push({
+        level: 'info',
+        message: `${label}: ${role} uses "${choice.model}" from the optional set ${set[0]}: ${set[1].note ?? ''}`,
+      });
+    else if (choice.source !== 'recommendation' && rec && !set && !rec.available.includes(choice.model)) {
       out.push({
         level: 'warn',
         message: `${label}: ${role} uses "${choice.model}", which is not among Mandao's recommendations (reviewed ${rec.reviewed})`,
