@@ -28,6 +28,9 @@ created it finishes, without any code in that test file. This covers workspaces 
 level, in `beforeAll`/`beforeEach` and inside tests. "When the test run ends" is satisfied per test
 file (story, confirmed at approval). A test file that fails while loading, before its tests run, is
 out of scope: like an abrupt crash, its cleanup is best effort (story, Out of scope; CC-1).
+Test code keeps everything it writes into the temp folder inside a `makeTree` workspace: a git
+worktree or a scratch file next to a workspace (`join(root, '..', …)`) is outside it and is never
+removed (CC-V1, found at verify).
 
 #### S-1.1 — A passing test file
 - **Given** a test file that creates workspaces with `makeTree` at module level, in a hook and inside
@@ -113,7 +116,10 @@ Projects: mandao
 
 ADDED. A guard test, in the spirit of `test/unit/architecture.test.ts` (story, confirmed at approval),
 scans every file under `test/` and fails, naming the file, when a file other than `test/helpers.ts`
-creates a temporary folder directly (`mkdtemp`, `mkdtempSync`, or a reference to `tmpdir`).
+creates a temporary folder directly (`mkdtemp`, `mkdtempSync`, or a reference to `tmpdir`), or
+builds a path that climbs out of a folder with `join(<folder>, '..', …)`. Paths built from
+`import.meta.dirname` point into the repository, not the temp folder, and are not flagged (CC-V2,
+found at verify).
 `test/integration/doctor-process.test.ts` is the only allowed exception, recorded in the guard with
 its reason: its folder is in `node_modules/.cache/`, not the temp folder, and it removes it in its own
 `afterAll` (story, Scope).
@@ -123,12 +129,14 @@ its reason: its folder is in `node_modules/.cache/`, not the temp folder, and it
 - **When** the suite runs
 - **Then** the guard test fails and its output names that file
 - **AND IT MUST** catch it in any folder under `test/`, at any depth (C1)
+- **AND IT MUST** also catch a file that writes next to a workspace through `join(<folder>, '..', …)`,
+  where `<folder>` is anything other than `import.meta.dirname`, and name it (C2)
 
 #### S-5.2 — The tree as delivered passes
 - **Given** the test tree after this spec
 - **When** the suite runs
 - **Then** the guard test passes: the only files that create temporary folders are `test/helpers.ts`
-  and the allowed exception
+  and the allowed exception, and no file climbs out of a folder with `join(<folder>, '..', …)`
 
 ### FR-6 — Existing coverage is unchanged
 Serves: AC-4, AC-4/C1
@@ -160,7 +168,7 @@ verifies, or the speed budgets of the test suite").
 | AC-2 | main: workspace still there and intact while the file uses it | FR-3 / S-3.1, S-3.2 | covered |
 | AC-2 | BUT it must NOT be removed before the file finished (C1) | FR-3 / S-3.1 C1 | covered |
 | AC-3 | main: removed without the test adding its own cleanup | FR-1 / S-1.3; FR-4 / S-4.1 | covered |
-| AC-3 | AND IT MUST fail the suite on a bypass (C1) | FR-5 / S-5.1, S-5.1 C1, S-5.2 | covered |
+| AC-3 | AND IT MUST fail the suite on a bypass (C1) | FR-5 / S-5.1, S-5.1 C1, S-5.1 C2, S-5.2 | covered |
 | AC-4 | main: critical-flow suites verify the same and pass | FR-6 / S-6.1 | covered |
 | AC-4 | BUT it must NOT weaken or skip any assertion (C1) | FR-6 / S-6.1 C1 | covered |
 
@@ -181,6 +189,18 @@ None. CC-1 was resolved in Clarifications.
 
 ## Clarifications
 <!-- Filled by /mandao-clarify: date, question, answer, who answered, what changed. -->
+
+### 2026-10-20 — CC-V1 and CC-V2: writes that escape a workspace (found at /mandao-verify)
+- **Question**: the D6 green run left a `.worktrees` folder (`test/integration/scripts.test.ts`) and
+  `.patch` files (`test/integration/characterization.test.ts`) in the temp folder. Both write through
+  `join(root, '..', …)`, which neither the design premise P5 nor the FR-5 guard saw
+  (`verify-report.md`, PB-1, PB-2).
+- **Answer**: (1) the worktree and the patch files must live inside a `makeTree` workspace; (2) the
+  guard must also flag writes that escape a workspace through `join(…, '..')`; (3) record the
+  corrected premise in `design.md`.
+- **Answered by**: the maintainer's delegate (MDO-0006 short run).
+- **What changed**: FR-1 states that test writes stay inside a workspace; FR-5 and S-5.1 (new clause
+  C2) and S-5.2 widen the guard; `design.md` corrects P5 and adds D7; `tasks.md` adds T3.
 
 ### 2026-10-20 — CC-1: a test file that fails while loading
 - **Question**: a test file that fails before its tests run (a syntax error, or an error thrown while
