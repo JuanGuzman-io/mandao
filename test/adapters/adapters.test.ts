@@ -187,6 +187,11 @@ describe('codex', () => {
     ]);
   });
 
+  test('the commit runs outside the sandbox only after the user approves it (prompt rule)', () => {
+    const rules = ADAPTERS.codex.render(input('single')).files.find((f) => f.path === '.codex/rules/mandao.rules');
+    expect(rules?.content).toContain('prefix_rule(pattern=["node",".mandao/bin/mandao.mjs","run","commit"], decision="prompt")');
+  });
+
   test('tomlString falls back to an escaped string when the body contains triple quotes', async () => {
     const { tomlString } = await import('../../src/adapters/codex.js');
     expect(tomlString('a\nb')).toBe("'''\na\nb'''");
