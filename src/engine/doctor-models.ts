@@ -36,7 +36,8 @@ function choiceFindings(m: ResolvedModels, rec: Rec | undefined, label: string):
 
 /**
  * When another installed harness could review but its default reviewer is below the Implementer's tier:
- * the first optional model of that harness that may review at that tier (e.g. gpt-6-astra in Codex).
+ * the first optional model of that harness that may review at that tier and carries an official source
+ * and review date (e.g. gpt-6-astra in Codex). Unverified models are never suggested.
  */
 function crossUpgrade(implementer: Choice, m: ResolvedModels, alternatives: CrossReviewer[], recs: Recommendations): string | undefined {
   const implTier = m.tiers[implementer.model];
@@ -44,10 +45,15 @@ function crossUpgrade(implementer: Choice, m: ResolvedModels, alternatives: Cros
   for (const alt of alternatives) {
     const rec = recs.harnesses[alt.harness as HarnessId];
     const opt = rec?.optional.find(
-      (o) => o.roles.includes('reviewer') && rec.tiers[o.model] && TIER_RANK[rec.tiers[o.model]!] >= TIER_RANK[implTier],
+      (o) =>
+        o.source &&
+        o.reviewed &&
+        o.roles.includes('reviewer') &&
+        rec.tiers[o.model] &&
+        TIER_RANK[rec.tiers[o.model]!] >= TIER_RANK[implTier],
     );
     if (opt)
-      return `if your plan has ${opt.model}, make it ${alt.harness}'s reviewer: \`mandao models set reviewer ${opt.model} --harness ${alt.harness}\` (${opt.note})`;
+      return `if your plan has ${opt.model}, make it ${alt.harness}'s reviewer: \`mandao models set reviewer ${opt.model} --harness ${alt.harness}\` (${opt.note}; verified ${opt.reviewed} at ${opt.source})`;
   }
   return undefined;
 }

@@ -85,7 +85,18 @@ export const recommendationsSchema = z.object({
       /** Plan or administration facts that doctor repeats to the user. */
       notes: z.array(z.string().min(1)).default([]),
       /** Good choices that depend on the plan or an administrator: offered, never defaults. */
-      optional: z.array(z.object({ model, roles: z.array(z.enum(ROLES)).min(1), note: z.string().min(1) })).default([]),
+      optional: z
+        .array(
+          z.object({
+            model,
+            roles: z.array(z.enum(ROLES)).min(1),
+            note: z.string().min(1),
+            /** Official page that documents this model, and when it was checked: doctor only suggests verified ones. */
+            source: z.url().optional(),
+            reviewed: z.iso.date().optional(),
+          }),
+        )
+        .default([]),
     }),
   ),
 });

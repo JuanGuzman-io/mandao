@@ -30,3 +30,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0021](0021-iteration-2a-acceptance-lessons.md) | Iteration 2a acceptance: commits by trailer, deterministic identity, cross-harness review | Accepted |
 | [0022](0022-tdd-discipline-and-spec-diagrams.md) | TDD and professional discipline; diagrams to approve in specify | Accepted (design; 2b) |
 | [0023](0023-branching-strategy-presets.md) | Branching strategy that adapts to the team (presets) | Accepted (design; 2b) |
+| [0024](0024-resource-floors-and-verified-suggestions.md) | Memory floors per operation, recorded forced runs, verified model suggestions | Accepted |
