@@ -31,8 +31,47 @@ describe('OpenCode providers (ADR 0017)', () => {
   test('openCodeSources asks the CLI and tolerates its absence', () => {
     const root = makeTree({});
     const env = { XDG_DATA_HOME: root, XDG_CONFIG_HOME: root };
-    expect(openCodeSources(root, env, () => '[{"id":"openai"}]').authList).toBe('[{"id":"openai"}]');
-    expect(openCodeSources(root, env, () => undefined)).toEqual({ env, configs: [] });
+    expect(
+      openCodeSources(
+        root,
+        env,
+        () => '[{"id":"openai"}]',
+        () => undefined,
+      ).authList,
+    ).toBe('[{"id":"openai"}]');
+    expect(
+      openCodeSources(
+        root,
+        env,
+        () => undefined,
+        () => undefined,
+      ),
+    ).toEqual({ env, configs: [] });
+    expect(
+      openCodeSources(
+        root,
+        env,
+        () => '[]',
+        () => 'opencode/beam-free\n',
+      ).models,
+    ).toBe('opencode/beam-free\n');
+  });
+
+  test('free models listed by `opencode models` count without credentials (ADR 0029)', () => {
+    const models = 'opencode/beam-free\nopencode/glm-5.3-flash-free\n';
+    expect(detectProviders({ models, authList: '[]', env: {}, configs: [] })).toEqual(['opencode']);
+    const zen = (reviewer: string): ResolvedModels => ({
+      harness: 'opencode',
+      mode: 'simple',
+      reviewer: { model: reviewer, source: 'workspace' },
+      implementer: { standard: { model: 'opencode/glm-5.3-flash-free', source: 'workspace' } },
+      tiers: {},
+    });
+    expect(opencodeFindings(zen('opencode/beam-free'), { models, env: {}, configs: [] }).map((f) => f.level)).toEqual(['ok']);
+    expect(opencodeFindings(zen('opencode/gone-free'), { models, env: {}, configs: [] })[1]).toMatchObject({
+      level: 'warn',
+      message: 'opencode: reviewer (opencode/gone-free) not in `opencode models` here',
+    });
   });
 
   test('enabled and disabled providers in config (JSONC, later file wins)', () => {
