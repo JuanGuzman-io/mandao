@@ -120,7 +120,7 @@ files:
     harness: codex
     from: command:resume
     ownership: owned
-    hash: sha256-uR3aOfVnaO0tjVEmTBseQulYmc3CtupuAWLXV/RekIY=
+    hash: sha256-E35cGJSNJSBlLk8apAkXtb29MJTNho6via6zEHDadNE=
     scope: project
   - path: .agents/skills/mandao-specify/agents/openai.yaml
     harness: codex
@@ -258,7 +258,7 @@ files:
     harness: claude
     from: command:resume
     ownership: owned
-    hash: sha256-sYNHTyROOIzUadWCX+l5Dodt828KRbJlnSJWqhYzc6g=
+    hash: sha256-E0XqQPK378BqKuZDvux7xrcemTH04zpkN3oswsV0YgI=
     scope: project
   - path: .claude/skills/mandao-specify/SKILL.md
     harness: claude
@@ -420,7 +420,7 @@ files:
     harness: copilot
     from: command:resume
     ownership: owned
-    hash: sha256-/Vz7IYWZxpPMp0Y91w44o5uLtyZ7Dvt+GpdOs5fTHGc=
+    hash: sha256-7f4Y/A6/XPMz30lYdP/VCFoxNNJSjzDFc1JKq28gEKQ=
     scope: project
   - path: .github/prompts/mandao-specify.prompt.md
     harness: copilot

@@ -25,7 +25,7 @@ mandao to run. Stop there.
    the diff summary and offer exactly three options:
    - **review the diff as it is** → checkpoint `--verdict REPORTED` and go to the review step;
    - **continue implementing** → brief the implementer with the diff as the starting point;
-   - **discard and redo the task** → only after confirming, restore the files and start the task again.
+   - **discard and redo the task** → only after confirming, restore the task's `files` (from `tasks.md`) and start it again. Never restore `specs/`: it holds the checkpoint and rows of tasks that already passed.
 5. **Commit pending.** A task whose last row is PASS without a commit (a sandbox blocked it) is
    committed first, following `/mandao-implement` step 7.
 6. **Provider independence.** When the task was implemented in another harness and is reviewed here,
