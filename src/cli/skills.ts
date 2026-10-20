@@ -46,6 +46,18 @@ export function formatPinnedSkills(skills: Lock['skills']): string[] {
     });
 }
 
+/** `mandao skills list`: print pinned skills or the add hint when the lock is empty. */
+export function skillsList(ctx: CliContext) {
+  const lock = readLock(join(ctx.root(), LOCK_FILE));
+  if (!lock) throw new Error('No lock found: run `mandao sync` first.');
+  const lines = formatPinnedSkills(lock.skills);
+  if (lines.length) {
+    for (const line of lines) console.log(line);
+    return;
+  }
+  console.log('  No skills pinned. Run `mandao skills add <id|pack>` to add one.');
+}
+
 const STATUS_LABEL: Record<SkillResult['status'], string> = {
   installed: c.green('installed'),
   pending: c.yellow('pending  '),

@@ -1,12 +1,12 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0001-list-pinned-skills
-updated_at: 2026-10-20T13:53:19.832Z
+updated_at: 2026-10-20T13:59:30.330Z
 current:
-  task: T1
+  task: T2
   phase: awaiting-review
   harness: claude
   model: claude-opus-5-5
 open_questions: []
-next_step: commit T1
+next_step: commit T2
 deferred_to_ci: []

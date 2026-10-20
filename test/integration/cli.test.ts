@@ -38,3 +38,15 @@ test('models set --tier writes a per-tier implementer', async () => {
   await run(root, 'models', 'set', 'implementer', 'opus', '--harness', 'claude', '--tier', 'strong');
   expect(parse(readFileSync(join(root, '.mandao/models.yml'), 'utf8')).harnesses.claude).toEqual({ implementer: { strong: 'opus' } });
 });
+
+test('prints the add hint and exits 0 when nothing is pinned', async () => {
+  const root = workspace();
+  process.exitCode = undefined;
+  try {
+    await run(root, 'skills', 'list');
+    expect(console.log).toHaveBeenCalledWith('  No skills pinned. Run `mandao skills add <id|pack>` to add one.');
+    expect(process.exitCode ?? 0).toBe(0);
+  } finally {
+    process.exitCode = undefined;
+  }
+});

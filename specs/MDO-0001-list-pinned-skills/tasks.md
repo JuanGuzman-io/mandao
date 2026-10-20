@@ -23,7 +23,7 @@ depends_on: []
 parallel_safe: false
 ```
 
-### [ ] T2 — Register `skills list`
+### [x] T2 — Register `skills list`
 
 ```yaml
 project: mandao
