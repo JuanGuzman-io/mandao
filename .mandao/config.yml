@@ -24,3 +24,4 @@ harnesses:
   - codex
 # Feature branches from main, PRs to main (ADR 0023).
 branching: { model: feature-branch, base: main }
+budget: { per_spec: 8 }
