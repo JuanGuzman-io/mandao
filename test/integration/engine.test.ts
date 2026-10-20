@@ -219,6 +219,27 @@ describe('models in doctor', () => {
     }
   });
 
+  test('models from an optional provider set are noted with its terms, not flagged as unknown (ADR 0027)', () => {
+    const root = makeTree({ '.git/': '', 'package.json': pkg('shop') });
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.' }],
+      harnesses: ['opencode'],
+    });
+    writeYaml(join(root, '.mandao/models.yml'), {
+      schema_version: 1,
+      mode: 'simple',
+      harnesses: { opencode: { implementer: 'opencode/glm-5.3-flash-free', reviewer: 'opencode/beam-free' } },
+    });
+    const findings = modelFindings(root, readConfig(root), readRecommendations()).filter((f) => f.message.includes('-free'));
+    expect(findings.every((f) => f.level === 'info')).toBe(true);
+    expect(findings.some((f) => f.message.includes('not among'))).toBe(false);
+    expect(findings[0]!.message).toContain(
+      'from the optional set opencode-zen: free for a limited time; free models may use data for training',
+    );
+  });
+
   test('a project models.yml applies to that project only', () => {
     const root = makeTree({ '.git/': '', 'apps/a/package.json': pkg('a'), 'apps/b/package.json': pkg('b') });
     writeYaml(join(root, '.mandao/config.yml'), {

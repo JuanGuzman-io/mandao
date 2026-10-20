@@ -51,6 +51,19 @@ export function opencodeFindings(models: ResolvedModels | undefined, src: Provid
 
 type ProviderSets = NonNullable<NonNullable<Recommendations['harnesses']['opencode']>['provider_sets']>;
 
+/** `mandao models set` for every role of a set, so no role stays on a provider that is not there. */
+function setCommands(routed: ProviderSets[string]['routed']): string {
+  const implementer = new Set(Object.values(routed.implementer));
+  const pairs: [string, string][] = [
+    ['leader', routed.leader],
+    ['reviewer', routed.reviewer],
+    ...(routed.reviewer_alt ? [['reviewer_alt', routed.reviewer_alt] as [string, string]] : []),
+    ['tester', routed.tester],
+    ...(implementer.size === 1 ? [['implementer', [...implementer][0]!] as [string, string]] : []),
+  ];
+  return pairs.map(([role, model]) => `\`mandao models set ${role} ${model} --harness opencode\``).join('; ');
+}
+
 /** Optional sets the configured providers cover, offered with their terms, never applied (ADR 0027). */
 export function optionalSetFindings(sets: ProviderSets | undefined, providers: string[]): Finding[] {
   return Object.entries(sets ?? {})
@@ -58,7 +71,7 @@ export function optionalSetFindings(sets: ProviderSets | undefined, providers: s
     .map(([name, set]) => ({
       level: 'info' as const,
       message: `opencode: optional set ${name} fits the configured providers (${set.note ?? 'see recommendations'}; ${set.source ?? 'no source'}, reviewed ${set.reviewed ?? '?'})`,
-      fix: `apply it only for public code: \`mandao models set implementer ${set.simple.implementer} --harness opencode\` and \`mandao models set reviewer ${set.simple.reviewer} --harness opencode\``,
+      fix: `apply it only for public code, every role: ${setCommands(set.routed)}`,
     }));
 }
 
