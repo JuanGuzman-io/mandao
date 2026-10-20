@@ -10,7 +10,7 @@ import { packageInfo } from '../util/package-root.js';
 import { type CliContext, sync } from './context.js';
 import { type InitOptions, runInit } from './init.js';
 import { prepareTarget } from './init-target.js';
-import { c, printFindings } from './output.js';
+import { c, doctorReport, printFindings } from './output.js';
 
 function update(ctx: CliContext, opts: { force?: boolean }) {
   const lockPath = join(ctx.root(), LOCK_FILE);
@@ -62,9 +62,11 @@ export function registerSetup(program: Command, ctx: CliContext) {
   program
     .command('doctor')
     .description('Check configuration, generated files and optional tools')
-    .action(() => {
+    .option('--json', 'print the findings as one JSON document')
+    .action((opts: { json?: boolean }) => {
       const findings = runDoctor(ctx.root());
-      printFindings(findings);
+      if (opts.json) console.log(JSON.stringify(doctorReport(findings), null, 2));
+      else printFindings(findings);
       if (findings.some((f) => f.level === 'error')) process.exitCode = 1;
     });
 

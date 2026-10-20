@@ -15,8 +15,4 @@ red_tests:
     files:
       - path: test/integration/doctor-cli.test.ts
         sha256: 238568802dcdb00436406b3dcdfa753b54bbde96bb8bb5a96f108a70edd23b48
-pending_commits:
-  - task: T2
-    subject: add --json to mandao doctor with the shared exit rule
-    files:
-      - src/cli/setup.ts
+pending_commits: []
