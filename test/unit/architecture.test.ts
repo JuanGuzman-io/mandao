@@ -28,3 +28,13 @@ test('only test/helpers.ts creates temporary folders', () => {
     .filter((f) => /\bmkdtemp(Sync)?\b|\btmpdir\b/.test(readFileSync(join(root, f), 'utf8')));
   expect(offenders).toEqual([]);
 });
+
+/** MDO-0006 D4: a file must not write next to a workspace through join(<folder>, '..', …), it leaks outside makeTree. */
+test('no test climbs out of a folder with join(<folder>, "..")', () => {
+  const root = join(import.meta.dirname, '../..');
+  const offenders = files(join(root, 'test'))
+    .map((f) => relative(root, f))
+    .filter((f) => f !== 'test/unit/architecture.test.ts')
+    .filter((f) => /\bjoin\((?!import\.meta\.dirname\b)[^,()]+,\s*['"`]\.\.['"`]/.test(readFileSync(join(root, f), 'utf8')));
+  expect(offenders).toEqual([]);
+});

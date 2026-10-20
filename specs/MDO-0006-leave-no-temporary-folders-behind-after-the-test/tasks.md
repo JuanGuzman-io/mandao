@@ -82,7 +82,7 @@ parallel_safe: false
 characterization: false
 ```
 
-### [ ] T3 — Keep worktrees and patch files inside the workspace, and guard against `join(…, '..')`
+### [x] T3 — Keep worktrees and patch files inside the workspace, and guard against `join(…, '..')`
 
 ```yaml
 project: mandao

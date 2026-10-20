@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { describe, expect, test, vi } from 'vitest';
 import { parse as parseYaml } from 'yaml';
 import { configSchema } from '../../src/schemas/index.js';
@@ -22,7 +22,7 @@ const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
 
 function repoWithSpec() {
-  const root = realpathSync(makeTree({ 'README.md': 'x' }));
+  const root = realpathSync(join(makeTree({ 'repo/README.md': 'x' }), 'repo'));
   git(root, 'init', '-q', '-b', 'main');
   git(root, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init', '--allow-empty');
   cpSync(fixture, join(root, 'specs/MDO-0001-skills-list'), { recursive: true });
@@ -45,7 +45,7 @@ describe('spec proposal and status', () => {
     const root = repoWithSpec();
     const p = proposeSpec(root, config, 'fix login', { type: 'bug', id: 'PROJ-12' });
     expect(p.branch).toBe('fix/PROJ-12-fix-login');
-    expect(p.worktree).toBe(join(root, '..', `${root.split('/').pop()}.worktrees`, 'PROJ-12-fix-login'));
+    expect(p.worktree).toBe(join(dirname(root), 'repo.worktrees', 'PROJ-12-fix-login'));
     git(root, 'worktree', 'add', '-q', '-b', p.branch, p.worktree);
     expect(whereAmI(p.worktree, { branch: p.branch, worktree: p.worktree }).inWorktree).toBe(true);
     expect(proposeSpec(p.worktree, config, 'fix login', { type: 'bug', id: 'PROJ-12' }).worktree).toBe(p.worktree);
