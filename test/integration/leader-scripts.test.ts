@@ -81,6 +81,7 @@ describe('Leader scripts', () => {
     expect(by.audit).toMatchObject({ status: 'SKIPPED', reason: 'no dependency change' });
     expect(r).toMatchObject({ passed: false, notConfigured: ['format', 'build', 'sast', 'metrics'] });
     expect(by.lint.excerpt).toBeUndefined();
+    expect(by['scan-markers']).toBeUndefined(); // no test changed
     const log = readFileSync(join(logPath(join(root, SPEC), 'gates'), 'T2-1.md'), 'utf8');
     expect(log).toContain('| typecheck | FAIL | 2 |');
     expect(log).toContain('error TS2304');
@@ -192,11 +193,37 @@ describe('Leader scripts', () => {
     vi.stubEnv('CLAUDE_CONFIG_DIR', home);
     vi.stubEnv('CLAUDE_CODE_SESSION_ID', session);
     const step = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
-    expect(step.session).toMatchObject({ cut: true, reason: expect.stringMatching(/context 160k vs 44k/) });
+    // Saves $0.65, below the default $1: no stop inside implement, but the estimate is logged for Kaizen.
+    expect(step.session).toMatchObject({
+      cut: true,
+      savings: 0.65,
+      stop: false,
+      minSavings: 1,
+      reason: expect.stringMatching(/context 160k vs 44k/),
+    });
+    const cuts = readFileSync(logPath(join(root, SPEC), 'session-cuts.md'), 'utf8');
+    expect(cuts).toMatch(/\| T2 \| 160000 \| 44000 \| 43 \| 0\.65 \| go on: below 1 \|/);
+    // Between implement and verify the rule alone decides, with the command for the new session.
+    const summary = await run(root, 'implement-summary', 'MDO-0001');
+    expect(summary.session).toMatchObject({ cut: true, savings: 0.3, command: expect.stringContaining('"/mandao-verify MDO-0001"') });
     // Mid-task (a RED row, the next action delegates the implementation): no advice.
     await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'RED');
     const mid = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
     expect(mid.loop.action).toBe('implement');
     expect(mid.session).toBeUndefined();
+  });
+
+  test('MDO-0007: the scan-markers gate fails a changed test that lists folders without saying what it scans', async () => {
+    const root = repo();
+    writeFileSync(join(root, 'src/cli/skills.test.ts'), "import { readdirSync } from 'node:fs';\nreaddirSync('src');\n");
+    const r = await run(root, 'gates', 'MDO-0001', 'T2');
+    const gate = r.results.find((g: { gate: string }) => g.gate === 'scan-markers');
+    expect(gate).toMatchObject({ status: 'FAIL', excerpt: expect.stringContaining('src/cli/skills.test.ts:2 lists folders') });
+    writeFileSync(
+      join(root, 'src/cli/skills.test.ts'),
+      "// mandao-scans: src/\nimport { readdirSync } from 'node:fs';\nreaddirSync('src');\n",
+    );
+    const again = await run(root, 'gates', 'MDO-0001', 'T2');
+    expect(again.results.find((g: { gate: string }) => g.gate === 'scan-markers')).toEqual({ gate: 'scan-markers', status: 'PASS' });
   });
 });

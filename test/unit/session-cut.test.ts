@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { cutAdvice, type SessionContext, sessionContext } from '../../src/scripts/session-cut.js';
+import { cutAdvice, cutMinSavings, type SessionContext, sessionContext } from '../../src/scripts/session-cut.js';
 import { makeTree } from '../helpers.js';
 
 // Opus 5.5 per MTok: the cut weighs the 1h cache write against cache reads (ADR 0038).
@@ -56,5 +56,12 @@ describe('session cut at a task boundary', () => {
       ttl: '1h',
     });
     expect(sessionContext(join(makeTree({ 'e.jsonl': '' }), 'e.jsonl'))).toBeUndefined();
+  });
+
+  test('inside implement the Leader stops only above cut_min_savings: $1 or 15% of the spec budget, the lower', () => {
+    expect(cutMinSavings({ session: {}, budget: {} })).toBe(1);
+    expect(cutMinSavings({ session: {}, budget: { per_spec: 4 } })).toBeCloseTo(0.6);
+    expect(cutMinSavings({ session: {}, budget: { per_spec: 20 } })).toBe(1);
+    expect(cutMinSavings({ session: { cut_min_savings: 0 }, budget: { per_spec: 4 } })).toBe(0);
   });
 });
