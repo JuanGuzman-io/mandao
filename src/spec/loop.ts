@@ -92,7 +92,11 @@ export function loopState(
     case undefined:
       return { ...base, action: 'implement', reason: 'not started' };
     case 'STARTED':
-      return { ...base, action: 'resume-implementation', reason: 'implementation was interrupted' };
+      return {
+        ...base,
+        action: 'resume-implementation',
+        reason: 'implementation started and not reported yet (in progress or interrupted)',
+      };
     case 'REPORTED':
       return { ...base, action: 'review', reason: 'implementation reported, awaiting review' };
     case 'FAIL':

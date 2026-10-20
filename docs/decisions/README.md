@@ -26,3 +26,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0016](0016-codex-adapter.md) | Codex adapter (OpenAI) | Accepted for iteration 2 |
 | [0017](0017-opencode-adapter.md) | OpenCode adapter (provider-agnostic) | Accepted for iteration 2 |
 | [0019](0019-antigravity-adapter.md) | Antigravity adapter (Google) | Accepted for a later slice |
+| [0020](0020-iteration-2a-execution-rules.md) | Iteration 2a: worktrees, impacted tests, test runs, Codex defaults, Reviewer tier rule | Accepted |

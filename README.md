@@ -31,8 +31,10 @@ To get `/mandao-init` in every repository: `npx mandao init --scope global`.
 constitution → story → specify → [clarify] → tasks → implement → verify → close
 ```
 
-Utilities: `quick`, `perf`, `audit`, `resume`. In this version `constitution`, `specify` and `quick`
-are implemented; the others are declared with their contracts and say so when invoked.
+Utilities: `quick`, `perf`, `audit`, `resume`. Implemented: `constitution`, `story`, `specify`,
+`clarify`, `tasks`, `implement`, `quick` and `resume`; `verify`, `close`, `perf` and `audit` are declared
+with their contracts and say so when invoked. Work can move between harnesses mid-spec: every Leader
+step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it anywhere.
 
 ## Harnesses
 
@@ -40,6 +42,7 @@ are implemented; the others are declared with their contracts and say so when in
 |---|---|---|---|
 | Claude Code | `.claude/skills/mandao-*/SKILL.md` | `.claude/agents/mandao-*.md` | 2026-10-19 |
 | GitHub Copilot (VS Code) | `.github/prompts/mandao-*.prompt.md` | `.github/agents/mandao-*.agent.md` | 2026-10-19 |
+| Codex (OpenAI) | `.agents/skills/mandao-*/SKILL.md` (`$mandao-<id>`) | `.codex/agents/mandao-*.toml` | 2026-10-20 |
 | Any other agent | `AGENTS.md` (managed block) | — | — |
 
 ## CLI
@@ -53,7 +56,7 @@ are implemented; the others are declared with their contracts and say so when in
 | `mandao harness add <id>` | Generate files for another harness |
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester) |
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
-| `mandao run quick-check \| fingerprint \| models` | Helper scripts used by the commands (JSON output) |
+| `mandao run …` | Helper scripts the commands call, JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
 
 ## Customizing
 

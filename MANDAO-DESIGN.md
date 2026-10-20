@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.7 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.8 · **Last updated:** 2026-10-20
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -501,6 +501,7 @@ One story = **one spec, one development**, even across projects.
   - `init` asks for each role's model, showing Mandao's recommendation and the option to type another. `mandao models set <role> <model>` changes it; `mandao models` shows the result and its source.
   - Precedence: command flag (`--reviewer-model`, …) > spec frontmatter (`models:` in `story.md`) > project `models.yml` > workspace `models.yml` > Mandao's recommendation.
   - Recommendations live in `core/models/recommendations.yml`, per harness, with a review date and the official documentation they come from (never from memory). **Defaults must be available on every plan of the harness** (ADR 0012); plan- or admin-dependent models are listed as `optional` with the note "requires availability on your plan". Claude Code (ADR 0014): pinned to the 5.5 family by full ID — `claude-opus-5-5` for leader, reviewer and strong implementer; `claude-sonnet-5-5` for reviewer_alt, standard implementer and tester; `claude-haiku-5-5` for fast implementer — requiring Claude Code ≥ 2.1.293, which `doctor` checks; aliases and `claude-fable-5-1` are optional. Copilot Free and Student only get auto model selection. `mandao update` refreshes them without touching the user's choices and only offers the new recommendation.
+  - **DECIDED (ADR 0020) — Reviewer tier rule:** the Reviewer never runs on a lower tier or effort than the Implementer, in every harness. When no reviewer on another model qualifies, the review runs on the implementer's model in a clean context (`reduced independence`), and `doctor` recommends an optional model of the same tier or reviewing in another harness. Strong equal to standard is judged on the pair (model, effort).
   - `reviewer_alt` reviews when the Implementer ended on the Reviewer's model (for example after escalating to `strong`). If no different model is available, or the user picks the same model for both roles: warn, review in a clean context, and record `reduced independence` in `execution.md`. Never block.
   - `mandao doctor` checks that every role has a model in each active harness and warns when a chosen model is not among the recommendations.
 - **Escalation:** 2 FAILs at a tier → retry one tier up → 3 FAILs at `strong` → HALT.
@@ -518,7 +519,7 @@ One story = **one spec, one development**, even across projects.
 
 **DECIDED (ADR 0015).**
 
-- `specify` (or `quick`) creates the branch `feat|fix/<ID>-<slug>` and its git worktree, with a single confirmation, so every artifact of the spec lives on that branch.
+- `specify` (or `quick`) creates the branch `feat|fix/<ID>-<slug>` and its git worktree, with a single confirmation, so every artifact of the spec lives on that branch. **DECIDED (ADR 0020):** worktrees live in a sibling folder, `paths.worktrees` (default `../{repo}.worktrees`), resolved from the main checkout.
 - `implement` never creates branches: it checks that it runs inside the spec's worktree and, if not, warns and shows the path.
 - Commits are local and need no confirmation after the Reviewer's PASS. Mandao never pushes.
 - Polyrepo: the same branch name in every touched repo.
@@ -650,6 +651,7 @@ Mandao-AC: AC-1, AC-3
   ```
 
 - **Not enough resources:** reduce workers. If that is still not enough, mark the run `DEFERRED_TO_CI`.
+- **DECIDED (ADR 0020):** the runner is detected (vitest, jest, nx, pytest, go) unless `projects[].tests.impacted` (with `{files}` and `{workers}`) is set, which wins. `mandao run tests` is the one helper script that executes (the exception to ADR 0006): it applies the budget and waits in a single queue (`.mandao/run.lock`).
 - **Deferred is not PASS:** `execution.md` records what was deferred and why, and the spec cannot reach `verified` until CI confirms those tests.
 
 ## 17. Skills
