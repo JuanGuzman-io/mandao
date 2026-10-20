@@ -47,6 +47,7 @@ export function registerSetup(program: Command, ctx: CliContext) {
     .option('--model-profile <profile>', 'peak | balanced | economy (default: peak)')
     .option('--polyrepo <strategy>', 'workspace-repo | home | local (polyrepo only)')
     .option('--home <path>', 'home repository path when --polyrepo home')
+    .option('--budget <usd>', 'cost cap per spec in USD, or "none" (asked when interactive; no default)')
     .option('-y, --yes', 'accept detected defaults without prompting')
     .option('--force', 'overwrite an existing config and drifted generated files')
     .option('--shadow', 'shadow mode for pilots: generated files go to .git/info/exclude and tracked files are never touched')

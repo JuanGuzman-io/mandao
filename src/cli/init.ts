@@ -25,6 +25,7 @@ import {
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { createIfMissing } from '../writer/files.js';
+import { chooseBudget } from './init-budget.js';
 import { chooseProfile } from './init-profile.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 
@@ -44,6 +45,8 @@ export interface InitOptions {
   yes?: boolean;
   force?: boolean;
   shadow?: boolean;
+  /** USD per spec; `none` for no cap. Never defaulted: a person sets it (ADR 0036). */
+  budget?: string;
 }
 
 const HARNESS_LABEL: Record<HarnessId, string> = {
@@ -298,6 +301,23 @@ function modeFlags(localOnly: boolean | undefined, opts: InitOptions): Pick<Conf
   return { ...(localOnly ? { local_only: true } : {}), ...(opts.shadow ? { shadow: true } : {}) };
 }
 
+/** The config, and the models, sources and overrides files when they are missing. */
+function writeInitFiles(root: string, config: ConfigInput, models: Models) {
+  writeYaml(join(root, CONFIG_FILE), config, '# Mandao configuration. Run `mandao sync` after editing. Schema: docs/schemas.md');
+  if (!existsSync(join(root, MODELS_FILE))) {
+    writeYaml(
+      join(root, MODELS_FILE),
+      models,
+      '# Model per role and harness. Change with `mandao models set <role> <model>`; see `mandao models`.',
+    );
+  }
+  if (!existsSync(join(root, SOURCES_FILE))) {
+    writeYaml(join(root, SOURCES_FILE), SOURCES_TEMPLATE, '# Where business context lives: tracker, docs, chat, design, transcripts.');
+  }
+  const overrides = join(root, '.mandao', 'overrides');
+  createIfMissing(join(overrides, 'README.md'), OVERRIDES_README);
+}
+
 export async function runInit(root: string, opts: InitOptions) {
   const interactive = !opts.yes;
   if (interactive) p.intro(c.bold('mandao init'));
@@ -337,6 +357,7 @@ export async function runInit(root: string, opts: InitOptions) {
   const projects = await confirmProjects(ws, defaultProfile, opts);
   const business = await chooseLanguage('business', opts.languageBusiness, opts.yes);
   const technical = await chooseLanguage('technical', opts.languageTechnical, opts.yes);
+  const budget = await chooseBudget(opts.budget, opts.yes);
 
   let home = '.';
   let localOnly: boolean | undefined;
@@ -361,25 +382,13 @@ export async function runInit(root: string, opts: InitOptions) {
       ...(pr.repo ? { repo: pr.repo } : {}),
     })),
     harnesses,
+    ...budget,
   };
   const models = await chooseModels(root, harnesses, opts);
   const parsed = configSchema.safeParse(config);
   if (!parsed.success) throw new Error(`Generated config is invalid: ${parsed.error.message}`);
 
-  writeYaml(join(root, CONFIG_FILE), config, '# Mandao configuration. Run `mandao sync` after editing. Schema: docs/schemas.md');
-  if (!existsSync(join(root, MODELS_FILE))) {
-    writeYaml(
-      join(root, MODELS_FILE),
-      models,
-      '# Model per role and harness. Change with `mandao models set <role> <model>`; see `mandao models`.',
-    );
-  }
-  if (!existsSync(join(root, SOURCES_FILE))) {
-    writeYaml(join(root, SOURCES_FILE), SOURCES_TEMPLATE, '# Where business context lives: tracker, docs, chat, design, transcripts.');
-  }
-  const overrides = join(root, '.mandao', 'overrides');
-  createIfMissing(join(overrides, 'README.md'), OVERRIDES_README);
-
+  writeInitFiles(root, config, models);
   const result = syncProject(root, { force: opts.force });
   printChanges(result.changes);
   printWarnings(result.warnings);
