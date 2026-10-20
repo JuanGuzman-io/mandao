@@ -16,6 +16,8 @@ export interface DiagramStamp {
   source: string;
   /** Structured source of the diagram (`diagrams/proposed.graph.json`), what close's drift compares (ADR 0026). */
   graph?: string;
+  /** `subgraphHash` of that graph when the diagram was generated (ADR 0027). */
+  graphHash?: string;
 }
 
 const SECTION = /^## Diagram[ \t]*\n[\s\S]*?(?=^## |(?![\s\S]))/m;
@@ -42,17 +44,22 @@ export interface DiagramState {
   stale: boolean;
 }
 
-/** Whether the spec needs the approval diagram, and whether the one it has still matches design.md (ADR 0022). */
-export function diagramState(designMd: string): DiagramState {
+/**
+ * Whether the spec needs the approval diagram, and whether the one it has still matches design.md
+ * (ADR 0022) and, when given, the current `subgraphHash` of its graph (ADR 0027).
+ */
+export function diagramState(designMd: string, currentGraphHash?: string): DiagramState {
   const meta = matter(designMd).data as { depth?: string; projects?: string[] };
   const required = meta.depth === 'lite' ? 'optional' : (meta.projects?.length ?? 0) > 1 ? 'yes' : 'if-new-flow';
   const stamp = readStamp(designMd);
-  return { required, ...(stamp ? { stamp } : {}), stale: Boolean(stamp && stamp.source !== designSourceHash(designMd)) };
+  const designChanged = Boolean(stamp && stamp.source !== designSourceHash(designMd));
+  const graphChanged = Boolean(stamp?.graphHash && currentGraphHash && stamp.graphHash !== currentGraphHash);
+  return { required, ...(stamp ? { stamp } : {}), stale: designChanged || graphChanged };
 }
 
 /** design.md with its `## Diagram` section stamped for the current design (added at the end when missing). */
 export function stampDiagram(designMd: string, d: Omit<DiagramStamp, 'source'>, mermaid?: string): string {
-  const graph = d.graph ? ` graph=${d.graph}` : '';
+  const graph = (d.graph ? ` graph=${d.graph}` : '') + (d.graphHash ? ` graphHash=${d.graphHash}` : '');
   const marker = `<!-- mandao:diagram type=${d.type} tool=${d.tool} file=${d.file}${graph} source=${designSourceHash(designMd)} -->`;
   const body = mermaid ? `\`\`\`mermaid\n${mermaid.trim()}\n\`\`\`` : `![${d.type} diagram](${d.file})`;
   const section = `## Diagram\n\n${marker}\nDerived from this design; regenerated whenever it changes. Part of the design approval.\n\n${body}\n\n`;

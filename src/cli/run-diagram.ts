@@ -17,6 +17,7 @@ import {
   implementedGraph,
   readStamp,
   stampDiagram,
+  subgraphHash,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
@@ -71,12 +72,20 @@ function indexedModules(root: string, changed: string[]): (module: string) => bo
   };
 }
 
+/** The subgraph hash of the graph the stamp points to, as the file is now. */
+function currentGraphHash(dir: string, design: string): string | undefined {
+  const graph = readStamp(design)?.graph;
+  if (!graph || !existsSync(join(dir, graph))) return undefined;
+  return subgraphHash(diagramGraphSchema.parse(JSON.parse(readFileSync(join(dir, graph), 'utf8'))));
+}
+
 /** design.md with the diagram just generated stamped in, after checking the options. */
 function stamped(dir: string, design: string, o: DiagramOptions): string {
   const tool = checked<DiagramTool>(o.tool, DIAGRAM_TOOLS, 'tool');
   const type = checked<DiagramType>(o.type, DIAGRAM_TYPES, 'type');
-  if (o.graph) diagramGraphSchema.parse(JSON.parse(readFileSync(join(dir, o.graph), 'utf8')));
-  const graph = o.graph ? { graph: o.graph } : {};
+  const graph = o.graph
+    ? { graph: o.graph, graphHash: subgraphHash(diagramGraphSchema.parse(JSON.parse(readFileSync(join(dir, o.graph), 'utf8')))) }
+    : {};
   if (tool === 'mermaid') {
     if (!o.mermaid) throw new Error('--tool mermaid needs --mermaid <file>');
     return stampDiagram(design, { type, tool, file: 'inline', ...graph }, readFileSync(o.mermaid, 'utf8'));
@@ -133,6 +142,6 @@ export function registerDiagram(run: Command, ctx: CliContext) {
         design = stamped(dir, design, o);
         writeText(file, design);
       }
-      json(diagramState(design));
+      json(diagramState(design, currentGraphHash(dir, design)));
     });
 }

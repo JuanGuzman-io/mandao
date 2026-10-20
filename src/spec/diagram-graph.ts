@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { z } from 'zod';
 
 /**
@@ -21,6 +22,23 @@ export const diagramGraphSchema = z.object({
 export type DiagramGraph = z.infer<typeof diagramGraphSchema>;
 
 const edgeKey = (e: { from: string; to: string }) => `${e.from} -> ${e.to}`;
+
+/**
+ * Hash of what a diagram claims about the spec: node ids with their kind and role, and the edges between
+ * those nodes, sorted. Labels, order and formatting are left out, so regenerating or reformatting the
+ * graph does not make the diagram stale; adding or removing a module or an edge does (ADR 0027).
+ */
+export function subgraphHash(graph: DiagramGraph): string {
+  const ids = new Set(graph.nodes.map((n) => n.id));
+  const canonical = {
+    nodes: graph.nodes.map((n) => `${n.id}|${n.kind}|${n.role}`).sort(),
+    edges: graph.edges
+      .filter((e) => ids.has(e.from) && ids.has(e.to))
+      .map(edgeKey)
+      .sort(),
+  };
+  return `sha256:${createHash('sha256').update(JSON.stringify(canonical)).digest('hex').slice(0, 16)}`;
+}
 
 /**
  * The implemented graph from the diff: one module node per folder of a changed source file, and an edge

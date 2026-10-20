@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'vitest';
-import { designSourceHash, diagramDrift, diagramState, implementedGraph, readStamp, stampDiagram } from '../../src/spec/index.js';
+import {
+  designSourceHash,
+  diagramDrift,
+  diagramState,
+  implementedGraph,
+  readStamp,
+  stampDiagram,
+  subgraphHash,
+} from '../../src/spec/index.js';
 
 const design = (depth: string, projects: string[], body = '## Decisions\n\nUse a refresh token.\n') =>
   `---\nschema_version: 1\nspec: MDO-0001-x\ndepth: ${depth}\nprojects: [${projects.join(', ')}]\n---\n\n# Design — x\n\n${body}`;
@@ -129,5 +137,37 @@ describe('diagram drift by identity (ADR 0026)', () => {
         { from: 'src/cli', to: 'src/writer' },
       ],
     });
+  });
+});
+
+describe('subgraph hash in the stamp (ADR 0027)', () => {
+  const graph = (extra: { id: string }[] = [], label = 'CLI') => ({
+    schema_version: 1 as const,
+    nodes: [
+      { id: 'src/cli', label, kind: 'module' as const, role: 'changed' as const },
+      { id: 'src/engine', kind: 'module' as const, role: 'context' as const },
+      ...extra.map((n) => ({ ...n, kind: 'module' as const, role: 'changed' as const })),
+    ],
+    edges: [{ from: 'src/cli', to: 'src/engine' }],
+  });
+
+  test('labels, order and formatting do not change it; modules and edges do', () => {
+    const base = subgraphHash(graph());
+    expect(subgraphHash(graph([], 'Command line'))).toBe(base);
+    expect(subgraphHash({ ...graph(), nodes: [...graph().nodes].reverse() })).toBe(base);
+    expect(subgraphHash(graph([{ id: 'src/writer' }]))).not.toBe(base);
+    expect(subgraphHash({ ...graph(), edges: [] })).not.toBe(base);
+  });
+
+  test('the diagram is stale when its graph changed, not when it was only regenerated', () => {
+    const d = '---\ndepth: standard\nprojects: [p]\n---\n\n# Design\n\n## Decisions\n\nx\n';
+    const stamped = stampDiagram(
+      d,
+      { type: 'workflow', tool: 'mermaid', file: 'inline', graph: 'diagrams/g.json', graphHash: subgraphHash(graph()) },
+      'flowchart LR\n a-->b',
+    );
+    expect(readStamp(stamped)?.graphHash).toBe(subgraphHash(graph()));
+    expect(diagramState(stamped, subgraphHash(graph([], 'renamed'))).stale).toBe(false);
+    expect(diagramState(stamped, subgraphHash(graph([{ id: 'src/writer' }]))).stale).toBe(true);
   });
 });
