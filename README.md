@@ -94,3 +94,5 @@ Undo the link with `npm rm -g mandao`.
 Contributing and releasing (trusted publishing with OIDC, no npm token): [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Requires Node ≥ 22.18. Commits follow the format in `core/templates/shared/rules/commits.md`.
+
+Planned: work types for ML, infrastructure, DevOps and security.

@@ -30,6 +30,8 @@ Sections without an explicit tag are **DECIDED**.
 
 **Domains:** traditional software (web, API, mobile) **and** AI engineering (LLMs, RAG, agents).
 
+**DECIDED (ADR 0031) — direction:** Mandao aims to serve every kind of engineering work that changes a system: software (web, API, mobile), AI engineering (applications built on LLMs), ML (training and data), infrastructure (IaC, cloud), DevOps (CI/CD, platform) and security. **PROPOSED:** the detailed design, as work types (§9), after the pilot.
+
 **Inspirations (not forks):**
 - GitHub Spec Kit — multi-harness, presets/overrides resolution stack, specify → plan → tasks flow.
 - AKILI-SPECS — robust constitution, project modes, Leader → Implementer → Reviewer harness, Premise Ledger, Kaizen loop, model routing.
@@ -287,6 +289,27 @@ AGENTS.md                       # root, project and module levels (CLAUDE.md is 
 | `data` | **OPEN.** |
 
 - **OPEN (ai):** eval dataset management, prompt registry format, model change as a controlled change, LLM observability.
+
+### 9.1 Work types (PROPOSED, ADR 0031 — after the pilot)
+
+Profiles evolve into **work types**:
+
+- A project declares the types it uses (a monorepo can have `app` + `infra`). Each spec declares its type, or it is inferred from the paths it touches (e.g. `terraform/` → `infra`).
+- The type changes the templates (the form of acceptance criteria), the verify gates, the review lenses and the quick rules. Skills bring each domain's knowledge.
+
+| Type | Acceptance criterion | Verification | Particular risk |
+|---|---|---|---|
+| `app` | Given/When/Then | unit + e2e | — |
+| `ai` | eval thresholds | evals against a baseline | silent model regression |
+| `ml` | metrics on a versioned dataset | reproducibility, baseline | unversioned data, expensive runs |
+| `infra` | desired state, cost within budget | plan / dry-run, policy-as-code, apply in an ephemeral environment | blast radius, state, rollback |
+| `devops` | an idempotent pipeline that does X | run the pipeline on the branch | breaking the team's pipeline |
+| `security` | control verified, finding closed with evidence | scanners, control verification, threat model | exposing a vulnerability's details |
+
+**Safety rules per type** (PROPOSED; DECIDED when the types are implemented):
+
+- **`infra` and `devops`:** the agent never applies to a real environment — only plan, dry-run or ephemeral environments. A rollback plan is mandatory in the design. An infrastructure change is never quick.
+- **`security`:** exploitable details of a vulnerability never go into tracker comments, release notes or visible PRs. `close` publishes a version without them; the full detail stays in a restricted place the team defines.
 
 ## 10. Command reference
 
@@ -927,6 +950,7 @@ Raised in the gap sweep. Each needs a decision (and an ADR) before dependent wor
 - **Format migrations:** `mandao migrate` using `schema_version`.
 - **Testing Mandao itself:** evals of the commands (e.g., does `specify` catch a planted AC↔FR contradiction?).
 - **Multi-repo beyond polyrepo:** `related:` repos outside the workspace.
+- **Work types beyond app/ai** (ML, infrastructure, DevOps, security): see §9.1 and ADR 0031. After the pilot.
 - ~~Cross-harness Reviewer~~ — **DECIDED (ADR 0021)**, now §14.3: optional, offered when the review would be reduced independence and another harness is installed and logged in.
 
 ## 24. MVP
