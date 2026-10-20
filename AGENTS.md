@@ -3,53 +3,7 @@
 
 ## Mandao
 
-This workspace uses [Mandao](https://www.npmjs.com/package/mandao) for spec-driven development.
-Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent.
-
-Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `implement` → `verify` → `close`
-
-### Workspace
-
-- Mode: `single`
-- Specs: `specs/<id>-<slug>/` (id from the tracker, or a sequential `NNN` when there is none)
-- Workspace constitution: `docs/constitution/`; each project may extend it in `<project>/docs/constitution/`
-
-| Project | Path | Profile |
-|---|---|---|
-| mandao | `.` | app |
-
-### Commands
-
-- `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev.
-- `/mandao-close` — Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram.
-- `/mandao-constitution` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
-- `/mandao-implement` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
-- `/mandao-init` — Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution.
-- `/mandao-quick` — Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial.
-- `/mandao-resume` — Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness.
-- `/mandao-specify` — Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story, spec and tasks in one session.
-- `/mandao-story` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
-- `/mandao-tasks` — Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies.
-- `/mandao-verify` — Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
-
-Not implemented yet: `/mandao-audit`, `/mandao-perf`.
-
-### Rules
-
-- Never invent context. Mark gaps as `ASSUMPTION`, `OPEN` or `CONFLICT`, always with the source.
-- If a code graph exists (e.g. graphify), query it before searching files.
-- Write business content (story, release notes, questions to the PO, product context) in `en` and technical content (requirements, design, tasks, technical docs) in `en`. Section headings, keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n) and markers stay in English. Code and commits are always in English.
-- Spec status: `draft → approved → in-progress → blocked → verified → closed | abandoned`.
-- A human approves every significant change and anything published outside the repository.
-- Templates live in `.mandao/templates/<profile>/`; use the profile of the project you are working on.
-
-### Commits
-
-Subject: `<emoji> <type>(<scope>): <subject>`, imperative mood, at most 72 characters without the emoji.
-
-Emoji per type: feat ✨, fix 🐛, docs 📝, style 🎨, refactor ♻️, test ✅, chore 🔧, perf ⚡️, build 📦️, ci 👷, revert ⏪️. A breaking change uses 💥 instead of the type emoji.
-
-Trailers: `Refs: <tracker id>`, `Mandao-Task: <task>`, `Mandao-AC: <AC ids>`, `Mandao-Quick: <name>` for quick changes.
+Spec-driven development with [Mandao](https://www.npmjs.com/package/mandao): commands are `/mandao-<command>`. Before running one, or editing `specs/` or `docs/constitution/`, read [.mandao/guide.md](.mandao/guide.md).
 
 <!-- mandao:end -->
 

@@ -468,7 +468,7 @@ files:
     harness: mandao
     from: block:graph-ignore
     ownership: managed-block
-    hash: sha256-MTUVGOs4GxhUJRNZoqP6pRqGZBiRAB/Ajnq+Gb+C9jw=
+    hash: sha256-nwrr3o5aR8VFu6i8yg9CzW3cAlUkv/ycmKyMhm7Bd6U=
     scope: project
   - path: .mandao/bin/mandao.mjs
     harness: mandao
@@ -481,6 +481,12 @@ files:
     from: config:commits
     ownership: owned
     hash: sha256-1B37psB8wq4s4FUg+3n1kZRzX04OPbzrq78OqKE+iXs=
+    scope: project
+  - path: .mandao/guide.md
+    harness: agents-md
+    from: guide:mandao
+    ownership: owned
+    hash: sha256-u144zTr9+dvlYSfv0jzYwsgd3/vwErSmCe649HdRZok=
     scope: project
   - path: .mandao/templates/app/close/kaizen.md
     harness: mandao
@@ -738,7 +744,7 @@ files:
     harness: agents-md
     from: block:mandao
     ownership: managed-block
-    hash: sha256-Cjd36beCDSEBEvsaDKWPaRmMQiOP9UZJOUv3S7xIdZw=
+    hash: sha256-DuSAye8IyLFqL1YQ5fWgs/cwSxg3pPIEas0SsdpKrFc=
     scope: project
   - path: CLAUDE.md
     harness: claude

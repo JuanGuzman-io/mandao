@@ -82,6 +82,19 @@ describe.each(Object.keys(configs))('%s workspace', (name) => {
   });
 });
 
+describe('the AGENTS.md block every session loads', () => {
+  test('is only a pointer to the generated guide, which holds the commands, rules and commit conventions', () => {
+    const files = renderAgentsMd(input('single')).files;
+    const root = files.find((f) => f.path === 'AGENTS.md')!.content;
+    expect(root.length).toBeLessThan(600);
+    expect(root).toContain('[.mandao/guide.md](.mandao/guide.md)');
+    const guide = files.find((f) => f.path === '.mandao/guide.md')!;
+    expect(guide.ownership).toBe('owned');
+    expect(guide.content).toContain('## Commands');
+    expect(guide.content).toContain('## Commits');
+  });
+});
+
 describe('selection', () => {
   test('profile-specific commands install only when a project uses the profile', () => {
     const paths = (n: string) => ADAPTERS.claude.render(input(n)).files.map((f) => f.path);
