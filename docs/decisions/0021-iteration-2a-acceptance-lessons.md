@@ -71,3 +71,7 @@ Earlier in 2a: `checkpoint --task` with `--clear` labelled one task's PASS row w
 - **Rebases rewrite hashes**, which is why the hash left the log (decision 1).
 - An independent reviewer in another provider caught what a self-review missed (T2 exit code proof,
   T3 duplicated ordering), which supports offering it by default when independence would be reduced.
+
+**Amended by ADR 0033 (2026-10-20):** every record of who did a step uses a deterministic source
+(agent files, the launched process, `models.yml`), including `progress.yml` and the quick log; a claim is
+compared only when it names a model.

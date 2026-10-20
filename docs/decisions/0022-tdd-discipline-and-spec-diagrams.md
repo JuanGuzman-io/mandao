@@ -77,3 +77,7 @@ internals.
   regenerates it when an answer changes the design.
 - Pending until `close` exists: the diagram of what was built, derived from the diff, compared with the
   approved one as drift.
+
+**Amended by ADR 0033 (2026-10-20):** tasks that only pin down existing behavior (`characterization:
+true`) prove their tests with recorded mutations (`MUTANT` rows) instead of a red run; Kaizen counts them
+apart as `characterization`.
