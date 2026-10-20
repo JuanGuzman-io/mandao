@@ -36,6 +36,19 @@ Utilities: `quick`, `perf`, `audit`, `resume`. Implemented: `constitution`, `sto
 with their contracts and say so when invoked. Work can move between harnesses mid-spec: every Leader
 step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it anywhere.
 
+At `lite` depth `/mandao-specify` writes the story, a single `spec.md` and up to three tasks in one
+session, with one approval.
+
+### Approving without a model session
+
+`mandao approve <spec> <step>` (`story`, `design`, `spec`, `tasks`, `close`) checks the same gates the
+command would, sets the status, records who approved and when in `_log/approvals.yml`, and makes the
+spec commit. No model runs, so it costs no tokens. For `close` it records which proposals you approved;
+`/mandao-close` applies them.
+
+After approving, continue with the next command **in the same session**: its context is already loaded
+and the provider's prompt cache is warm, so the next step costs less than a new session.
+
 ## Harnesses
 
 | Harness | Commands | Personas | Verified | Tested |
@@ -62,7 +75,8 @@ Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester) |
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
 | `mandao skills list` | List skills pinned in the workspace lock |
-| `mandao run …` | Helper scripts the commands call, JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
+| `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session |
+| `mandao run …` | Helper scripts the commands call, compact JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
 
 ## Customizing
 

@@ -105,6 +105,10 @@ For each tracker target (e.g. `jira:PROJ-123`, from `.mandao/sources.yml`):
 Without a tracker MCP: the files in `{{paths.releases}}/<ID>/` are the publication; also print the
 release notes as a block the user can paste.
 
+**Approved from the terminal:** when `_log/approvals.yml` holds a `close` approval (`mandao approve
+<ID> close --items …`), apply exactly those items without asking again; anything not listed stays
+unapplied and is reported.
+
 ## 8. Finish
 
 `{{script:close-summary}} {{arg:spec}} --closed` (it writes the record and the links to the documents
