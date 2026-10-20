@@ -55,3 +55,25 @@ without the user's explicit command.
 Cost is recorded per command and per role in each spec (`_log/costs.yml`). Kaizen shows it and recommends
 adjustments with data (for example the first-pass approval rate per tier, the Leader's share) with the
 estimated saving; it never changes the profile or a model.
+
+## Addendum — cache duration (proposed, 2026-10-20)
+
+**Who can configure it.** Only Claude Code: `promptCacheTtl` / `CLAUDE_CODE_PROMPT_CACHE_TTL` for the main
+conversation (interactive and `-p`) and `subagentPromptCacheTtl` / `CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL`
+for subagents, `5m` or `1h`, from v2.1.242. Defaults: on a subscription within plan usage the main
+conversation uses 1h and subagents 5m; with an API key, usage credits or a cloud provider, 5m for
+everything. A 5m write costs 1.25× input and a 1h write 2×; a read refreshes the TTL at no cost. Codex,
+Copilot, OpenCode and Antigravity document no TTL control (the OpenAI and Gemini APIs do, but the
+harnesses do not expose it): a limitation Mandao documents and does not work around.
+
+**What the data says.** The maintainer's real pauses in this project's session (60 pauses): 85% at most
+5 minutes, 13% between 5 and 60, 2% over an hour; median 1.2 minutes. In MDO-0006 (10 main sessions,
+median context 58k tokens on Opus) the 1h writes cost 1.74 USD more than 5m writes would have (0.17 per
+session). With a 5m TTL, a 5–60 minute pause re-writes the context instead of reading it, about 0.28 USD at
+that context size; at 13% of pauses that is 0.04–0.11 USD for a session with 1–3 pauses and about 0.18
+for one with 5. So 5m is cheaper for separate sessions, and close to even for one long lite session.
+
+**Proposal.** Mandao recommends `promptCacheTtl: 5m` (the default already for API keys and credits)
+and never writes it into the user's settings; `doctor` reports the TTL in effect, and Kaizen will show
+the measured pauses per spec so the choice can be revisited with data. A team whose people pause often
+for 5–60 minutes inside long sessions is the case where 1h pays off.
