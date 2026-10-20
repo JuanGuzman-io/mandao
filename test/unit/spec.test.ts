@@ -173,7 +173,6 @@ describe('loopState', () => {
     implementer: 'x',
     reviewer: 'y',
     verdict,
-    commit: '—',
     notes: '',
     ...extra,
   });
@@ -192,19 +191,41 @@ describe('loopState', () => {
   test('strong tasks review on the implementer model when no reviewer qualifies', () => {
     const s = loopState({ id: 'T2', tier: 'strong' }, [row('REPORTED', 'strong')], models, 'claude');
     expect(s).toMatchObject({ action: 'review', reviewer: { model: 'o' }, notes: ['reduced independence'] });
+    expect(s.crossReview).toBeUndefined();
+  });
+
+  test('another harness reviews instead, but never below the implementer tier', () => {
+    const strong = { id: 'T2', tier: 'strong' as const };
+    const rows = [row('REPORTED', 'strong')];
+    const lower = { harness: 'codex', reviewer: { model: 'g', source: 'recommendation' as const }, tier: 'standard' as const };
+    const equal = {
+      harness: 'codex',
+      reviewer: { model: 'g2', source: 'recommendation' as const, effort: 'high' as const },
+      tier: 'strong' as const,
+    };
+    expect(loopState(strong, rows, models, 'claude', { alternatives: [lower] }).notes).toEqual(['reduced independence']);
+    const s = loopState(strong, rows, models, 'claude', { alternatives: [lower, equal] });
+    expect(s).toMatchObject({ crossReview: { harness: 'codex', model: 'g2', effort: 'high' }, notes: [] });
   });
 
   test('a review in another harness is provider independence; interruptions resume', () => {
     expect(loopState(task, [row('REPORTED', 'standard', { harness: 'claude' })], models, 'codex').notes).toContain('provider independence');
     expect(loopState(task, [row('STARTED', 'standard')], models, 'claude').action).toBe('resume-implementation');
     expect(loopState(task, [row('PASS', 'standard')], models, 'claude').action).toBe('commit');
-    expect(loopState(task, [row('PASS', 'standard', { commit: 'abc1234' })], models, 'claude').action).toBe('done');
+    expect(loopState(task, [row('PASS', 'standard')], models, 'claude', { committed: true }).action).toBe('done');
   });
 
   test('execution rows round-trip', () => {
     const r = row('PASS', 'fast', { notes: 'a | b' });
-    const md = `| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Commit | Notes |\n|---|---|---|---|---|---|---|---|---|---|\n${executionRow(r)}\n`;
+    const md = `| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Notes |\n|---|---|---|---|---|---|---|---|---|\n${executionRow(r)}\n`;
     expect(parseExecution(md).rows[0]).toMatchObject({ verdict: 'PASS', notes: 'a | b' });
+  });
+
+  test('logs written before ADR 0021 still parse: the Commit column is ignored', () => {
+    const md =
+      '| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Commit | Notes |\n|---|---|---|---|---|---|---|---|---|---|\n| d | T1 | 1 | fast | claude | x | y | PASS | abc1234 | ok |\n';
+    expect(parseExecution(md)).toEqual({ rows: [row('PASS', 'fast', { task: 'T1', notes: 'ok' })], issues: [] });
+    expect(parseExecution('| Date | Task | Verdict |\n|---|---|---|\n').issues[0]).toMatch(/missing columns Attempt/);
   });
 });
 

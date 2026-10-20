@@ -1,4 +1,4 @@
-import { independence, type ResolvedModels } from '../models/resolve.js';
+import { type Choice, independence, type ResolvedModels, TIER_RANK } from '../models/resolve.js';
 import { TIERS, type Tier } from '../schemas/index.js';
 import type { ExecutionRow } from './execution.js';
 
@@ -15,7 +15,26 @@ export interface LoopState {
   reviewer?: { role: 'reviewer' | 'reviewer_alt'; model: string; effort?: string };
   /** `reduced independence` and `provider independence` as they apply to the next review. */
   notes: string[];
+  /**
+   * When the review would be reduced independence: a reviewer in another installed harness, run as a
+   * read-only process by `mandao run review --via <harness>`, never below the Implementer's tier (ADR 0021).
+   */
+  crossReview?: { harness: string; model: string; effort?: string };
   reason: string;
+}
+
+/** A reviewer another installed harness offers, with Mandao's tier for its model. */
+export interface CrossReviewer {
+  harness: string;
+  reviewer: Choice;
+  tier?: Tier;
+}
+
+export interface LoopContext {
+  /** True when git holds a commit with this task's trailers (`taskCommits`). */
+  committed?: boolean;
+  /** Reviewers in other installed and available harnesses, in preference order. */
+  alternatives?: CrossReviewer[];
 }
 
 const MAX_FAILS_PER_TIER = 2;
@@ -27,10 +46,6 @@ function escalate(tier: Tier, fails: number): Tier {
   return fails >= MAX_FAILS_PER_TIER && i < TIERS.length - 1 ? TIERS[i + 1]! : tier;
 }
 
-/**
- * The Leader's next step for one task, from its rows in execution.md (ADR 0018 checkpoints):
- * escalation after 2 FAILs per tier, HALT after 3 at strong, reviewer chosen by the independence rule.
- */
 /** Replays the FAILs to find the current tier and the FAILs counted at it. */
 function currentTier(start: Tier, own: ExecutionRow[]): { tier: Tier; fails: number } {
   let tier = start;
@@ -48,12 +63,21 @@ function currentTier(start: Tier, own: ExecutionRow[]): { tier: Tier; fails: num
   return { tier, fails };
 }
 
+/** The first other-harness reviewer at or above the Implementer's tier; none when the tier is unknown. */
+function crossReviewer(impl: Choice | undefined, models: ResolvedModels, alternatives: CrossReviewer[]) {
+  const implTier = impl ? models.tiers[impl.model] : undefined;
+  if (!implTier) return undefined;
+  const alt = alternatives.find((a) => a.tier && TIER_RANK[a.tier] >= TIER_RANK[implTier]);
+  return alt && { harness: alt.harness, model: alt.reviewer.model, ...(alt.reviewer.effort ? { effort: alt.reviewer.effort } : {}) };
+}
+
 /** Implementer and reviewer for the tier, and the independence notes for the next review. */
-function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefined, harness: string) {
+function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefined, harness: string, alternatives: CrossReviewer[]) {
   const impl = models?.implementer[tier];
   const check = models ? independence(models).find((c) => c.tier === tier) : undefined;
   const notes: string[] = [];
-  if (check?.reduced) notes.push('reduced independence');
+  const cross = check?.reduced && models ? crossReviewer(impl, models, alternatives) : undefined;
+  if (check?.reduced && !cross) notes.push('reduced independence');
   const reportedIn = [...own].reverse().find((r) => r.verdict === 'REPORTED')?.harness;
   if (reportedIn && reportedIn !== harness) notes.push('provider independence');
   return {
@@ -67,6 +91,7 @@ function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefin
           },
         }
       : {}),
+    ...(cross ? { crossReview: cross } : {}),
     notes,
   };
 }
@@ -80,12 +105,13 @@ export function loopState(
   rows: ExecutionRow[],
   models: ResolvedModels | undefined,
   harness: string,
+  { committed = false, alternatives = [] }: LoopContext = {},
 ): LoopState {
   const own = rows.filter((r) => r.task === task.id);
   const last = own.at(-1);
   const { tier, fails } = currentTier(task.tier, own);
   const attempt = Math.max(1, ...own.map((r) => r.attempt));
-  const base = { task: task.id, tier, attempt, failsAtTier: fails, ...roles(tier, own, models, harness) };
+  const base = { task: task.id, tier, attempt, failsAtTier: fails, ...roles(tier, own, models, harness, alternatives) };
   const failsAtStrong = own.filter((r) => r.verdict === 'FAIL' && r.tier === 'strong').length;
   if (failsAtStrong >= MAX_FAILS_AT_STRONG) return { ...base, action: 'halt', reason: `${failsAtStrong} FAILs at strong` };
   switch (last?.verdict) {
@@ -103,9 +129,9 @@ export function loopState(
       return { ...base, action: 'rework', attempt: attempt + 1, reason: `FAIL ${fails} at ${tier}` };
     case 'PASS':
     case 'DEFERRED_TO_CI':
-      return last.commit && last.commit !== '—'
-        ? { ...base, action: 'done', reason: `committed ${last.commit}` }
-        : { ...base, action: 'commit', reason: 'PASS without a commit yet' };
+      return committed
+        ? { ...base, action: 'done', reason: 'committed (found by its trailers)' }
+        : { ...base, action: 'commit', reason: 'PASS without a commit carrying its trailers yet' };
     case 'HALT':
       return { ...base, action: 'halt', reason: 'halted' };
     case 'PIVOT':

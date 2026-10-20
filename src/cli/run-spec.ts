@@ -3,13 +3,16 @@ import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
-import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
+import { commitState } from '../scripts/commits.js';
 import { detectRunner, fillCommand, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
+import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
-import { blockingMarkers, commitMessage, type ExecutionRow, loopState, planTasks, trace, VERDICTS } from '../spec/index.js';
+import { blockingMarkers, commitMessage, type LoopContext, loopState, planTasks, trace } from '../spec/index.js';
+import { onPath } from '../util/which.js';
 import type { CliContext } from './context.js';
+import { registerLedger } from './run-ledger.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
@@ -28,6 +31,23 @@ function modelsFor(ctx: CliContext, harness: HarnessId, project?: string) {
   const config = readConfig(ctx.root());
   const p = project ? config.projects.find((x) => x.name === project) : undefined;
   return resolveWorkspaceModels(ctx.root(), config, readRecommendations(), p ? { project: p } : {})[harness];
+}
+
+/** What the loop needs beyond the log: the commit found by trailers, and other harnesses' reviewers. */
+function loopContext(
+  ctx: CliContext,
+  spec: ReturnType<typeof loadSpec>['spec'],
+  task: string,
+  harness: HarnessId,
+  project?: string,
+): LoopContext {
+  const config = readConfig(ctx.root());
+  const p = project ? config.projects.find((x) => x.name === project) : undefined;
+  const all = resolveWorkspaceModels(ctx.root(), config, readRecommendations(), p ? { project: p } : {});
+  return {
+    committed: commitState(spec, config.commits.trailers).committed.has(task),
+    alternatives: crossReviewers(config.harnesses, harness, all, onPath),
+  };
 }
 
 function projectNamed(ctx: CliContext, name: string) {
@@ -49,57 +69,6 @@ function impactFor(ctx: CliContext, project: ReturnType<typeof projectNamed>, fi
   });
 }
 
-interface CheckpointOptions {
-  task?: string;
-  nextTask?: string;
-  phase?: string;
-  harness?: string;
-  model?: string;
-  next?: string;
-  question?: string[];
-  verdict?: (typeof VERDICTS)[number];
-  tier?: string;
-  attempt: string;
-  implementer: string;
-  reviewer: string;
-  commit: string;
-  notes: string;
-  done?: string;
-  clear?: boolean;
-  deferred?: string;
-}
-
-/** `--deferred "a, b|low memory"` → one deferred_to_ci entry for the task. */
-function deferredEntry(o: CheckpointOptions) {
-  if (!o.deferred) return [];
-  const [tests = '', reason = 'not given'] = o.deferred.split('|');
-  return [
-    {
-      task: o.task ?? '—',
-      tests: tests
-        .split(',')
-        .map((t) => t.trim())
-        .filter(Boolean),
-      reason: reason.trim(),
-    },
-  ];
-}
-
-function checkpointRow(o: CheckpointOptions, now: string): ExecutionRow {
-  return {
-    date: now.slice(0, 10),
-    task: o.task ?? '—',
-    attempt: Number(o.attempt),
-    tier: o.tier ?? '—',
-    harness: o.harness ?? '—',
-    implementer: o.implementer,
-    reviewer: o.reviewer,
-    verdict: o.verdict!,
-    commit: o.commit,
-    notes: o.notes,
-  };
-}
-
 /** Spec proposal, traceability and the task plan. */
 function registerPlanning(run: Command, ctx: CliContext) {
   run
@@ -117,7 +86,8 @@ function registerPlanning(run: Command, ctx: CliContext) {
     .action((ref: string) => {
       const { spec } = loadSpec(ctx, ref);
       if (!spec.story || !spec.requirements) return json({ issues: [...spec.issues, 'trace needs story.md and requirements.md'] });
-      json({ ...trace(spec.story, spec.requirements, spec.tasks), issues: spec.issues });
+      const { config } = loadSpec(ctx, ref);
+      json({ ...trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers)), issues: spec.issues });
     });
 
   run
@@ -149,7 +119,9 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
       const harness = harnessOption(opts.harness);
       const project = config.projects.find((p) => p.name === task.project);
       const budget = decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit');
-      json(composeBrief(ctx.root(), config, spec, task, modelsFor(ctx, harness, task.project), harness, Math.max(1, budget.workers)));
+      const models = modelsFor(ctx, harness, task.project);
+      const loop = loopContext(ctx, spec, id, harness, task.project);
+      json(composeBrief(ctx.root(), config, spec, task, models, harness, Math.max(1, budget.workers), loop));
     });
 
   run
@@ -161,7 +133,9 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
       const task = spec.tasks.find((t) => t.id === id);
       if (!task) throw new Error(`No ${id} in ${spec.name}/tasks.md`);
       const harness = harnessOption(opts.harness);
-      json(loopState(task, spec.execution, modelsFor(ctx, harness, task.project), harness));
+      json(
+        loopState(task, spec.execution, modelsFor(ctx, harness, task.project), harness, loopContext(ctx, spec, id, harness, task.project)),
+      );
     });
 
   run
@@ -196,51 +170,6 @@ function registerState(run: Command, ctx: CliContext) {
     .action((ref: string) => {
       const { config, spec } = loadSpec(ctx, ref);
       json(whereAmI(process.cwd(), expectedPlace(ctx.root(), config, spec)));
-    });
-}
-
-/** The Leader checkpoint (writes through src/writer). */
-function registerCheckpoint(run: Command, ctx: CliContext) {
-  run
-    .command('checkpoint <spec>')
-    .description('Write the checkpoint after a Leader step: progress.yml, an execution row, a task checkbox')
-    .option('--task <id>', 'the task this step is about (the execution row and the task in progress)')
-    .option('--next-task <id>', 'after recording the row, the task now in progress (default: --task)')
-    .option('--phase <phase>', 'implementing | awaiting-review | rework-n')
-    .option('--harness <id>', 'harness running the task')
-    .option('--model <model>', 'model running the task')
-    .option('--next <text>', 'next step', '')
-    .option('--question <text...>', 'open questions')
-    .option('--verdict <verdict>', `also append an execution row: ${VERDICTS.join(' | ')}`)
-    .option('--tier <tier>', 'tier for the execution row')
-    .option('--attempt <n>', 'attempt for the execution row', '1')
-    .option('--implementer <model>', 'implementer model for the row', '—')
-    .option('--reviewer <model>', 'reviewer model for the row', '—')
-    .option('--commit <sha>', 'commit for the row', '—')
-    .option('--notes <text>', 'notes for the row (reduced independence, provider independence…)', '')
-    .option('--done <id>', 'mark a task done in tasks.md')
-    .option('--clear', 'no task in progress')
-    .option('--deferred <tests|reason>', 'record impacted tests deferred to CI for --task: "<tests, comma separated>|<reason>"')
-    .action((ref: string, o: CheckpointOptions) => {
-      const { spec } = loadSpec(ctx, ref);
-      const now = new Date().toISOString();
-      if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(o, now));
-      if (o.done) markTask(spec.dir, o.done, true);
-      const inProgress = o.nextTask ?? o.task;
-      const current =
-        o.clear || !inProgress
-          ? null
-          : { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: o.model ?? 'unknown' };
-      writeProgress(spec.dir, {
-        schema_version: 1,
-        spec: spec.name,
-        updated_at: now,
-        current,
-        open_questions: o.question ?? spec.progress?.open_questions ?? [],
-        next_step: o.next ?? '',
-        deferred_to_ci: [...(spec.progress?.deferred_to_ci ?? []), ...deferredEntry(o)],
-      });
-      json({ written: true, spec: spec.name, current });
     });
 }
 
@@ -288,8 +217,8 @@ export function registerSpecScripts(run: Command, ctx: CliContext) {
   registerState(run, ctx);
 }
 
-/** Scripts that write (checkpoint) or execute (tests): the documented exceptions (ADR 0020). */
+/** Scripts that write, commit or execute: the documented exceptions (ADR 0020, ADR 0021). */
 export function registerSpecWriters(run: Command, ctx: CliContext) {
-  registerCheckpoint(run, ctx);
+  registerLedger(run, ctx);
   registerTestRuns(run, ctx);
 }

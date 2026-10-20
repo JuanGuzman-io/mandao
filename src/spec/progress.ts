@@ -22,5 +22,14 @@ export const progressSchema = z.object({
   open_questions: z.array(z.string()).default([]),
   next_step: z.string().default(''),
   deferred_to_ci: z.array(z.object({ task: z.string(), tests: z.array(z.string()), reason: z.string() })).default([]),
+  /**
+   * Tasks that passed review and still need their commit (a sandbox blocked it, or the session ended):
+   * `mandao run commit` makes one commit per entry, in order (ADR 0021).
+   */
+  pending_commits: z
+    .array(z.object({ task: z.string().regex(/^T\d+$/), subject: z.string().min(1), files: z.array(z.string()).default([]) }))
+    .default([]),
 });
 export type Progress = z.infer<typeof progressSchema>;
+/** What a writer passes: defaults may be left out. */
+export type ProgressInput = z.input<typeof progressSchema>;

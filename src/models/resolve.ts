@@ -101,7 +101,7 @@ export function resolveModels(harness: HarnessId, mode: ModelMode, recommendatio
   return out;
 }
 
-const TIER_RANK: Record<Tier, number> = { fast: 0, standard: 1, strong: 2 };
+export const TIER_RANK: Record<Tier, number> = { fast: 0, standard: 1, strong: 2 };
 
 /**
  * Compares two choices by Mandao's model tier, then by effort. Returns undefined when a model is not

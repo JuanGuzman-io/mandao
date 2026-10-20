@@ -1,6 +1,6 @@
 import { join } from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
-import { type ExecutionRow, executionRow, type Progress, progressSchema, setTaskDone } from '../spec/index.js';
+import { type ExecutionRow, executionRow, type ProgressInput, progressSchema, setTaskDone } from '../spec/index.js';
 import { snapshot, writeFromSnapshot, writeText } from '../writer/files.js';
 
 const EXECUTION_TEMPLATE = (spec: string) => `---
@@ -12,8 +12,8 @@ spec: ${spec}
 
 ## Log
 
-| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Commit | Notes |
-|---|---|---|---|---|---|---|---|---|---|
+| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Notes |
+|---|---|---|---|---|---|---|---|---|
 `;
 
 /** Appends a row to the execution log, creating the file from its template when missing. */
@@ -30,7 +30,7 @@ export function appendExecutionRow(dir: string, spec: string, row: ExecutionRow)
 }
 
 /** Writes progress.yml (the checkpoint) after validating it. */
-export function writeProgress(dir: string, progress: Progress): void {
+export function writeProgress(dir: string, progress: ProgressInput): void {
   const valid = progressSchema.parse(progress);
   writeText(
     join(dir, 'progress.yml'),

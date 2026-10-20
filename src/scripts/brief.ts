@@ -2,8 +2,17 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ResolvedModels } from '../models/resolve.js';
 import type { Config, RiskTag } from '../schemas/index.js';
-import { type LoopState, loopState, type Task } from '../spec/index.js';
-import { detectRunner, fillCommand, graphFile, type ImpactSelection, projectDir, readGraph, selectImpact } from './impact.js';
+import { type LoopContext, type LoopState, loopState, type Task } from '../spec/index.js';
+import {
+  detectRunner,
+  fillCommand,
+  graphFile,
+  type ImpactSelection,
+  projectDir,
+  readGraph,
+  reverseDependents,
+  selectImpact,
+} from './impact.js';
 import type { SpecFolder } from './spec.js';
 
 /** Risk tags → review lenses (rules/review.md). */
@@ -30,6 +39,11 @@ export interface Brief {
   lenses: string[];
   loop: LoopState;
   impact: ImpactSelection & { commandForBudget?: string };
+  /**
+   * Code-graph context for roles without a shell (the Reviewer cannot run `graphify query`): files that
+   * depend directly on the task's files. Absent when there is no graph (ADR 0021).
+   */
+  graph?: { source: 'graphify'; dependents: string[] };
 }
 
 /** Rows of the `## Skill Map` table in the root AGENTS.md. */
@@ -69,15 +83,18 @@ export function composeBrief(
   models: ResolvedModels | undefined,
   harness: string,
   workers: number,
+  loop: LoopContext = {},
 ): Brief {
   const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
   const dir = projectDir(root, project.path);
+  const graph = readGraph(graphFile(root));
+  const runner = detectRunner(dir);
   const impact = selectImpact({
     changed: task.files,
     projectPath: project.path,
     ...(project.tests.impacted ? { configured: project.tests.impacted } : {}),
-    ...(detectRunner(dir) ? { runner: detectRunner(dir)! } : {}),
-    ...(readGraph(graphFile(root)) ? { graph: readGraph(graphFile(root))! } : {}),
+    ...(runner ? { runner } : {}),
+    ...(graph ? { graph } : {}),
   });
   return {
     spec: spec.name,
@@ -87,7 +104,8 @@ export function composeBrief(
     project: { name: project.name, path: project.path, gates: project.gates as Record<string, string> },
     skillMap: skillMapRows(root),
     lenses: [...new Set(task.risk_tags.flatMap((t) => LENSES[t]))],
-    loop: loopState(task, spec.execution, models, harness),
+    loop: loopState(task, spec.execution, models, harness, loop),
     impact: { ...impact, ...(impact.command ? { commandForBudget: fillCommand(impact.command, impact.files, workers) } : {}) },
+    ...(graph ? { graph: { source: 'graphify' as const, dependents: reverseDependents(graph, task.files, 1) } } : {}),
   };
 }

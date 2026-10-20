@@ -64,6 +64,7 @@ describe('spec proposal and status', () => {
       open_questions: [],
       next_step: '',
       deferred_to_ci: [{ task: 'T2', tests: ['e2e'], reason: 'low memory' }],
+      pending_commits: [],
     };
     expect(checkTransition('in-progress', 'verified', progress, false)[0]).toMatch(/deferred to CI \(T2\)/);
     expect(checkTransition('in-progress', 'verified', progress, true)).toEqual([]);
@@ -85,7 +86,6 @@ describe('checkpoints', () => {
       implementer: 'gpt-6.1-sol',
       reviewer: '—',
       verdict: 'REPORTED',
-      commit: '—',
       notes: '',
     });
     expect(parseExecution(readFileSync(join(dir, 'execution.md'), 'utf8')).rows.map((r) => r.verdict)).toEqual([

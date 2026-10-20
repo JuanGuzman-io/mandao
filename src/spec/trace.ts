@@ -2,7 +2,7 @@ import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
 import type { Task } from './tasks.js';
 
-export type TraceFindingType = 'GAP' | 'ORPHAN' | 'BROKEN_REF' | 'UNPLANNED' | 'UNTESTED' | 'E2E_MISSING';
+export type TraceFindingType = 'GAP' | 'ORPHAN' | 'BROKEN_REF' | 'UNPLANNED' | 'UNTESTED' | 'E2E_MISSING' | 'UNCOMMITTED';
 
 export interface TraceFinding {
   type: TraceFindingType;
@@ -19,6 +19,29 @@ export interface TraceRow {
   scenarios: string[];
   tasks: string[];
   tests: string[];
+}
+
+/** Commit state of the spec, resolved from git trailers by the caller (ADR 0021). */
+export interface CommitState {
+  /** Tasks whose last execution row is PASS or DEFERRED_TO_CI. */
+  passed: string[];
+  /** Tasks with a commit carrying `Refs: <spec id>` and `Mandao-Task: <task>`. */
+  committed: Set<string>;
+  /** Tasks queued in progress.yml `pending_commits`. */
+  pending: string[];
+}
+
+/** A passed task without a commit carrying its trailers. */
+export function commitFindings(state: CommitState): TraceFinding[] {
+  return state.passed
+    .filter((t) => !state.committed.has(t))
+    .map((t) => ({
+      type: 'UNCOMMITTED' as const,
+      ref: t,
+      message: state.pending.includes(t)
+        ? `${t} passed review and its commit is pending: run \`mandao run commit <spec>\``
+        : `${t} passed review but no commit carries its Mandao-Task trailer`,
+    }));
 }
 
 export interface Trace {
@@ -65,8 +88,8 @@ function referenceFindings(reqs: Requirements, tasks: Task[], known: Set<string>
  * covered when something cites it exactly — a gap is never discharged by citing another reference.
  * Semantic findings (CONTRADICTION, RULE, PREMISE, CONTRACT) stay with the agent.
  */
-export function trace(story: Story, reqs: Requirements, tasks: Task[] = []): Trace {
-  const findings: TraceFinding[] = [];
+export function trace(story: Story, reqs: Requirements, tasks: Task[] = [], commits?: CommitState): Trace {
+  const findings: TraceFinding[] = commits ? commitFindings(commits) : [];
   const refs = storyRefs(story);
   const known = new Set(refs.map((r) => r.ref));
   const scenarios = scenarioRefs(reqs);
