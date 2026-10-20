@@ -12,7 +12,13 @@ layers:
 recommendations:
   claude: sha256-5rayhZ9WuQ5FBwp6gqxVCDKoHiHYzxbSKMoa0zugPHQ=
   copilot: sha256-gkDFlhvXwuhNbQ7SNJht6xdi37mthr1PSTu7A1wQ07E=
-skills: []
+skills:
+  - id: graphify
+    version: 0.9.92
+    source: https://github.com/Graphify-Labs/graphify
+    author: Safi Shamsi and the Graphify contributors
+    license: Apache-2.0
+    vetted: true
 files:
   - path: .agents/skills/mandao-audit/agents/openai.yaml
     harness: codex

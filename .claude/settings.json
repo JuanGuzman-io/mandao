@@ -2,11 +2,12 @@
   "hooks": {
     "PreToolUse": [
       {
-        "matcher": "Bash",
+        "matcher": "Bash|Grep",
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard search"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard search",
+            "timeout": 10
           }
         ]
       },
@@ -15,7 +16,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard read"
+            "command": "node \"$CLAUDE_PROJECT_DIR/.mandao/bin/mandao.mjs\" hook graph-guard read",
+            "timeout": 10
           }
         ]
       }

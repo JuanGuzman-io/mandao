@@ -73,7 +73,7 @@ Architecture and rules: `docs/constitution/`.
 
 | Skill | Binding | Phase | Module | Status |
 |---|---|---|---|---|
-| graphify | core | constitution, specify, implement, close | all | installed locally (0.9.13; catalog pins 0.9.92 — `mandao doctor` offers the update); Claude Code and git hooks installed |
+| graphify | core | constitution, specify, implement, close | all | 0.9.92, pinned in the lock; Claude Code hooks through `mandao hook graph-guard` (roles with a shell only, ADR 0021) and git hooks installed |
 | codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`, generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |
 
 The catalog has no entries for this stack (TypeScript CLI with zod, commander, vitest); by decision
