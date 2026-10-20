@@ -127,6 +127,11 @@ export const configSchema = z
     home: relPath.default('.'),
     /** Polyrepo only: the user accepted that workspace artifacts are not versioned. */
     local_only: z.boolean().optional(),
+    /**
+     * Shadow mode (pilots, ADR 0030): everything Mandao generates is listed in `.git/info/exclude`, and
+     * managed blocks are never written into files git already tracks, so the team sees no change.
+     */
+    shadow: z.boolean().default(false),
     paths: z
       .object({
         specs: relPath.default('specs'),

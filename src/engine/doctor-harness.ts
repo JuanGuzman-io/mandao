@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { ADAPTERS } from '../adapters/index.js';
 import type { GeneratedFile } from '../adapters/types.js';
@@ -11,6 +12,8 @@ import { planChanges } from '../writer/plan.js';
 import type { Finding } from './doctor.js';
 import { codexFindings } from './doctor-codex.js';
 import { opencodeDoctor } from './doctor-opencode.js';
+import { sddConflictFindings } from './doctor-sdd.js';
+import { trackedFiles } from './shadow.js';
 import { harnessVersionFindings, type Probe } from './tools.js';
 
 /** Committed settings that must stay portable (ADR 0015); local variants are git-ignored. */
@@ -71,6 +74,17 @@ function checkoutPaths(root: string): string[] {
   return [...new Set([root, realpathSync(root)])];
 }
 
+/** Shadow mode is a choice, not drift: say it is on and which tracked files it leaves alone (ADR 0030). */
+function shadowFinding(root: string, lock: LockFile[]): Finding {
+  const tracked = trackedFiles(root);
+  const managed = ['AGENTS.md', 'CLAUDE.md', '.gitignore', ...lock.filter((f) => f.ownership === 'managed-block').map((f) => f.path)];
+  const left = [...new Set(managed)].filter((p) => tracked.has(p)).sort();
+  return {
+    level: 'info',
+    message: `shadow mode: generated files are listed in .git/info/exclude; tracked files are never touched${left.length ? ` (left alone: ${left.join(', ')})` : ''}`,
+  };
+}
+
 /** One summary line per installed harness: generated files, models per role, minimum version. */
 function statusFindings(
   root: string,
@@ -117,9 +131,13 @@ export function harnessFindings(
 ): Finding[] {
   const out = [...statusFindings(root, config, files, lock, recs, probe), ...portabilityFindings(root), ...graphHookFindings(root, config)];
   if (config.harnesses.includes('codex')) out.push(...codexFindings(checkoutPaths(root), probe));
+  if (config.shadow) out.push(shadowFinding(root, lock));
+  out.push(...sddConflictFindings(root, process.env.MANDAO_HOME ?? homedir()));
   for (const h of config.harnesses) {
     const why = ADAPTERS[h].experimental;
     if (why) out.push({ level: 'info', message: `${h} is experimental: ${why}` });
+    const tested = ADAPTERS[h].testedNote;
+    if (tested) out.push({ level: 'info', message: `${h}: ${tested}` });
   }
   if (config.harnesses.includes('opencode'))
     out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode, recs.harnesses.opencode?.provider_sets));

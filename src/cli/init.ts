@@ -40,6 +40,7 @@ export interface InitOptions {
   home?: string;
   yes?: boolean;
   force?: boolean;
+  shadow?: boolean;
 }
 
 const HARNESS_LABEL: Record<HarnessId, string> = {
@@ -288,6 +289,11 @@ const SOURCES_TEMPLATE = {
   design: [],
 };
 
+/** Workspace flags that are only written when set: local-only polyrepo, shadow mode (ADR 0030). */
+function modeFlags(localOnly: boolean | undefined, opts: InitOptions): Pick<ConfigInput, 'local_only' | 'shadow'> {
+  return { ...(localOnly ? { local_only: true } : {}), ...(opts.shadow ? { shadow: true } : {}) };
+}
+
 export async function runInit(root: string, opts: InitOptions) {
   const interactive = !opts.yes;
   if (interactive) p.intro(c.bold('mandao init'));
@@ -341,7 +347,7 @@ export async function runInit(root: string, opts: InitOptions) {
     schema_version: 1,
     workspace: ws.mode,
     ...(home !== '.' ? { home } : {}),
-    ...(localOnly ? { local_only: localOnly } : {}),
+    ...modeFlags(localOnly, opts),
     default_profile: defaultProfile,
     language: { business, technical },
     projects: projects.map((pr) => ({

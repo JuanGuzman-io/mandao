@@ -249,6 +249,12 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
 export function expectedPlace(root: string, config: Config, spec: SpecFolder): { branch: string; worktree: string } {
   const [id, ...slug] = spec.name.split(/-(?=[a-z])/);
   const type = spec.story?.meta.type;
-  const branch = specBranch(config, branchingFor(config), { id: id ?? spec.name, slug: slug.join('-'), ...(type ? { type } : {}) });
+  const hotfix = spec.story?.meta.lane === 'hotfix';
+  const branch = specBranch(config, branchingFor(config), {
+    id: id ?? spec.name,
+    slug: slug.join('-'),
+    ...(type ? { type } : {}),
+    ...(hotfix ? { hotfix } : {}),
+  });
   return { branch, worktree: join(worktreesDir(root, config), spec.name) };
 }

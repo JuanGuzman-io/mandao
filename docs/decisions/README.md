@@ -36,3 +36,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0027](0027-iteration-3-decisions.md) | Iteration 3 decisions: release, gates, diagram freshness, free models, Antigravity status | Accepted |
 | [0028](0028-no-size-estimates.md) | No size estimates: measure the real diff | Accepted |
 | [0029](0029-opencode-free-models-detection.md) | OpenCode: providers from the models it lists | Accepted |
+| [0030](0030-init-dir-shadow-hotfix-and-sdd-conflicts.md) | init in a new folder, shadow mode, hotfix lane, other SDD frameworks | Accepted |

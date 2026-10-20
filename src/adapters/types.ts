@@ -39,5 +39,7 @@ export interface Adapter {
   verified: { date: string; docs: string[] };
   /** Why the adapter is experimental, when it is: `init` and `doctor` say so. */
   experimental?: string;
+  /** How far it was tested live, when that limits how it is used: `doctor` shows it. */
+  testedNote?: string;
   render(input: AdapterInput): AdapterOutput;
 }

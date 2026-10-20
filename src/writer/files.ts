@@ -19,6 +19,11 @@ export function writeText(abs: string, content: string): WriteOutcome {
 }
 
 /** Writes only when the file does not exist yet; user content is never replaced. */
+/** Creates a directory (and its parents) if it does not exist. */
+export function ensureDir(abs: string): void {
+  mkdirSync(abs, { recursive: true });
+}
+
 export function createIfMissing(abs: string, content: string): WriteOutcome {
   return existsSync(abs) ? 'unchanged' : writeText(abs, content);
 }
