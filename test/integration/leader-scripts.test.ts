@@ -103,7 +103,7 @@ describe('Leader scripts', () => {
       'implementing',
     );
     expect(first.checkpoint).toMatchObject({ written: true });
-    expect(first.loop).toMatchObject({ task: 'T2', action: 'resume-implementation' });
+    expect(first.loop).toMatchObject({ task: 'T2', action: 'write-red-tests' });
     expect(first.brief).toMatchObject({ task: expect.objectContaining({ id: 'T2' }) });
     const lean = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
     expect(lean.checkpoint).toBeUndefined();
