@@ -52,6 +52,13 @@ describe('parsers on the sample spec', () => {
     ]);
     expect(progressSchema.parse(parseYaml(read('progress.yml'))).current).toMatchObject({ task: 'T2', phase: 'implementing' });
   });
+
+  test('the tasks template keeps each free-text entry whole', () => {
+    const template = readFileSync(join(import.meta.dirname, '../../core/templates/shared/spec/tasks.md'), 'utf8');
+    const { tasks } = parseTasks(template);
+    expect(tasks[0]?.tests.unit).toEqual(['what the unit test proves, in one sentence']);
+    expect(tasks[0]?.dod).toEqual(['module AGENTS.md (and CLAUDE.md pointer) created or updated']);
+  });
 });
 
 describe('malformed documents', () => {

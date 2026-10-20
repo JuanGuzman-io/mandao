@@ -630,7 +630,7 @@ files:
     harness: mandao
     from: template:shared/spec/tasks.md
     ownership: owned
-    hash: sha256-gogb0HasYT4w9HZuXn11T8C+G+xzlQJ4XPpe/GHZi14=
+    hash: sha256-JzJLCsuU+6Uv6m0hOp7I1ppQwlfC1iHwbUTui2UhjA0=
     scope: project
   - path: AGENTS.md
     harness: agents-md
