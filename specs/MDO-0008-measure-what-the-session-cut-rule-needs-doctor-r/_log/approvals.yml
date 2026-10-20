@@ -1,0 +1,6 @@
+# Written by mandao approve: who approved what, and when.
+approvals:
+  - step: spec
+    by: Juan D. Guzmán
+    at: 2026-10-20T22:22:54.589Z
+    note: "trial run: approved by the maintainer's delegate"
