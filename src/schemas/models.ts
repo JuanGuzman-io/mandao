@@ -54,7 +54,15 @@ export const recommendationsSchema = z.object({
       reviewed: z.iso.date(),
       sources: z.array(z.url()).min(1),
       /** Oldest harness release that knows the recommended models, and how to read the installed one. */
-      harness_version: z.object({ min: z.string().min(1), command: z.string().min(1) }).optional(),
+      /**
+       * Supported range: `min` is the oldest release with the recommended models and verified formats,
+       * `max_major` the newest major whose formats Mandao verified. Outside it, doctor warns (ADR 0025).
+       */
+      harness_version: z
+        .object({ min: z.string().min(1), max_major: z.number().int().nonnegative(), command: z.string().min(1) })
+        .optional(),
+      /** Why the version is not checked, when there is no documented version command or verified release. */
+      version_unchecked: z.string().min(1).optional(),
       available: z.array(model).min(1),
       /** `simple` when the harness cannot give each role its own model. */
       default_mode: z.enum(MODEL_MODES).default('routed'),

@@ -15,7 +15,7 @@ harnesses:
     # Pinned to the 5.5 family by full model ID (ADR 0014): aliases float to newer models, IDs do not.
     # Claude Code maps these Anthropic IDs to Bedrock and Google Cloud IDs itself. Opus, Sonnet and
     # Haiku are available on Pro, Max, Team, Enterprise and the API.
-    harness_version: { min: 2.1.293, command: claude --version }
+    harness_version: { min: 2.1.293, max_major: 2, command: claude --version }
     available: [claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5]
     routed:
       leader: claude-opus-5-5
@@ -60,6 +60,7 @@ harnesses:
       - https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference
     # Included on Pro, Pro+, Max, Business and Enterprise and supported in VS Code. Copilot Free and
     # Student only get auto model selection, so they ignore the model field of agents and prompts.
+    version_unchecked: "the Copilot adapter was verified against the VS Code docs, not a recorded VS Code or Copilot Chat release (ADR 0008)"
     available:
       - Claude Sonnet 5.5
       - Claude Sonnet 5
@@ -120,7 +121,7 @@ harnesses:
       - https://learn.chatgpt.com/docs/enterprise/workspace-model-availability.md
       - https://learn.chatgpt.com/docs/agent-configuration/subagents.md
     # 0.155.0 is the oldest CLI that knows gpt-6-sol and gpt-6-luna (codex-rs/models-manager/models.json).
-    harness_version: { min: 0.155.0, command: codex --version }
+    harness_version: { min: 0.155.0, max_major: 0, command: codex --version }
     # Defaults target the paid plans (Plus, Pro, Business) and API keys; no Codex model is on every plan.
     available: [gpt-6.1-sol, gpt-6-sol, gpt-6-luna]
     routed:
@@ -172,7 +173,7 @@ harnesses:
       - https://developers.openai.com/api/docs/models
     # 1.19.3 is the release whose formats Mandao verified (ADR 0017): commands, agents with permission,
     # permission.skill and .opencode/opencode.jsonc.
-    harness_version: { min: 1.19.3, command: opencode --version }
+    harness_version: { min: 1.19.3, max_major: 1, command: opencode --version }
     # OpenCode has no plans of its own: models follow the providers configured here. `init` detects them
     # (auth.json keys, provider env vars, enabled/disabled providers) and picks the matching set; this
     # top-level recommendation is the `anthropic` set, used when detection finds nothing.
@@ -245,6 +246,7 @@ harnesses:
     # model), `flash` or `pro`. No documented version command, so no minimum-version check.
     # Free and Plus only have Flash, and defaults must work on every plan: simple mode, Flash for both
     # roles, which is reduced independence (ADR 0020). `pro` is optional.
+    version_unchecked: "Antigravity documents no version command (ADR 0019)"
     default_mode: simple
     available: [flash]
     routed:

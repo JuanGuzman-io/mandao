@@ -81,23 +81,39 @@ export function runnerFindings(root: string, lockVersion: string | undefined, pr
   ];
 }
 
-/** Warns when an installed harness is older than the release the recommended models need. */
+/** One harness against its supported range: older than `min`, or a major newer than `max_major`. */
+function versionFinding(harness: HarnessId, installed: string, min: string, maxMajor: number): Finding | undefined {
+  if (semver.lt(installed, min)) {
+    return {
+      level: 'warn',
+      message: `${harness} ${installed} is older than ${min}, the oldest release Mandao supports (recommended models and verified formats)`,
+      fix: `update ${harness}, or choose models it supports with \`mandao models set\``,
+    };
+  }
+  if (semver.major(installed) > maxMajor) {
+    return {
+      level: 'warn',
+      message: `${harness} ${installed} is newer than the ${maxMajor}.x releases whose formats Mandao verified: generated files may not load as expected`,
+      fix: `run \`mandao update\` for a Mandao that supports it, or check the ${harness} adapter's ADR before relying on it`,
+    };
+  }
+  return undefined;
+}
+
+/** Warns when an installed harness is outside the range Mandao supports (ADR 0025). */
 export function harnessVersionFindings(recs: Recommendations, harnesses: HarnessId[], probe: Probe): Finding[] {
   const out: Finding[] = [];
   for (const harness of harnesses) {
-    const req = recs.harnesses[harness]?.harness_version;
+    const rec = recs.harnesses[harness];
+    if (rec?.version_unchecked) out.push({ level: 'info', message: `${harness}: version not checked: ${rec.version_unchecked}` });
+    const req = rec?.harness_version;
     if (!req) continue;
     const output = probe(req.command);
     const installed = output === undefined ? undefined : semver.coerce(output)?.version;
     const min = semver.coerce(req.min)?.version;
     if (!installed || !min) continue; // harness CLI not on PATH: nothing to compare
-    if (semver.lt(installed, min)) {
-      out.push({
-        level: 'warn',
-        message: `${harness} ${installed} is older than ${min}, which the recommended models need`,
-        fix: `update ${harness} (e.g. \`claude update\`), or choose models it supports with \`mandao models set\``,
-      });
-    }
+    const finding = versionFinding(harness, installed, min, req.max_major);
+    if (finding) out.push(finding);
   }
   return out;
 }

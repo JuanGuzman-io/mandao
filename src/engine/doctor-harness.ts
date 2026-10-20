@@ -82,7 +82,7 @@ function statusFindings(
 ): Finding[] {
   const plan = planChanges(files, lock, { project: root });
   const models = resolveWorkspaceModels(root, config, recs);
-  return config.harnesses.map((harness: HarnessId) => {
+  return config.harnesses.flatMap((harness: HarnessId): Finding[] => {
     const own = plan.filter((c) => c.lock?.harness === harness || files.some((f) => f.path === c.path && f.harness === harness));
     const stale = own.filter((c) => c.action !== 'unchanged').length;
     const missing = missingRoles(models[harness]!);
@@ -90,18 +90,20 @@ function statusFindings(
     const problems = [
       ...(stale ? [`${stale} file(s) not in sync`] : []),
       ...(missing.length ? [`no model for ${missing.join(', ')}`] : []),
-      ...version.map((v) => v.message),
+      ...version.filter((v) => v.level === 'warn').map((v) => v.message),
     ];
-    return problems.length
+    const notes = version.filter((v) => v.level !== 'warn');
+    const status: Finding = problems.length
       ? {
-          level: 'warn' as const,
+          level: 'warn',
           message: `harness ${harness}: not ready to switch to (${problems.join('; ')})`,
           fix: 'run `mandao sync` and `mandao models`',
         }
       : {
-          level: 'ok' as const,
-          message: `harness ${harness}: files in sync, every role has a model, version requirement met or not checkable`,
+          level: 'ok',
+          message: `harness ${harness}: files in sync, every role has a model, version in the supported range or not checkable`,
         };
+    return [status, ...notes];
   });
 }
 
