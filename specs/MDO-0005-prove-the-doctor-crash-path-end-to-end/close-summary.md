@@ -16,4 +16,3 @@ closed_at: 2026-10-20T18:40:13.335Z
 - [Technical notes](../../docs/releases/MDO-0005/technical.md)
 - [Kaizen](../../docs/kaizen/MDO-0005.md)
 - [Verify report](verify-report.md)
-- [Quickstart](quickstart.md)
