@@ -1,0 +1,6 @@
+# Written by mandao approve: who approved what, and when.
+approvals:
+  - step: spec
+    by: Juan D. Guzmán
+    at: 2026-10-20T20:48:40.842Z
+    note: maintainer's delegate, MDO-0007 trial
