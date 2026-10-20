@@ -19,3 +19,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0010](0010-design-document-alignment.md) | Alignment with the design document | Accepted |
 | [0011](0011-models-languages-and-iteration-2-decisions.md) | Models per role, profiles vs presets, skill installs, quick review, hooks, spec states, languages | Accepted |
 | [0012](0012-dogfooding-corrections.md) | Corrections from the first dogfooding run | Accepted |
+| [0013](0013-impacted-tests-and-resource-budget.md) | Impacted tests and a resource budget | Accepted |

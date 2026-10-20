@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.3 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.4 · **Last updated:** 2026-10-20
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -494,7 +494,7 @@ Separation of roles: **skills teach** (generic knowledge), **the constitution de
 
 | Level | What | When |
 |---|---|---|
-| **0 · Deterministic gates** | format, lint, typecheck, area tests, secrets scan, dependency audit for new deps, light SAST, clean-code thresholds | **Always**, including quick |
+| **0 · Deterministic gates** | format, lint, typecheck, **impacted tests** (§16.5), secrets scan, dependency audit for new deps, light SAST, clean-code thresholds | **Always**, including quick |
 | **1 · Core Reviewer** | spec conformance, contract, test policy, AGENTS.md, standards, semantic clean code | Every task |
 | **2 · Risk lenses** | security, performance, data/migrations, accessibility, AI (prompt injection, PII to model, cost) | Only when the task has the matching tag |
 | **3 · Adversarial** | Panel review of the whole design (judgment-day style) | Full depth or high-risk designs only |
@@ -529,13 +529,13 @@ Declared per task in `tasks.md`.
 
 - `critical-flows.md` lists critical flows; AC are flagged `critical: true`.
 - E2E required for: critical AC, multi-project features, regressions of past incidents.
-- `verify` always runs the existing **critical suite as smoke**.
+- **DECIDED (ADR 0013):** locally, `verify` runs only the e2e flows tied to the spec's AC. The full suite and the **smoke of every critical flow run in CI**; locally only with `--full`. See §16.5.
 - Profile `ai`: evals instead of e2e for model behavior.
 
 ### 16.3 Commit cadence
 
 - One commit per task, **only after Reviewer PASS**. Rework attempts are never committed.
-- Each commit leaves lint and area tests green.
+- Each commit leaves lint and impacted tests green.
 - `tasks.md` is updated in the same commit; `execution.md` records the hash.
 
 ### 16.4 Commit format
@@ -568,6 +568,38 @@ Mandao-AC: AC-1, AC-3
 - Breaking: `!` + `BREAKING CHANGE:` trailer (mandatory when the contract changes).
 - Closing keywords (`Fixes <ID>`) only on the final commit or the PR.
 - `init` offers commitlint with a custom `headerPattern` that accepts the emoji prefix, validates it matches the type, and requires `Refs:` when an ID is active. Same pattern for semantic-release if used.
+
+### 16.5 Test execution: impact and resources
+
+**DECIDED (ADR 0013).** The Reviewer and `verify` run only the tests a change impacts, under a resource budget.
+
+**Scope**
+
+- **Unit:** tests related to the touched files: reverse dependents from the graph plus the runner's native selection (`vitest related`, `jest --findRelatedTests`, `nx affected`, `go test` per package, `pytest` per path).
+- **E2E:** only the flows tied to the AC of the task (Reviewer) or of the spec (`verify`).
+- **Uncertain impact:** the tests of the touched module, **never the full suite**.
+- **Full suite and smoke of every critical flow:** in CI. Locally only with `--full`.
+
+**Resources**
+
+- Before running: check cores, free RAM and load.
+- Limited workers (default: half the cores), passed to the runner; low process priority; local e2e with one browser, headless, limited workers; a timeout per run.
+- **One heavy run at a time:** the Leader queues test runs from tasks, Testers and parallel worktrees.
+- Configuration, with per-project override:
+
+  ```yaml
+  # .mandao/config.yml
+  resources:
+    max_workers: auto          # auto = half the cores
+    min_free_memory_mb: 2048
+    priority: low
+    e2e_workers: 1
+  projects:
+    - { name: web, path: apps/web, resources: { e2e_workers: 2 } }
+  ```
+
+- **Not enough resources:** reduce workers. If that is still not enough, mark the run `DEFERRED_TO_CI`.
+- **Deferred is not PASS:** `execution.md` records what was deferred and why, and the spec cannot reach `verified` until CI confirms those tests.
 
 ## 17. Skills
 
@@ -698,7 +730,7 @@ Scope: a project, a route, or a critical flow from `critical-flows.md`. `--audit
 - **One optimization per task, one commit per task** (`⚡️ perf(<scope>): …`). Never batch optimizations: the effect must be attributable.
 - For each task: measure → change → measure again with the same protocol.
 - Keep the change only if the improvement exceeds the measured noise **and** nothing regresses (other metrics, functionality). Otherwise revert and record the result as evidence (a failed optimization is useful knowledge).
-- **Behavior must not change:** area tests and critical e2e stay green.
+- **Behavior must not change:** impacted tests and the e2e of the affected critical flows stay green.
 - Optimizations that introduce caching must specify invalidation; a stale-data risk is a correctness requirement, reviewed under the `perf` + `data` lenses.
 
 **Phase 5 — Report** (`perf-report.md`)
@@ -749,7 +781,7 @@ Double-checked gate.
 
 **Post-check (on the real diff).** If the change outgrew the estimate, stop: do not commit as quick; escalate to `story` or `specify` with what was learned, keeping the work as a draft.
 
-**Never skipped:** level 0 gates, area tests, lite review, a `quick-log.md` entry, and a commit with `Mandao-Quick: <name>`.
+**Never skipped:** level 0 gates, impacted tests, lite review, a `quick-log.md` entry, and a commit with `Mandao-Quick: <name>`.
 
 **DECIDED (ADR 0011):** the lite review always runs in a context separate from the author's, on a different model when one is available. Lite = the core Reviewer on the diff, without lenses (tasks with risk tags cannot be quick).
 
@@ -786,7 +818,7 @@ Raised in the gap sweep. Each needs a decision (and an ADR) before dependent wor
 
 ### 23.2 Process governance
 - **Roles and approvals:** who approves what (PO → AC; tech lead → design and constitution; dev → tasks); approval modes (e.g., `pre-approved` with logged auto-approvals).
-- **DECIDED (ADR 0011) — spec states:** `draft → approved → in-progress → blocked → verified → closed | abandoned`.
+- **DECIDED (ADR 0011) — spec states:** `draft → approved → in-progress → blocked → verified → closed | abandoned`. A spec with tests `DEFERRED_TO_CI` reaches `verified` only after CI confirms them (ADR 0013).
 - **Mid-flight changes:** AC changed after approval → spec versioning and a spec changelog.
 - **Concurrent specs:** two specs touching the same module; parallel branches; worktrees.
 - **DECIDED (ADR 0011) — artifact language:** `language.business` and `language.technical` (§3).
