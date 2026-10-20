@@ -51,3 +51,13 @@ test('no test climbs out of its work folder', () => {
     .flatMap((f) => withoutAllowed(f, findClimbs(f, readFileSync(join(root, f), 'utf8')), ALLOWED).map((c) => `${f}:${c.line} ${c.text}`));
   expect(offenders).toEqual([]);
 });
+
+/** MDO-0008: gray-matter evals `---js` front matter; only the YAML/JSON-only wrapper may use it. */
+test('only src/engine/frontmatter.ts imports gray-matter', () => {
+  const root = join(import.meta.dirname, '../..');
+  const offenders = files(join(root, 'src'))
+    .map((f) => relative(root, f))
+    .filter((f) => f !== 'src/engine/frontmatter.ts')
+    .filter((f) => /from 'gray-matter'|require\('gray-matter'\)/.test(readFileSync(join(root, f), 'utf8')));
+  expect(offenders).toEqual([]);
+});

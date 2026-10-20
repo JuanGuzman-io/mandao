@@ -1,6 +1,6 @@
-import matter from 'gray-matter';
 import { parse as parseYaml } from 'yaml';
 import type { z } from 'zod';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 import {
   type CommandFrontmatter,
   commandFrontmatterSchema,
@@ -79,7 +79,7 @@ function resolveDocuments<S extends z.ZodType>(
     for (const [path, content] of layer.files) {
       const m = path.match(new RegExp(`^${dir}/([^/]+)\\.md$`));
       if (!m?.[1]) continue;
-      const parsed = matter(content);
+      const parsed = parseFrontmatter(content);
       base.set(m[1], { data: structuredClone(parsed.data) as Plain, body: parsed.content, layerIndex, layer, file: `${layer.id}:${path}` });
     }
   });

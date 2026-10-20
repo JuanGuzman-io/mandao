@@ -1,4 +1,4 @@
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 
 export interface Section {
   level: number;
@@ -31,7 +31,7 @@ export function sections(markdown: string, level: number): Section[] {
 }
 
 export function frontmatterOf(markdown: string): { data: Record<string, unknown>; content: string } {
-  const parsed = matter(markdown);
+  const parsed = parseFrontmatter(markdown);
   return { data: structuredClone(parsed.data) as Record<string, unknown>, content: parsed.content };
 }
 
