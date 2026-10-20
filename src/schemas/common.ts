@@ -30,3 +30,15 @@ export const relPath = z
   .min(1)
   .refine((p) => !p.startsWith('/') && !/^[A-Za-z]:/.test(p), 'must be relative')
   .refine((p) => !p.split('/').includes('..'), 'must not escape the workspace');
+
+/** Risk tags assigned per task; they select review lenses and gate `quick`. */
+export const RISK_TAGS = ['auth', 'input', 'pii', 'payments', 'migration', 'public-api', 'infra', 'ai-prompt', 'ui'] as const;
+export const riskTag = z.enum(RISK_TAGS);
+export type RiskTag = z.infer<typeof riskTag>;
+/** Tags that always escalate a quick change to story/specify. */
+export const QUICK_FORBIDDEN_TAGS: readonly RiskTag[] = ['auth', 'payments', 'pii', 'migration'];
+
+/** Deterministic gates (review level 0). Concrete tools are configured per project. */
+export const GATES = ['format', 'lint', 'typecheck', 'test', 'secrets', 'audit', 'sast', 'metrics'] as const;
+export const gate = z.enum(GATES);
+export type Gate = z.infer<typeof gate>;

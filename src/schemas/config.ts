@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { harnessId, kebabId, profile, relPath, tier, workspaceMode, TIERS } from './common.js';
+import { gate, harnessId, kebabId, profile, relPath, tier, workspaceMode, TIERS } from './common.js';
 
 export const COMMIT_TYPES = [
   'feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'build', 'ci', 'revert',
@@ -26,6 +26,8 @@ const project = z.object({
   profile,
   /** Polyrepo only: the project is an independent git repository. */
   repo: z.boolean().optional(),
+  /** Shell command per deterministic gate, run from the project path. Missing gates are reported by doctor. */
+  gates: z.partialRecord(gate, z.string().min(1)).default({}),
 });
 export type ProjectConfig = z.infer<typeof project>;
 
