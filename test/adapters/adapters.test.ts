@@ -130,3 +130,66 @@ describe('persona variants', () => {
     expect(copilot.every((f) => !/^model:/m.test(f.content))).toBe(true);
   });
 });
+
+describe('codex', () => {
+  const codexRecs = recommendationsSchema.parse({
+    schema_version: 1,
+    harnesses: {
+      codex: {
+        reviewed: '2026-10-20',
+        sources: ['https://example.com/codex'],
+        available: ['gpt-6-luna', 'gpt-6.1-sol', 'gpt-6-sol'],
+        routed: {
+          leader: 'gpt-6.1-sol',
+          reviewer: 'gpt-6-sol',
+          reviewer_alt: 'gpt-6.1-sol',
+          implementer: { fast: 'gpt-6-luna', standard: 'gpt-6.1-sol', strong: 'gpt-6.1-sol' },
+          tester: 'gpt-6.1-sol',
+        },
+        simple: { implementer: 'gpt-6.1-sol', reviewer: 'gpt-6-sol' },
+        effort: { reviewer: 'high', implementer: { fast: 'medium', standard: 'medium', strong: 'high' } },
+      },
+    },
+  });
+
+  test('agents get snake_case names, their model and their reasoning effort', () => {
+    const i = input('single', 'project', { codex: resolveModels('codex', 'routed', codexRecs, []) });
+    const agents = Object.fromEntries(
+      ADAPTERS.codex
+        .render(i)
+        .files.filter((f) => f.path.startsWith('.codex/agents/'))
+        .map((f) => [
+          f.path,
+          [
+            f.content.match(/^name = (.+)$/m)?.[1],
+            f.content.match(/^model = (.+)$/m)?.[1],
+            f.content.match(/^model_reasoning_effort = (.+)$/m)?.[1],
+          ],
+        ]),
+    );
+    expect(agents['.codex/agents/mandao-implementer-strong.toml']).toEqual(['"mandao_implementer_strong"', '"gpt-6.1-sol"', '"high"']);
+    expect(agents['.codex/agents/mandao-implementer-standard.toml']).toEqual([
+      '"mandao_implementer_standard"',
+      '"gpt-6.1-sol"',
+      '"medium"',
+    ]);
+    expect(agents['.codex/agents/mandao-reviewer.toml']).toEqual(['"mandao_reviewer"', '"gpt-6-sol"', '"high"']);
+  });
+
+  test('skills are explicit-only and live in .agents/skills', () => {
+    const files = ADAPTERS.codex.render(input('single')).files;
+    expect(files.find((f) => f.path === '.agents/skills/mandao-specify/agents/openai.yaml')?.content).toContain(
+      'allow_implicit_invocation: false',
+    );
+    expect(ADAPTERS.codex.render(input('single', 'global')).files.map((f) => f.path)).toEqual([
+      'skills/mandao-init/SKILL.md',
+      'skills/mandao-init/agents/openai.yaml',
+    ]);
+  });
+
+  test('tomlString falls back to an escaped string when the body contains triple quotes', async () => {
+    const { tomlString } = await import('../../src/adapters/codex.js');
+    expect(tomlString('a\nb')).toBe("'''\na\nb'''");
+    expect(tomlString("x'''y")).toBe("\"x'''y\"");
+  });
+});

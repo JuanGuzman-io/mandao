@@ -60,7 +60,6 @@ describe('resolveModels', () => {
     expect(missingRoles(resolveModels('copilot', 'routed', recs, []))).toEqual([
       'leader',
       'reviewer',
-      'reviewer_alt',
       'tester',
       'implementer.fast',
       'implementer.standard',
@@ -70,18 +69,55 @@ describe('resolveModels', () => {
 });
 
 describe('independence', () => {
+  const withTiers = recommendationsSchema.parse({
+    ...recs,
+    harnesses: { claude: { ...recs.harnesses.claude, tiers: { haiku: 'fast', sonnet: 'standard', opus: 'strong', fable: 'strong' } } },
+  });
+  const summary = (models: ReturnType<typeof resolveModels>) =>
+    independence(models).map((c) => [c.tier, c.reviewer.model, c.reviewerRole, c.reduced]);
+
   test('reviewer_alt reviews the tier where the implementer equals the reviewer', () => {
-    const checks = independence(resolveModels('claude', 'routed', recs, []));
-    expect(checks.map((c) => [c.tier, c.reviewedBy, c.reduced])).toEqual([
-      ['fast', 'opus', false],
-      ['standard', 'opus', false],
-      ['strong', 'fable', false],
+    expect(summary(resolveModels('claude', 'routed', withTiers, []))).toEqual([
+      ['fast', 'opus', 'reviewer', false],
+      ['standard', 'opus', 'reviewer', false],
+      ['strong', 'fable', 'reviewer_alt', false],
     ]);
   });
 
-  test('independence is reduced when no alternative differs', () => {
-    const m = resolveModels('claude', 'routed', recs, [{ source: 'workspace', models: { reviewer_alt: 'opus' } }]);
-    expect(independence(m).find((c) => c.tier === 'strong')).toMatchObject({ reviewedBy: 'opus', reduced: true });
+  test('a reviewer below the implementer tier is never used: independence is reduced instead', () => {
+    const m = resolveModels('claude', 'routed', withTiers, [{ source: 'workspace', models: { reviewer_alt: 'sonnet' } }]);
+    expect(independence(m).find((c) => c.tier === 'strong')).toMatchObject({
+      reviewer: { model: 'opus' },
+      reduced: true,
+      reason: 'every reviewer on another model is below the implementer tier or effort',
+    });
+  });
+
+  test('the same model at a higher effort is not lower', async () => {
+    const { compareChoices } = await import('../../src/models/resolve.js');
+    const tiers = { m: 'standard' as const };
+    expect(
+      compareChoices({ model: 'm', source: 'workspace', effort: 'high' }, { model: 'm', source: 'workspace', effort: 'medium' }, tiers),
+    ).toBeGreaterThan(0);
+    expect(
+      compareChoices({ model: 'm', source: 'workspace', effort: 'low' }, { model: 'm', source: 'workspace', effort: 'high' }, tiers),
+    ).toBeLessThan(0);
+    expect(compareChoices({ model: 'x', source: 'workspace' }, { model: 'm', source: 'workspace' }, tiers)).toBeUndefined();
+  });
+
+  test('strong equals standard only when model and effort are both the same', async () => {
+    const { strongEqualsStandard } = await import('../../src/models/resolve.js');
+    const same = resolveModels('claude', 'routed', withTiers, [
+      { source: 'workspace', models: { implementer: { standard: 's', strong: 's' } } },
+    ]);
+    expect(strongEqualsStandard(same)).toBe(true);
+    const escalates = resolveModels('claude', 'routed', withTiers, [
+      {
+        source: 'workspace',
+        models: { implementer: { standard: 's', strong: 's' }, effort: { implementer: { standard: 'medium', strong: 'high' } } },
+      },
+    ]);
+    expect(strongEqualsStandard(escalates)).toBe(false);
   });
 });
 

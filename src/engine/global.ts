@@ -17,6 +17,8 @@ export function globalRoots(): Record<HarnessId, string> {
   return {
     claude: join(h, '.claude'),
     copilot: join(vscodeUser, 'prompts'),
+    // Codex reads user skills from ~/.agents/skills (learn.chatgpt.com/docs/build-skills).
+    codex: join(h, '.agents'),
   };
 }
 

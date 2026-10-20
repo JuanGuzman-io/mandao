@@ -129,7 +129,7 @@ describe('models in doctor', () => {
     expect(warns).toEqual(
       expect.arrayContaining([
         expect.stringMatching(/^claude: implementer\.fast uses "my-model", which is not among Mandao's recommendations/),
-        'claude: reduced independence for strong tasks: implementer and reviewer both use "my-model" and no reviewer_alt differs',
+        'claude: reduced independence for strong tasks (every reviewer uses the implementer model); my-model reviews in a clean context',
       ]),
     );
   });

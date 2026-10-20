@@ -8,7 +8,7 @@ const ctx = (over: Partial<RenderContext> = {}): RenderContext => ({
   profiles: new Set<Profile>(['app']),
   multiProject: false,
   mode: 'single',
-  paths: { specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases' },
+  paths: { specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases', worktrees: '../{repo}.worktrees' },
   version: '0.1.0',
   language: { business: 'es', technical: 'en' },
   ...over,

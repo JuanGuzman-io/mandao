@@ -13,7 +13,12 @@ const messages = (r: { success: boolean; error?: { issues: { message: string }[]
 describe('config', () => {
   test('fills defaults for paths, spec ids and the commit emoji map', () => {
     const cfg = configSchema.parse(baseConfig);
-    expect(cfg.paths).toEqual({ specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases' });
+    expect(cfg.paths).toEqual({
+      specs: 'specs',
+      constitution: 'docs/constitution',
+      releases: 'docs/releases',
+      worktrees: '../{repo}.worktrees',
+    });
     expect(cfg.spec.branch).toBe('{type}/{id}-{slug}');
     expect(cfg.commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);
     expect(cfg.commits.max_subject_length).toBe(72);

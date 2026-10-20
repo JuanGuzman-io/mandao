@@ -1,6 +1,28 @@
 import { z } from 'zod';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
 
+/** Test-run budget (ADR 0013). Every key is optional so a project can override only what differs. */
+export const resourcesSchema = z
+  .object({
+    /** `auto` = half the cores. */
+    max_workers: z.union([z.literal('auto'), z.number().int().positive()]),
+    min_free_memory_mb: z.number().int().nonnegative(),
+    priority: z.enum(['low', 'normal']),
+    e2e_workers: z.number().int().positive(),
+    /** Per test run, in seconds. */
+    timeout_s: z.number().int().positive(),
+  })
+  .partial();
+export type ResourcesConfig = z.infer<typeof resourcesSchema>;
+
+export const DEFAULT_RESOURCES = {
+  max_workers: 'auto',
+  min_free_memory_mb: 2048,
+  priority: 'low',
+  e2e_workers: 1,
+  timeout_s: 900,
+} as const;
+
 export const COMMIT_TYPES = ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'build', 'ci', 'revert'] as const;
 export type CommitType = (typeof COMMIT_TYPES)[number];
 
@@ -35,6 +57,15 @@ const project = z.object({
   repo: z.string().min(1).optional(),
   /** Shell command per deterministic gate, run from the project path. Missing gates are reported by doctor. */
   gates: z.partialRecord(gate, z.string().min(1)).default({}),
+  /**
+   * Impacted-test commands. `{files}` is replaced by the impacted test or source files and `{workers}` by
+   * the worker budget; when set they win over runner detection (ADR 0020).
+   */
+  tests: z
+    .object({ impacted: z.string().min(1), e2e: z.string().min(1) })
+    .partial()
+    .default({}),
+  resources: resourcesSchema.default({}),
 });
 export type ProjectConfig = z.infer<typeof project>;
 
@@ -73,8 +104,11 @@ export const configSchema = z
         specs: relPath.default('specs'),
         constitution: relPath.default('docs/constitution'),
         releases: relPath.default('docs/releases'),
+        /** Where spec worktrees live, relative to the workspace root; may sit outside it. `{repo}` = the root folder name. */
+        worktrees: z.string().min(1).default('../{repo}.worktrees'),
       })
       .prefault({}),
+    resources: resourcesSchema.default({}),
     /** Profile for projects that do not declare one. */
     default_profile: profile.default('app'),
     /**

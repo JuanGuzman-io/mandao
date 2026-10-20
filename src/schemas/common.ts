@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const kebabId = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'must be kebab-case');
 
-export const HARNESS_IDS = ['claude', 'copilot'] as const;
+export const HARNESS_IDS = ['claude', 'copilot', 'codex'] as const;
 export const harnessId = z.enum(HARNESS_IDS);
 export type HarnessId = z.infer<typeof harnessId>;
 
@@ -13,6 +13,11 @@ export type Profile = z.infer<typeof profile>;
 export const TIERS = ['fast', 'standard', 'strong'] as const;
 export const tier = z.enum(TIERS);
 export type Tier = z.infer<typeof tier>;
+
+/** Reasoning effort, where a harness lets a role set it (Codex `model_reasoning_effort`). Ordered low → high. */
+export const EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max', 'ultra'] as const;
+export const effort = z.enum(EFFORTS);
+export type Effort = z.infer<typeof effort>;
 
 export const CAPABILITIES = ['read', 'edit', 'search', 'shell', 'web', 'mcp', 'agents'] as const;
 export const capability = z.enum(CAPABILITIES);

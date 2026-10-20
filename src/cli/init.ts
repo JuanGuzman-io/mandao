@@ -41,7 +41,7 @@ export interface InitOptions {
   force?: boolean;
 }
 
-const HARNESS_LABEL: Record<HarnessId, string> = { claude: 'Claude Code', copilot: 'GitHub Copilot' };
+const HARNESS_LABEL: Record<HarnessId, string> = { claude: 'Claude Code', copilot: 'GitHub Copilot', codex: 'Codex' };
 
 function bail(value: unknown): asserts value is NonNullable<unknown> {
   if (p.isCancel(value)) {
@@ -136,22 +136,43 @@ async function chooseLanguage(kind: 'business' | 'technical', preset: string | u
 }
 
 /** Asks for each role's model, showing Mandao's recommendation with the option to type another. */
-async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
+async function chooseMode(opts: InitOptions): Promise<ModelMode> {
   if (opts.modelsMode && !MODEL_MODES.includes(opts.modelsMode)) throw new Error(`--models-mode must be one of ${MODEL_MODES.join(', ')}`);
-  const recs = readRecommendations();
-  let mode: ModelMode = opts.modelsMode ?? 'routed';
-  if (!opts.modelsMode && !opts.yes) {
-    const picked = await p.select({
-      message: 'How should Mandao pick models?',
-      options: [
-        { value: 'routed', label: 'Routed', hint: 'the Implementer follows each task tier (fast, standard, strong)' },
-        { value: 'simple', label: 'Simple', hint: 'one model to implement, another to review' },
-      ],
-      initialValue: 'routed',
-    });
-    bail(picked);
-    mode = picked as ModelMode;
+  if (opts.modelsMode || opts.yes) return opts.modelsMode ?? 'routed';
+  const picked = await p.select({
+    message: 'How should Mandao pick models?',
+    options: [
+      { value: 'routed', label: 'Routed', hint: 'the Implementer follows each task tier (fast, standard, strong)' },
+      { value: 'simple', label: 'Simple', hint: 'one model to implement, another to review' },
+    ],
+    initialValue: 'routed',
+  });
+  bail(picked);
+  return picked as ModelMode;
+}
+
+/** Role by role, the recommendation first and any other model allowed. Efforts follow the recommendation. */
+async function askEveryRole(recommended: RoleModels, rec: NonNullable<Recommendations['harnesses'][HarnessId]>): Promise<RoleModels> {
+  const chosen: RoleModels = {};
+  for (const role of ['leader', 'reviewer', 'reviewer_alt', 'tester'] as const) {
+    const value = recommended[role];
+    if (value) chosen[role] = await askModel(role, value, rec);
   }
+  const impl = recommended.implementer;
+  if (typeof impl === 'string') chosen.implementer = await askModel('implementer', impl, rec);
+  else if (impl) {
+    const tiers: Record<string, string> = {};
+    for (const tier of TIERS) tiers[tier] = await askModel(`implementer (${tier} tasks)`, impl[tier]!, rec);
+    chosen.implementer = tiers;
+  }
+  if (recommended.effort) chosen.effort = recommended.effort;
+  return chosen;
+}
+
+/** Asks for each role's model, showing Mandao's recommendation with the option to type another. */
+async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
+  const recs = readRecommendations();
+  const mode = await chooseMode(opts);
   const out: Models = { schema_version: 1, mode, harnesses: {} };
   for (const harness of harnesses) {
     const rec = recs.harnesses[harness];
@@ -164,31 +185,27 @@ async function chooseModels(harnesses: HarnessId[], opts: InitOptions): Promise<
     p.note(rolesTable(recommended), `Mandao recommends for ${HARNESS_LABEL[harness]} (reviewed ${rec.reviewed}, from the official docs)`);
     const accept = await p.confirm({ message: `Use these models for ${HARNESS_LABEL[harness]}?` });
     bail(accept);
-    if (accept) {
-      out.harnesses[harness] = recommended;
-      continue;
-    }
-    const chosen: RoleModels = {};
-    for (const [role, value] of Object.entries(recommended) as [keyof RoleModels, RoleModels[keyof RoleModels]][]) {
-      if (typeof value === 'object') {
-        const tiers: Record<string, string> = {};
-        for (const tier of TIERS) tiers[tier] = await askModel(`${role} (${tier} tasks)`, value[tier]!, rec);
-        chosen.implementer = tiers;
-      } else if (value) {
-        (chosen as Record<string, string>)[role] = await askModel(role, value, rec);
-      }
-    }
-    out.harnesses[harness] = chosen;
+    out.harnesses[harness] = accept ? recommended : await askEveryRole(recommended, rec);
   }
   return out;
 }
 
 function rolesTable(models: RoleModels): string {
-  return Object.entries(models)
-    .flatMap(([role, value]) =>
-      typeof value === 'object' ? TIERS.map((t) => `${`${role}.${t}`.padEnd(22)} ${value[t]}`) : [`${role.padEnd(22)} ${value}`],
-    )
-    .join('\n');
+  const effort = models.effort ?? {};
+  const line = (role: string, model: string, e?: string) => `${role.padEnd(22)} ${model}${e ? ` (${e})` : ''}`;
+  const rows: string[] = [];
+  for (const role of ['leader', 'reviewer', 'reviewer_alt', 'tester'] as const) {
+    const m = models[role];
+    if (m) rows.push(line(role, m, effort[role]));
+  }
+  const impl = models.implementer;
+  const implEffort = effort.implementer;
+  for (const tier of TIERS) {
+    const m = typeof impl === 'string' ? impl : impl?.[tier];
+    const e = typeof implEffort === 'string' ? implEffort : implEffort?.[tier];
+    if (m) rows.push(line(`implementer.${tier}`, m, e));
+  }
+  return rows.join('\n');
 }
 
 async function askModel(role: string, recommended: string, rec: NonNullable<Recommendations['harnesses'][HarnessId]>): Promise<string> {

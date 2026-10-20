@@ -3,6 +3,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 import { type Config, QUICK_FORBIDDEN_TAGS, type RiskTag } from '../schemas/index.js';
 
+/** The part of the config the diff analysis needs. */
+export type WorkspaceProjects = { projects: Pick<Config['projects'][number], 'name' | 'path' | 'profile'>[] };
+
 export interface FileStat {
   path: string;
   added: number;
@@ -77,7 +80,7 @@ export function manifestDeps(path: string, content: string | undefined): Set<str
   return names;
 }
 
-function projectOf(path: string, config: Pick<Config, 'projects'>): string | undefined {
+function projectOf(path: string, config: WorkspaceProjects): string | undefined {
   // Longest matching project path wins, so nested projects resolve correctly.
   return config.projects
     .filter((p) => p.path === '.' || path === p.path || path.startsWith(`${p.path}/`))
@@ -88,7 +91,7 @@ function projectOf(path: string, config: Pick<Config, 'projects'>): string | und
 export function analyzeDiff(
   files: FileStat[],
   manifests: ManifestChange[],
-  config: Pick<Config, 'projects'>,
+  config: WorkspaceProjects,
   limits: QuickLimits = DEFAULT_LIMITS,
 ): QuickReport {
   const totals = files.reduce(

@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import matter from 'gray-matter';
 import { MODELS_FILE, readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import { independence, type ModelLayer, missingRoles, type ResolvedModels, usedModels } from '../models/resolve.js';
+import { independence, type ModelLayer, missingRoles, type ResolvedModels, strongEqualsStandard, usedModels } from '../models/resolve.js';
 import { HARNESS_IDS, type HarnessId, MODEL_MODES, type ModelMode, ROLES, type RoleModels, TIERS, type Tier } from '../schemas/index.js';
 import { editYaml } from '../writer/files.js';
 import { c } from './output.js';
@@ -62,15 +62,23 @@ export function resolveForCli(root: string, opts: ResolveCliOptions): ResolvedMo
   });
 }
 
+function printReview(m: ResolvedModels) {
+  for (const check of independence(m)) {
+    if (check.reduced) console.log(`    ${c.yellow('reduced independence')} at ${check.tier}: ${check.reason}`);
+    else if (check.reviewerRole === 'reviewer_alt')
+      console.log(`    ${c.dim(`${check.tier} tasks are reviewed by reviewer_alt (${check.reviewer.model})`)}`);
+  }
+  if (strongEqualsStandard(m))
+    console.log(`    ${c.yellow('note')} implementer.strong equals standard (same model and effort): escalation does not change model`);
+}
+
 export function printModels(all: ResolvedModels[]) {
   for (const m of all) {
     console.log(`  ${c.bold(m.harness)} ${c.dim(`(${m.mode})`)}`);
-    for (const { role, choice } of usedModels(m)) console.log(`    ${role.padEnd(22)} ${choice.model} ${c.dim(choice.source)}`);
-    for (const check of independence(m)) {
-      if (check.reduced) console.log(`    ${c.yellow('reduced independence')} at ${check.tier}: ${check.implementer} reviews itself`);
-      else if (check.reviewedBy !== check.reviewer)
-        console.log(`    ${c.dim(`${check.tier} tasks are reviewed by reviewer_alt (${check.reviewedBy})`)}`);
+    for (const { role, choice } of usedModels(m)) {
+      console.log(`    ${role.padEnd(22)} ${choice.model}${choice.effort ? ` (${choice.effort})` : ''} ${c.dim(choice.source)}`);
     }
+    printReview(m);
     const missing = missingRoles(m);
     if (missing.length) console.log(`    ${c.red('missing')} ${missing.join(', ')}`);
   }

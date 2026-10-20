@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { harnessId, schemaVersion, TIERS, type Tier } from './common.js';
+import { effort, harnessId, schemaVersion, TIERS, type Tier, tier } from './common.js';
 
 export const ROLES = ['leader', 'reviewer', 'reviewer_alt', 'implementer', 'tester'] as const;
 export type Role = (typeof ROLES)[number];
@@ -9,6 +9,14 @@ export type ModelMode = (typeof MODEL_MODES)[number];
 
 const model = z.string().min(1);
 const tierModels = z.object(Object.fromEntries(TIERS.map((t) => [t, model])) as Record<Tier, typeof model>);
+const tierEfforts = z.object(Object.fromEntries(TIERS.map((t) => [t, effort])) as Record<Tier, typeof effort>);
+
+/** Reasoning effort per role, mirroring the model choices; ignored by harnesses without per-agent effort. */
+const roleEfforts = z
+  .object({ leader: effort, reviewer: effort, reviewer_alt: effort, implementer: z.union([effort, tierEfforts.partial()]), tester: effort })
+  .partial()
+  .strict();
+export type RoleEfforts = z.infer<typeof roleEfforts>;
 
 /** One harness's role → model choices. Every key is optional: missing roles fall back to the next layer. */
 const roleModels = z
@@ -19,6 +27,7 @@ const roleModels = z
     /** `simple` mode: one model. `routed` mode: one model per task tier (a string applies to every tier). */
     implementer: z.union([model, tierModels.partial()]),
     tester: model,
+    effort: roleEfforts,
   })
   .partial()
   .strict();
@@ -44,8 +53,19 @@ export const recommendationsSchema = z.object({
       /** Oldest harness release that knows the recommended models, and how to read the installed one. */
       harness_version: z.object({ min: z.string().min(1), command: z.string().min(1) }).optional(),
       available: z.array(model).min(1),
-      routed: z.object({ leader: model, reviewer: model, reviewer_alt: model, implementer: tierModels, tester: model }),
+      /** `simple` when the harness cannot give each role its own model. */
+      default_mode: z.enum(MODEL_MODES).default('routed'),
+      routed: z.object({ leader: model, reviewer: model, reviewer_alt: model.optional(), implementer: tierModels, tester: model }),
       simple: z.object({ implementer: model, reviewer: model }),
+      /** Reasoning effort per role, for harnesses that support it. */
+      effort: roleEfforts.optional(),
+      /**
+       * Mandao's classification of each recommended or optional model into a tier. It is a judgement, not
+       * vendor data; it backs the rule that a Reviewer never runs below the Implementer's tier.
+       */
+      tiers: z.record(model, tier).default({}),
+      /** Plan or administration facts that doctor repeats to the user. */
+      notes: z.array(z.string().min(1)).default([]),
       /** Good choices that depend on the plan or an administrator: offered, never defaults. */
       optional: z.array(z.object({ model, roles: z.array(z.enum(ROLES)).min(1), note: z.string().min(1) })).default([]),
     }),

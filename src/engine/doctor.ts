@@ -1,21 +1,23 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { delimiter, join } from 'node:path';
+import { existsSync, readdirSync } from 'node:fs';
+import { join } from 'node:path';
 import semver from 'semver';
 import { ADAPTERS } from '../adapters/index.js';
-import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import { independence, missingRoles, usedModels } from '../models/resolve.js';
+import { readRecommendations } from '../models/load.js';
 import { loadLayers } from '../resolver/layers.js';
 import { ResolveError } from '../resolver/resolve.js';
-import { type Config, GATES, LOCAL_REPO, type Recommendations } from '../schemas/index.js';
+import { type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
+import { onPath } from '../util/which.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
 import { readCatalog } from './catalog.js';
+import { harnessFindings } from './doctor-harness.js';
+import { modelFindings } from './doctor-models.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
 import { buildProject } from './sync.js';
-import { harnessVersionFindings, type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
+import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
 export type Level = 'error' | 'warn' | 'info' | 'ok';
 
@@ -32,12 +34,6 @@ const OPTIONAL_TOOLS = [
   { name: 'graphify', fallback: 'repository mapping falls back to grep/glob; reports lower their confidence' },
   { name: 'archify', fallback: 'diagrams fall back to Mermaid' },
 ];
-
-function onPath(bin: string): boolean {
-  return (process.env.PATH ?? '')
-    .split(delimiter)
-    .some((dir) => dir && (existsSync(join(dir, bin)) || existsSync(join(dir, `${bin}.cmd`))));
-}
 
 function hasSkill(root: string, name: string): boolean {
   return [join(root, '.claude', 'skills', name), join(home(), '.claude', 'skills', name)].some((p) => existsSync(p));
@@ -88,65 +84,16 @@ function workspaceFindings(root: string, config: Config): Finding[] {
   return out;
 }
 
-/** Every role has a model, chosen models are still recommended, and review independence holds. */
-export function modelFindings(root: string, config: Config, recs: Recommendations): Finding[] {
-  const out: Finding[] = [];
-  const scopes = [undefined, ...config.projects.filter((p) => p.path !== '.' && existsSync(join(root, p.path, '.mandao', 'models.yml')))];
-  for (const project of scopes) {
-    const where = project ? ` (project ${project.name})` : '';
-    const resolved = resolveWorkspaceModels(root, config, recs, { project });
-    for (const harness of config.harnesses) {
-      const m = resolved[harness]!;
-      const missing = missingRoles(m);
-      if (missing.length) {
-        out.push({
-          level: 'error',
-          message: `${harness}${where}: no model for ${missing.join(', ')}`,
-          fix: `mandao models set <role> <model> --harness ${harness}`,
-        });
-      }
-      const rec = recs.harnesses[harness];
-      for (const { role, choice } of usedModels(m)) {
-        const optional = rec?.optional.find((o) => o.model === choice.model);
-        if (optional) {
-          out.push({ level: 'info', message: `${harness}${where}: ${role} uses "${choice.model}": ${optional.note}` });
-        } else if (choice.source !== 'recommendation' && rec && !rec.available.includes(choice.model)) {
-          out.push({
-            level: 'warn',
-            message: `${harness}${where}: ${role} uses "${choice.model}", which is not among Mandao's recommendations (reviewed ${rec.reviewed})`,
-            fix: 'check that the model is still available, or `mandao models` to compare',
-          });
-        }
-      }
-      for (const check of independence(m).filter((x) => x.reduced)) {
-        out.push({
-          level: 'warn',
-          message: `${harness}${where}: reduced independence for ${check.tier} tasks: implementer and reviewer both use "${check.implementer}" and no reviewer_alt differs`,
-          fix: 'reviews will run in a clean context and execution.md records "reduced independence"; set reviewer_alt to another model to avoid it',
-        });
-      }
-    }
+function sourcesFindings(root: string): Finding[] {
+  if (!existsSync(join(root, SOURCES_FILE))) {
+    return [{ level: 'info', message: 'no .mandao/sources.yml: story and constitution --product will only use local context' }];
   }
-  return out;
-}
-
-/** Graphify installs its own hooks; Mandao only checks that they are there. */
-function graphHookFindings(root: string, config: Config): Finding[] {
-  if (!onPath('graphify')) return [];
-  const out: Finding[] = [];
-  const settings = join(root, '.claude', 'settings.json');
-  if (config.harnesses.includes('claude') && !(existsSync(settings) && readFileSync(settings, 'utf8').includes('graphify'))) {
-    out.push({ level: 'info', message: 'graphify is installed but its Claude Code hooks are not', fix: 'run `graphify claude install`' });
+  try {
+    return [{ level: 'ok', message: `sources: tracker ${readSources(root).tracker.kind}` }];
+  } catch (e) {
+    if (!(e instanceof ConfigError)) throw e;
+    return e.issues.map((m) => ({ level: 'error' as const, message: m }));
   }
-  const postCommit = join(root, '.git', 'hooks', 'post-commit');
-  if (isRepo(root) && !(existsSync(postCommit) && readFileSync(postCommit, 'utf8').includes('graphify'))) {
-    out.push({
-      level: 'info',
-      message: 'graphify is installed but its git hooks are not (the graph will go stale)',
-      fix: 'run `graphify hook install`',
-    });
-  }
-  return out;
 }
 
 export interface DoctorOptions {
@@ -183,17 +130,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
     return findings;
   }
 
-  if (existsSync(join(root, SOURCES_FILE))) {
-    try {
-      const sources = readSources(root);
-      findings.push({ level: 'ok', message: `sources: tracker ${sources.tracker.kind}` });
-    } catch (e) {
-      if (!(e instanceof ConfigError)) throw e;
-      findings.push(...e.issues.map((m) => ({ level: 'error' as const, message: m })));
-    }
-  } else {
-    findings.push({ level: 'info', message: 'no .mandao/sources.yml: story and constitution --product will only use local context' });
-  }
+  findings.push(...sourcesFindings(root));
 
   findings.push(...workspaceFindings(root, config));
 
@@ -212,12 +149,11 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   findings.push(...build.warnings.map((m) => ({ level: 'warn' as const, message: m })));
   const recs = readRecommendations();
   findings.push(...modelFindings(root, config, recs));
-  findings.push(...harnessVersionFindings(recs, config.harnesses, probe));
+  findings.push(...harnessFindings(root, config, build.files, lockForTools?.files ?? [], recs, probe));
   const catalog = readCatalog();
   findings.push(
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...(lockForTools?.skills ?? []).map((s) => s.id)])], probe),
   );
-  findings.push(...graphHookFindings(root, config));
 
   const lock = readLock(join(root, LOCK_FILE));
   if (!lock) {

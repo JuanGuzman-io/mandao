@@ -1,8 +1,8 @@
 import { stringify as stringifyYaml } from 'yaml';
-import type { ResolvedModels } from '../models/resolve.js';
+import type { Choice, ResolvedModels } from '../models/resolve.js';
 import { applyConditionals, contextFromConfig, type RenderContext, renderBody, type TokenSyntax } from '../render/render.js';
 import type { ResolvedCommand, ResolvedPersona } from '../resolver/resolve.js';
-import { type Capability, type HarnessId, TIERS } from '../schemas/index.js';
+import { type Capability, type Effort, type HarnessId, TIERS } from '../schemas/index.js';
 import type { AdapterInput } from './types.js';
 
 export const commandName = (id: string) => `mandao-${id}`;
@@ -67,9 +67,13 @@ export interface PersonaVariant {
   from: string;
   description: string;
   model?: string;
+  /** Reasoning effort, for harnesses that set it per agent. */
+  effort?: Effort;
   /** Prepended to the persona body to tell the variant apart. */
   preface?: string;
 }
+
+const pick = (c: Choice | undefined) => (c ? { model: c.model, ...(c.effort ? { effort: c.effort } : {}) } : {});
 
 export function personaVariants(persona: ResolvedPersona, models: ResolvedModels | undefined): PersonaVariant[] {
   const { id, description } = persona.meta;
@@ -77,32 +81,31 @@ export function personaVariants(persona: ResolvedPersona, models: ResolvedModels
   const base = { name: commandName(id), from, description };
   switch (id) {
     case 'implementer':
-      if (models?.mode === 'simple' || !models) return [{ ...base, model: models?.implementer.standard?.model }];
+      if (models?.mode === 'simple' || !models) return [{ ...base, ...pick(models?.implementer.standard) }];
       return TIERS.map((tier) => ({
         name: commandName(`${id}-${tier}`),
         from: `${from}:${tier}`,
         description: `${description} Tier: ${tier}.`,
-        model: models.implementer[tier]?.model,
+        ...pick(models.implementer[tier]),
         preface: `This Implementer runs tasks whose tier is \`${tier}\`.`,
       }));
     case 'reviewer': {
-      const variants: PersonaVariant[] = [{ ...base, model: models?.reviewer?.model }];
-      const alt = models?.reviewer_alt?.model;
-      if (alt) {
+      const variants: PersonaVariant[] = [{ ...base, ...pick(models?.reviewer) }];
+      if (models?.reviewer_alt) {
         variants.push({
           name: commandName(`${id}-alt`),
           from: `${from}:alt`,
           description: `${description} Used when the Implementer ran on the Reviewer's model.`,
-          model: alt,
+          ...pick(models.reviewer_alt),
           preface: "You are the alternative Reviewer: the Leader calls you when the Implementer ran on the main Reviewer's model.",
         });
       }
       return variants;
     }
     case 'leader':
-      return [{ ...base, model: models?.leader?.model }];
+      return [{ ...base, ...pick(models?.leader) }];
     case 'tester':
-      return [{ ...base, model: models?.tester?.model }];
+      return [{ ...base, ...pick(models?.tester) }];
     default:
       return [base];
   }
