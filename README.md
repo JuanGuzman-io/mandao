@@ -43,7 +43,7 @@ step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it a
 | Claude Code | `.claude/skills/mandao-*/SKILL.md` | `.claude/agents/mandao-*.md` | 2026-10-19 | live |
 | GitHub Copilot (VS Code) | `.github/prompts/mandao-*.prompt.md` | `.github/agents/mandao-*.agent.md` | 2026-10-19 | snapshots |
 | Codex (OpenAI) | `.agents/skills/mandao-*/SKILL.md` (`$mandao-<id>`) | `.codex/agents/mandao-*.toml` | 2026-10-20 | live |
-| OpenCode (2.1.1 – 2.x) | `.opencode/commands/mandao-*.md` | `.opencode/agents/mandao-*.md` | 2026-10-20 | snapshots; live run pending |
+| OpenCode (2.1.1 – 2.x) | `.opencode/commands/mandao-*.md` | `.opencode/agents/mandao-*.md` | 2026-10-20 | **live-tested (TUI)**; non-interactive invocation needs OpenCode 2's server API (OPEN) |
 | Antigravity (Google) — **experimental** | `.agents/skills/mandao-*/SKILL.md`, shared with Codex | `.agents/agents/mandao-*.md` | 2026-10-20 | **not live-tested**: snapshots only |
 | Any other agent | `AGENTS.md` (managed block) | — | — | — |
 

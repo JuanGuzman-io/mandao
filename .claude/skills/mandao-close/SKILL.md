@@ -60,6 +60,11 @@ In `docs/releases/<ID>/`:
 
 - gitflow: `node .mandao/bin/mandao.mjs run close-summary $spec --detect-release` (or `--release <branch>` when the team
   says which). Mandao never creates `release/` branches.
+- **Hotfix lane** (`lane: hotfix` in story.md): remind the user, with the exact branches from
+  `node .mandao/bin/mandao.mjs run branching`, that the fix must be merged back into every branch of `hotfix.merge_to` other
+  than the one it was merged into (e.g. gitflow: `main` and `develop`; env-branches: `staging` and
+  `test`). Mandao never merges or pushes; list each back-merge as an open item in the technical notes
+  until the user confirms it.
 - Environments: only as CI or the tracker reports them —
   `node .mandao/bin/mandao.mjs run close-summary $spec --env <name> --source ci|tracker`. Promotion is never automated.
 

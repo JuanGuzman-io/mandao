@@ -90,6 +90,8 @@ function renderConfig(input: AdapterInput): GeneratedFile {
 export const opencodeAdapter: Adapter = {
   id: 'opencode',
   name: 'OpenCode',
+  testedNote:
+    'live-tested in the TUI (2.1.1, acceptance 2026-10-20); invoking mandaos non-interactively needs OpenCode 2 server API (session.command): OPEN',
   verified: {
     date: '2026-10-20',
     docs: [

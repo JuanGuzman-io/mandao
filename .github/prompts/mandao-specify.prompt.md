@@ -1,7 +1,7 @@
 ---
 name: mandao-specify
 description: Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check.
-argument-hint: "[ref] [depth]"
+argument-hint: "[ref] [depth] [hotfix]"
 agent: agent
 tools:
   - read
@@ -13,7 +13,7 @@ tools:
 
 # /mandao-specify
 
-Arguments: ref: ${input:ref:Spec folder, tracker id (PROJ-123) or item URL; empty to choose}, depth: ${input:depth:lite | standard | full (default - standard)}
+Arguments: ref: ${input:ref:Spec folder, tracker id (PROJ-123) or item URL; empty to choose}, depth: ${input:depth:lite | standard | full (default - standard)}, hotfix: ${input:hotfix:--hotfix for a production fix - branch from branching.hotfix.from, merged back at close}
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,
 `.mandao/templates/app/rules/traceability.md` and `.mandao/templates/app/rules/test-policy.md`.
@@ -31,10 +31,13 @@ Write requirements and design content in `en` and anything addressed to the PO
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
 The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
-`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type>` and, with **one** confirmation, run the
+`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type>` (add `--hotfix` when the request says `--hotfix`)
+and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
 from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
-a missing base) before asking. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
+a missing base) before asking. **Hotfix:** the branch starts from `branching.hotfix.from` with the hotfix
+prefix; set `lane: hotfix` and `type: bug` in `story.md`, depth `lite` unless the risk calls for more, and
+say at once where it must be merged back (`branching.hotfix.merge_to`, from `node .mandao/bin/mandao.mjs run branching`). Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
 session already runs in the worktree. If there is no `story.md`, write one from
 `.mandao/templates/app/spec/story.md` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the

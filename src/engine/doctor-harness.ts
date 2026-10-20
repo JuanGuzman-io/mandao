@@ -1,4 +1,5 @@
 import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { ADAPTERS } from '../adapters/index.js';
 import type { GeneratedFile } from '../adapters/types.js';
@@ -11,6 +12,7 @@ import { planChanges } from '../writer/plan.js';
 import type { Finding } from './doctor.js';
 import { codexFindings } from './doctor-codex.js';
 import { opencodeDoctor } from './doctor-opencode.js';
+import { sddConflictFindings } from './doctor-sdd.js';
 import { trackedFiles } from './shadow.js';
 import { harnessVersionFindings, type Probe } from './tools.js';
 
@@ -130,9 +132,12 @@ export function harnessFindings(
   const out = [...statusFindings(root, config, files, lock, recs, probe), ...portabilityFindings(root), ...graphHookFindings(root, config)];
   if (config.harnesses.includes('codex')) out.push(...codexFindings(checkoutPaths(root), probe));
   if (config.shadow) out.push(shadowFinding(root, lock));
+  out.push(...sddConflictFindings(root, process.env.MANDAO_HOME ?? homedir()));
   for (const h of config.harnesses) {
     const why = ADAPTERS[h].experimental;
     if (why) out.push({ level: 'info', message: `${h} is experimental: ${why}` });
+    const tested = ADAPTERS[h].testedNote;
+    if (tested) out.push({ level: 'info', message: `${h}: ${tested}` });
   }
   if (config.harnesses.includes('opencode'))
     out.push(...opencodeDoctor(root, resolveWorkspaceModels(root, config, recs).opencode, recs.harnesses.opencode?.provider_sets));
