@@ -34,11 +34,9 @@ export function reviewArgv(harness: ReviewProcess, root: string, choice: Choice)
     };
   }
   if (harness === 'opencode') {
-    // A `mode: all` agent whose permissions deny edit and bash: read-only by its definition.
-    return {
-      bin: 'opencode',
-      args: ['run', '--agent', 'mandao-reviewer', '-m', choice.model, ...(effort ? ['--variant', effort] : []), '--dir', root],
-    };
+    // OpenCode 2 (ADR 0025): the effort is the model's variant (`provider/model#variant`) and the folder is
+    // the process's cwd. The agent's permissions deny edit and shell: read-only by its definition.
+    return { bin: 'opencode', args: ['run', '--agent', 'mandao-reviewer', '-m', effort ? `${choice.model}#${effort}` : choice.model] };
   }
   return {
     bin: 'claude',

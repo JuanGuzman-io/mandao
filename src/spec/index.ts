@@ -9,3 +9,4 @@ export * from './requirements.js';
 export * from './story.js';
 export * from './tasks.js';
 export * from './trace.js';
+export * from './verify.js';

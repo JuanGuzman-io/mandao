@@ -1,7 +1,8 @@
 import { describe, expect, test } from 'vitest';
 import { opencodeFindings } from '../../src/engine/doctor-opencode.js';
-import { chooseProviderSet, detectProviders } from '../../src/models/providers.js';
+import { chooseProviderSet, detectProviders, openCodeSources } from '../../src/models/providers.js';
 import type { ResolvedModels } from '../../src/models/resolve.js';
+import { makeTree } from '../helpers.js';
 
 const sets = {
   anthropic: { providers: ['anthropic'] },
@@ -15,6 +16,23 @@ describe('OpenCode providers (ADR 0017)', () => {
     expect(detectProviders({ authJson, env: {}, configs: [] })).toEqual(['anthropic']);
     expect(detectProviders({ authJson, env: { OPENAI_API_KEY: 'x' }, configs: [] })).toEqual(['anthropic', 'openai']);
     expect(detectProviders({ env: { OPENAI_API_KEY: '' }, configs: [] })).toEqual([]);
+  });
+
+  test('OpenCode 2: provider ids from `opencode auth list --format json` (ADR 0025)', () => {
+    const authList = JSON.stringify([
+      { id: 'anthropic', name: 'Anthropic', connections: [{ type: 'credential', label: 'work' }] },
+      { id: 'openai', name: 'OpenAI', connections: [{ type: 'env', name: 'OPENAI_API_KEY' }] },
+    ]);
+    expect(detectProviders({ authList, env: {}, configs: [] })).toEqual(['anthropic', 'openai']);
+    expect(detectProviders({ authList: '[]', env: {}, configs: [] })).toEqual([]);
+    expect(detectProviders({ authList: 'not json', env: { ANTHROPIC_API_KEY: 'a' }, configs: [] })).toEqual(['anthropic']);
+  });
+
+  test('openCodeSources asks the CLI and tolerates its absence', () => {
+    const root = makeTree({});
+    const env = { XDG_DATA_HOME: root, XDG_CONFIG_HOME: root };
+    expect(openCodeSources(root, env, () => '[{"id":"openai"}]').authList).toBe('[{"id":"openai"}]');
+    expect(openCodeSources(root, env, () => undefined)).toEqual({ env, configs: [] });
   });
 
   test('enabled and disabled providers in config (JSONC, later file wins)', () => {

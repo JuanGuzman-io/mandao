@@ -74,3 +74,5 @@
   providers in config) and applies the largest matching set; `doctor` warns for a role whose provider is
   not configured. Local providers (`ollama`, `lmstudio`) need no credentials.
 - Not verified live: OpenCode is not installed on the machine that built this; the acceptance run needs it.
+
+**Superseded in part by ADR 0025** (OpenCode 2.1.1): credentials, `opencode run` flags and the supported range.

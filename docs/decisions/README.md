@@ -31,3 +31,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0022](0022-tdd-discipline-and-spec-diagrams.md) | TDD and professional discipline; diagrams to approve in specify | Accepted (design; 2b) |
 | [0023](0023-branching-strategy-presets.md) | Branching strategy that adapts to the team (presets) | Accepted (design; 2b) |
 | [0024](0024-resource-floors-and-verified-suggestions.md) | Memory floors per operation, recorded forced runs, verified model suggestions | Accepted |
+| [0025](0025-opencode-2-and-supported-version-ranges.md) | OpenCode 2, and a supported version range per adapter | Accepted |

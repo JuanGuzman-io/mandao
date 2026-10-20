@@ -30,9 +30,9 @@ function permission(caps: Capability[]): Record<string, string> | undefined {
 }
 
 /**
- * Leader: the session agent the implement and resume commands switch to. Reviewer: `all`, so `opencode
- * run --agent` can also run it as a separate process (a `subagent` there falls back to the default agent
- * and loses its read-only permissions). Everyone else is a subagent.
+ * Leader: the session agent the implement and resume commands switch to. Reviewer: `all`, usable both as
+ * a subagent and by `opencode run --agent` as a separate process (OpenCode 1 fell back to the default
+ * agent for a `subagent`; 2 does not, `all` works in both). Everyone else is a subagent.
  */
 const modeFor = (id: string) => (id === 'leader' ? 'primary' : id === 'reviewer' ? 'all' : 'subagent');
 
@@ -45,7 +45,8 @@ function renderAgents(input: AdapterInput): GeneratedFile[] {
         description: v.description,
         mode: modeFor(persona.meta.id),
         model: v.model,
-        // OpenCode model variants are effort names (low … max); only set when an effort is chosen.
+        // OpenCode model variants are effort names (low … max); only set when an effort is chosen. OpenCode 2
+        // migrates `variant` and `permission` (v1 keys) to its own `model#variant` and rules (ADR 0025).
         variant: v.effort,
         permission: permission(persona.meta.capabilities),
         ...persona.meta.harness.opencode,
@@ -96,6 +97,7 @@ export const opencodeAdapter: Adapter = {
       'https://opencode.ai/docs/agents/',
       'https://opencode.ai/docs/skills/',
       'https://github.com/anomalyco/opencode/tree/v1.19.3/packages/opencode/src',
+      'https://github.com/anomalyco/opencode/tree/v2.1.1/packages',
     ],
   },
   render(input) {

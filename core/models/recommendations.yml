@@ -171,9 +171,9 @@ harnesses:
       - https://models.dev/api.json
       - https://platform.claude.com/docs/en/about-claude/models/overview
       - https://developers.openai.com/api/docs/models
-    # 1.19.3 is the release whose formats Mandao verified (ADR 0017): commands, agents with permission,
-    # permission.skill and .opencode/opencode.jsonc.
-    harness_version: { min: 1.19.3, max_major: 1, command: opencode --version }
+    # Verified against 2.1.1 (ADR 0025): the files Mandao writes load natively or through v2's compatibility
+    # decoders, `opencode run` takes `-m provider/model#variant`, credentials are listed by `opencode auth list`.
+    harness_version: { min: 2.1.1, max_major: 2, command: opencode --version }
     # OpenCode has no plans of its own: models follow the providers configured here. `init` detects them
     # (auth.json keys, provider env vars, enabled/disabled providers) and picks the matching set; this
     # top-level recommendation is the `anthropic` set, used when detection finds nothing.
