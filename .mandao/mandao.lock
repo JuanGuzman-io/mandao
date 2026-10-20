@@ -1,7 +1,7 @@
 # Written by mandao. Do not edit by hand.
 schema_version: 1
 mandao: 0.1.0
-config_hash: sha256-ztiS0OhtpUlE5VwZ9MT2uqVdErJWB3aFKbXGBirepH8=
+config_hash: sha256-sct7JTVpd9cCU6ZPzeCdaZrv1giGstMxBh2goW0lm3c=
 layers:
   - kind: core
     id: core
@@ -576,7 +576,7 @@ files:
     harness: mandao
     from: template:shared/rules/budget.md
     ownership: owned
-    hash: sha256-DIlyo8WEkwTzQqgsRm9QptrXlfrkx7A30xH0A5YErqQ=
+    hash: sha256-PULjIkpurG+L2NjjXmziZFK0wPdLWoehfe8U0FhPfEg=
     scope: project
   - path: .mandao/templates/app/rules/clean-code.md
     harness: mandao
