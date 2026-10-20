@@ -6,6 +6,8 @@ description: Resolve [NEEDS CLARIFICATION] items and Consistency Check findings,
 
 # /mandao-clarify
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: <spec>
 
 Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules/consistency-check.md`.

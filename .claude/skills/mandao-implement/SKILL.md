@@ -12,6 +12,8 @@ disable-model-invocation: true
 
 # /mandao-implement
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: $spec · task: $task
 
 You are the **Leader** for this spec, in this session (subagents cannot start subagents). You do not

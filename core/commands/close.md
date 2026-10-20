@@ -24,11 +24,14 @@ templates:
   - close/technical.md
   - close/kaizen.md
   - rules/doc-close.md
+  - rules/budget.md
 scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
 approval: required
 ---
 
 # /mandao-close
+
+Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 
 Spec: {{arg:spec}}
 

@@ -161,6 +161,8 @@ export const configSchema = z
     size_limits: sizeLimitsSchema.default({}),
     /** Kaizen (design §18.1): no TDD conclusion below this many specs per group (ADR 0026). */
     kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
+    /** Cost cap per spec in USD (ADR 0036): a warning at 80%, a confirmation to go on at 100%. */
+    budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** The team's branching model (ADR 0023): preset plus overrides. */
     branching: branchingInput.default({ model: 'feature-branch' }),
     harnesses: z.array(harnessId).min(1),

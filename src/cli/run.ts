@@ -9,6 +9,7 @@ import { analyzeDiff, collectDiff, type FileStat, type ManifestChange, sizeLimit
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { isHarness, resolveForCli } from './models.js';
+import { registerCost } from './run-cost.js';
 import { registerLeader } from './run-leader.js';
 import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
@@ -22,6 +23,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerQuickLog(run, ctx);
   registerLeader(run, ctx);
   registerPremise(run, ctx);
+  registerCost(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

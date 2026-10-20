@@ -14,6 +14,8 @@ tools:
 
 # /mandao-quick
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Change: ${input:change:What to change, in one sentence}
 
 Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templates/app/rules/quick-gate.md`.

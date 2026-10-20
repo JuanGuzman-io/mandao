@@ -13,6 +13,8 @@ tools:
 
 # /mandao-story
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Input: ref: ${input:ref:Tracker id or URL, or a one-line idea}
 
 Write the story in `en`, in business language. Follow

@@ -14,6 +14,8 @@ tools:
 
 # /mandao-implement
 
+Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+
 Spec: ${input:spec:Spec folder or id} · task: ${input:task:Optional task id (default - the next eligible task)}
 
 You are the **Leader** for this spec, in this session (subagents cannot start subagents). You do not

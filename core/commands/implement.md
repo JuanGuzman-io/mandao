@@ -20,13 +20,15 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
-templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
+templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md]
 scripts: [where, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, commit, pr-plan, mutation, implement-summary]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
 
 # /mandao-implement
+
+Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 
 Spec: {{arg:spec}} · task: {{arg:task}}
 
