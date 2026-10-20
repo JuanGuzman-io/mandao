@@ -12,3 +12,9 @@ available, with or without credentials. Credentials (`opencode auth list --forma
 provider environment variables and `enabled_providers` / `disabled_providers` still apply. `doctor` now
 also warns when a role's model is not among the listed models. The command lists models only, never
 secrets.
+
+## Acceptance run (2026-10-20)
+
+All seven checks pass with the fixes listed in `docs/acceptance/2b-opencode-results.md`. OpenCode 2's
+`opencode run` does not parse slash commands, so mandaos are invoked from the TUI (or the server API);
+agents (`--agent`) and `mandao run review --via opencode` work non-interactively.
