@@ -6,18 +6,41 @@ description: Run testers per suite on the impacted tests, trace every AC to its 
 
 # /mandao-verify
 
-> **Not implemented yet** in this Mandao version. This file declares the command's contract
-> (arguments, inputs, outputs) so other mandaos and `AGENTS.md` can reference it.
+Spec: <spec>
 
-Arguments: the text the user wrote after the skill name
+You verify that what was built is what the spec asked for, with evidence. Write the report in
+`en`. Never claim a test passed without its output.
 
-Tell the user this mandao is not available yet, summarize what it will do (below), and suggest the
-closest available step.
+## 1. Plan
 
-## Planned behavior
+1. `node .mandao/bin/mandao.mjs run where <spec>` — work in the spec's worktree.
+2. `node .mandao/bin/mandao.mjs run verify-plan <spec>` gives the suites per project (unit over the files the spec's
+   commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
+   tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
+3. If `blockers` lists open tasks or uncommitted work, stop: verify comes after `/mandao-implement`.
 
-- Testers author and run one suite each and tell test defects from `PRODUCT_BUG`.
-- AC → test traceability per `.mandao/templates/app/rules/traceability.md`, clause by clause.
-- Runs only impacted tests under the resource budget in `.mandao/templates/app/rules/test-policy.md`: unit tests related to the touched files, e2e for the spec's AC (critical AC always). The full suite and the smoke of every critical flow run in CI, locally only with `--full`; `DEFERRED_TO_CI` runs keep the spec out of `verified` until CI confirms them.
-- `ai` projects: runs evals against the baseline; a metric drop is a FAIL even when tests pass.
-- Evidence is re-run by a context that did not author it. Ends with the Consistency Check.
+## 2. Run, one Tester per suite
+
+For each suite, a `tester` agent in a fresh context (it did not author the code):
+- **Unit:** `node .mandao/bin/mandao.mjs run tests <project> <files>` — impacted tests only, under the resource budget.
+- **E2E:** the flows of the suite's AC with the project's `tests.e2e` command; the full suite and the
+  smoke of every critical flow run in CI, locally only with `--full`.
+- The Tester traces each test to its AC and clause, re-runs the evidence, and labels a real failure
+  `PRODUCT_BUG` with the evidence; it fixes only test defects and never weakens an assertion.
+
+## 3. Report
+
+Write `verify-report.md` from `.mandao/templates/app/spec/verify-report.md`: suites as run, AC → tests clause by
+clause (`.mandao/templates/app/rules/traceability.md`), TDD evidence (`missingRed`, changed red tests), product
+bugs, deferred runs and the remaining blockers. Then run the semantic Consistency Check
+(`.mandao/templates/app/rules/consistency-check.md`) over story, requirements, design and the report.
+
+## 4. Status
+
+- Any `PRODUCT_BUG`, failing suite or blocker → `verdict: blocked`; list what must be fixed and
+  suggest `/mandao-implement` (a new task) or `/mandao-quick` when it is trivial.
+- Otherwise `node .mandao/bin/mandao.mjs run status <spec> verified` (add `--ci-confirmed` only when CI confirmed every
+  deferred run). If it is allowed, set `status: verified` in `story.md` and `verdict: verified` in the
+  report. `missingRed` on a spec started before TDD (ADR 0022) is reported, not blocking.
+
+Next: $mandao-close.
