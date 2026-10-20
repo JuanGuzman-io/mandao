@@ -22,7 +22,7 @@ templates:
   - close/release-notes.md
   - close/technical.md
   - close/kaizen.md
-scripts: [where, status, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan]
+scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan]
 approval: required
 ---
 
@@ -77,6 +77,11 @@ In `{{paths.releases}}/<ID>/`:
 
 - gitflow: `{{script:close-summary}} {{arg:spec}} --detect-release` (or `--release <branch>` when the team
   says which). Mandao never creates `release/` branches.
+- **Hotfix lane** (`lane: hotfix` in story.md): remind the user, with the exact branches from
+  `{{script:branching}}`, that the fix must be merged back into every branch of `hotfix.merge_to` other
+  than the one it was merged into (e.g. gitflow: `main` and `develop`; env-branches: `staging` and
+  `test`). Mandao never merges or pushes; list each back-merge as an open item in the technical notes
+  until the user confirms it.
 - Environments: only as CI or the tracker reports them —
   `{{script:close-summary}} {{arg:spec}} --env <name> --source ci|tracker`. Promotion is never automated.
 

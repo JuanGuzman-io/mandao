@@ -12,6 +12,8 @@ export const storyFrontmatterSchema = z.object({
   url: z.string().nullish(),
   parent: z.string().nullish(),
   projects: z.array(z.string()).default([]),
+  /** `hotfix`: branched from `branching.hotfix.from`, merged back into `branching.hotfix.merge_to` (ADR 0030). */
+  lane: z.enum(['normal', 'hotfix']).default('normal'),
   status: specStatus.default('draft'),
   sources: z.array(z.unknown()).default([]),
   models: z.record(z.string(), z.unknown()).optional(),

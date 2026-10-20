@@ -114,3 +114,23 @@ describe('branching in a repository', () => {
     expect(branchingFindings(root, config(), inFiveDays)).toEqual([]);
   });
 });
+
+describe('hotfix lane (ADR 0030)', () => {
+  test('a hotfix story expects the hotfix branch, from hotfix.from', async () => {
+    const { expectedPlace } = await import('../../src/scripts/spec.js');
+    const root = repo(['develop']);
+    const cfg = config({ branching: { model: 'gitflow' } });
+    const p = proposeSpec(root, cfg, 'Outage on login', { id: 'PROJ-7', hotfix: true });
+    expect(p).toMatchObject({ branch: 'hotfix/PROJ-7-outage-on-login', base: 'main' });
+    const spec = {
+      dir: root,
+      name: 'PROJ-7-outage-on-login',
+      tasks: [],
+      execution: [],
+      issues: [],
+      story: { meta: { lane: 'hotfix', type: 'bug' } },
+    } as never;
+    expect(expectedPlace(root, cfg, spec).branch).toBe('hotfix/PROJ-7-outage-on-login');
+    expect(branchingFor(cfg).hotfix.merge_to).toEqual(['main', 'develop']);
+  });
+});
