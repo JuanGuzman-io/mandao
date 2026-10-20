@@ -1,10 +1,22 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import matter from 'gray-matter';
-import { MODELS_FILE, readConfig } from '../engine/files.js';
+import { MODELS_FILE, readConfig, readModels } from '../engine/files.js';
+import { mergeChoices, profileChoices, userOverrides } from '../models/defaults.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { independence, type ModelLayer, missingRoles, type ResolvedModels, strongEqualsStandard, usedModels } from '../models/resolve.js';
-import { HARNESS_IDS, type HarnessId, MODEL_MODES, type ModelMode, ROLES, type RoleModels, TIERS, type Tier } from '../schemas/index.js';
+import {
+  HARNESS_IDS,
+  type HarnessId,
+  MODEL_MODES,
+  MODEL_PROFILES,
+  type ModelMode,
+  type ModelProfile,
+  ROLES,
+  type RoleModels,
+  TIERS,
+  type Tier,
+} from '../schemas/index.js';
 import { editYaml } from '../writer/files.js';
 import { c } from './output.js';
 
@@ -121,3 +133,50 @@ export function setMode(root: string, mode: string) {
 }
 
 export const isHarness = (h: string): h is HarnessId => (HARNESS_IDS as readonly string[]).includes(h);
+
+/**
+ * `mandao models profile <p>`: each active harness takes the profile's choices, with the roles the user
+ * changed by hand kept on top. Only this explicit command (or init) changes the profile.
+ */
+export function setProfile(root: string, profile: string) {
+  if (!(MODEL_PROFILES as readonly string[]).includes(profile)) throw new Error(`Profile must be one of ${MODEL_PROFILES.join(', ')}`);
+  const config = readConfig(root);
+  const recs = readRecommendations();
+  const current = readModels(root);
+  const mode = current.mode ?? 'routed';
+  const previous = current.profile ?? 'peak';
+  const kept: Partial<Record<HarnessId, RoleModels>> = {};
+  editYaml(
+    modelsFile(root),
+    (doc) => {
+      for (const h of config.harnesses) {
+        const rec = recs.harnesses[h];
+        if (!rec) continue;
+        const mine = userOverrides(current.harnesses[h] ?? {}, profileChoices(rec, mode, previous));
+        if (Object.keys(mine).length) kept[h] = mine;
+        doc.setIn(['harnesses', h], mergeChoices(profileChoices(rec, mode, profile as ModelProfile), mine));
+      }
+      doc.set('profile', profile);
+    },
+    EMPTY_MODELS,
+  );
+  return { profile, previous, kept };
+}
+
+/** Every profile's choices per harness and role, for the init question and `mandao models profile`. */
+export function profilesTable(harnesses: HarnessId[], mode: ModelMode): string {
+  const recs = readRecommendations();
+  const rows: string[] = [];
+  for (const h of harnesses) {
+    const rec = recs.harnesses[h];
+    if (!rec) continue;
+    for (const profile of MODEL_PROFILES) {
+      const m = profileChoices(rec, mode, profile);
+      const im = m.implementer;
+      const impl = typeof im === 'string' || im === undefined ? (im ?? '—') : TIERS.map((t) => im[t] ?? '—').join(' / ');
+      const why = profile === 'peak' ? 'the best model per role' : (rec.profiles?.[profile]?.why ?? 'same as peak for this harness');
+      rows.push(`${h} · ${profile}: leader ${m.leader} · reviewer ${m.reviewer} · implementer ${impl} · tester ${m.tester}\n    ${why}`);
+    }
+  }
+  return rows.join('\n');
+}

@@ -3,6 +3,7 @@ import {
   type Effort,
   type HarnessId,
   type ModelMode,
+  type ModelProfile,
   type Recommendations,
   type Role,
   type RoleEfforts,
@@ -12,7 +13,7 @@ import {
 } from '../schemas/index.js';
 
 /** Where a resolved model came from, lowest precedence first. */
-export const MODEL_SOURCES = ['recommendation', 'workspace', 'project', 'spec', 'flag'] as const;
+export const MODEL_SOURCES = ['recommendation', 'profile', 'workspace', 'project', 'spec', 'flag'] as const;
 export type ModelSource = (typeof MODEL_SOURCES)[number];
 
 export interface Choice {
@@ -25,6 +26,8 @@ export interface Choice {
 export interface ResolvedModels {
   harness: HarnessId;
   mode: ModelMode;
+  /** The profile the recommendation was taken from (`peak` when none is set). */
+  profile?: ModelProfile;
   leader?: Choice;
   reviewer?: Choice;
   reviewer_alt?: Choice;
@@ -89,13 +92,24 @@ function applyLayer(out: ResolvedModels, layer: ModelLayer, mode: ModelMode) {
 }
 
 /**
- * Precedence: flag > spec frontmatter > project models.yml > workspace models.yml > recommendation.
- * In `simple` mode the Implementer uses one model for every tier.
+ * Precedence: flag > spec frontmatter > project models.yml > workspace models.yml > profile >
+ * recommendation. In `simple` mode the Implementer uses one model for every tier.
  */
-export function resolveModels(harness: HarnessId, mode: ModelMode, recommendations: Recommendations, layers: ModelLayer[]): ResolvedModels {
+export function resolveModels(
+  harness: HarnessId,
+  mode: ModelMode,
+  recommendations: Recommendations,
+  layers: ModelLayer[],
+  profile: ModelProfile = 'peak',
+): ResolvedModels {
   const rec = recommendations.harnesses[harness];
-  const out: ResolvedModels = { harness, mode, implementer: {}, tiers: rec?.tiers ?? {} };
+  const out: ResolvedModels = { harness, mode, profile, implementer: {}, tiers: rec?.tiers ?? {} };
   if (rec) applyRecommendation(out, rec, mode);
+  const overrides = profile === 'peak' ? undefined : rec?.profiles?.[profile];
+  if (overrides) {
+    const { why: _why, ...models } = overrides;
+    applyLayer(out, { source: 'profile', models }, mode);
+  }
   const ordered = [...layers].sort((a, b) => MODEL_SOURCES.indexOf(a.source) - MODEL_SOURCES.indexOf(b.source));
   for (const layer of ordered) applyLayer(out, layer, mode);
   return out;

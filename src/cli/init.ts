@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import * as p from '@clack/prompts';
 import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
 import { syncGlobal, syncProject } from '../engine/sync.js';
-import { forProviders, recommendedChoices } from '../models/defaults.js';
+import { forProviders, profileChoices } from '../models/defaults.js';
 import { readRecommendations } from '../models/load.js';
 import { detectProviders, openCodeSources } from '../models/providers.js';
 import {
@@ -14,6 +14,7 @@ import {
   type HarnessId,
   MODEL_MODES,
   type ModelMode,
+  type ModelProfile,
   type Models,
   PROFILES,
   type Profile,
@@ -24,6 +25,7 @@ import {
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { createIfMissing } from '../writer/files.js';
+import { chooseProfile } from './init-profile.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
@@ -36,6 +38,7 @@ export interface InitOptions {
   languageBusiness?: string;
   languageTechnical?: string;
   modelsMode?: ModelMode;
+  modelProfile?: ModelProfile;
   polyrepo?: PolyrepoStrategy;
   home?: string;
   yes?: boolean;
@@ -181,12 +184,13 @@ async function askEveryRole(recommended: RoleModels, rec: NonNullable<Recommenda
 async function chooseModels(root: string, harnesses: HarnessId[], opts: InitOptions): Promise<Models> {
   const recs = readRecommendations();
   const mode = await chooseMode(opts);
-  const out: Models = { schema_version: 1, mode, harnesses: {} };
+  const profile = await chooseProfile(harnesses, mode, opts);
+  const out: Models = { schema_version: 1, mode, profile, harnesses: {} };
   for (const harness of harnesses) {
     const found = recs.harnesses[harness];
     if (!found) continue;
     const { rec, set } = forProviders(found, harness === 'opencode' ? detectProviders(openCodeSources(root)) : undefined);
-    const recommended = recommendedChoices(rec, mode);
+    const recommended = profileChoices(rec, mode, profile);
     if (opts.yes) {
       out.harnesses[harness] = recommended;
       continue;
