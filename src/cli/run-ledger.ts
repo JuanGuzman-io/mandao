@@ -13,6 +13,7 @@ import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { registerClose } from './run-close.js';
 import { registerDiagram } from './run-diagram.js';
 import { registerRed } from './run-red.js';
 
@@ -239,4 +240,5 @@ export function registerLedger(run: Command, ctx: CliContext) {
   registerReview(run, ctx);
   registerRed(run, ctx);
   registerDiagram(run, ctx);
+  registerClose(run, ctx);
 }

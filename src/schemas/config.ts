@@ -138,6 +138,8 @@ export const configSchema = z
       })
       .prefault({}),
     projects: z.array(project).min(1),
+    /** Kaizen (design §18.1): no TDD conclusion below this many specs per group (ADR 0026). */
+    kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
     /** The team's branching model (ADR 0023): preset plus overrides. */
     branching: branchingInput.default({ model: 'feature-branch' }),
     harnesses: z.array(harnessId).min(1),
