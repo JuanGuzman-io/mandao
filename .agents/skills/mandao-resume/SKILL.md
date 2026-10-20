@@ -12,7 +12,7 @@ Spec: <spec>
 
 For each folder in `specs/` with a `story.md`, show: id, title, status, the task in progress
 and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_TO_CI`), commits pending
-(`pending_commits` in `progress.yml`), and the next mandao to run. Stop there.
+(`pending_commits` in `progress.yml`), and the next mandao to run, plus the active worktrees (`mandao worktree list`). Stop there.
 
 ## With a spec id: continue
 

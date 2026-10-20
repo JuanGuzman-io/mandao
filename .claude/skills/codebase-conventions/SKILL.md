@@ -55,7 +55,8 @@ regressions at the cheapest level; skip DTOs, wiring and pass-throughs. In this 
 - pure logic → `test/unit/*.test.ts` (exemplar: `test/unit/models.test.ts`);
 - anything that writes or reads a workspace → `test/integration/*.test.ts` with `makeTree` from
   `test/helpers.ts`, never the real repo; never `mkdtempSync`/`tmpdir()` directly, and nothing
-  written outside the workspace (the setup file removes it after each test file);
+  written outside the workspace (the setup file removes it after each test file): no `..` segment in
+  `join`/`resolve` and no `dirname` of a workspace, or `test/unit/architecture.test.ts` fails;
 - adapter output → snapshots in `test/adapters/__snapshots__/`; review the diff before `vitest -u`.
 
 A bug fix ships with the test that would have caught it.
