@@ -1,0 +1,18 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
+updated_at: 2026-10-20T23:11:35.565Z
+current: null
+open_questions: []
+next_step: ""
+deferred_to_ci: []
+red_tests:
+  - task: T1
+    files:
+      - path: test/unit/doctor-cache.test.ts
+        sha256: 83b0983e82a0f6a5e739087cf14efe9cfcbee6ab69dfc0257e96ac7342f3424e
+  - task: T2
+    files:
+      - path: test/unit/session-turns.test.ts
+        sha256: de055fa026f9abcc08806daf0900f1ea329ab4a4970294c8f63dfe89bbcf28c4
+pending_commits: []

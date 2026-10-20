@@ -38,7 +38,7 @@ measurement (T3), then compares and proposes (T4). T3 and T4 both edit `src/cli/
 
 ## Details
 
-### [ ] T1 — doctor reports the Claude Code prompt-cache TTL and its source
+### [x] T1 — doctor reports the Claude Code prompt-cache TTL and its source
 
 - **What:** the TTL finding of [FR-1](spec.md#fr1) with the resolution of [D1](spec.md#d1).
 - **Done when:**
