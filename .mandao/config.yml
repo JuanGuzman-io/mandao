@@ -1,0 +1,13 @@
+# Mandao configuration. Run `mandao sync` after editing. Schema: docs/schemas.md
+schema_version: 1
+workspace: single
+default_profile: app
+language:
+  business: en
+  technical: en
+projects:
+  - name: mandao
+    path: .
+harnesses:
+  - claude
+  - copilot

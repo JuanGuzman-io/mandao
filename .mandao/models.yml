@@ -1,0 +1,22 @@
+# Model per role and harness. Change with `mandao models set <role> <model>`; see `mandao models`.
+schema_version: 1
+mode: routed
+harnesses:
+  claude:
+    leader: opus
+    reviewer: opus
+    reviewer_alt: fable
+    implementer:
+      fast: haiku
+      standard: sonnet
+      strong: opus
+    tester: sonnet
+  copilot:
+    leader: Claude Opus 5.5
+    reviewer: Claude Opus 5.5
+    reviewer_alt: GPT-6.1 Sol
+    implementer:
+      fast: Claude Haiku 5.5
+      standard: Claude Sonnet 5.5
+      strong: Claude Opus 5.5
+    tester: Claude Sonnet 5.5
