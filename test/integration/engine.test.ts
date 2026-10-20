@@ -2,8 +2,10 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync }
 import { join } from 'node:path';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { runDoctor } from '../../src/engine/doctor.js';
-import { readLock, writeYaml } from '../../src/engine/files.js';
+import { modelFindings } from '../../src/engine/doctor-models.js';
+import { readConfig, readLock, writeYaml } from '../../src/engine/files.js';
 import { syncGlobal, syncProject } from '../../src/engine/sync.js';
+import { readRecommendations } from '../../src/models/load.js';
 import { makeTree, pkg } from '../helpers.js';
 
 function workspace() {
@@ -193,6 +195,17 @@ describe('models in doctor', () => {
       expect(claudeReview()[0]!.fix).toMatch(
         /^if your plan has gpt-6-astra, make it codex's reviewer: `mandao models set reviewer gpt-6-astra --harness codex`/,
       );
+      expect(claudeReview()[0]!.fix).toContain('verified 2026-10-20 at https://learn.chatgpt.com/docs/models.md');
+      // Without an official source and review date the same model is never suggested.
+      const unverified = structuredClone(readRecommendations());
+      for (const o of unverified.harnesses.codex!.optional) {
+        delete o.source;
+        delete o.reviewed;
+      }
+      const strongFix = modelFindings(root, readConfig(root), unverified).find(
+        (f) => f.message.startsWith('claude: ') && /strong tasks/.test(f.message),
+      )!.fix;
+      expect(strongFix).not.toContain('gpt-6-astra');
       writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { codex: { reviewer: 'gpt-6-astra' } } });
       expect(claudeReview()).toEqual([
         {
@@ -243,7 +256,7 @@ describe('generated support files', () => {
     expect(graphignore).toContain('dist/');
     expect(graphignore).not.toContain('AGENTS.md');
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toMatch(
-      /^node_modules\/\n\n# mandao:begin\n.*\ngraphify-out\/\n\.mandao\/run\.lock\n\.claude\/settings\.local\.json\n# mandao:end\n$/s,
+      /^node_modules\/\n\n# mandao:begin\n.*\ngraphify-out\/\n\.mandao\/run\.lock\n\.mandao\/cli\.log\n\.claude\/settings\.local\.json\n# mandao:end\n$/s,
     );
     expect(readFileSync(join(root, 'src/billing/CLAUDE.md'), 'utf8')).toBe('<!-- mandao:begin -->\n@AGENTS.md\n<!-- mandao:end -->\n');
 

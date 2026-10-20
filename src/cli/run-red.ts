@@ -5,15 +5,16 @@ import { repoRoot } from '../scripts/commits.js';
 import { agentIdentity, identityCell } from '../scripts/identity.js';
 import { detectRunner, fillCommand, projectDir, RUNNER_COMMANDS } from '../scripts/impact.js';
 import { fileHash, redCheck } from '../scripts/red.js';
-import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
+import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 interface RedOptions {
   agent: string;
+  force?: boolean;
   harness?: string;
   attempt: string;
 }
@@ -36,6 +37,7 @@ export function registerRed(run: Command, ctx: CliContext) {
     .requiredOption('--agent <agent>', 'who wrote the tests: mandao-tester[@<harness>], mandao-implementer-<tier>[@<harness>] or self')
     .option('--harness <id>', 'harness running the Leader', 'claude')
     .option('--attempt <n>', 'attempt for the execution row', '1')
+    .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
     .action(async (ref: string, id: string, tests: string[], o: RedOptions) => {
       const root = ctx.root();
       const config = readConfig(root);
@@ -43,7 +45,7 @@ export function registerRed(run: Command, ctx: CliContext) {
       const task = spec.tasks.find((t) => t.id === id);
       if (!task) throw new Error(`No ${id} in ${spec.name}/tasks.md`);
       const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
-      const budget = decideBudget(probeMachine(), effectiveResources(config.resources, project.resources), 'unit');
+      const budget = budgetFor(root, config, project, 'unit', `${id} red`, o.force, spec.dir);
       const command = testCommand(root, project, tests, Math.max(1, budget.workers));
       const result = await runTests(root, `${id} red`, command, budget);
       const check = redCheck(result.status, result.exitCode);

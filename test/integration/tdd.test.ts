@@ -161,3 +161,37 @@ describe('mandao run red', () => {
     expect(readFileSync(join(root, SPEC, 'execution.md'), 'utf8')).not.toContain('| RED |');
   });
 });
+
+describe('forced runs (ADR 0024)', () => {
+  test('a forced run past a deferring budget is recorded in the CLI log and the active spec', async () => {
+    const { forceSource, recordForced, CLI_LOG } = await import('../../src/scripts/forced.js');
+    expect([
+      forceSource(true, {}),
+      forceSource(false, { RG_FORCE: '1' }),
+      forceSource(false, { MANDAO_FORCE: '1' }),
+      forceSource(false, {}),
+    ]).toEqual(['flag', 'RG_FORCE', 'MANDAO_FORCE', undefined]);
+    const root = makeTree({});
+    cpSync(fixture, join(root, SPEC), { recursive: true });
+    const run = {
+      at: '2026-10-20T10:00:00Z',
+      operation: 'unit' as const,
+      label: 'shop tests',
+      reason: '900 MB free is under half the 2048 MB floor',
+      by: 'RG_FORCE' as const,
+    };
+    recordForced(root, run, join(root, SPEC));
+    recordForced(root, { ...run, at: '2026-10-20T11:00:00Z' }, join(root, SPEC));
+    const log = readFileSync(join(root, CLI_LOG), 'utf8')
+      .trim()
+      .split('\n')
+      .map((l) => JSON.parse(l));
+    expect(log).toHaveLength(2);
+    expect(log[0]).toMatchObject({ event: 'forced-run', by: 'RG_FORCE', label: 'shop tests' });
+    const execution = readFileSync(join(root, SPEC, 'execution.md'), 'utf8');
+    expect(execution).toContain('## Forced runs');
+    expect(execution.match(/forced by RG_FORCE/g)).toHaveLength(2);
+    // The verdict table is untouched: forced runs are not verdicts.
+    expect(readSpec(join(root, SPEC)).execution.map((r) => r.verdict)).toEqual(['PASS', 'STARTED']);
+  });
+});

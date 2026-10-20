@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
-scripts: [where, models, tasks, brief, loop, checkpoint, tests, review, commit]
+scripts: [where, models, tasks, brief, loop, checkpoint, resources, tests, review, commit]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -75,7 +75,9 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
 <!-- mandao:endif -->
    Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED
    --implementer <agent>`.
-4. **Gates and impacted tests** (`{{template:rules/test-policy.md}}`): run the project's level 0 gates,
+4. **Gates and impacted tests** (`{{template:rules/test-policy.md}}`): before a build, check
+   `{{script:resources}} --project <project> --kind build`; when it says `defer`, do not force it — report
+   and wait, unless the user asks (a forced run is recorded). Run the project's level 0 gates,
    and the impacted tests with `{{script:tests}} <project> <changed files>` — never the full suite.
    `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
    `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.

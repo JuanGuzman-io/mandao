@@ -2,12 +2,20 @@ import { z } from 'zod';
 import { branchingInput } from './branching.js';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
 
-/** Test-run budget (ADR 0013). Every key is optional so a project can override only what differs. */
+/** Operations with their own memory floor (ADR 0024): a build does not need what an e2e suite needs. */
+export const OPERATIONS = ['build', 'tests', 'e2e'] as const;
+export type Operation = (typeof OPERATIONS)[number];
+const operationBudget = z.object({ min_free_memory_mb: z.number().int().nonnegative() }).partial();
+
+/** Run budget (ADR 0013, ADR 0024). Every key is optional so a project can override only what differs. */
 export const resourcesSchema = z
   .object({
     /** `auto` = half the cores. */
     max_workers: z.union([z.literal('auto'), z.number().int().positive()]),
+    /** Floor for tests when `operations.tests` does not set one (kept from ADR 0013). */
     min_free_memory_mb: z.number().int().nonnegative(),
+    /** Memory floor per operation; a project overrides one operation without repeating the others. */
+    operations: z.object({ build: operationBudget, tests: operationBudget, e2e: operationBudget }).partial(),
     priority: z.enum(['low', 'normal']),
     e2e_workers: z.number().int().positive(),
     /** Per test run, in seconds. */
@@ -15,6 +23,9 @@ export const resourcesSchema = z
   })
   .partial();
 export type ResourcesConfig = z.infer<typeof resourcesSchema>;
+
+/** Default memory floor per operation, in MB. */
+export const DEFAULT_OPERATION_FLOOR: Record<Operation, number> = { build: 1024, tests: 2048, e2e: 3072 };
 
 export const DEFAULT_RESOURCES = {
   max_workers: 'auto',

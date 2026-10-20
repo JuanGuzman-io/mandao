@@ -47,6 +47,17 @@ commits:
   max_subject_length: 72
   trailers: { refs: Refs, task: Mandao-Task, acs: Mandao-AC, quick: Mandao-Quick }
 scripts: { runner: npx }       # npx (pinned version) | local (devDependency)
+resources:                     # ADR 0013 / 0024; projects[].resources overrides any key
+  max_workers: auto            # half the cores
+  priority: low
+  timeout_s: 900
+  e2e_workers: 1
+  operations:                  # memory floor per operation (MB); defaults build 1024, tests 2048, e2e 3072
+    build: { min_free_memory_mb: 1024 }
+    tests: { min_free_memory_mb: 2048 }
+    e2e:   { min_free_memory_mb: 3072 }
+  # Under the floor: one worker; under half of it: deferred. --force, MANDAO_FORCE=1 or RG_FORCE=1 run it
+  # anyway and are recorded in .mandao/cli.log and in the active spec's execution.md (## Forced runs).
 ```
 
 Cross-field rules: unique project names and paths; `single` has exactly one project; polyrepo

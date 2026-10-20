@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { cpus, freemem, loadavg, platform } from 'node:os';
-import { DEFAULT_RESOURCES, type ResourcesConfig } from '../schemas/index.js';
+import { DEFAULT_OPERATION_FLOOR, DEFAULT_RESOURCES, type Operation, type ResourcesConfig } from '../schemas/index.js';
 
 export interface MachineProbe {
   cores: number;
@@ -38,17 +38,33 @@ export interface Budget {
   reason: string;
 }
 
-/** Merges workspace and project resources over the defaults. */
+/** Merges workspace and project resources over the defaults; operations merge one by one. */
 export function effectiveResources(workspace: ResourcesConfig, project: ResourcesConfig = {}) {
-  return { ...DEFAULT_RESOURCES, ...workspace, ...project };
+  const operations = Object.fromEntries(
+    (['build', 'tests', 'e2e'] as const).map((op) => [op, { ...workspace.operations?.[op], ...project.operations?.[op] }]),
+  ) as NonNullable<ResourcesConfig['operations']>;
+  return { ...DEFAULT_RESOURCES, ...workspace, ...project, operations };
+}
+
+/** `unit` runs are the `tests` operation. */
+export type BudgetKind = 'build' | 'unit' | 'e2e';
+const operationOf = (kind: BudgetKind): Operation => (kind === 'unit' ? 'tests' : kind);
+
+/** The memory floor of an operation: its own setting, else (tests) the legacy floor, else the default. */
+export function memoryFloor(resources: ResourcesConfig, kind: BudgetKind): number {
+  const op = operationOf(kind);
+  const own = resources.operations?.[op]?.min_free_memory_mb;
+  if (own !== undefined) return own;
+  if (op === 'tests' && resources.min_free_memory_mb !== undefined) return resources.min_free_memory_mb;
+  return DEFAULT_OPERATION_FLOOR[op];
 }
 
 /**
- * Workers for a test run (ADR 0013): half the cores by default, never more than the idle cores; one
- * worker when memory is under the floor; DEFERRED_TO_CI when even that would starve the machine.
+ * Workers for a run (ADR 0013): half the cores by default, never more than the idle cores; one worker when
+ * memory is under the operation's floor (ADR 0024); deferred when even that would starve the machine.
  */
-export function decideBudget(probe: MachineProbe, resources: ResourcesConfig, kind: 'unit' | 'e2e'): Budget {
-  const r = effectiveResources(resources);
+export function decideBudget(probe: MachineProbe, resources: ResourcesConfig, kind: BudgetKind): Budget {
+  const r = { ...effectiveResources(resources), min_free_memory_mb: memoryFloor(resources, kind) };
   const max = kind === 'e2e' ? r.e2e_workers : r.max_workers === 'auto' ? Math.max(1, Math.floor(probe.cores / 2)) : r.max_workers;
   const idle = Math.max(1, probe.cores - Math.ceil(probe.load1));
   const wanted = Math.min(max, idle);

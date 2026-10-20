@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { detectRunner, fillCommand, isTestFile, readGraph, reverseDependents, selectImpact } from '../../src/scripts/impact.js';
-import { decideBudget } from '../../src/scripts/resources.js';
+import { decideBudget, effectiveResources } from '../../src/scripts/resources.js';
 import { makeTree, pkg } from '../helpers.js';
 
 const graph = {
@@ -89,6 +89,17 @@ describe('decideBudget', () => {
   test('low memory reduces to one worker, very low defers to CI', () => {
     expect(decideBudget(probe({ freeMemoryMb: 1500 }), {}, 'unit')).toMatchObject({ decision: 'reduce', workers: 1 });
     expect(decideBudget(probe({ freeMemoryMb: 800 }), {}, 'unit')).toMatchObject({ decision: 'defer', workers: 0 });
+  });
+
+  test('each operation has its own memory floor; a project overrides one operation only (ADR 0024)', () => {
+    const at = (mb: number, kind: 'build' | 'unit' | 'e2e', r = {}) => decideBudget(probe({ freeMemoryMb: mb }), r, kind).decision;
+    expect([at(1500, 'build'), at(1500, 'unit'), at(1500, 'e2e')]).toEqual(['run', 'reduce', 'defer']);
+    expect(at(1500, 'unit', { min_free_memory_mb: 1000 })).toBe('run');
+    const ws = { operations: { build: { min_free_memory_mb: 4000 }, e2e: { min_free_memory_mb: 1000 } } };
+    const project = { operations: { build: { min_free_memory_mb: 512 } } };
+    const merged = effectiveResources(ws, project);
+    expect(merged.operations).toEqual({ build: { min_free_memory_mb: 512 }, tests: {}, e2e: { min_free_memory_mb: 1000 } });
+    expect([at(1500, 'build', merged), at(1500, 'e2e', merged)]).toEqual(['run', 'run']);
   });
 
   test('e2e uses e2e_workers; explicit max_workers is honoured', () => {

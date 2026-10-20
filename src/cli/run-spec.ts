@@ -6,12 +6,13 @@ import { branchingFor, branchNames, currentBranch, detectBranching } from '../sc
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
 import { detectRunner, fillCommand, graphFile, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
-import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
+import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
 import { blockingMarkers, commitMessage, type LoopContext, loopState, planTasks, trace } from '../spec/index.js';
 import { onPath } from '../util/which.js';
+import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { registerLedger } from './run-ledger.js';
 
@@ -191,10 +192,10 @@ function registerState(run: Command, ctx: CliContext) {
 function registerTestRuns(run: Command, ctx: CliContext) {
   run
     .command('resources')
-    .description('Cores, free memory and load, and the test budget they allow')
+    .description('Cores, free memory and load, and the budget they allow for an operation')
     .option('--project <name>', 'apply this project resources override')
-    .option('--kind <kind>', 'unit | e2e', 'unit')
-    .action((opts: { project?: string; kind: 'unit' | 'e2e' }) => {
+    .option('--kind <kind>', 'build | unit | e2e', 'unit')
+    .action((opts: { project?: string; kind: BudgetKind }) => {
       const config = readConfig(ctx.root());
       const project = opts.project ? config.projects.find((p) => p.name === opts.project) : undefined;
       const probe = probeMachine();
@@ -211,10 +212,11 @@ function registerTestRuns(run: Command, ctx: CliContext) {
     .description('Run the impacted tests under the resource budget, one heavy run at a time (queued)')
     .option('--full', 'run the full suite (normally CI only)')
     .option('--queue-wait <s>', 'seconds to wait in the queue', '1800')
-    .action(async (name: string, files: string[], opts: { full?: boolean; queueWait: string }) => {
+    .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
+    .action(async (name: string, files: string[], opts: { full?: boolean; queueWait: string; force?: boolean }) => {
       const config = readConfig(ctx.root());
       const project = projectNamed(ctx, name);
-      const budget = decideBudget(probeMachine(), effectiveResources(config.resources, project.resources), 'unit');
+      const budget = budgetFor(ctx.root(), config, project, 'unit', `${name} tests`, opts.force);
       const impact = impactFor(ctx, project, files);
       const template = opts.full ? project.gates.test : impact.command;
       const command = template ? fillCommand(template, opts.full ? [] : impact.files, Math.max(1, budget.workers)) : undefined;

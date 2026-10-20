@@ -47,6 +47,8 @@ export function gitIgnoreBlock(childRepos: string[], version: string): Generated
       'graphify-out/',
       // One heavy test run at a time (ADR 0013); the lock belongs to this machine.
       '.mandao/run.lock',
+      // The CLI's own log (forced runs, ADR 0024) belongs to this machine.
+      '.mandao/cli.log',
       // Machine-specific agent settings (ADR 0015).
       '.claude/settings.local.json',
       ...childRepos.map((p) => `/${p}/`),
