@@ -56,7 +56,7 @@ Run `{{script:quick-check}}` and read its JSON.
 ## 4. Gates and lite review
 
 1. Run the level 0 gates configured in `projects[].gates` for the touched project (format, lint,
-   typecheck, test for the area, secrets, audit when dependencies changed, sast, metrics). Report any
+   typecheck, impacted tests, secrets, audit when dependencies changed, sast, metrics). Report any
    gate that is not configured; never skip silently.
 2. Lite review per `{{template:rules/review.md}}`: the core checklist on the diff, without lenses,
    run by the `mandao-reviewer` agent in a separate context, never by you. Use a model different from

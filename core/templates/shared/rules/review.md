@@ -12,7 +12,7 @@ Skills teach, the constitution decides, the Reviewer enforces. The Reviewer buil
 
 | Level | What | When |
 |---|---|---|
-| 0 · Gates | `format`, `lint`, `typecheck`, area `test`, `secrets` scan, `audit` of new dependencies, light `sast`, clean-code `metrics` | Always, including quick |
+| 0 · Gates | `format`, `lint`, `typecheck`, impacted `test` (see test-policy.md), `secrets` scan, `audit` of new dependencies, light `sast`, clean-code `metrics` | Always, including quick |
 | 1 · Core | Spec conformance, contract, test policy, `AGENTS.md` of touched modules, `standards.md`, semantic clean code | Every task |
 | 2 · Lenses | security, performance, data/migrations, accessibility, AI | Only when the task carries the matching risk tag |
 | 3 · Adversarial | Panel review of the whole design | `full` depth or high-risk designs only |
