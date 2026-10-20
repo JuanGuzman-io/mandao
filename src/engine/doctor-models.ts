@@ -1,8 +1,16 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { resolveWorkspaceModels } from '../models/load.js';
-import { independence, missingRoles, type ResolvedModels, strongEqualsStandard, usedModels } from '../models/resolve.js';
-import type { Config, Recommendations } from '../schemas/index.js';
+import {
+  type Choice,
+  independence,
+  missingRoles,
+  type ResolvedModels,
+  strongEqualsStandard,
+  TIER_RANK,
+  usedModels,
+} from '../models/resolve.js';
+import type { Config, HarnessId, Recommendations } from '../schemas/index.js';
 import { crossReviewers } from '../scripts/review.js';
 import { type CrossReviewer, crossReviewer } from '../spec/index.js';
 import { onPath } from '../util/which.js';
@@ -26,7 +34,25 @@ function choiceFindings(m: ResolvedModels, rec: Rec | undefined, label: string):
   return out;
 }
 
-function reviewFindings(m: ResolvedModels, label: string, alternatives: CrossReviewer[]): Finding[] {
+/**
+ * When another installed harness could review but its default reviewer is below the Implementer's tier:
+ * the first optional model of that harness that may review at that tier (e.g. gpt-6-astra in Codex).
+ */
+function crossUpgrade(implementer: Choice, m: ResolvedModels, alternatives: CrossReviewer[], recs: Recommendations): string | undefined {
+  const implTier = m.tiers[implementer.model];
+  if (!implTier) return undefined;
+  for (const alt of alternatives) {
+    const rec = recs.harnesses[alt.harness as HarnessId];
+    const opt = rec?.optional.find(
+      (o) => o.roles.includes('reviewer') && rec.tiers[o.model] && TIER_RANK[rec.tiers[o.model]!] >= TIER_RANK[implTier],
+    );
+    if (opt)
+      return `if your plan has ${opt.model}, make it ${alt.harness}'s reviewer: \`mandao models set reviewer ${opt.model} --harness ${alt.harness}\` (${opt.note})`;
+  }
+  return undefined;
+}
+
+function reviewFindings(m: ResolvedModels, label: string, alternatives: CrossReviewer[], recs: Recommendations): Finding[] {
   const out: Finding[] = independence(m)
     .filter((x) => x.reduced)
     .map((check): Finding => {
@@ -39,7 +65,9 @@ function reviewFindings(m: ResolvedModels, label: string, alternatives: CrossRev
         : {
             level: 'warn',
             message: `${label}: reduced independence for ${check.tier} tasks (${check.reason}); ${check.implementer.model} reviews in a clean context`,
-            fix: 'choose a reviewer_alt of the same tier or higher on another model (see `optional` in the recommendations), or add and log in another harness (e.g. `mandao harness add codex`) to review there',
+            fix:
+              crossUpgrade(check.implementer, m, alternatives, recs) ??
+              'choose a reviewer_alt of the same tier or higher on another model (see `optional` in the recommendations), or add and log in another harness (e.g. `mandao harness add codex`) to review there',
           };
     });
   if (strongEqualsStandard(m)) {
@@ -70,7 +98,7 @@ export function modelFindings(root: string, config: Config, recs: Recommendation
         });
       }
       const alternatives = crossReviewers(config.harnesses, harness, resolved, onPath);
-      out.push(...choiceFindings(m, recs.harnesses[harness], label), ...reviewFindings(m, label, alternatives));
+      out.push(...choiceFindings(m, recs.harnesses[harness], label), ...reviewFindings(m, label, alternatives, recs));
     }
   }
   for (const harness of config.harnesses) {

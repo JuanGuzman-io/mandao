@@ -189,6 +189,10 @@ describe('models in doctor', () => {
         runDoctor(root, { probe }).filter((f) => f.message.startsWith('claude: ') && /strong tasks/.test(f.message));
       // Default Codex reviewer (gpt-6-sol) is standard: below an Opus implementer, so not offered.
       expect(claudeReview().map((f) => f.level)).toEqual(['warn']);
+      // …so doctor offers Codex's optional strong model for that role.
+      expect(claudeReview()[0]!.fix).toMatch(
+        /^if your plan has gpt-6-astra, make it codex's reviewer: `mandao models set reviewer gpt-6-astra --harness codex`/,
+      );
       writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { codex: { reviewer: 'gpt-6-astra' } } });
       expect(claudeReview()).toEqual([
         {
