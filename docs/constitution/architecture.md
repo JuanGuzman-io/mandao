@@ -28,8 +28,8 @@ cli ──▶ engine ──▶ adapters ──▶ render ──▶ schemas
 
 | Layer | Path | Role | May depend on |
 |---|---|---|---|
-| CLI | `src/cli/` | Commands, prompts, printing | everything below |
-| Engine | `src/engine/` | Sync pipeline, doctor, config/lock IO | adapters, resolver, writer, models, render, schemas |
+| CLI | `src/cli/` | `program.ts` assembles command groups (`setup`, `extensions`, `models-command`, `run`); prompts and printing | everything below |
+| Engine | `src/engine/` | Sync pipeline (`buildProject`, shared with doctor), doctor, launcher, graph exclusions, config/lock reads | adapters, resolver, writer, models, render, schemas |
 | Adapters | `src/adapters/` | **Pure** canonical → harness files (ADR 0007) | render, resolver types, models types, schemas |
 | Render | `src/render/` | Token and conditional rendering, template install (ADR 0002) | schemas |
 | Resolver | `src/resolver/` | overrides > presets > core (ADR 0004) | schemas |
@@ -40,10 +40,11 @@ cli ──▶ engine ──▶ adapters ──▶ render ──▶ schemas
 | Workspace | `src/workspace/` | Read-only layout detection (ADR 0005) | schemas |
 | Schemas | `src/schemas/` | zod schemas, single source of types | zod, semver |
 
-`CONFLICT(a: ADR 0007 "only src/writer/ touches the filesystem", b: src/engine/files.ts, src/cli/init.ts,
-src/cli/index.ts, src/cli/models.ts write config.yml, models.yml, sources.yml and the lock; decides: tech lead)`.
-The writer owns *generated* files only; user-intent files are written elsewhere. Proposed resolution:
-amend ADR 0007 to say "generated files", or route those writes through one module.
+All filesystem writes go through `src/writer/` (ADR 0007, amended 2026-10-20): generated files via the
+change plan, and user-intent files (`config.yml`, `models.yml`, the lock, `.gitignore` blocks) via
+`writeText`, `createIfMissing` and `editYaml`, which are idempotent and refuse to overwrite a file that
+changed on disk mid-edit. `test/unit/architecture.test.ts` fails on any write elsewhere. The
+`CONFLICT` raised by the first constitution run is resolved.
 
 ## Patterns and conventions
 

@@ -8,6 +8,15 @@ language:
 projects:
   - name: mandao
     path: .
+    gates:
+      format: npx biome format .
+      lint: npm run lint
+      typecheck: npm run typecheck
+      test: npm test
+      secrets: gitleaks git . --redact --no-banner
+      audit: npm audit --omit=dev
+      sast: semgrep scan --config p/typescript --config p/javascript --error --metrics=off
+      metrics: npx biome lint --only=complexity/noExcessiveCognitiveComplexity --only=complexity/noExcessiveLinesPerFunction --only=style/noExcessiveLinesPerFile
 harnesses:
   - claude
   - copilot

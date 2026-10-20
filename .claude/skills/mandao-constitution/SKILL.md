@@ -1,7 +1,7 @@
 ---
 name: mandao-constitution
 description: Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
-argument-hint: "[mode] [product]"
+argument-hint: "[mode] [--product]"
 arguments:
   - mode
   - product
@@ -32,13 +32,23 @@ markers stay in English.
    - **active**: the constitution exists → safe update; only propose changes, never rewrite.
 4. Tell the user the mode and the plan in three lines, then continue.
 
+**Approval flow.** In **new** and **legacy** mode every document is written with `status: draft`. The
+user reviews the files themselves; their approval moves each one to `status: approved`. Nothing is
+committed before that approval. In **active** mode nothing is written until the user approves a diff
+per file.
+
 ## 2. Map the code
 
 - If a graph engine is available (graphify skill or CLI, or CodeGraph), build or refresh the graph
   following that tool's own instructions. It is mandatory in legacy mode when available.
-- Graph hooks are installed by the tool's own installer, never written by hand: with approval, run
-  `graphify claude install` (agent hooks, merged into `.claude/settings.json`) and
-  `graphify hook install` (git hooks that keep the graph fresh). `mandao doctor` checks they exist.
+- In this order, with approval:
+  1. **Exclusions first.** `mandao sync` keeps `.graphifyignore` (generated files and build outputs,
+     derived from the adapters) and `graphify-out/` in `.gitignore`. Check both exist before building.
+  2. **Hooks**, through the tool's own installer, never written by hand: `graphify claude install`
+     (agent hooks, merged into `.claude/settings.json`) and `graphify hook install` (git hooks, merged
+     with existing ones). Before running them, note what `.claude/settings.json` and the git hooks
+     contain; afterwards confirm nothing was lost, and restore it if it was.
+  3. **Verify** with `node .mandao/bin/mandao.mjs doctor`, which also flags an outdated graph tool.
 - Otherwise map with search and glob: entry points, modules, layers, data models, integrations, tests.
   State "graph engine unavailable: lower confidence" in the summary.
 - Do not commit the graph. Commit only distilled outputs.
@@ -90,15 +100,16 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 
 ## 6. Skills
 
-1. Run `npx -y mandao@0.1.0 run fingerprint` and read its JSON: per-project fingerprint, bootstrap skills, and the
+1. Run `node .mandao/bin/mandao.mjs run fingerprint` and read its JSON: per-project fingerprint, bootstrap skills, and the
    catalog proposal (`matches`, `dropped`).
 2. Present the proposal: skill, technology, projects, evidence, vetted or `unvetted`. For `dropped`
    items, ask the question they carry (e.g. which state-management convention is used).
 3. Technologies missing from the catalog: offer `unvetted` candidates or a project-tailored skill
    generated with skill-creator from `standards.md`.
-4. After approval, pin them with `mandao skills add <ids>` and write a `## Skill Map` in the root
-   `AGENTS.md` (outside the managed block): which skill applies in which phase and module.
-   One primary skill per technology, at most ~10 project skills.
+4. After approval, install and pin them with `node .mandao/bin/mandao.mjs skills add <ids>`, which always uses the
+   version pinned in the catalog, then write a `## Skill Map` in the root `AGENTS.md` (outside the
+   managed block): skill, binding, phase and module. One primary skill per technology, at most ~10
+   project skills.
 
 ## 7. Clarify and approve
 

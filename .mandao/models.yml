@@ -5,18 +5,18 @@ harnesses:
   claude:
     leader: opus
     reviewer: opus
-    reviewer_alt: fable
+    reviewer_alt: sonnet
     implementer:
       fast: haiku
       standard: sonnet
       strong: opus
     tester: sonnet
   copilot:
-    leader: Claude Opus 5.5
-    reviewer: Claude Opus 5.5
-    reviewer_alt: GPT-6.1 Sol
+    leader: Claude Sonnet 5.5
+    reviewer: GPT-6 Luna
+    reviewer_alt: Claude Sonnet 5.5
     implementer:
       fast: Claude Haiku 5.5
       standard: Claude Sonnet 5.5
-      strong: Claude Opus 5.5
+      strong: Claude Sonnet 5.5
     tester: Claude Sonnet 5.5

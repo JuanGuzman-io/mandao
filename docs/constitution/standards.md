@@ -2,7 +2,7 @@
 schema_version: 1
 level: workspace
 last_reviewed: 2026-10-20
-status: draft
+status: approved
 ---
 
 # Standards
@@ -54,26 +54,33 @@ license compatible with MIT.
 
 ## Clean-code thresholds (level 0 gates, blocking)
 
+Approved 2026-10-20. Enforced by Biome (`biome.json`) through the `lint` and `metrics` gates.
+
 | Metric | Threshold | Tool |
 |---|---|---|
-| Cyclomatic complexity per function | `OPEN(owner: tech lead)`: proposal 15 | Biome `noExcessiveCognitiveComplexity` (not enabled yet) |
-| Function length (lines) | `OPEN`: proposal 80 | — |
-| File length (lines) | `OPEN`: proposal 400 (largest today: `src/cli/init.ts`, 353) | — |
-| Duplication | `OPEN` | — |
-| Layer-violating imports | none (see architecture.md) | `OPEN`: no tool yet |
+| Cognitive complexity per function | 15 | `complexity/noExcessiveCognitiveComplexity` |
+| Function length | 60 lines, blank lines not counted (test suites exempt) | `complexity/noExcessiveLinesPerFunction` |
+| File length | 350 lines, blank lines not counted | `style/noExcessiveLinesPerFile` |
+| Layer-violating imports | none (see architecture.md) | `OPEN(owner: tech lead)`: no tool yet |
 | Dead code | none | Biome `noUnusedImports` / `noUnusedVariables` |
+| Filesystem writes outside `src/writer/` | none | `test/unit/architecture.test.ts` |
+
+**Ratchet.** Files that exceeded a threshold when it was introduced are pinned in `biome.json`
+`overrides` at their maximum at that time. The pin may only go down: lower it when a refactor allows,
+remove the entry when the file meets the threshold, never raise it. New files get no entry: split the
+code instead (as `src/cli/` was split into `setup.ts`, `extensions.ts`, `models-command.ts`, `run.ts`).
 
 ## Gates
 
-Proposed for `projects[].gates` (pending approval):
+Approved 2026-10-20 and declared in `projects[].gates` of `.mandao/config.yml`.
 
-| Gate | Command |
-|---|---|
-| format | `npx biome format .` |
-| lint | `npm run lint` |
-| typecheck | `npm run typecheck` |
-| test | `npm test` |
-| audit | `npm audit --omit=dev` |
-| secrets | `OPEN`: no scanner configured |
-| sast | `OPEN`: no scanner configured |
-| metrics | `OPEN`: depends on the thresholds above |
+| Gate | Command | CI |
+|---|---|---|
+| format | `npx biome format .` | via lint |
+| lint | `npm run lint` | `check` job |
+| typecheck | `npm run typecheck` | `check` job |
+| test | `npm test` | `check` job |
+| secrets | `gitleaks git . --redact --no-banner` | `secrets` job (gitleaks 8.30.1) |
+| audit | `npm audit --omit=dev` | — |
+| sast | `semgrep scan --config p/typescript --config p/javascript --error --metrics=off` | `sast` job (semgrep 1.181.0) |
+| metrics | `npx biome lint --only=…complexity and length rules` | via lint |

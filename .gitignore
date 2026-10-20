@@ -3,4 +3,8 @@ dist/
 coverage/
 *.tgz
 .DS_Store
+
+# mandao:begin
+# Managed by mandao 0.1.0.
 graphify-out/
+# mandao:end

@@ -30,7 +30,7 @@ Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templat
 
 ## 3. Post-check
 
-Run `npx -y mandao@0.1.0 run quick-check` and read its JSON.
+Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
 
 - `withinLimits: false` → stop. Do not commit. Keep the work as a draft (stash or a draft branch),
   and escalate to /mandao-story or /mandao-specify with the `reasons` and what you learned.

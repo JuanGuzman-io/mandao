@@ -66,11 +66,10 @@ Architecture and rules: `docs/constitution/`.
 
 ## Skill Map
 
-| Skill | Phase | Module | Status |
-|---|---|---|---|
-| graphify | constitution, specify, implement, close | all | installed locally (0.9.13; catalog pins 0.9.92); hooks not installed |
+| Skill | Binding | Phase | Module | Status |
+|---|---|---|---|---|
+| graphify | core | constitution, specify, implement, close | all | installed locally (0.9.13; catalog pins 0.9.92 — `mandao doctor` offers the update); Claude Code and git hooks installed |
+| codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`, generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |
 
-The catalog proposed no stack skills for this project (TypeScript CLI with zod, commander, vitest are
-not in `core/catalog/skills.yml`). `OPEN(owner: tech lead)`: add catalog entries or generate a
-project skill from `docs/constitution/standards.md`.
-
+The catalog has no entries for this stack (TypeScript CLI with zod, commander, vitest); by decision
+(ADR 0012) the project skill covers it instead of new catalog entries.

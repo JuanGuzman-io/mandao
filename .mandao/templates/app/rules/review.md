@@ -60,4 +60,5 @@ its source file), and the remediation.
   the loop.
 
 The Reviewer fails a task when module behavior, contracts or conventions changed and the module's
-`AGENTS.md` was not updated.
+`AGENTS.md` was not updated, or when a new module `AGENTS.md` lacks its `CLAUDE.md` pointer in a
+workspace that uses Claude Code.
