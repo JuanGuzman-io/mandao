@@ -21,7 +21,7 @@ Gate commands come from `projects[].gates` in `.mandao/config.yml`. A missing ga
 invented.
 
 Test policy at level 1 includes the evidence: a `RED` row for a task with mandatory tests, or `MUTANT`
-rows for a `characterization: true` task. For the latter, check the classification against the diff: any
+rows for an `evidence: mutation` task. For the latter, check the classification against the diff: any
 change to production behavior means it is not characterization → FAIL. Each recorded mutation
 (`mutations/<Tn>-<n>.md`) must change what an assertion protects.
 

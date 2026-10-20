@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import type { Config } from '../schemas/index.js';
 import { branchAgeDays, branchExists, branchingFor, branchNames, currentBranch } from '../scripts/branching.js';
+import { logPath } from '../scripts/spec-log.js';
 import { progressSchema } from '../spec/index.js';
 import type { Finding } from './doctor.js';
 
@@ -14,9 +15,9 @@ export function pendingCommitFindings(root: string, config: Config): Finding[] {
   const dir = join(root, config.paths.specs);
   if (!existsSync(dir)) return [];
   return readdirSync(dir, { withFileTypes: true })
-    .filter((d) => d.isDirectory() && existsSync(join(dir, d.name, 'progress.yml')))
+    .filter((d) => d.isDirectory() && existsSync(logPath(join(dir, d.name), 'progress.yml')))
     .flatMap((d): Finding[] => {
-      const parsed = progressSchema.safeParse(parseYaml(readFileSync(join(dir, d.name, 'progress.yml'), 'utf8')));
+      const parsed = progressSchema.safeParse(parseYaml(readFileSync(logPath(join(dir, d.name), 'progress.yml'), 'utf8')));
       const pending = parsed.success ? parsed.data.pending_commits.map((p) => p.task) : [];
       return pending.length
         ? [

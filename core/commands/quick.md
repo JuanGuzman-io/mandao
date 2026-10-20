@@ -76,8 +76,9 @@ Run `{{script:quick-check}}` and read its JSON.
 
 1. Record the row with `{{script:quick-log}} <name> --gates "<gate results>" --verdict <PASS|FAIL>
    --reviewer <agent you invoked> --harness <this harness>` (`self` when the review ran in your own
-   context). The script measures files and lines from the diff and reads the reviewer's model from its
-   agent file: never type a model name into the log. Pass what the reviewer said about itself, verbatim,
+   context; add `--reduced-independence` when the reviewer ran on your model). The script measures files
+   and lines from the diff, reads the reviewer's model from its agent file and puts every review note in
+   the Review column: never type a model name or a review note into the log. Pass what the reviewer said about itself, verbatim,
    as `--claimed-reviewer`; it is only compared.
 2. Commit following `{{template:rules/commits.md}}`, with the trailer `Mandao-Quick: <name>` and,
    when a spec id is active, `Refs: <ID>`. Example:

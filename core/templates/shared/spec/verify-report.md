@@ -7,35 +7,30 @@ date:
 
 # Verify — <title>
 
-<!-- Written by /mandao-verify from `mandao run verify-plan` and the runs it makes. Evidence is quoted as
-run: command, exit code, counts. Nothing here is claimed without output. -->
-
-## Suites
-
-| Project | Kind | Command (as run) | Result | Evidence |
-|---|---|---|---|---|
+<2–3 lines: the verdict and why.>
 
 ## Acceptance criteria → tests
-
-<!-- First column: the bare id, `AC-n` or `AC-n/Cn`, nothing else — release-status reads it. Describe
-the scope in the Tests column. -->
 
 | AC / clause | Critical | Tests | Level | Result |
 |---|---|---|---|---|
 
-## TDD evidence (ADR 0022)
+## Suites
 
-<!-- Tasks with declared tests and their RED row; `missingRed` from verify-plan, and changed red tests. -->
+| Project | Kind | Result |
+|---|---|---|
+
+## TDD evidence (ADR 0022)
 
 ## Product bugs
 
-<!-- PRODUCT_BUG findings from the testers: test, expected, actual, evidence. Test defects fixed are listed
-separately, never mixed with product bugs. -->
+None.
 
 ## Deferred to CI
 
-<!-- Runs the budget deferred; `verified` waits for CI to confirm them. -->
+None.
 
 ## Blockers
 
-<!-- `blockers` from verify-plan that remain; empty when the verdict is `verified`. -->
+None.
+
+## Evidence

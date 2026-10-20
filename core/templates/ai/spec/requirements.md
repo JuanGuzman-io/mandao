@@ -8,24 +8,24 @@ status: draft           # draft | approved | in-progress | blocked | verified | 
 
 # Requirements — <title>
 
+<2–3 lines: what must be true, and how it is checked.>
+
 ## Functional requirements
 
+<a id="fr1"></a>
 ### FR-1 — <name>
 Serves: AC-1, AC-1/C1
 Projects: <project>
 
-<Requirement statement.>
+<The requirement, in one or two sentences.>
 
 #### S-1.1 — <scenario>
 - **Given** …
 - **When** …
 - **Then** …
 - **BUT it must NOT** … (C1)
-- **AND IT MUST** … (C2)
 
 ## Eval thresholds
-
-<!-- ai projects: acceptance as thresholds against a reference dataset. -->
 
 | ID | Serves | Metric | Threshold | Tolerance vs baseline | Dataset (version) |
 |---|---|---|---|---|---|
@@ -35,23 +35,19 @@ Projects: <project>
 
 ### NFR-1 — <name>
 Serves: AC-…
-<Measurable target and how it is measured. A number, not an adjective.>
+
+<A number and how it is measured.>
 
 ## AC → FR matrix
 
 | AC | Clause | FR / scenario | Status |
 |---|---|---|---|
 | AC-1 | main | FR-1 / S-1.1 | covered |
-| AC-1 | BUT must NOT … | FR-1 / S-1.1 C1 | covered |
-
-## Consistency Check
-<!-- Per rules/consistency-check.md. Write "No findings" when empty. -->
-
-| ID | Type | Sides (quoted, with location) | Severity | Owner |
-|---|---|---|---|---|
-
-## Open items
-<!-- [NEEDS CLARIFICATION] items, ASSUMPTION, OPEN, CONFLICT. -->
 
 ## Clarifications
-<!-- Filled by /mandao-clarify: date, question, answer, who answered, what changed. -->
+
+## Consistency Check
+
+No findings.
+
+## Open items

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
@@ -10,8 +12,20 @@ import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from 
 import { crossReviewers } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, findSpec, proposeSpec, readSpec, whereAmI } from '../scripts/spec.js';
-import { blockingMarkers, commitMessage, type LoopContext, loopState, planTasks, TASK_KINDS, trace } from '../spec/index.js';
+import {
+  blockingMarkers,
+  commitMessage,
+  type LoopContext,
+  loopState,
+  planTasks,
+  TASK_KINDS,
+  taskIndex,
+  taskLayoutIssues,
+  trace,
+  withIndex,
+} from '../spec/index.js';
 import { onPath } from '../util/which.js';
+import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { registerLedger } from './run-ledger.js';
@@ -106,16 +120,28 @@ function registerPlanning(run: Command, ctx: CliContext) {
 
   run
     .command('tasks <spec>')
-    .description('Validate tasks.md, compute waves and the next eligible task')
-    .action((ref: string) => {
+    .description('Validate tasks.md, compute waves and the next eligible task; --index prints the generated Overview')
+    .option('--index', 'print the Overview generated from the task details')
+    .option('--write', 'with --index: replace the Overview in tasks.md')
+    .action((ref: string, o: { index?: boolean; write?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
+      if (o.index) {
+        const file = join(spec.dir, 'tasks.md');
+        if (o.write) writeText(file, withIndex(readFileSync(file, 'utf8'), spec.tasks, spec.story));
+        return json({ overview: taskIndex(spec.tasks, spec.story), written: Boolean(o.write) });
+      }
       const markers = [spec.story?.raw, spec.requirements?.raw].filter(Boolean).map((t) => blockingMarkers(t!));
+      const raw = existsSync(join(spec.dir, 'tasks.md')) ? readFileSync(join(spec.dir, 'tasks.md'), 'utf8') : '';
       json({
         ...planTasks(
           spec.tasks,
           markers.flatMap((m) => m.criticalOpen),
         ),
-        issues: [...spec.issues, ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`)],
+        issues: [
+          ...spec.issues,
+          ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`),
+          ...taskLayoutIssues(raw, spec.tasks, spec.story),
+        ],
       });
     });
 }

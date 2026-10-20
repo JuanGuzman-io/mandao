@@ -6,32 +6,30 @@ status: draft           # draft | approved | in-progress | blocked | verified | 
 
 # Tasks — <title>
 
-<!--
-One heading per task with a status checkbox, then a YAML block (ADR 0015). Order by dependencies;
-multi-project: contract → back and front in parallel against a mock → integration → e2e.
-Tests follow rules/test-policy.md; tier: fast | standard | strong; risk_tags from rules/review.md.
--->
+<2–3 lines: the work and its order.>
 
-### [ ] T1 — <name>
+## Overview
+
+## Details
+
+### [ ] T1 — <result, in plain words>
+
+- **What:** <what it does and why; the how is in [design](design.md#d1)>.
+- **Done when:**
+  - S-1.1 holds: <behavior>.
 
 ```yaml
 project: <project>
-# The commit type: feat | fix | test | docs | refactor | chore | perf | style | build | ci.
-# `mandao run commit` checks it against the real diff (only tests changed → test).
 kind: feat
 tier: standard
 files: [path/to/file.ts]
 exemplar: path/to/similar.ts
-risk_tags: []
 ac: [AC-1, AC-1/C1]
 scenarios: [S-1.1, S-1.1/C1]
-# Free text goes in double quotes: an unquoted comma splits the entry in two.
-tests: { unit: ["what the unit test proves, in one sentence"], e2e: [] }
-dod: ["module AGENTS.md (and CLAUDE.md pointer) created or updated"]
-verify: <command>
+test_levels: { S-1.1: unit, S-1.1/C1: unit }
+evidence: tdd
+risk_tags: []
 depends_on: []
 parallel_safe: false
-# true only when the task pins down behavior that already exists (rules/test-policy.md): mutation evidence
-# replaces the red test.
-characterization: false
+verify: <command>
 ```

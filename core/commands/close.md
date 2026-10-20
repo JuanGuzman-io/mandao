@@ -19,6 +19,7 @@ outputs:
 capabilities: [read, search, edit, shell, mcp]
 templates:
   - rules/context.md
+  - rules/spec-docs.md
   - close/release-notes.md
   - close/technical.md
   - close/kaizen.md
@@ -57,7 +58,13 @@ creation.
 
 ## 3. Sync
 
-Update the `AGENTS.md` of every touched module and the code graph (if graphify is present).
+Update the `AGENTS.md` of every touched module, the project skills the design names, and the code graph
+(if graphify is present).
+
+**A write the harness refuses** (for example under `.claude/`, which some harnesses protect from the
+session) is not a failure and never waits for a manual commit: list it as pending in the grouped
+confirmation of step 8 with its exact diff and the one instruction to apply it, and record it as an open
+item in the technical notes.
 
 ## 4. Diagram and drift
 
@@ -68,7 +75,7 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-In `{{paths.releases}}/<ID>/`:
+Following `{{template:rules/spec-docs.md}}` (summary first, evidence at the end), in `{{paths.releases}}/<ID>/`:
 - `technical.md` from `{{template:close/technical.md}}`, in `{{language.technical}}`.
 - `release-notes.md` from `{{template:close/release-notes.md}}`, in `{{language.business}}`, one row per
   criterion with the status from `{{script:release-status}} {{arg:spec}}` — never upgraded by hand.
@@ -100,7 +107,8 @@ release notes as a block the user can paste.
 
 ## 8. Finish
 
-`{{script:close-summary}} {{arg:spec}} --closed`, set `status: closed` in story.md, then commit everything
+`{{script:close-summary}} {{arg:spec}} --closed` (it writes the record and the links to the documents
+the close produced; never edit it by hand), set `status: closed` in story.md, then commit everything
 close wrote on its own: `{{script:commit-spec}} {{arg:spec}} close` (the spec folder, `{{paths.releases}}/<ID>/`,
 `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.

@@ -161,7 +161,8 @@ describe('content defects found by MDO-0004', () => {
   });
 
   test('#5 the verify report asks for the bare AC id in the first column', () => {
-    expect(core('templates/shared/spec/verify-report.md')).toContain('First column: the bare id, `AC-n` or `AC-n/Cn`');
+    expect(core('templates/shared/rules/spec-docs.md')).toContain('bare `AC-n` / `AC-n/Cn` in the first column');
+    expect(core('templates/shared/spec/verify-report.md')).toContain('| AC / clause | Critical | Tests | Level | Result |');
   });
 
   test('quick does not repeat "quick" in the branch name (MDO-0005 quick run)', () => {

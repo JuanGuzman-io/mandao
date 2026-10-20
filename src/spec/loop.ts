@@ -45,10 +45,12 @@ export interface LoopTask {
   risk_tags?: string[];
   /** Pins down existing behavior: evidence is a recorded mutation (`MUTANT`), not a red run. */
   characterization?: boolean;
+  /** `none`: the task declares no evidence to prove (docs, config); there is no red step. */
+  evidence?: 'tdd' | 'mutation' | 'none';
 }
 
 function tddFor(task: LoopTask, own: ExecutionRow[]): LoopState['tdd'] {
-  const required = Boolean(task.tests && task.tests.unit.length + task.tests.e2e.length > 0);
+  const required = Boolean(task.tests && task.tests.unit.length + task.tests.e2e.length > 0) && task.evidence !== 'none';
   const testsBy = required && (task.risk_tags?.length || task.tier === 'strong') ? 'tester' : 'implementer';
   const evidence = task.characterization ? 'mutation' : 'red';
   return { required, testsBy, red: own.some((r) => r.verdict === (evidence === 'mutation' ? 'MUTANT' : 'RED')), evidence };
@@ -92,6 +94,17 @@ function currentTier(start: Tier, own: ExecutionRow[]): { tier: Tier; fails: num
     }
   }
   return { tier, fails };
+}
+
+/**
+ * The agent Mandao routed to write a task's tests now: the Tester for tasks with risk tags or tier strong,
+ * else the Implementer of the current (possibly escalated) tier, or the single Implementer in simple mode.
+ * Red and mutation evidence record this agent, never a name the model typed (MDO-0006).
+ */
+export function testWriter(task: LoopTask, rows: ExecutionRow[], simple: boolean): string {
+  const own = rows.filter((r) => r.task === task.id);
+  if (tddFor(task, own).testsBy === 'tester') return 'mandao-tester';
+  return simple ? 'mandao-implementer' : `mandao-implementer-${currentTier(task.tier, own).tier}`;
 }
 
 /** The first other-harness reviewer at or above the Implementer's tier; none when the tier is unknown. */

@@ -20,16 +20,19 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: only when the spec has behavior a user or PO can see }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
 capabilities: [read, search, edit, shell, mcp]
 templates:
   - rules/context.md
+  - rules/spec-docs.md
   - rules/traceability.md
   - rules/consistency-check.md
   - rules/test-policy.md
   - spec/story.md
   - spec/requirements.md
   - spec/design.md
+  - spec/quickstart.md
 scripts: [spec-new, trace, diagram, branching, commit-spec, resources]
 approval: required
 ---
@@ -39,7 +42,8 @@ approval: required
 Arguments: {{args}}
 
 Produce `requirements.md` and `design.md` for one spec. Follow `{{template:rules/context.md}}`,
-`{{template:rules/traceability.md}}` and `{{template:rules/test-policy.md}}`.
+`{{template:rules/traceability.md}}`, `{{template:rules/test-policy.md}}` and, for how each document
+reads, `{{template:rules/spec-docs.md}}`.
 
 Write requirements and design content in `{{language.technical}}` and anything addressed to the PO
 (story text, business questions) in `{{language.business}}`. Headings and keywords stay in English.
@@ -106,14 +110,15 @@ From `{{template:spec/requirements.md}}`:
 
 From `{{template:spec/design.md}}`:
 
-- **Premise Ledger**: one row per claim about existing code that the design depends on, with
-  evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before relying on it`. If there
-  are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
+- **Premise Ledger** (at the end of the design): one entry per claim about existing code that the
+  design depends on, with evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before
+  relying on it`. If there are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
   reading code (MDO-0004 read one and was wrong): cite the command and an excerpt of its output. Only
   safe runs: read-only, inside the worktree or a sandbox, no writes to real systems and no external
   effects, with a timeout, and through `{{script:resources}}` when it builds or tests (never force the
   guard). If it cannot run safely, it stays `UNVERIFIED`.
-- Decisions with alternatives, changes per project and module, and an **exemplar file** per change.
+- Decisions first, each with why and the alternatives rejected; changes per project and module, and an
+  **exemplar file** per change.
 - Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
 - `Constitution Impact`, `Product Impact` and `Module Docs Impact`: record, never apply. Only
@@ -127,6 +132,13 @@ From `{{template:spec/design.md}}`:
 - `ai` projects: model choice, versioned prompts, chunking/embedding/retrieval, guardrails and
   fallback, in the template's *Model and prompts* table.
 <!-- mandao:endif -->
+
+## 5b. quickstart.md (only with visible behavior)
+
+When the spec has behavior a user or a PO can see, write `quickstart.md` from
+`{{template:spec/quickstart.md}}`: prerequisites in one line, 3–6 steps with the exact command or click
+and what appears, and the expected result; about 400 tokens at most. Not for test-only specs,
+refactors or internal infrastructure.
 
 ## 6. Consistency Check
 

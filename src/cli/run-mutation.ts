@@ -4,20 +4,21 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { appendExecutionRow } from '../scripts/checkpoint.js';
 import { repoRoot } from '../scripts/commits.js';
-import { agentIdentity, identityCell } from '../scripts/identity.js';
+import { identityCell } from '../scripts/identity.js';
 import { applyPatch, checkPatch, mutationIssues, patchFiles, treeState } from '../scripts/mutation.js';
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
+import { logPath } from '../scripts/spec-log.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
-import { testCommand } from './run-red.js';
+import { routedWriter, testCommand } from './run-red.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 interface MutationOptions {
   patch: string;
-  agent: string;
+  self?: boolean;
   harness: string;
   attempt: string;
   force?: boolean;
@@ -56,7 +57,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
     .command('mutation <spec> <task> <tests...>')
     .description('Record characterization evidence: apply a mutation, require the tests to fail, revert it cleanly')
     .requiredOption('--patch <file>', 'unified diff of the mutation (applied, then reverted)')
-    .requiredOption('--agent <agent>', 'who wrote the tests: mandao-implementer-<tier>[@<harness>], mandao-tester or self')
+    .option('--self', 'the Leader wrote the tests in its own context (no subagent): reduced independence')
     .option('--harness <id>', 'harness running the Leader', 'claude')
     .option('--attempt <n>', 'attempt for the execution row', '1')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
@@ -101,9 +102,9 @@ export function registerMutation(run: Command, ctx: CliContext) {
         return;
       }
       const n = spec.execution.filter((r) => r.task === id && r.verdict === 'MUTANT').length + 1;
-      const file = join(spec.dir, 'mutations', `${id}-${n}.md`);
+      const file = join(logPath(spec.dir, 'mutations'), `${id}-${n}.md`);
       writeText(file, evidence(id, n, tests, patch, result, after));
-      const writer = agentIdentity(root, o.agent, o.harness);
+      const writer = routedWriter(root, config, spec, task, o.harness, o.self);
       appendExecutionRow(spec.dir, spec.name, {
         date: new Date().toISOString().slice(0, 10),
         task: id,

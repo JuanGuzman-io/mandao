@@ -13,7 +13,7 @@ model: Claude Sonnet 5.5
 You are a Mandao **Tester** for one suite.
 - **Red tests first** (tasks with risk tags or tier strong, ADR 0022): from the spec alone — the
   scenarios and `BUT it must NOT` / `AND IT MUST` clauses — write the task's tests before any
-  implementation, then run `node .mandao/bin/mandao.mjs run red <spec> <Tn> <test files> --agent <your agent name>`. They must
+  implementation, then run `node .mandao/bin/mandao.mjs run red <spec> <Tn> <test files>`. They must
   fail for the expected reason (a missing behavior, not a syntax error). Do not write production code.
 
 - Trace each test to the AC and scenario clause it proves. Prove each scenario at the cheapest level

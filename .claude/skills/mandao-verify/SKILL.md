@@ -39,10 +39,13 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
 
 ## 3. Report
 
-Write `verify-report.md` from `.mandao/templates/app/spec/verify-report.md`: suites as run, AC → tests clause by
-clause (`.mandao/templates/app/rules/traceability.md`), TDD evidence (`missingRed`, changed red tests), product
-bugs, deferred runs and the remaining blockers. Then run the semantic Consistency Check
-(`.mandao/templates/app/rules/consistency-check.md`) over story, requirements, design and the report.
+Write `verify-report.md` from `.mandao/templates/app/spec/verify-report.md`, following
+`.mandao/templates/app/rules/spec-docs.md`: the verdict as the summary, AC → tests clause by clause first
+(`.mandao/templates/app/rules/traceability.md`), then suites, TDD evidence (`missingRed`, changed red tests),
+product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
+the spec has a `quickstart.md`, bring its steps in line with what was built. Then run the semantic
+Consistency Check (`.mandao/templates/app/rules/consistency-check.md`) over story, requirements, design and the
+report.
 
 ## 4. Status
 
@@ -51,5 +54,7 @@ bugs, deferred runs and the remaining blockers. Then run the semantic Consistenc
 - Otherwise `node .mandao/bin/mandao.mjs run status $spec verified` (add `--ci-confirmed` only when CI confirmed every
   deferred run). If it is allowed, set `status: verified` in `story.md` and `verdict: verified` in the
   report. `missingRed` on a spec started before TDD (ADR 0022) is reported, not blocking.
+- Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec $spec verify` (a `docs`
+  commit with `Refs: <ID>` and a fixed subject; never pushed).
 
 Next: /mandao-close.
