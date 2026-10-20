@@ -4,7 +4,7 @@ tracker: none
 type: story
 id: MDO-0002
 projects: [mandao]
-status: approved
+status: verified
 sources:
   - { ref: "specs/MDO-0001-list-pinned-skills (skills list)", kind: code, date: 2026-10-20 }
   - { ref: "iteration 3 plan: dogfooding spec with TDD", kind: conversation, date: 2026-10-20 }
