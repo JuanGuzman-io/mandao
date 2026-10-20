@@ -11,6 +11,7 @@ import { ResolveError } from '../resolver/resolve.js';
 import { HARNESS_IDS, type HarnessId, MAX_PROJECT_SKILLS, PROFILES } from '../schemas/index.js';
 import { fingerprintProject, proposeSkills } from '../scripts/fingerprint.js';
 import { analyzeDiff, collectDiff, DEFAULT_LIMITS } from '../scripts/quick-check.js';
+import { installStep, sourceLabel } from '../skills/install.js';
 import { packageInfo } from '../util/package-root.js';
 import { type InitOptions, runInit } from './init.js';
 import { c, printChanges, printFindings, printWarnings } from './output.js';
@@ -113,14 +114,7 @@ skills
     const pinned = new Map(lock.skills.map((s) => [s.id, s]));
     for (const id of wanted) {
       const s = catalog.skills[id]!;
-      const source =
-        s.source.type === 'git'
-          ? `${s.source.url}#${s.source.ref}`
-          : s.source.type === 'npm'
-            ? `npm:${s.source.package}`
-            : s.source.type === 'skills'
-              ? `skills:${s.source.ref}`
-              : `bundled:${s.source.path}`;
+      const source = sourceLabel(s);
       pinned.set(id, { id, version: s.version, source, author: s.author, license: s.license, vetted: s.vetted });
     }
     const counted = [...pinned.keys()].filter((id) => !bootstrap.has(id));
@@ -136,14 +130,8 @@ skills
     console.log('  Pinned in .mandao/mandao.lock. Install them with your ecosystem tooling:');
     for (const id of wanted) {
       const s = catalog.skills[id]!;
-      const how =
-        s.source.type === 'skills'
-          ? `npx skills add ${s.source.ref}`
-          : s.source.type === 'git'
-            ? `git: ${s.source.url} @ ${s.source.ref}`
-            : s.source.type === 'npm'
-              ? `npm: ${s.source.package}@${s.version}`
-              : 'bundled with Mandao';
+      const step = installStep(id, s);
+      const how = step.kind === 'manual' ? step.note : step.commands.join(' && ');
       console.log(
         `  ${s.vetted ? c.green('vetted  ') : c.yellow('unvetted')} ${id}@${s.version} — ${how} ${c.dim(`(${s.author}, ${s.license})`)}`,
       );

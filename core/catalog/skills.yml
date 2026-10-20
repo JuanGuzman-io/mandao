@@ -3,57 +3,70 @@
 # Admission (design doc §17.2): maintained, clear license, matches the framework version, tried on a
 # real project. Third-party skills are referenced, never vendored.
 #
-# Every third-party entry below is a seed: author, license, version and source were NOT verified when
-# the catalog was created, so they read UNVERIFIED and `vetted: false`. Verify each one at its source
-# before setting `vetted: true`.
+# Bootstrap entries were verified at their upstream source (2026-10-20). Every other third-party entry
+# is a seed: author, license, version and source were NOT verified, so they read UNVERIFIED and
+# `vetted: false`. Verify each one at its source before setting `vetted: true`.
 schema_version: 1
 
 bootstrap: [graphify, software-architect, product-manager-toolkit, brainstorming, mandao-skills]
 
 skills:
+  # Bootstrap skills: metadata verified at the upstream source on 2026-10-20.
   graphify:
-    description: Repository mapping into a persistent graph; mandatory in legacy constitution mode when available.
-    source: { type: skills, ref: UNVERIFIED/graphify }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
-    vetted: false
+    description: Repository mapping into a persistent graph; mandatory in legacy constitution mode when available. Installs its own agent and git hooks.
+    source:
+      type: command
+      repo: https://github.com/Graphify-Labs/graphify
+      install: ["uv tool install graphifyy==0.9.92", "graphify install --project"]
+    version: 0.9.92
+    author: Safi Shamsi and the Graphify contributors
+    license: Apache-2.0
+    vetted: true
     binding: core
     phases: [constitution, story, specify, implement, close]
   software-architect:
     description: TRD, NFRs as testable scenarios, architecture styles, patterns and ADRs.
-    source: { type: skills, ref: UNVERIFIED/software-architect }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
-    vetted: false
+    # Upstream has no per-skill installer (`npx akili-specs install` installs the whole AKILI kit).
+    source: { type: git, url: https://github.com/JuankCadavid/akili-specs, ref: v2.34.1, path: .claude/skills/software-architect }
+    version: 2.34.1
+    author: Juan Carlos Cadavid
+    license: MIT
+    vetted: true
     binding: core
     phases: [constitution, specify]
   product-manager-toolkit:
-    description: Derive the product layer from code; capability maps and prioritization.
-    source: { type: skills, ref: UNVERIFIED/product-manager-toolkit }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
-    vetted: false
+    description: Derive the product layer from code; capability maps, PRDs and prioritization.
+    # Installs the whole product-skills plugin.
+    source:
+      type: plugin
+      repo: https://github.com/alirezarezvani/claude-skills
+      install: ["/plugin marketplace add alirezarezvani/claude-skills", "/plugin install product-skills@claude-code-skills"]
+    version: 2.12.0
+    author: Alireza Rezvani
+    license: MIT
+    vetted: true
     binding: core
     phases: [constitution, story]
   brainstorming:
     description: Elicit intent and requirements when there is no code yet (constitution new mode).
-    source: { type: skills, ref: UNVERIFIED/brainstorming }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
-    vetted: false
+    # Part of the superpowers plugin.
+    source:
+      type: plugin
+      repo: https://github.com/obra/superpowers
+      install: ["/plugin install superpowers@claude-plugins-official"]
+    version: 7.0.0
+    author: Jesse Vincent
+    license: MIT
+    vetted: true
     binding: core
     phases: [constitution, story]
   mandao-skills:
-    description: Mandao's own skill that resolves which project skills to bring after the constitution.
+    description: Mandao's own skill that resolves which project skills to bring after the constitution. Planned for the next iteration.
     source: { type: bundled, path: skills/mandao-skills }
     version: 0.1.0
     author: Mandao
     license: MIT
-    vetted: true
+    vetted: false
     binding: core
     phases: [constitution]
   nestjs-best-practices:
