@@ -33,7 +33,7 @@ unanswered becomes `ASSUMPTION` or `OPEN`; a critical `OPEN` blocks `/mandao-spe
 
 ## 3. Write story.md
 
-From `.mandao/templates/app/spec/story.md`, following `.mandao/templates/app/rules/spec-docs.md`:
+From `.mandao/templates/app/spec/story.md`, following `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-story.md`:
 
 - Acceptance criteria `### AC-n — <name>`, numbers never reused, each with `critical: true` when it
   touches a flow in `critical-flows.md`.

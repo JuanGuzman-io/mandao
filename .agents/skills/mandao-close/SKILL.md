@@ -52,7 +52,7 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-Following `.mandao/templates/app/rules/spec-docs.md` (summary first, evidence at the end), in `docs/releases/<ID>/`:
+Following `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-close.md` (summary first, evidence at the end), in `docs/releases/<ID>/`:
 - `technical.md` from `.mandao/templates/app/close/technical.md`, in `en`.
 - `release-notes.md` from `.mandao/templates/app/close/release-notes.md`, in `en`, one row per
   criterion with the status from `node .mandao/bin/mandao.mjs run release-status <spec>` — never upgraded by hand.

@@ -139,7 +139,7 @@ describe('decision 2: high-impact premises are executed in specify', () => {
     expect(specify).toMatch(/\*\*High\*\* impact is verified only by\s+\*\*running\*\* it with `{{script:premise}}/);
     expect(specify).toMatch(/read-only, inside the worktree or a sandbox, no writes to real systems/);
     expect(specify).toContain('{{script:resources}}');
-    expect(readFileSync(join(core, 'templates/shared/rules/spec-docs.md'), 'utf8')).toMatch(
+    expect(readFileSync(join(core, 'templates/shared/rules/doc-design.md'), 'utf8')).toMatch(
       /A High\s+premise counts as verified only with an executed command/,
     );
   });

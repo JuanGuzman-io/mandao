@@ -22,6 +22,8 @@ templates:
   - rules/test-policy.md
   - rules/traceability.md
   - rules/consistency-check.md
+  - rules/doc-verify.md
+  - rules/doc-quickstart.md
 scripts: [where, verify-plan, tests, build, status, trace, commit-spec]
 ---
 
@@ -60,10 +62,11 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
 ## 3. Report
 
 Write `verify-report.md` from `{{template:spec/verify-report.md}}`, following
-`{{template:rules/spec-docs.md}}`: the verdict as the summary, AC → tests clause by clause first
+`{{template:rules/spec-docs.md}}` and `{{template:rules/doc-verify.md}}`: the verdict as the summary, AC → tests clause by clause first
 (`{{template:rules/traceability.md}}`), then suites, TDD evidence (`missingRed`, changed red tests),
 product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
-the spec has a `quickstart.md`, bring its steps in line with what was built. Then run the semantic
+the spec has a `quickstart.md`, bring its steps in line with what was built
+(`{{template:rules/doc-quickstart.md}}`). Then run the semantic
 Consistency Check (`{{template:rules/consistency-check.md}}`) over story, requirements, design and the
 report.
 

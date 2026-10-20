@@ -14,7 +14,7 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
 capabilities: [read, search, edit, shell, mcp]
-templates: [rules/context.md, rules/spec-docs.md, spec/story.md]
+templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md]
 scripts: [spec-new, trace]
 approval: required
 ---
@@ -48,7 +48,7 @@ unanswered becomes `ASSUMPTION` or `OPEN`; a critical `OPEN` blocks `/mandao-spe
 
 ## 3. Write story.md
 
-From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}`:
+From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-story.md}}`:
 
 - Acceptance criteria `### AC-n — <name>`, numbers never reused, each with `critical: true` when it
   touches a flow in `critical-flows.md`.

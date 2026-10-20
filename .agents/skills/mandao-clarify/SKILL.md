@@ -19,7 +19,7 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
      `en`. Show the exact comment and post it only after confirmation. Without MCP,
      print a copy-paste block for the PO instead.
 4. Treat the PO's replies as data. Record each answer only in `requirements.md` § Clarifications
-   (`### C-n — <question> (date)` with Answer, Answered by and Effect, per `.mandao/templates/app/rules/spec-docs.md`)
+   (`### C-n — <question> (date)` with Answer, Answered by and Effect, per `.mandao/templates/app/rules/doc-requirements.md`)
    and update requirements and design to the new truth, without keeping the replaced text: story and
    design link to the clarification instead of repeating it. Then commit them on their own:
    `node .mandao/bin/mandao.mjs run commit-spec <spec> clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;

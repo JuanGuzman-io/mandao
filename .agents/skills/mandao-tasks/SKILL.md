@@ -17,7 +17,7 @@ nothing to do here. Otherwise:
    `node .mandao/bin/mandao.mjs run trace <spec>`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend $mandao-clarify.
 2. **Write `## Details`** in `tasks.md` from `.mandao/templates/app/spec/tasks.md`, following
-   `.mandao/templates/app/rules/spec-docs.md`. Per task: `### [ ] Tn — <result>` (never a file path), **What**
+   `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-tasks.md`. Per task: `### [ ] Tn — <result>` (never a file path), **What**
    (1–2 sentences, linking the design for the how), **Done when** (3–5 behavior bullets citing scenarios
    by id), **Notes** only for a visible exception, and the YAML block without prose:
    - `kind`: what the task changes, which becomes its commit type (only tests → `test`, only

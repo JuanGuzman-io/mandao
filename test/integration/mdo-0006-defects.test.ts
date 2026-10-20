@@ -121,6 +121,22 @@ describe('minor defects found by the MDO-0006 run', () => {
 });
 
 describe('readability pass in the content', () => {
+  test('spec-docs.md keeps only the principles; each command loads the rules of the documents it writes', () => {
+    expect(readFileSync(join(core, 'templates/shared/rules/spec-docs.md'), 'utf8').length).toBeLessThan(3000);
+    const loads: Record<string, string[]> = {
+      story: ['doc-story'],
+      clarify: ['doc-requirements'],
+      tasks: ['doc-tasks'],
+      verify: ['doc-verify'],
+      close: ['doc-close'],
+      specify: ['doc-requirements', 'doc-design', 'doc-lite'],
+    };
+    for (const [c, docs] of Object.entries(loads)) {
+      const text = readFileSync(join(core, `commands/${c}.md`), 'utf8');
+      for (const d of docs) expect(text, c).toContain(`{{template:rules/${d}.md}}`);
+    }
+  });
+
   const templates = (dir: string) => readdirSync(join(core, 'templates', dir)).map((f) => join(core, 'templates', dir, f));
   const docs = [...templates('shared/spec'), ...templates('shared/close'), ...templates('ai/spec')].filter(
     (f) => !f.endsWith('execution.md'),
