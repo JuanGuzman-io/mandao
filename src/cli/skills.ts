@@ -54,12 +54,20 @@ export function pinnedSkillsJson(skills: Lock['skills']) {
   return sortedPinnedSkills(skills).map(({ id, version, vetted, source }) => ({ id, version, vetted, source }));
 }
 
+/** Keeps only the vetted or only the unvetted pinned skills; no filter keeps all. Pure. */
+export function filterByVetting(skills: Lock['skills'], filter?: 'vetted' | 'unvetted'): Lock['skills'] {
+  if (!filter) return skills;
+  return skills.filter((s) => s.vetted === (filter === 'vetted'));
+}
+
 /** `mandao skills list`: print pinned skills (or JSON with `--json`), or the add hint when the lock is empty. */
-export function skillsList(ctx: CliContext, opts: { json?: boolean } = {}) {
+export function skillsList(ctx: CliContext, opts: { json?: boolean; vetted?: boolean; unvetted?: boolean } = {}) {
+  if (opts.vetted && opts.unvetted) throw new Error('Use either --vetted or --unvetted, not both.');
   const lock = readLock(join(ctx.root(), LOCK_FILE));
   if (!lock) throw new Error('No lock found: run `mandao sync` first.');
-  if (opts.json) return console.log(JSON.stringify(pinnedSkillsJson(lock.skills), null, 2));
-  const lines = formatPinnedSkills(lock.skills);
+  const skills = filterByVetting(lock.skills, opts.vetted ? 'vetted' : opts.unvetted ? 'unvetted' : undefined);
+  if (opts.json) return console.log(JSON.stringify(pinnedSkillsJson(skills), null, 2));
+  const lines = formatPinnedSkills(skills);
   if (lines.length) {
     for (const line of lines) console.log(line);
     return;

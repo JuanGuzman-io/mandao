@@ -1,0 +1,10 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0002-filter-pinned-skills-by-vetting
+updated_at: 2026-10-20T15:58:35.412Z
+current: null
+open_questions: []
+next_step: verify MDO-0002
+deferred_to_ci: []
+red_tests: []
+pending_commits: []

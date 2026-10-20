@@ -74,3 +74,43 @@ test('prints an empty JSON array when nothing is pinned', async () => {
   expect(console.log).toHaveBeenCalledTimes(1);
   expect(JSON.parse(vi.mocked(console.log).mock.calls[0]![0])).toEqual([]);
 });
+
+function pinMixed(root: string) {
+  const lockPath = join(root, LOCK_FILE);
+  const lock = readLock(lockPath)!;
+  lock.skills = [
+    { id: 'zeta', version: '2.0.0', source: 'owner/zeta', author: 'a', license: 'MIT', vetted: false },
+    { id: 'alpha', version: '1.0.0', source: 'owner/alpha', author: 'a', license: 'MIT', vetted: true },
+  ];
+  writeYaml(lockPath, lock, LOCK_HEADER);
+}
+
+test('--unvetted prints only unvetted skills, in text and JSON', async () => {
+  const root = workspace();
+  pinMixed(root);
+  await run(root, 'skills', 'list', '--unvetted');
+  const lines = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+  expect(lines).toHaveLength(1);
+  expect(lines[0]).toContain('zeta@2.0.0');
+  vi.mocked(console.log).mockClear();
+  await run(root, 'skills', 'list', '--unvetted', '--json');
+  expect(JSON.parse(vi.mocked(console.log).mock.calls[0]![0])).toEqual([
+    { id: 'zeta', version: '2.0.0', vetted: false, source: 'owner/zeta' },
+  ]);
+});
+
+test('--vetted prints only vetted skills', async () => {
+  const root = workspace();
+  pinMixed(root);
+  await run(root, 'skills', 'list', '--vetted');
+  const lines = vi.mocked(console.log).mock.calls.map((call) => String(call[0]));
+  expect(lines).toHaveLength(1);
+  expect(lines[0]).toContain('alpha@1.0.0');
+});
+
+test('--vetted with --unvetted fails with exit code 1', async () => {
+  const root = workspace();
+  pinMixed(root);
+  await expect(run(root, 'skills', 'list', '--vetted', '--unvetted')).rejects.toThrow(/--vetted.*--unvetted/);
+  expect(console.log).not.toHaveBeenCalled();
+});

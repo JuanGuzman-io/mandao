@@ -6,7 +6,7 @@ status: approved
 
 # Tasks — Filter pinned skills by vetting
 
-### [ ] T1 — Filter `skills list` by vetting
+### [x] T1 — Filter `skills list` by vetting
 
 ```yaml
 project: mandao
