@@ -56,6 +56,21 @@ function implemented(root: string, dir: string, changed: string[]): DiagramGraph
   };
 }
 
+/**
+ * Modules whose changed files all appear in the code graph as depending on something: only then can a
+ * missing edge from them be drift. No graph, or a partial one, leaves their edges unverified.
+ */
+function indexedModules(root: string, changed: string[]): (module: string) => boolean {
+  const graph = readGraph(graphFile(root));
+  if (!graph) return () => false;
+  const sources = new Set([...graph.dependents.values()].flatMap((s) => [...s]));
+  const moduleOf = (f: string) => (f.includes('/') ? f.slice(0, f.lastIndexOf('/')) : '.');
+  return (module) => {
+    const files = changed.filter((f) => moduleOf(f) === module && !isTestFile(f));
+    return files.length > 0 && files.every((f) => sources.has(f));
+  };
+}
+
 /** design.md with the diagram just generated stamped in, after checking the options. */
 function stamped(dir: string, design: string, o: DiagramOptions): string {
   const tool = checked<DiagramTool>(o.tool, DIAGRAM_TOOLS, 'tool');
@@ -85,13 +100,9 @@ function registerDrift(run: Command, ctx: CliContext) {
       const changed = specChangedFiles(repo, [...taskCommits(repo, spec.story.meta.id, config.commits.trailers).values()].flat());
       const built = implemented(ctx.root(), spec.dir, changed);
       writeText(join(spec.dir, 'diagrams', 'implemented.graph.json'), `${JSON.stringify(built, null, 2)}\n`);
-      const edgesKnown = existsSync(graphFile(ctx.root()));
-      const drift = diagramDrift(proposed, built, { edgesKnown, exists: (id) => existsSync(join(repo, id)) });
-      json({
-        ...drift,
-        implemented: 'diagrams/implemented.graph.json',
-        ...(edgesKnown ? {} : { note: 'no code graph: edges unverified' }),
-      });
+      const edgesKnownFrom = indexedModules(ctx.root(), changed);
+      const drift = diagramDrift(proposed, built, { edgesKnownFrom, exists: (id) => existsSync(join(repo, id)) });
+      json({ ...drift, implemented: 'diagrams/implemented.graph.json' });
     });
 }
 

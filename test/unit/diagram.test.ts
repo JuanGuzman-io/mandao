@@ -43,7 +43,7 @@ describe('approval diagram (ADR 0022)', () => {
 });
 
 describe('diagram drift by identity (ADR 0026)', () => {
-  const ctx = { edgesKnown: true, exists: () => true };
+  const ctx = { edgesKnownFrom: () => true, exists: () => true };
   const g = (nodes: { id: string; label?: string; kind?: 'module' | 'contract' }[], edges: [string, string][] = []) => ({
     schema_version: 1 as const,
     nodes: nodes.map((n) => ({ kind: 'module' as const, role: 'changed' as const, ...n })),
@@ -99,12 +99,12 @@ describe('diagram drift by identity (ADR 0026)', () => {
       edges: [{ from: 'src/cli', to: 'src/engine' }],
     };
     const built = g([{ id: 'src/cli' }]);
-    expect(diagramDrift(proposed, built, { edgesKnown: false, exists: () => true })).toMatchObject({
+    expect(diagramDrift(proposed, built, { edgesKnownFrom: () => false, exists: () => true })).toMatchObject({
       drift: false,
       missingNodes: [],
       unverifiedEdges: ['src/cli -> src/engine'],
     });
-    expect(diagramDrift(proposed, built, { edgesKnown: false, exists: () => false })).toMatchObject({
+    expect(diagramDrift(proposed, built, { edgesKnownFrom: () => false, exists: () => false })).toMatchObject({
       drift: true,
       missingContext: ['src/engine'],
     });

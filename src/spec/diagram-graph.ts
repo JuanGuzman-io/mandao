@@ -73,8 +73,11 @@ export interface DiagramDrift {
 }
 
 export interface DriftContext {
-  /** False when no code graph was available to derive edges. */
-  edgesKnown: boolean;
+  /**
+   * Whether the code graph knows the dependencies of a module's changed files. An edge from a module it
+   * does not know (no graph, or files the graph has not indexed yet) is unverified, never drift.
+   */
+  edgesKnownFrom: (module: string) => boolean;
   /** Whether a context node exists (a module path in the repository). */
   exists: (id: string) => boolean;
 }
@@ -91,13 +94,12 @@ export function diagramDrift(proposed: DiagramGraph, implemented: DiagramGraph, 
   const known = new Set([...pIds, ...context.map((n) => n.id)]);
   const pEdges = new Set(proposed.edges.filter((e) => known.has(e.from) && known.has(e.to)).map(edgeKey));
   const iEdges = new Set(implemented.edges.map(edgeKey));
-  const edges = ctx.edgesKnown
-    ? {
-        addedEdges: [...iEdges].filter((e) => !pEdges.has(e)).sort(),
-        missingEdges: [...pEdges].filter((e) => !iEdges.has(e)).sort(),
-        unverifiedEdges: [],
-      }
-    : { addedEdges: [], missingEdges: [], unverifiedEdges: [...pEdges].sort() };
+  const judged = (e: string) => ctx.edgesKnownFrom(e.split(' -> ')[0]!);
+  const edges = {
+    addedEdges: [...iEdges].filter((e) => !pEdges.has(e)).sort(),
+    missingEdges: [...pEdges].filter((e) => !iEdges.has(e) && judged(e)).sort(),
+    unverifiedEdges: [...pEdges].filter((e) => !iEdges.has(e) && !judged(e)).sort(),
+  };
   const out = {
     addedNodes: [...iIds].filter((id) => !known.has(id)).sort(),
     missingNodes: [...pIds].filter((id) => !iIds.has(id)).sort(),
