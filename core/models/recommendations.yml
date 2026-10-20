@@ -1,0 +1,288 @@
+# Mandao's model recommendations per harness and role.
+#
+# Defaults must be available on every plan of the harness; models that depend on the plan or on an
+# administrator go under `optional` with a note, never as defaults. Taken from each harness's official
+# documentation on the `reviewed` date, never from memory. `mandao update` refreshes this file with the
+# package; it never changes the choices in .mandao/models.yml and only offers the new recommendation.
+schema_version: 1
+
+harnesses:
+  claude:
+    reviewed: 2026-10-20
+    sources:
+      - https://code.claude.com/docs/en/model-config
+      - https://platform.claude.com/docs/en/about-claude/models/overview
+    # Pinned to the 5.5 family by full model ID (ADR 0014): aliases float to newer models, IDs do not.
+    # Claude Code maps these Anthropic IDs to Bedrock and Google Cloud IDs itself. Opus, Sonnet and
+    # Haiku are available on Pro, Max, Team, Enterprise and the API.
+    harness_version: { min: 2.1.293, max_major: 2, command: claude --version }
+    available: [claude-opus-5-5, claude-sonnet-5-5, claude-haiku-5-5]
+    routed:
+      leader: claude-opus-5-5
+      reviewer: claude-opus-5-5
+      # No reviewer_alt by default: every plan-wide model other than Opus is a lower tier, and the
+      # Reviewer never runs below the Implementer (ADR 0020). Strong tasks are reviewed by Opus in a clean
+      # context (reduced independence) unless Fable is available or the review runs in another harness.
+      implementer: { fast: claude-haiku-5-5, standard: claude-sonnet-5-5, strong: claude-opus-5-5 }
+      tester: claude-sonnet-5-5
+    simple:
+      implementer: claude-sonnet-5-5
+      reviewer: claude-opus-5-5
+    tiers:
+      claude-haiku-5-5: fast
+      claude-sonnet-5-5: standard
+      claude-opus-5-5: strong
+      claude-fable-5-1: strong
+      haiku: fast
+      sonnet: standard
+      opus: strong
+    notes:
+      - "Strong tasks: Opus implements and Opus reviews in a clean context (reduced independence). Set reviewer_alt to claude-fable-5-1 if your plan has it, or review in another harness."
+
+    optional:
+      - model: claude-fable-5-1
+        roles: [leader, reviewer, reviewer_alt]
+        note: requires availability on your plan (Fable is never a plan default and can bill to usage credits)
+      - model: opus
+        roles: [leader, reviewer, reviewer_alt, implementer, tester]
+        note: alias that moves to the newest Opus on each Claude Code release; not pinned
+      - model: sonnet
+        roles: [leader, reviewer, reviewer_alt, implementer, tester]
+        note: alias that moves to the newest Sonnet on each Claude Code release; not pinned
+      - model: haiku
+        roles: [implementer, tester]
+        note: alias that moves to the newest Haiku on each Claude Code release; not pinned
+
+  copilot:
+    reviewed: 2026-10-20
+    sources:
+      - https://docs.github.com/en/copilot/reference/ai-models/supported-models
+      - https://code.visualstudio.com/docs/agents/reference/custom-agent-file-reference
+    # Included on Pro, Pro+, Max, Business and Enterprise and supported in VS Code. Copilot Free and
+    # Student only get auto model selection, so they ignore the model field of agents and prompts.
+    version_unchecked: "the Copilot adapter was verified against the VS Code docs, not a recorded VS Code or Copilot Chat release (ADR 0008)"
+    available:
+      - Claude Sonnet 5.5
+      - Claude Sonnet 5
+      - Claude Haiku 5.5
+      - Claude Haiku 4.5
+      - GPT-6 Luna
+      - GPT-5.6 Terra
+      - GPT-5.6 Luna
+      - GPT-5.3-Codex
+      - Gemini 3.8 Flash
+    routed:
+      leader: Claude Sonnet 5.5
+      # A different vendor from the Implementer keeps the review independent.
+      reviewer: GPT-6 Luna
+      reviewer_alt: Claude Sonnet 5.5
+      implementer: { fast: Claude Haiku 5.5, standard: Claude Sonnet 5.5, strong: Claude Sonnet 5.5 }
+      tester: Claude Sonnet 5.5
+    simple:
+      implementer: Claude Sonnet 5.5
+      reviewer: GPT-6 Luna
+    tiers:
+      Claude Haiku 5.5: fast
+      Claude Haiku 4.5: fast
+      Claude Sonnet 5.5: standard
+      Claude Sonnet 5: standard
+      GPT-6 Luna: standard
+      GPT-5.6 Terra: standard
+      GPT-5.6 Luna: standard
+      GPT-5.3-Codex: standard
+      Gemini 3.8 Flash: fast
+      Claude Opus 5.5: strong
+      GPT-6 Sol: strong
+      GPT-6.1 Sol: strong
+      Claude Fable 5.1: strong
+    notes:
+      - "implementer.strong equals implementer.standard (Claude Sonnet 5.5, same effort): no plan-wide model is stronger, so escalating a task does not change its model. Choose Claude Opus 5.5 for strong if your plan has it."
+      - "Copilot Free and Student only get auto model selection: model fields are ignored there."
+
+    optional:
+      - model: Claude Opus 5.5
+        roles: [leader, reviewer, reviewer_alt, implementer]
+        note: requires availability on your plan (not included in Copilot Pro)
+      - model: GPT-6 Sol
+        roles: [reviewer, reviewer_alt]
+        note: requires availability on your plan (not included in Copilot Pro)
+      - model: GPT-6.1 Sol
+        roles: [reviewer, reviewer_alt]
+        note: requires availability on your plan (not included in Copilot Pro; VS Code support not listed)
+      - model: Claude Fable 5.1
+        roles: [leader, reviewer, reviewer_alt]
+        note: requires availability on your plan (an administrator must enable it)
+
+  codex:
+    reviewed: 2026-10-20
+    sources:
+      - https://learn.chatgpt.com/docs/models.md
+      - https://learn.chatgpt.com/docs/pricing.md
+      - https://learn.chatgpt.com/docs/enterprise/workspace-model-availability.md
+      - https://learn.chatgpt.com/docs/agent-configuration/subagents.md
+    # 0.155.0 is the oldest CLI that knows gpt-6-sol and gpt-6-luna (codex-rs/models-manager/models.json).
+    harness_version: { min: 0.155.0, max_major: 0, command: codex --version }
+    # Defaults target the paid plans (Plus, Pro, Business) and API keys; no Codex model is on every plan.
+    available: [gpt-6.1-sol, gpt-6-sol, gpt-6-luna]
+    routed:
+      leader: gpt-6.1-sol
+      reviewer: gpt-6-sol
+      reviewer_alt: gpt-6.1-sol
+      implementer: { fast: gpt-6-luna, standard: gpt-6.1-sol, strong: gpt-6.1-sol }
+      tester: gpt-6.1-sol
+    simple:
+      implementer: gpt-6.1-sol
+      reviewer: gpt-6-sol
+    # Escalating to strong keeps the model and raises the reasoning effort: a real escalation.
+    effort:
+      leader: high
+      reviewer: high
+      reviewer_alt: high
+      implementer: { fast: medium, standard: medium, strong: high }
+      tester: medium
+    tiers:
+      gpt-6-luna: fast
+      gpt-6.1-sol: standard
+      gpt-6-sol: standard
+      gpt-6-astra: strong
+      gpt-5.6-luna: fast
+      gpt-5.6-terra: standard
+      gpt-5.6-sol: standard
+    notes:
+      - "ChatGPT Free and Go only have gpt-6-luna (desktop app, during rollout): routed mode is not viable on those plans."
+      - "Enterprise and Edu: an administrator must enable gpt-6.1-sol and gpt-6-sol before Codex can use them."
+      - "API keys: availability follows the models your key and project can use."
+    optional:
+      - model: gpt-6-astra
+        roles: [leader, reviewer, reviewer_alt, implementer]
+        note: requires availability on your plan (documented for Plus and Business; off by default on Enterprise and Edu; some paid plans omit its Extra High effort)
+        # Model card: Codex CLI and IDE extension, API access; strong tier (most capable model).
+        source: https://learn.chatgpt.com/docs/models.md
+        reviewed: 2026-10-20
+      - model: gpt-5.6-sol
+        roles: [reviewer, reviewer_alt, implementer, tester]
+        note: kept during the rollout of the GPT-6 family
+
+  opencode:
+    reviewed: 2026-10-20
+    sources:
+      - https://opencode.ai/docs/models/
+      - https://opencode.ai/docs/agents/
+      - https://models.dev/api.json
+      - https://platform.claude.com/docs/en/about-claude/models/overview
+      - https://developers.openai.com/api/docs/models
+    # Verified against 2.1.1 (ADR 0025): the files Mandao writes load natively or through v2's compatibility
+    # decoders, `opencode run` takes `-m provider/model#variant`, credentials are listed by `opencode auth list`.
+    harness_version: { min: 2.1.1, max_major: 2, command: opencode --version }
+    # OpenCode has no plans of its own: models follow the providers configured here. `init` detects them
+    # (auth.json keys, provider env vars, enabled/disabled providers) and picks the matching set; this
+    # top-level recommendation is the `anthropic` set, used when detection finds nothing.
+    available: [anthropic/claude-opus-5-5, anthropic/claude-sonnet-5-5, anthropic/claude-haiku-5-5]
+    routed:
+      leader: anthropic/claude-opus-5-5
+      reviewer: anthropic/claude-opus-5-5
+      implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+      tester: anthropic/claude-sonnet-5-5
+    simple:
+      implementer: anthropic/claude-sonnet-5-5
+      reviewer: anthropic/claude-opus-5-5
+    provider_sets:
+      anthropic:
+        providers: [anthropic]
+        routed:
+          leader: anthropic/claude-opus-5-5
+          reviewer: anthropic/claude-opus-5-5
+          implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+          tester: anthropic/claude-sonnet-5-5
+        simple: { implementer: anthropic/claude-sonnet-5-5, reviewer: anthropic/claude-opus-5-5 }
+        note: "Strong tasks: Opus implements and reviews in a clean context (reduced independence), as in Claude Code."
+      openai:
+        providers: [openai]
+        routed:
+          leader: openai/gpt-6-astra
+          reviewer: openai/gpt-6-astra
+          reviewer_alt: openai/gpt-6.1-sol
+          implementer: { fast: openai/gpt-6-luna, standard: openai/gpt-6.1-sol, strong: openai/gpt-6-astra }
+          tester: openai/gpt-6.1-sol
+        simple: { implementer: openai/gpt-6.1-sol, reviewer: openai/gpt-6-astra }
+        note: "OpenAI's docs do not state the minimum usage tier per model; check that your API project can use gpt-6-astra."
+      anthropic+openai:
+        providers: [anthropic, openai]
+        routed:
+          leader: anthropic/claude-opus-5-5
+          # The Reviewer runs on the other provider by default.
+          reviewer: openai/gpt-6-astra
+          reviewer_alt: openai/gpt-6.1-sol
+          implementer: { fast: anthropic/claude-haiku-5-5, standard: anthropic/claude-sonnet-5-5, strong: anthropic/claude-opus-5-5 }
+          tester: anthropic/claude-sonnet-5-5
+        simple: { implementer: anthropic/claude-sonnet-5-5, reviewer: openai/gpt-6-astra }
+      # Offered, never auto-selected: free models through OpenCode Zen (`/connect` → OpenCode Zen, provider
+      # `opencode`). Two different models so Implementer and Reviewer differ; both providers state they do
+      # not train on your data today, but terms change with each free period. Use them on public code only.
+      opencode-zen:
+        optional: true
+        providers: [opencode]
+        routed:
+          leader: opencode/glm-5.3-flash-free
+          reviewer: opencode/beam-free
+          implementer: { fast: opencode/glm-5.3-flash-free, standard: opencode/glm-5.3-flash-free, strong: opencode/glm-5.3-flash-free }
+          tester: opencode/glm-5.3-flash-free
+        simple: { implementer: opencode/glm-5.3-flash-free, reviewer: opencode/beam-free }
+        note: "free for a limited time; free models may use data for training"
+        source: https://opencode.ai/docs/zen/
+        reviewed: 2026-10-20
+    tiers:
+      anthropic/claude-haiku-5-5: fast
+      anthropic/claude-sonnet-5-5: standard
+      anthropic/claude-opus-5-5: strong
+      anthropic/claude-fable-5-1: strong
+      openai/gpt-6-luna: fast
+      openai/gpt-6.1-sol: standard
+      openai/gpt-6-sol: standard
+      openai/gpt-6-astra: strong
+    notes:
+      - "Models follow the providers configured in OpenCode; `mandao doctor` checks that every role's provider is configured here."
+      - "Anthropic subscriptions (Pro/Max) are not a supported way to use OpenCode: use an Anthropic API key."
+    optional:
+      - model: anthropic/claude-fable-5-1
+        roles: [leader, reviewer, reviewer_alt]
+        note: requires availability on your Anthropic account
+      - model: ollama/*
+        roles: [implementer]
+        note: "local models (ollama/*, lmstudio/*), for implementer.fast only: they vary widely in quality and tool use; verify on your tasks before relying on them"
+
+  antigravity:
+    reviewed: 2026-10-20
+    sources:
+      - https://antigravity.google/docs/subagents
+      - https://antigravity.google/docs/models
+      - https://antigravity.google/docs/plans
+    # Experimental (ADR 0019). A subagent's `model` is a tier, not a model ID: `inherit` (the session's
+    # model), `flash` or `pro`. No documented version command, so no minimum-version check.
+    # Free and Plus only have Flash, and defaults must work on every plan: simple mode, Flash for both
+    # roles, which is reduced independence (ADR 0020). `pro` is optional.
+    version_unchecked: "Antigravity documents no version command (ADR 0019)"
+    default_mode: simple
+    available: [flash]
+    routed:
+      leader: flash
+      reviewer: flash
+      implementer: { fast: flash, standard: flash, strong: flash }
+      tester: flash
+    simple:
+      implementer: flash
+      reviewer: flash
+    tiers:
+      flash: standard
+      pro: strong
+    notes:
+      - "Experimental: formats moved this month, skill arguments and agent tool names are not documented."
+      - "Free and Plus only have Flash: Implementer and Reviewer both run on Flash, so reviews have reduced independence. Use pro for the reviewer if your plan has it (AI Pro, Ultra, Enterprise), or review in another harness."
+      - "The Reviewer's read-only rule is in its prompt only: Antigravity's tool names are not documented, so Mandao cannot restrict its tools."
+    optional:
+      - model: pro
+        roles: [leader, reviewer, reviewer_alt, implementer]
+        note: requires AI Pro (not on trial), Ultra or Enterprise
+      - model: inherit
+        roles: [implementer, tester]
+        note: "the session's model, whatever the user picked; Mandao cannot know its tier"

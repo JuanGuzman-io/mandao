@@ -1,0 +1,37 @@
+name: Release
+
+# Manual on purpose: a maintainer decides when Mandao is published (ADR 0026). Publishing uses npm
+# trusted publishing (OIDC): no token secret exists or is needed. Setup: CONTRIBUTING.md.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write # OIDC for npm trusted publishing and provenance
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # trusted publishing needs Node 22.14.0 or later
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      - name: npm with trusted publishing support (11.5.1 or later)
+        run: npm install -g npm@^11.5.1
+      - run: npm ci
+      - run: npm run check
+      - run: npm run build
+      - run: npm run smoke
+      - name: Version or publish
+        uses: changesets/action@v1
+        with:
+          publish: npm run release
+          commit: "🔧 chore(release): version packages"
+          title: "🔧 chore(release): version packages"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

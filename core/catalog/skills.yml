@@ -1,0 +1,188 @@
+# Mandao curated skills catalog. Schema: docs/schemas.md.
+#
+# Admission (design doc §17.2): maintained, clear license, matches the framework version, tried on a
+# real project. Third-party skills are referenced, never vendored.
+#
+# Bootstrap entries were verified at their upstream source (2026-10-20). Every other third-party entry
+# is a seed: author, license, version and source were NOT verified, so they read UNVERIFIED and
+# `vetted: false`. Verify each one at its source before setting `vetted: true`.
+schema_version: 1
+
+bootstrap: [graphify, software-architect, product-manager-toolkit, brainstorming, mandao-skills]
+
+skills:
+  # Bootstrap skills: metadata verified at the upstream source on 2026-10-20.
+  graphify:
+    description: Repository mapping into a persistent graph; mandatory in legacy constitution mode when available. Installs its own agent and git hooks.
+    source:
+      type: command
+      repo: https://github.com/Graphify-Labs/graphify
+      install: ["uv tool install graphifyy==0.9.92", "graphify install --project"]
+      version_command: graphify --version
+    version: 0.9.92
+    author: Safi Shamsi and the Graphify contributors
+    license: Apache-2.0
+    vetted: true
+    binding: core
+    phases: [constitution, story, specify, implement, close]
+  software-architect:
+    description: TRD, NFRs as testable scenarios, architecture styles, patterns and ADRs.
+    # Upstream has no per-skill installer (`npx akili-specs install` installs the whole AKILI kit).
+    source: { type: git, url: https://github.com/JuankCadavid/akili-specs, ref: v2.34.1, path: .claude/skills/software-architect }
+    version: 2.34.1
+    author: Juan Carlos Cadavid
+    license: MIT
+    vetted: true
+    binding: core
+    phases: [constitution, specify]
+  product-manager-toolkit:
+    description: Derive the product layer from code; capability maps, PRDs and prioritization.
+    # Installs the whole product-skills plugin.
+    source:
+      type: plugin
+      repo: https://github.com/alirezarezvani/claude-skills
+      install: ["/plugin marketplace add alirezarezvani/claude-skills", "/plugin install product-skills@claude-code-skills"]
+    version: 2.12.0
+    author: Alireza Rezvani
+    license: MIT
+    vetted: true
+    binding: core
+    phases: [constitution, story]
+  brainstorming:
+    description: Elicit intent and requirements when there is no code yet (constitution new mode).
+    # Part of the superpowers plugin.
+    source:
+      type: plugin
+      repo: https://github.com/obra/superpowers
+      install: ["/plugin install superpowers@claude-plugins-official"]
+    version: 7.0.0
+    author: Jesse Vincent
+    license: MIT
+    vetted: true
+    binding: core
+    phases: [constitution, story]
+  mandao-skills:
+    description: Mandao's own skill that resolves which project skills to bring after the constitution. Planned for the next iteration.
+    source: { type: bundled, path: skills/mandao-skills }
+    version: 0.1.0
+    author: Mandao
+    license: MIT
+    vetted: false
+    binding: core
+    phases: [constitution]
+  nestjs-best-practices:
+    description: NestJS module architecture, dependency injection, security and performance practices.
+    source: { type: skills, ref: UNVERIFIED/nestjs-best-practices }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  react-best-practices:
+    description: React and Next.js performance and composition patterns.
+    source: { type: skills, ref: UNVERIFIED/react-best-practices }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  angular-developer:
+    description: Angular components, signals, forms, routing and testing.
+    source: { type: skills, ref: UNVERIFIED/angular-developer }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  flutter-bloc:
+    description: Flutter architecture with the BLoC state-management convention.
+    source: { type: skills, ref: UNVERIFIED/flutter-bloc }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  flutter-riverpod:
+    description: Flutter architecture with the Riverpod state-management convention.
+    source: { type: skills, ref: UNVERIFIED/flutter-riverpod }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  ai-agent-development:
+    description: Agent framework and runtime selection, agent architecture and evals.
+    source: { type: skills, ref: UNVERIFIED/ai-agent-development }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: profile
+    phases: [specify, implement, verify]
+    profiles: [ai]
+  systematic-debugging:
+    description: Root-cause debugging before proposing fixes.
+    source: { type: skills, ref: UNVERIFIED/systematic-debugging }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: conditional
+    phases: [implement, verify]
+  error-handling-patterns:
+    description: Error propagation, Result types and graceful degradation.
+    source: { type: skills, ref: UNVERIFIED/error-handling-patterns }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: conditional
+    phases: [specify, implement]
+  api-design-principles:
+    description: REST and GraphQL API design for public contracts.
+    source: { type: skills, ref: UNVERIFIED/api-design-principles }
+    version: UNVERIFIED
+    author: UNVERIFIED
+    license: UNVERIFIED
+    vetted: false
+    binding: conditional
+    phases: [specify]
+
+technologies:
+  nestjs:
+    match: { packages: ["@nestjs/core"], versions: ">=10" }
+    primary: nestjs-best-practices
+  react:
+    match: { packages: [react, next] }
+    primary: react-best-practices
+  angular:
+    match: { packages: ["@angular/core"], files: [angular.json] }
+    primary: angular-developer
+  flutter:
+    match: { files: [pubspec.yaml] }
+    primary: flutter-bloc
+    when: { state: bloc }
+    alt:
+      - { skill: flutter-riverpod, when: { state: riverpod } }
+  langgraph:
+    match: { packages: [langgraph, "@langchain/langgraph", langchain, "@langchain/core"] }
+    primary: ai-agent-development
+
+facets:
+  state:
+    bloc: { packages: [flutter_bloc, bloc] }
+    riverpod: { packages: [flutter_riverpod, riverpod, hooks_riverpod] }
+
+packs:
+  core: [graphify, systematic-debugging]
+  po: [brainstorming, product-manager-toolkit]
+  dev-node: [nestjs-best-practices, error-handling-patterns, api-design-principles]
+  dev-web: [react-best-practices, angular-developer]
+  dev-flutter: [flutter-bloc, flutter-riverpod]
+  ai-ml: [ai-agent-development]

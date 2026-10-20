@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "src/cli",
+      "label": "skills list command",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/engine",
+      "label": "lock reader",
+      "kind": "module",
+      "role": "context"
+    }
+  ],
+  "edges": [
+    {
+      "from": "src/cli",
+      "to": "src/engine"
+    }
+  ]
+}

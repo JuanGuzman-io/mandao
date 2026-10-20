@@ -1,0 +1,15 @@
+node_modules/
+dist/
+coverage/
+*.tgz
+.DS_Store
+# Machine-specific agent settings (absolute paths, personal hooks)
+.claude/settings.local.json
+
+# mandao:begin
+# Managed by mandao 0.1.0.
+graphify-out/
+.mandao/run.lock
+.mandao/cli.log
+.claude/settings.local.json
+# mandao:end

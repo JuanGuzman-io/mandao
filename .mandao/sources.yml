@@ -1,0 +1,7 @@
+# Where business context lives: tracker, docs, chat, design, transcripts.
+schema_version: 1
+tracker: none
+docs: []
+meetings: []
+chat: []
+design: []

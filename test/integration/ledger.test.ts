@@ -1,0 +1,135 @@
+import { execFileSync } from 'node:child_process';
+import { chmodSync, cpSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { configSchema } from '../../src/schemas/index.js';
+import { appendExecutionRow, writeProgress } from '../../src/scripts/checkpoint.js';
+import { changedFiles, commitPending, commitState, taskCommits } from '../../src/scripts/commits.js';
+import { readSpec } from '../../src/scripts/spec.js';
+import { commitFindings, type ExecutionRow } from '../../src/spec/index.js';
+import { makeTree } from '../helpers.js';
+
+const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
+const config = configSchema.parse({
+  schema_version: 1,
+  workspace: 'single',
+  projects: [{ name: 'mandao', path: '.' }],
+  harnesses: ['claude'],
+});
+const git = (cwd: string, ...args: string[]) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+const SPEC = 'specs/MDO-0001-skills-list';
+
+beforeEach(() => {
+  for (const k of ['GIT_AUTHOR_NAME', 'GIT_COMMITTER_NAME']) vi.stubEnv(k, 'test');
+  for (const k of ['GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_EMAIL']) vi.stubEnv(k, 'test@example.com');
+});
+afterEach(() => vi.unstubAllEnvs());
+
+/** A repo on branch `feat` with the sample spec committed (T1 PASS in the log, T2 started). */
+function repo() {
+  const root = realpathSync(makeTree({ 'README.md': 'x\n' }));
+  git(root, 'init', '-q', '-b', 'main');
+  git(root, 'commit', '-qm', 'init', '--allow-empty');
+  git(root, 'checkout', '-qb', 'feat');
+  cpSync(fixture, join(root, SPEC), { recursive: true });
+  git(root, 'add', '.');
+  git(root, 'commit', '-qm', 'spec');
+  return root;
+}
+
+const pass = (task: string): ExecutionRow => ({
+  date: '2026-10-20',
+  task,
+  attempt: 1,
+  tier: 'standard',
+  harness: 'claude',
+  implementer: 'claude-sonnet-5-5',
+  reviewer: 'claude-opus-5-5',
+  verdict: 'PASS',
+  notes: '',
+});
+
+/** Simulates a Leader PASS whose commit was blocked: code changed, PASS row written, commit queued. */
+function passPending(root: string, task: string, file: string, subject: string) {
+  const dir = join(root, SPEC);
+  mkdirSync(join(root, 'src'), { recursive: true });
+  writeFileSync(join(root, file), `export const ${task.toLowerCase()} = 1;\n`);
+  appendExecutionRow(dir, 'MDO-0001-skills-list', pass(task));
+  const spec = readSpec(dir);
+  const queued = new Set(spec.progress!.pending_commits.flatMap((p) => p.files));
+  const files = changedFiles(root, dir).filter((f) => !queued.has(f));
+  writeProgress(dir, { ...spec.progress!, pending_commits: [...spec.progress!.pending_commits, { task, subject, files }] });
+}
+
+const pending = (root: string) => {
+  const spec = readSpec(join(root, SPEC));
+  return { repo: root, specDir: spec.dir, config, story: spec.story!, tasks: spec.tasks, progress: spec.progress! };
+};
+
+describe('commits found by trailers (ADR 0021)', () => {
+  test('a passed task without a commit is reported; a pending one says how to commit it', () => {
+    const root = repo();
+    const state = commitState(readSpec(join(root, SPEC)), config.commits.trailers);
+    expect(state).toMatchObject({ passed: ['T1'], pending: [] });
+    expect(commitFindings(state)).toEqual([
+      { type: 'UNCOMMITTED', ref: 'T1', message: 'T1 passed review but no commit carries its Mandao-Task trailer' },
+    ]);
+  });
+
+  test('mandao run commit: one commit per task with trailers, the PASS row inside it, nothing left behind', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    expect(commitFindings(commitState(readSpec(join(root, SPEC)), config.commits.trailers)).map((f) => f.message)).toContain(
+      'T2 passed review and its commit is pending: run `mandao run commit <spec>`',
+    );
+    const run = commitPending({ ...pending(root), trailers: ['Co-Authored-By: Test <t@example.com>'] });
+    expect(run).toMatchObject({ committed: [{ task: 'T2' }], pending: [] });
+    expect(git(root, 'status', '--porcelain')).toBe('');
+    expect(git(root, 'log', '-1', '--format=%B')).toBe(
+      '✨ feat(cli): register the skills list command\n\nRefs: MDO-0001\nMandao-Task: T2\nMandao-AC: AC-2, AC-2/C1\nCo-Authored-By: Test <t@example.com>',
+    );
+    const files = git(root, 'show', '--name-only', '--format=', 'HEAD').split('\n');
+    expect(files).toEqual(expect.arrayContaining(['src/b.ts', `${SPEC}/execution.md`, `${SPEC}/progress.yml`]));
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits).toEqual([]);
+  });
+
+  test('a rebase rewrites the hashes and trace stays clean', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    commitPending(pending(root));
+    const before = taskCommits(root, 'MDO-0001', config.commits.trailers).get('T2');
+    git(root, 'checkout', '-q', 'main');
+    writeFileSync(join(root, 'other.txt'), 'main moved on\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'main moved on');
+    git(root, 'checkout', '-q', 'feat');
+    git(root, 'rebase', '-q', 'main');
+    const after = taskCommits(root, 'MDO-0001', config.commits.trailers).get('T2');
+    expect(after).toHaveLength(1);
+    expect(after).not.toEqual(before);
+    const state = commitState(readSpec(join(root, SPEC)), config.commits.trailers);
+    expect(commitFindings(state).filter((f) => f.ref === 'T2')).toEqual([]);
+  });
+
+  test('a failed commit keeps the task pending; overlapping files are refused', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const hook = join(root, '.git/hooks/pre-commit');
+    writeFileSync(hook, '#!/bin/sh\necho blocked >&2\nexit 1\n');
+    chmodSync(hook, 0o755);
+    expect(commitPending(pending(root))).toMatchObject({
+      committed: [],
+      pending: ['T2'],
+      error: expect.stringMatching(/T2: git commit failed: blocked/),
+    });
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
+
+    const spec = readSpec(join(root, SPEC));
+    const twice = {
+      ...spec.progress!,
+      pending_commits: [...spec.progress!.pending_commits, { task: 'T1', subject: 'x', files: ['src/b.ts'] }],
+    };
+    expect(commitPending({ ...pending(root), progress: twice }).error).toBe('src/b.ts is changed by both T2 and T1: commit them by hand');
+  });
+});

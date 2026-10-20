@@ -1,0 +1,135 @@
+---
+schema_version: 1
+id: implement
+title: Implement
+description: "Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS."
+status: stable
+flow: { after: [tasks], next: [verify] }
+arguments:
+  - name: spec
+    description: "Spec folder or id"
+    required: true
+  - name: task
+    description: "Optional task id (default: the next eligible task)"
+inputs:
+  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true }
+  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+outputs:
+  - { path: "(code)", description: one local commit per task after PASS }
+  - { path: "{{paths.specs}}/<ID>-<slug>/execution.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
+capabilities: [read, search, edit, shell, agents]
+templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
+scripts: [where, models, status, tasks, brief, loop, checkpoint, resources, tests, review, commit, pr-plan]
+# OpenCode: the commands run as the Leader agent, so the session uses the leader model.
+harness: { opencode: { agent: mandao-leader } }
+---
+
+# /mandao-implement
+
+Spec: {{arg:spec}} · task: {{arg:task}}
+
+You are the **Leader** for this spec, in this session (subagents cannot start subagents). You do not
+write production code yourself. Use `{{language.technical}}` for notes; code and commits are English.
+
+## 0. Before the first task
+
+1. `{{script:where}} {{arg:spec}}` — if this session is not in the spec's worktree, stop and tell the user
+   the path to open. Mandao never creates branches here.
+2. `{{script:models}} --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
+   warn (the Leader should run on `<leader>`) and continue.
+3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
+   `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
+   spec to `verified`.
+4. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
+
+## 1. For each task
+
+Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (stop if it reports
+`blocked`). Then repeat until the task is done, halted or pivoted, following
+`{{script:loop}} {{arg:spec}} <Tn> --harness <this harness>` at every step:
+
+1. **Checkpoint** before anything else:
+   `{{script:checkpoint}} {{arg:spec}} --task <Tn> --phase implementing --harness <h> --model <your model> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   Checkpoints are the only memory between sessions: write one after every step below.
+   **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
+   (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
+   `self` when it ran in your own context); the script reads its model and effort from the agent file the
+   harness loads. Pass what the agent said about itself as `--claimed-implementer` / `--claimed-reviewer`:
+   a difference is recorded as `identity mismatch`.
+2. **Brief:** `{{script:brief}} {{arg:spec}} <Tn> --harness <h>` gives the clauses, files, exemplar,
+   gates, skills, lenses, models and impacted tests.
+3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests and
+   has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
+   spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
+   tasks with declared tests, the Implementer writes the red test first and records it the same way.
+   **Implement** in a fresh context with the implementer for the tier:
+<!-- mandao:if harness=claude -->
+   the `mandao-implementer-<tier>` agent (or `mandao-implementer` in simple mode).
+<!-- mandao:endif -->
+<!-- mandao:if harness=copilot -->
+   the `mandao-implementer-<tier>` custom agent (or `mandao-implementer` in simple mode) as a subagent.
+<!-- mandao:endif -->
+<!-- mandao:if harness=codex -->
+   the `mandao_implementer_<tier>` custom agent (or `mandao_implementer` in simple mode). Codex loads
+   `.codex/agents/` only in a trusted project; when the agent is not available, say so and record
+   `reduced independence` with your own model as the implementer.
+<!-- mandao:endif -->
+   Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED
+   --implementer <agent>`.
+4. **Gates and impacted tests** (`{{template:rules/test-policy.md}}`): before a build, check
+   `{{script:resources}} --project <project> --kind build`; when it says `defer`, do not force it — report
+   and wait, unless the user asks (a forced run is recorded). Run the project's level 0 gates,
+   and the impacted tests with `{{script:tests}} <project> <changed files>` — never the full suite.
+   `DEFERRED_TO_CI` is not a PASS: record it on the checkpoint with
+   `--deferred "<tests>|<reason>"`; the spec cannot reach `verified` until CI confirms those tests.
+5. **Review** in a separate agent or process — never in your own context — with only the diff, the brief
+   (its `graph` field is the code-graph context: the Reviewer has no shell for `graphify query`), the
+   step 4 results (a read-only reviewer cannot run tests) and the active lenses
+   (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`). Who reviews comes from `loop`:
+   - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
+     and records itself: save the brief and the step 4 results to files, then
+     `{{script:review}} {{arg:spec}} <Tn> --via <harness> --brief <file> --gates <file>`. It writes the
+     execution row (PASS or FAIL) with the identity it launched; do not checkpoint the verdict again.
+     If it fails (not logged in, no verdict), fall back to the next option and say why.
+   - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>`.
+<!-- mandao:if harness=codex -->
+   In Codex: the `mandao_reviewer` custom agent. If custom agents are not loaded (untrusted project),
+   use `{{script:review}} … --via codex`, which runs `codex exec` read-only on the reviewer model.
+<!-- mandao:endif -->
+   With neither, review in your own context: `--reviewer self`, which the script records as `reduced
+   independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
+6. **Verdict:**
+   - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n>` with the findings; back to step 3. `loop`
+     moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
+   - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `execution.md`,
+     checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
+   - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
+7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
+   the script refuses). Hashes are never recorded: the commit is
+   found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.
+   1. Checkpoint the PASS and queue the commit:
+      `--verdict PASS --reviewer <agent> --done <Tn> --pending-commit "<subject>" --clear` (or
+      `--next-task`), subject per `{{template:rules/commits.md}}`.
+   2. `{{script:commit}} {{arg:spec}} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
+      per pending task with its trailers.
+<!-- mandao:if harness=codex -->
+   The Codex sandbox keeps `.git` read-only: run step 2 as a command that asks for approval to run
+   outside the sandbox (`.codex/rules/mandao.rules` makes Codex prompt for exactly this command in a
+   trusted project). In `codex exec`, or if the user declines, leave it pending.
+<!-- mandao:endif -->
+   If the commit cannot run, do not work around it: the task stays `PASS · pending-commit`, `resume` and
+   `doctor` show it, and anyone — the user, the next session, another harness — runs
+   `{{script:commit}} {{arg:spec}}`. Start the next task only if it touches none of the pending files.
+
+The Definition of Done includes the module's `AGENTS.md` and, when the workspace uses Claude Code, its
+`CLAUDE.md` pointer.
+
+## 2. After the last task
+
+Report: tasks done, FAILs and escalations, reduced or provider independence, deferred tests, commits.
+Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
+stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
+against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
+Next: {{command:verify}}.
