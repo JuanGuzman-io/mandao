@@ -1,3 +1,4 @@
+// mandao-scans: core/ — reads commands and templates by folder.
 import { execFileSync } from 'node:child_process';
 import { cpSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

@@ -67,6 +67,25 @@ export function findScanners(repo: string, projectPath: string): Scanner[] {
   });
 }
 
+/** Calls that list or glob folders: a test making them reads the tree by path (JS, Python, Go). */
+const LISTS_FOLDERS =
+  /\b(?:readdirSync|readdir|opendirSync|opendir|globSync|glob|fastGlob|fg|walk|listdir|scandir|iglob|rglob|ReadDir|WalkDir|Walk)\s*\(/;
+
+/**
+ * Changed test files that list or glob folders but carry no `mandao-scans:` marker, so impact selection
+ * cannot know what they read (MDO-0007). `mandao-scans: none` says the test lists only its own temp folders.
+ */
+export function unmarkedScanners(repo: string, files: string[]): { file: string; line: number }[] {
+  return files.flatMap((file) => {
+    const full = join(repo, file);
+    if (!isTestFile(file) || !existsSync(full)) return [];
+    const text = readFileSync(full, 'utf8');
+    if (SCANS.test(text)) return [];
+    const line = text.split('\n').findIndex((l) => LISTS_FOLDERS.test(l));
+    return line < 0 ? [] : [{ file, line: line + 1 }];
+  });
+}
+
 /** File-level dependency edges from graphify's graph.json (imports, calls, re-exports…). */
 export interface FileGraph {
   /** file → files that depend on it */

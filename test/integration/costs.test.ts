@@ -1,3 +1,4 @@
+// mandao-scans: none — lists only the temporary trees it creates.
 import { mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
