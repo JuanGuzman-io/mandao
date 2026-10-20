@@ -4,6 +4,15 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-20 — MDO-0007 close (catch every way a test can climb out of its workspace)
+- standards.md § Conventions: tests never build a path with a `..` segment through `join` or
+  `resolve`, nor take `dirname` of a workspace, except calls named in the guard's `ALLOWED` list;
+  enforced by `test/unit/architecture.test.ts`.
+- Project skill `codebase-conventions` § Tests: the same rule, for agents writing tests. Approved,
+  but not applied: writing `.claude/skills/` was refused by the permission system during close, so
+  the maintainer applies it by hand (diff in `docs/releases/MDO-0007/technical.md`).
+- Approved by: the maintainer's delegate (MDO-0007 close, `mandao approve MDO-0007 close`).
+
 ## 2026-10-20 — MDO-0006 close (leave no temporary folders behind after the test run)
 - standards.md § Conventions: tests create temporary folders only through `makeTree`
   (`test/helpers.ts`), which removes them when the test file finishes, and never write next to a
