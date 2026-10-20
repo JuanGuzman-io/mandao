@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.9 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.10 · **Last updated:** 2026-10-20
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -591,6 +591,11 @@ Declared per task in `tasks.md`.
 - **Tests by another agent** for tasks with risk tags or tier strong: the Tester writes the red tests from the spec; the Implementer makes them pass.
 - **Measurement:** Kaizen compares specs with and without TDD (rework rate, Reviewer FAILs, bugs after merge) to validate the impact with data.
 
+**DECIDED (ADR 0026) — verify.** Suites come from the files the spec's own commits touched (by trailer),
+not the branch diff; one Tester per suite; `verify-report.md` holds the evidence as run; blockers for
+`verified` are open tasks, structural findings that matter, uncommitted passes and unconfirmed deferred
+runs.
+
 ### 16.2 E2E
 
 - `critical-flows.md` lists critical flows; AC are flagged `critical: true`.
@@ -723,6 +728,13 @@ Archify is optional at this stage. No framework skills in the bootstrap.
 ## 18. Close
 
 ### 18.1 Steps
+
+**DECIDED (ADR 0026) — implemented in iteration 3.** Kaizen is measured from the execution log; the
+TDD comparison shows sample sizes and says `insufficient data` below `kaizen.min_specs_per_group`
+(default 5); bugs after merge count `fix` commits referencing the spec and, with a tracker, bugs linked
+to the story, and depend on those references being made. Diagram drift compares structured graphs by
+module path or contract id, never by label. Release notes are in `language.business`, technical notes
+in `language.technical`. The first publication of a spec shows the whole payload before confirmation.
 
 1. **Kaizen:** measure (rework, pivots, bugs, review FAILs) → learn (0–3 root-cause lessons with evidence) → standardize (1–3 line edits proposed) → record (`docs/kaizen/<ID>.md`).
 2. Apply Constitution / Product Impact (human approval, single writer).
