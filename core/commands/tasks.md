@@ -62,7 +62,7 @@ nothing to do here. Otherwise:
 <!-- mandao:endif -->
 7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues and no cycles;
    `{{script:trace}} {{arg:spec}}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
-8. **Approve:** show the overview and the first eligible task; on approval set `status: approved` and
+8. **Approve:** show the overview and the first eligible task. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
    available yet. Next: {{command:implement}}.

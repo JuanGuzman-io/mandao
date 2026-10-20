@@ -194,7 +194,7 @@ did not exist), `optional` (lite).
 - If there are `[NEEDS CLARIFICATION]` items or findings, recommend {{command:clarify}} and list them
   by impact. A critical finding blocks {{command:tasks}}.
 - Otherwise ask for approval of requirements and design — **showing the diagram** when there is one;
-  the PO or lead approves looking at it. On approval set `status: approved` in both
+  the PO or lead approves looking at it. The user may approve from the terminal instead (`mandao approve {{arg:ref}} design`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. On approval in the session set `status: approved` in both
   (and in `story.md` if it was still `draft`), then commit the spec documents on their own:
   `{{script:commit-spec}} {{arg:ref}} specify` (a `docs` commit with `Refs: <ID>` and a fixed subject; never
   pushed).

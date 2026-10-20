@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { packageInfo } from '../util/package-root.js';
+import { registerApprove } from './approve.js';
 import type { CliContext } from './context.js';
 import { registerExtensions } from './extensions.js';
 import { registerHook } from './hook.js';
@@ -22,6 +23,7 @@ export function buildProgram(cwd: () => string = () => process.cwd()): Command {
   registerExtensions(program, ctx);
   registerModels(program, ctx);
   registerRun(program, ctx);
+  registerApprove(program, ctx);
   registerHook(program, ctx);
   return program;
 }

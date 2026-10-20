@@ -1,3 +1,4 @@
+export * from './approvals.js';
 export * from './close-summary.js';
 export * from './commit.js';
 export * from './diagram.js';
