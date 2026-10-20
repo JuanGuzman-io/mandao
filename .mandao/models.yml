@@ -3,14 +3,14 @@ schema_version: 1
 mode: routed
 harnesses:
   claude:
-    leader: opus
-    reviewer: opus
-    reviewer_alt: sonnet
+    leader: claude-opus-5-5
+    reviewer: claude-opus-5-5
+    reviewer_alt: claude-sonnet-5-5
     implementer:
-      fast: haiku
-      standard: sonnet
-      strong: opus
-    tester: sonnet
+      fast: claude-haiku-5-5
+      standard: claude-sonnet-5-5
+      strong: claude-opus-5-5
+    tester: claude-sonnet-5-5
   copilot:
     leader: Claude Sonnet 5.5
     reviewer: GPT-6 Luna

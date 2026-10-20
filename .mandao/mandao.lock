@@ -1,7 +1,7 @@
 # Written by mandao. Do not edit by hand.
 schema_version: 1
 mandao: 0.1.0
-config_hash: sha256-C3SaIMKD7NCouMB41lh95aN4iUtyrGtBE5aluQ5qwVU=
+config_hash: sha256-Zk9m9WpStfgELmWgACRZhhQm3Tjay8ZnlSYIhkjHRRM=
 layers:
   - kind: core
     id: core
@@ -10,51 +10,51 @@ layers:
     id: overrides
     hash: sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=
 recommendations:
-  claude: 2026-10-20
-  copilot: 2026-10-20
+  claude: sha256-5rayhZ9WuQ5FBwp6gqxVCDKoHiHYzxbSKMoa0zugPHQ=
+  copilot: sha256-gkDFlhvXwuhNbQ7SNJht6xdi37mthr1PSTu7A1wQ07E=
 skills: []
 files:
   - path: .claude/agents/mandao-implementer-fast.md
     harness: claude
     from: persona:implementer:fast
     ownership: owned
-    hash: sha256-u5utnqLcdzrl/Yk3tGUp+BsGHCY+9ju7b4aNkMxd4gk=
+    hash: sha256-8oLnXa6eDNrdkTdHIoO9KwRO64wG6f8ZHW1wbH4BXGw=
     scope: project
   - path: .claude/agents/mandao-implementer-standard.md
     harness: claude
     from: persona:implementer:standard
     ownership: owned
-    hash: sha256-oo3hn9L0Y2fTUpgCwmDoBcPqPjONyHrjsw9ATTtI7p4=
+    hash: sha256-oAA/DIYjM5H2HgxV95sOZ8Q6gCrz6KhSq/3jX5nprEI=
     scope: project
   - path: .claude/agents/mandao-implementer-strong.md
     harness: claude
     from: persona:implementer:strong
     ownership: owned
-    hash: sha256-JiK7k4LMOis14pz5K5hHUU8RRSKFMEnO/W2c9Yz/8nE=
+    hash: sha256-vBAY9MSqne6mCb8jefiwJnnB+PmHPvOrJeN03X3P2xs=
     scope: project
   - path: .claude/agents/mandao-leader.md
     harness: claude
     from: persona:leader
     ownership: owned
-    hash: sha256-ybojBwo7gIm/Es1vB2/yBr4asT0MftaM0eN4bnyMoKA=
+    hash: sha256-7sRuvJ50nLYxRy35TBloctMCDgBepUBcx7eRqJrBqqs=
     scope: project
   - path: .claude/agents/mandao-reviewer-alt.md
     harness: claude
     from: persona:reviewer:alt
     ownership: owned
-    hash: sha256-lbcHFXHbXaZMf3pT3un/wg0ONImHLO8oVsT/yqXWNN8=
+    hash: sha256-bI9tVgTspkUvsNUtsNhEE8YVJRb5qpXmEkKncUblONo=
     scope: project
   - path: .claude/agents/mandao-reviewer.md
     harness: claude
     from: persona:reviewer
     ownership: owned
-    hash: sha256-xuC7nc21mKqTwBDMcWZ+lI4E1qePx/frkvqMj2Rbz9s=
+    hash: sha256-gO3RZKhuLQD9x+sJu8ZihD03mIWoMZeLSZj79zPoPGY=
     scope: project
   - path: .claude/agents/mandao-tester.md
     harness: claude
     from: persona:tester
     ownership: owned
-    hash: sha256-LWh6UKixXPIpWrIujK4lqbHDtfbn/CbdhvYfboGWOIY=
+    hash: sha256-KJRYQrXXlL1gu182SOn3hUd1lBUBgeNux1jr2c5vVq8=
     scope: project
   - path: .claude/skills/mandao-audit/SKILL.md
     harness: claude
