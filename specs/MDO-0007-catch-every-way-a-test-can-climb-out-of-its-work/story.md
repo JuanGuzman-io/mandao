@@ -7,7 +7,7 @@ url:
 parent: MDO-0006
 projects: [mandao]
 lane: normal
-status: in-progress
+status: verified
 sources:
   - { ref: "user request (/mandao-specify input)", kind: chat, date: 2026-10-20 }
   - { ref: "specs/MDO-0006-leave-no-temporary-folders-behind-after-the-test/execution.md:33 (T3 Reviewer advisory)", kind: repo, date: 2026-10-20 }
