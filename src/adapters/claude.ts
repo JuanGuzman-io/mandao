@@ -13,7 +13,22 @@ import {
   selectCommands,
 } from './shared.js';
 import type { TokenSyntax } from '../render/render.js';
-import type { Adapter, GeneratedFile } from './types.js';
+import type { Adapter, AdapterInput, GeneratedFile } from './types.js';
+import { BLOCK_BEGIN, BLOCK_END } from './agents-md.js';
+import { posix } from 'node:path';
+
+/** CLAUDE.md is only a pointer to AGENTS.md, next to every AGENTS.md that Mandao manages. */
+function claudeMdPointers(input: AdapterInput): GeneratedFile[] {
+  const dirs = new Set([input.config.home, ...input.config.projects.map((p) => p.path)]);
+  return [...dirs].sort().map((dir) => ({
+    path: posix.join(dir, 'CLAUDE.md'),
+    content: `${BLOCK_BEGIN}\n@AGENTS.md\n${BLOCK_END}`,
+    ownership: 'managed-block' as const,
+    from: 'block:claude-pointer',
+    harness: 'claude' as const,
+    scope: 'project' as const,
+  }));
+}
 
 const TOOLS: Record<Capability, string[]> = {
   read: ['Read'],
@@ -28,7 +43,8 @@ const TOOLS: Record<Capability, string[]> = {
 
 const syntax: TokenSyntax = {
   args: () => '$ARGUMENTS',
-  arg: (_meta, name) => `<${name}>`,
+  // Named arguments are declared in the `arguments` frontmatter list.
+  arg: (_meta, name) => `$${name}`,
   command: (id) => `/${commandName(id)}`,
 };
 
@@ -36,6 +52,7 @@ const syntax: TokenSyntax = {
 export const claudeAdapter: Adapter = {
   id: 'claude',
   name: 'Claude Code',
+  verified: { date: '2026-10-19', docs: ['https://code.claude.com/docs/en/skills'] },
   render(input) {
     const ctx = renderContext(input, 'claude');
     const files: GeneratedFile[] = [];
@@ -46,6 +63,7 @@ export const claudeAdapter: Adapter = {
         name: commandName(cmd.meta.id),
         description: cmd.meta.description,
         'argument-hint': argumentHint(cmd),
+        arguments: cmd.meta.arguments.length ? cmd.meta.arguments.map((a) => a.name) : undefined,
         'allowed-tools': mapCapabilities(cmd.meta.capabilities, TOOLS).join(', ') || undefined,
         model: modelFor(input, 'claude', cmd.meta.tier),
         // Mandaos are given explicitly; the model should not trigger them on its own.
@@ -82,6 +100,8 @@ export const claudeAdapter: Adapter = {
         });
       }
     }
+
+    if (input.scope === 'project') files.push(...claudeMdPointers(input));
 
     return { files, warnings: input.scope === 'project' ? modelSeparationWarnings(input, 'claude') : [] };
   },

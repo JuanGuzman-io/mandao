@@ -1,11 +1,12 @@
 import type { Resolution } from '../resolver/resolve.js';
-import type { Config, HarnessId } from '../schemas/index.js';
+import type { Config, HarnessId, Models } from '../schemas/index.js';
 
 export type InstallScope = 'project' | 'global';
 
 export interface AdapterInput {
   resolution: Resolution;
   config: Config;
+  models: Models;
   version: string;
   scope: InstallScope;
 }
@@ -30,5 +31,7 @@ export interface AdapterOutput {
 export interface Adapter {
   id: HarnessId;
   name: string;
+  /** When the target format was last checked against the official docs, and where. */
+  verified: { date: string; docs: string[] };
   render(input: AdapterInput): AdapterOutput;
 }

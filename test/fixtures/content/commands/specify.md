@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 id: specify
 title: Specify
 description: Turn an approved story into requirements and design.

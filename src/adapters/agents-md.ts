@@ -30,7 +30,7 @@ function rootBlock(input: AdapterInput): string {
     '',
     '### Workspace',
     '',
-    `- Mode: \`${config.workspace.mode}\``,
+    `- Mode: \`${config.workspace}\``,
     `- Specs: \`${config.paths.specs}/<id>-<slug>/\` (id from the tracker, or a sequential \`NNN\` when there is none)`,
     `- Workspace constitution: \`${config.paths.constitution}/\`; each project may extend it in \`<project>/${config.paths.constitution}/\``,
     '',
@@ -47,11 +47,11 @@ function rootBlock(input: AdapterInput): string {
     '',
     '- Never invent context. Mark gaps as `ASSUMPTION`, `OPEN` or `CONFLICT`, always with the source.',
     '- A human approves every significant change and anything published outside the repository.',
-    `- Templates live in \`${posix.join(workspaceRelative(config.workspace.home, '.'), '.mandao/templates/<profile>/')}\`; use the profile of the project you are working on.`,
+    `- Templates live in \`${posix.join(workspaceRelative(config.home, '.'), '.mandao/templates/<profile>/')}\`; use the profile of the project you are working on.`,
     '',
     '### Commits',
     '',
-    `Subject: \`<emoji> <type>(<scope>): <subject>\`, imperative mood, at most ${config.commits.maxSubjectLength} characters without the emoji.`,
+    `Subject: \`<emoji> <type>(<scope>): <subject>\`, imperative mood, at most ${config.commits.max_subject_length} characters without the emoji.`,
     '',
     `Emoji per type: ${Object.entries(emoji)
       .filter(([k]) => k !== 'breaking')
@@ -64,17 +64,17 @@ function rootBlock(input: AdapterInput): string {
 }
 
 function projectBlock(input: AdapterInput, project: AdapterInput['config']['projects'][number]): string {
-  const home = input.config.workspace.home;
+  const home = input.config.home;
   const toRoot = workspaceRelative(project.path, home);
   return block(input.version, [
     '## Mandao',
     '',
-    `Project \`${project.name}\` (profile \`${project.profile}\`) in a Mandao ${input.config.workspace.mode} workspace.`,
+    `Project \`${project.name}\` (profile \`${project.profile}\`) in a Mandao ${input.config.workspace} workspace.`,
     '',
     `- Workspace guide: \`${posix.join(toRoot, 'AGENTS.md')}\``,
     `- Project constitution: \`${input.config.paths.constitution}/\` (extends \`${posix.join(toRoot, input.config.paths.constitution)}/\`)`,
     `- Canonical specs: \`${posix.join(toRoot, input.config.paths.specs)}/\``,
-    ...(input.config.workspace.mode === 'polyrepo'
+    ...(input.config.workspace === 'polyrepo'
       ? [`- This repository receives spec slices in \`${input.config.paths.specs}/<id>/spec-ref.md\`; the canonical spec stays in the workspace.`]
       : []),
   ]);
@@ -84,7 +84,7 @@ function projectBlock(input: AdapterInput, project: AdapterInput['config']['proj
 export function renderAgentsMd(input: AdapterInput): AdapterOutput {
   const files: GeneratedFile[] = [
     {
-      path: posix.join(input.config.workspace.home, 'AGENTS.md'),
+      path: posix.join(input.config.home, 'AGENTS.md'),
       content: rootBlock(input),
       ownership: 'managed-block',
       from: 'block:mandao',
@@ -93,7 +93,7 @@ export function renderAgentsMd(input: AdapterInput): AdapterOutput {
     },
   ];
   for (const project of input.config.projects) {
-    if (project.path === '.' || project.path === input.config.workspace.home) continue;
+    if (project.path === '.' || project.path === input.config.home) continue;
     files.push({
       path: posix.join(project.path, 'AGENTS.md'),
       content: projectBlock(input, project),

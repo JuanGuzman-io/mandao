@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 id: reviewer
 title: Reviewer
 description: Reviews one task.

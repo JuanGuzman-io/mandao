@@ -29,10 +29,10 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     harness,
     profiles: new Set(config.projects.map((p) => p.profile)),
     multiProject: config.projects.length > 1,
-    mode: config.workspace.mode,
+    mode: config.workspace,
     // Paths are relative to `workspace.home`; agents run from the workspace root.
     paths: Object.fromEntries(
-      Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.workspace.home, v)]),
+      Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)]),
     ) as Config['paths'],
     version,
     scriptRunner: config.scripts.runner,

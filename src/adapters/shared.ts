@@ -34,7 +34,7 @@ export function mapCapabilities(caps: Capability[], table: Record<Capability, st
 }
 
 export function modelFor(input: AdapterInput, harness: HarnessId, tier: Tier): string | undefined {
-  return input.config.models[harness]?.[tier];
+  return input.models.harnesses[harness]?.[tier];
 }
 
 export function renderContext(input: AdapterInput, harness: HarnessId): RenderContext {
@@ -75,7 +75,7 @@ export function modelSeparationWarnings(input: AdapterInput, harness: HarnessId)
     const a = modelFor(input, harness, p.meta.tier);
     const b = modelFor(input, harness, other.meta.tier);
     if (!a || !b) {
-      warnings.push(`${harness}: "${p.meta.id}" must use a different model than "${other.meta.id}", but models.${harness} is not configured; the rule is enforced by instruction only`);
+      warnings.push(`${harness}: "${p.meta.id}" must use a different model than "${other.meta.id}", but .mandao/models.yml has no models for ${harness}; the rule is enforced by instruction only`);
     } else if (a === b) {
       warnings.push(`${harness}: "${p.meta.id}" and "${other.meta.id}" both resolve to model "${a}"`);
     }

@@ -1,13 +1,14 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { basename, join, posix } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import type { Profile, WorkspaceMode } from '../schemas/index.js';
+import { LOCAL_REPO, type Profile, type WorkspaceMode } from '../schemas/index.js';
 
 export interface DetectedProject {
   name: string;
   path: string;
   profile: Profile;
-  repo?: boolean;
+  /** Polyrepo: the child repository's origin URL, or `local` when it has no remote. */
+  repo?: string;
 }
 
 export interface DetectedWorkspace {
@@ -27,6 +28,17 @@ const AI_MARKERS = ['openai', '@anthropic-ai/sdk', 'anthropic', 'langchain', '@l
 const DATA_MARKERS = ['dbt-core', 'apache-airflow', 'dagster', 'prefect', 'pyspark', 'great-expectations', 'polars'];
 
 export const isRepo = (dir: string) => existsSync(join(dir, '.git'));
+
+/** Reads `remote "origin"` from `.git/config` without spawning git. */
+export function originUrl(dir: string): string {
+  try {
+    const cfg = readFileSync(join(dir, '.git', 'config'), 'utf8');
+    const section = cfg.split(/^\[/m).find((s) => s.startsWith('remote "origin"]'));
+    return section?.match(/^\s*url\s*=\s*(.+)$/m)?.[1]?.trim() ?? LOCAL_REPO;
+  } catch {
+    return LOCAL_REPO;
+  }
+}
 
 const isDir = (p: string) => {
   try {
@@ -156,14 +168,14 @@ function manifestDirs(root: string): string[] {
   return found;
 }
 
-function toProjects(root: string, paths: string[], repo?: boolean): DetectedProject[] {
+function toProjects(root: string, paths: string[], repos = false): DetectedProject[] {
   const used = new Set<string>();
   return paths.map((path) => {
     let name = toProjectName(basename(path));
     // Disambiguate `apps/web` and `packages/web`.
     if (used.has(name)) name = toProjectName(path);
     used.add(name);
-    return { name, path, profile: guessProfile(join(root, path)), ...(repo ? { repo } : {}) };
+    return { name, path, profile: guessProfile(join(root, path)), ...(repos ? { repo: originUrl(join(root, path)) } : {}) };
   });
 }
 

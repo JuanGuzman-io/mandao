@@ -21,6 +21,7 @@ const syntax: TokenSyntax = {
 };
 
 const meta = commandFrontmatterSchema.parse({
+  schema_version: 1,
   id: 'x',
   title: 'X',
   description: 'x',

@@ -1,64 +1,80 @@
 import { z } from 'zod';
 import semver from 'semver';
-import { kebabId, profile } from './common.js';
+import { kebabId, PROFILES, profile, schemaVersion } from './common.js';
 
 export const MAX_PROJECT_SKILLS = 10;
 
 const source = z.discriminatedUnion('type', [
   z.object({ type: z.literal('git'), url: z.string().url(), ref: z.string().min(1), path: z.string().optional() }),
-  z.object({ type: z.literal('npm'), package: z.string().min(1), version: z.string().min(1) }),
+  z.object({ type: z.literal('npm'), package: z.string().min(1) }),
+  /** Installed through ecosystem tooling, e.g. `npx skills add <ref>`. */
+  z.object({ type: z.literal('skills'), ref: z.string().min(1) }),
   z.object({ type: z.literal('bundled'), path: z.string().min(1) }),
 ]);
 
+const PHASES = ['constitution', 'story', 'specify', 'clarify', 'tasks', 'implement', 'verify', 'close', 'quick', 'perf', 'audit'] as const;
+
 const skill = z.object({
-  id: kebabId,
-  technology: kebabId,
-  role: z.enum(['primary', 'secondary']),
   description: z.string().min(1),
-  match: z
-    .object({
-      packages: z.array(z.string()).default([]),
-      versions: z
-        .string()
-        .refine((r) => semver.validRange(r) !== null, 'must be a valid semver range')
-        .optional(),
-      files: z.array(z.string()).default([]),
-    })
-    .refine((m) => m.packages.length > 0 || m.files.length > 0, 'needs at least one package or file matcher'),
-  profiles: z.array(profile).min(1),
   source,
   version: z.string().min(1),
   author: z.string().min(1),
   license: z.string().min(1),
   vetted: z.boolean(),
-  /** Bootstrap skills ship with the installation and do not count toward the per-project cap. */
-  bootstrap: z.boolean().default(false),
+  /** core: wired to a step · profile · stack · conditional: loaded when a task touches its domain. */
+  binding: z.enum(['core', 'profile', 'stack', 'conditional']),
+  phases: z.array(z.enum(PHASES)).min(1),
+  profiles: z.array(profile).default([...PROFILES]),
+});
+
+const matcher = z
+  .object({
+    packages: z.array(z.string()).default([]),
+    versions: z.string().refine((r) => semver.validRange(r) !== null, 'must be a valid semver range').optional(),
+    files: z.array(z.string()).default([]),
+  })
+  .refine((m) => m.packages.length > 0 || m.files.length > 0, 'needs at least one package or file matcher');
+
+/** `when: { state: bloc }` holds when the fingerprint detected facet `state` = `bloc`. */
+const when = z.record(z.string(), z.string());
+
+const technology = z.object({
+  match: matcher,
+  primary: kebabId,
+  when: when.optional(),
+  alt: z.array(z.object({ skill: kebabId, when })).default([]),
 });
 
 export const catalogSchema = z
-  .object({ version: z.literal(1), skills: z.array(skill) })
+  .object({
+    schema_version: schemaVersion,
+    /** Ships with every install; does not count toward the per-project cap. */
+    bootstrap: z.array(kebabId),
+    skills: z.record(kebabId, skill),
+    technologies: z.record(kebabId, technology),
+    /** Style-defining libraries: facet → value → matcher, e.g. state → bloc → flutter_bloc. */
+    facets: z.record(z.string(), z.record(z.string(), matcher)).default({}),
+    packs: z.record(kebabId, z.array(kebabId)).default({}),
+  })
   .superRefine((cat, ctx) => {
-    const ids = new Set<string>();
-    const primaries = new Map<string, string>();
-    cat.skills.forEach((s, i) => {
-      if (ids.has(s.id)) ctx.addIssue({ code: 'custom', path: ['skills', i, 'id'], message: `duplicate skill "${s.id}"` });
-      ids.add(s.id);
-      if (s.role !== 'primary') return;
-      // One primary per technology and profile.
-      for (const p of s.profiles) {
-        const key = `${s.technology}/${p}`;
-        const other = primaries.get(key);
-        if (other) {
-          ctx.addIssue({
-            code: 'custom',
-            path: ['skills', i, 'role'],
-            message: `"${s.id}" and "${other}" are both primary for ${s.technology} (${p})`,
-          });
+    const known = new Set(Object.keys(cat.skills));
+    const check = (id: string, path: (string | number)[]) => {
+      if (!known.has(id)) ctx.addIssue({ code: 'custom', path, message: `unknown skill "${id}"` });
+    };
+    cat.bootstrap.forEach((id, i) => check(id, ['bootstrap', i]));
+    for (const [tech, t] of Object.entries(cat.technologies)) {
+      check(t.primary, ['technologies', tech, 'primary']);
+      t.alt.forEach((a, i) => check(a.skill, ['technologies', tech, 'alt', i, 'skill']));
+      for (const w of [t.when ?? {}, ...t.alt.map((a) => a.when)]) {
+        for (const [facet, value] of Object.entries(w)) {
+          if (!cat.facets[facet]?.[value]) {
+            ctx.addIssue({ code: 'custom', path: ['technologies', tech], message: `facet "${facet}: ${value}" is not defined in facets` });
+          }
         }
-        primaries.set(key, s.id);
       }
-    });
+    }
+    for (const [pack, ids] of Object.entries(cat.packs)) ids.forEach((id, i) => check(id, ['packs', pack, i]));
   });
 
 export type Catalog = z.infer<typeof catalogSchema>;
-export type CatalogSkill = Catalog['skills'][number];
+export type CatalogSkill = Catalog['skills'][string];

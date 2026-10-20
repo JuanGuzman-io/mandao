@@ -24,15 +24,18 @@ export const WORKSPACE_MODES = ['single', 'monorepo', 'polyrepo'] as const;
 export const workspaceMode = z.enum(WORKSPACE_MODES);
 export type WorkspaceMode = z.infer<typeof workspaceMode>;
 
-/** Relative POSIX path that stays inside the workspace. */
+export const schemaVersion = z.literal(1);
+
+/** Relative POSIX path that stays inside the workspace. A trailing slash is dropped. */
 export const relPath = z
   .string()
   .min(1)
+  .transform((p) => (p.length > 1 ? p.replace(/\/+$/, '') : p))
   .refine((p) => !p.startsWith('/') && !/^[A-Za-z]:/.test(p), 'must be relative')
   .refine((p) => !p.split('/').includes('..'), 'must not escape the workspace');
 
 /** Risk tags assigned per task; they select review lenses and gate `quick`. */
-export const RISK_TAGS = ['auth', 'input', 'pii', 'payments', 'migration', 'public-api', 'infra', 'ai-prompt', 'ui'] as const;
+export const RISK_TAGS = ['auth', 'input', 'pii', 'payments', 'migration', 'public-api', 'infra', 'ai-prompt', 'ui', 'perf'] as const;
 export const riskTag = z.enum(RISK_TAGS);
 export type RiskTag = z.infer<typeof riskTag>;
 /** Tags that always escalate a quick change to story/specify. */

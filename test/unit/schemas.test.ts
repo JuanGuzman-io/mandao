@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { catalogSchema, commandFrontmatterSchema, configSchema, DEFAULT_COMMIT_EMOJI } from '../../src/schemas/index.js';
+import { catalogSchema, commandFrontmatterSchema, configSchema, DEFAULT_COMMIT_EMOJI, sourcesSchema } from '../../src/schemas/index.js';
 
 const baseConfig = {
-  version: 1,
-  workspace: { mode: 'single' },
+  schema_version: 1,
+  workspace: 'single',
   projects: [{ name: 'app', path: '.', profile: 'app' }],
   harnesses: ['claude'],
 };
@@ -15,9 +15,9 @@ describe('config', () => {
   test('fills defaults for paths, spec ids and the commit emoji map', () => {
     const cfg = configSchema.parse(baseConfig);
     expect(cfg.paths).toEqual({ specs: 'specs', constitution: 'docs/constitution', releases: 'docs/releases' });
-    expect(cfg.spec.id).toBe('tracker');
+    expect(cfg.spec.branch).toBe('{type}/{id}-{slug}');
     expect(cfg.commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);
-    expect(cfg.commits.maxSubjectLength).toBe(72);
+    expect(cfg.commits.max_subject_length).toBe(72);
   });
 
   test('rejects paths that escape the workspace', () => {
@@ -39,7 +39,7 @@ describe('config', () => {
   test('rejects duplicate project names and paths', () => {
     const r = configSchema.safeParse({
       ...baseConfig,
-      workspace: { mode: 'monorepo' },
+      workspace: 'monorepo',
       projects: [
         { name: 'a', path: 'x', profile: 'app' },
         { name: 'a', path: 'x', profile: 'ai' },
@@ -49,7 +49,7 @@ describe('config', () => {
   });
 
   test('polyrepo projects cannot live at the root', () => {
-    const r = configSchema.safeParse({ ...baseConfig, workspace: { mode: 'polyrepo' } });
+    const r = configSchema.safeParse({ ...baseConfig, workspace: 'polyrepo', projects: [{ name: 'a', path: '.', profile: 'app', repo: 'local' }] });
     expect(messages(r)).toContain('polyrepo projects cannot live at the workspace root');
   });
 
@@ -63,44 +63,56 @@ describe('config', () => {
 });
 
 describe('catalog', () => {
-  const skill = {
-    id: 'nest-a',
-    technology: 'nestjs',
-    role: 'primary',
-    description: 'x',
-    match: { packages: ['@nestjs/core'], versions: '>=10' },
-    profiles: ['app'],
-    source: { type: 'git', url: 'https://github.com/x/y', ref: 'v1' },
-    version: '1.0.0',
-    author: 'x',
-    license: 'MIT',
-    vetted: true,
-  };
+  const skill = { description: 'x', source: { type: 'skills', ref: 'a/b' }, version: '1', author: 'x', license: 'MIT', vetted: true, binding: 'stack', phases: ['implement'] };
 
-  test('allows only one primary skill per technology and profile', () => {
-    const r = catalogSchema.safeParse({ version: 1, skills: [skill, { ...skill, id: 'nest-b' }] });
-    expect(messages(r)).toContain('"nest-b" and "nest-a" are both primary for nestjs (app)');
-  });
-
-  test('the same technology may have one primary per profile', () => {
-    const r = catalogSchema.safeParse({ version: 1, skills: [skill, { ...skill, id: 'nest-b', profiles: ['ai'] }] });
-    expect(r.success).toBe(true);
+  test('every referenced skill and facet must exist', () => {
+    const r = catalogSchema.safeParse({
+      schema_version: 1,
+      bootstrap: ['ghost'],
+      skills: { bloc: skill },
+      technologies: { flutter: { match: { packages: ['flutter'] }, primary: 'bloc', when: { state: 'bloc' }, alt: [{ skill: 'riverpod', when: { state: 'riverpod' } }] } },
+      packs: { dev: ['nope'] },
+    });
+    expect(messages(r)).toEqual(
+      expect.arrayContaining(['unknown skill "ghost"', 'unknown skill "riverpod"', 'unknown skill "nope"', 'facet "state: bloc" is not defined in facets']),
+    );
   });
 
   test('rejects invalid version ranges and empty matchers', () => {
     const r = catalogSchema.safeParse({
-      version: 1,
-      skills: [{ ...skill, match: { versions: 'not-a-range' } }],
+      schema_version: 1,
+      bootstrap: [],
+      skills: { a: skill },
+      technologies: { a: { match: { versions: 'not-a-range' }, primary: 'a' } },
     });
-    expect(messages(r)).toEqual(
-      expect.arrayContaining(['must be a valid semver range', 'needs at least one package or file matcher']),
-    );
+    expect(messages(r)).toEqual(expect.arrayContaining(['must be a valid semver range', 'needs at least one package or file matcher']));
+  });
+});
+
+describe('sources', () => {
+  test('accepts the shorthand form from the design doc', () => {
+    const s = sourcesSchema.parse({ schema_version: 1, tracker: 'linear', docs: 'sharepoint', meetings: 'teams', chat: 'slack' });
+    expect(s.tracker.kind).toBe('linear');
+    expect(s.docs).toEqual([{ kind: 'sharepoint' }]);
+    expect(s.chat).toEqual([{ kind: 'slack', channels: [] }]);
+  });
+});
+
+describe('polyrepo', () => {
+  test('every project needs a repo', () => {
+    const r = configSchema.safeParse({ ...baseConfig, workspace: 'polyrepo', projects: [{ name: 'a', path: 'a', profile: 'app' }] });
+    expect(messages(r)).toContain('polyrepo project "a" needs repo (remote URL, or "local")');
+  });
+
+  test('paths drop trailing slashes', () => {
+    expect(configSchema.parse({ ...baseConfig, paths: { specs: 'specs/' } }).paths.specs).toBe('specs');
   });
 });
 
 describe('command frontmatter', () => {
   test('rejects unknown keys so typos do not pass silently', () => {
     const r = commandFrontmatterSchema.safeParse({
+      schema_version: 1,
       id: 'x',
       title: 'X',
       description: 'x',

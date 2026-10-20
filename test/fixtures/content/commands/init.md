@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 id: init
 title: Init
 description: Initialize Mandao in this repository.

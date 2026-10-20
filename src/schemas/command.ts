@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { capability, harnessId, kebabId, profile, PROFILES, tier } from './common.js';
+import { capability, harnessId, kebabId, profile, PROFILES, schemaVersion, tier } from './common.js';
 
 const io = z.object({
   path: z.string().min(1),
@@ -9,6 +9,7 @@ const io = z.object({
 
 export const commandFrontmatterSchema = z
   .object({
+    schema_version: schemaVersion,
     id: kebabId,
     title: z.string().min(1),
     description: z.string().min(1).max(300),
@@ -43,6 +44,7 @@ export type CommandFrontmatter = z.infer<typeof commandFrontmatterSchema>;
 
 export const personaFrontmatterSchema = z
   .object({
+    schema_version: schemaVersion,
     id: kebabId,
     title: z.string().min(1),
     description: z.string().min(1).max(300),

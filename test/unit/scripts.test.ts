@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { analyzeDiff, manifestDeps } from '../../src/scripts/quick-check.js';
-import { proposeSkills, type ProjectFingerprint } from '../../src/scripts/fingerprint.js';
+import { detectFacets, proposeSkills, type ProjectFingerprint } from '../../src/scripts/fingerprint.js';
 import { catalogSchema } from '../../src/schemas/index.js';
 
 const config = {
@@ -71,42 +71,75 @@ describe('quick-check', () => {
 });
 
 describe('proposeSkills', () => {
-  const skill = (id: string, technology: string, extra: Record<string, unknown> = {}) => ({
-    id,
-    technology,
-    role: 'primary',
+  const skill = (extra: Record<string, unknown> = {}) => ({
     description: 'x',
-    match: { packages: [technology] },
-    profiles: ['app'],
-    source: { type: 'bundled', path: 'x' },
+    source: { type: 'skills', ref: 'x/y' },
     version: '1.0.0',
     author: 'x',
     license: 'MIT',
     vetted: true,
+    binding: 'stack',
+    phases: ['implement'],
+    profiles: ['app'],
     ...extra,
   });
-  const fp = (deps: Record<string, string>, profile: ProjectFingerprint['profile'] = 'app'): ProjectFingerprint => ({ project: 'api', path: '.', profile, dependencies: deps, files: [] });
-
-  test('matches by package and version range, skipping incompatible versions', () => {
-    const catalog = catalogSchema.parse({ version: 1, skills: [skill('react-19', 'react', { match: { packages: ['react'], versions: '>=19' } })] });
-    expect(proposeSkills([fp({ react: '^19.1.0' })], catalog).matches.map((m) => m.skill)).toEqual(['react-19']);
-    expect(proposeSkills([fp({ react: '^18.2.0' })], catalog).matches).toEqual([]);
-  });
-
-  test('keeps one primary per technology and prefers vetted ones', () => {
-    const catalog = catalogSchema.parse({
-      version: 1,
-      skills: [skill('nest-community', 'nestjs', { vetted: false, profiles: ['ai'], match: { packages: ['nestjs'] } }), skill('nest-official', 'nestjs', { match: { packages: ['nestjs'] } })],
+  const catalog = (over: Record<string, unknown> = {}) =>
+    catalogSchema.parse({
+      schema_version: 1,
+      bootstrap: ['graphify'],
+      skills: { graphify: skill({ binding: 'core' }), 'react-19': skill(), 'flutter-bloc': skill(), 'flutter-riverpod': skill({ vetted: false }), a: skill(), b: skill(), c: skill() },
+      technologies: {
+        react: { match: { packages: ['react'], versions: '>=19' }, primary: 'react-19' },
+        flutter: {
+          match: { packages: ['flutter'] },
+          primary: 'flutter-bloc',
+          when: { state: 'bloc' },
+          alt: [{ skill: 'flutter-riverpod', when: { state: 'riverpod' } }],
+        },
+      },
+      facets: { state: { bloc: { packages: ['flutter_bloc'] }, riverpod: { packages: ['flutter_riverpod'] } } },
+      ...over,
     });
-    const r = proposeSkills([fp({ nestjs: '10' }, 'app'), { ...fp({ nestjs: '10' }, 'ai'), project: 'bot' }], catalog);
-    expect(r.matches.map((m) => m.skill)).toEqual(['nest-official']);
-    expect(r.dropped).toEqual([{ skill: 'nest-community', reason: '"nest-official" is already the primary skill for nestjs' }]);
+  const fp = (deps: Record<string, string>, cat = catalog(), project = 'app'): ProjectFingerprint => ({
+    project,
+    path: '.',
+    profile: 'app',
+    dependencies: deps,
+    files: [],
+    facets: detectFacets(cat, deps, []),
   });
 
-  test('enforces the cap and ignores bootstrap skills', () => {
-    const catalog = catalogSchema.parse({ version: 1, skills: [skill('a', 'a'), skill('b', 'b'), skill('c', 'c'), skill('boot', 'boot', { bootstrap: true })] });
-    const r = proposeSkills([fp({ a: '1', b: '1', c: '1', boot: '1' })], catalog, 2);
-    expect(r.matches.map((m) => m.skill)).toEqual(['a', 'b']);
-    expect(r.dropped).toEqual([{ skill: 'c', reason: 'cap of 2 skills reached' }]);
+  test('matches by package and version range', () => {
+    expect(proposeSkills([fp({ react: '^19.1.0' })], catalog()).matches.map((m) => m.skill)).toEqual(['react-19']);
+    expect(proposeSkills([fp({ react: '^18.2.0' })], catalog()).matches).toEqual([]);
+  });
+
+  test('facets pick the primary or the alternative', () => {
+    expect(proposeSkills([fp({ flutter: '*', flutter_bloc: '^8' })], catalog()).matches.map((m) => m.skill)).toEqual(['flutter-bloc']);
+    expect(proposeSkills([fp({ flutter: '*', flutter_riverpod: '^2' })], catalog()).matches.map((m) => m.skill)).toEqual(['flutter-riverpod']);
+  });
+
+  test('when no facet is detected the primary is not guessed', () => {
+    const r = proposeSkills([fp({ flutter: '*' })], catalog());
+    expect(r.matches).toEqual([]);
+    expect(r.dropped[0]?.reason).toMatch(/could not detect state/);
+  });
+
+  test('merges projects and enforces the cap, keeping vetted skills first', () => {
+    const cat = catalog({
+      technologies: {
+        a: { match: { packages: ['a'] }, primary: 'a' },
+        b: { match: { packages: ['b'] }, primary: 'b' },
+        c: { match: { packages: ['c'] }, primary: 'flutter-riverpod' },
+        graph: { match: { packages: ['g'] }, primary: 'graphify' },
+      },
+      facets: {},
+    });
+    const r = proposeSkills([fp({ a: '1', b: '1' }, cat, 'api'), fp({ a: '1', c: '1', g: '1' }, cat, 'web')], cat, 2);
+    expect(r.matches.map((m) => [m.skill, m.projects])).toEqual([
+      ['a', ['api', 'web']],
+      ['b', ['api']],
+    ]);
+    expect(r.dropped).toEqual([{ skill: 'flutter-riverpod', technology: 'c', reason: 'cap of 2 skills reached' }]);
   });
 });

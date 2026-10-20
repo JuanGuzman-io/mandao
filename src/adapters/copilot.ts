@@ -45,6 +45,10 @@ const syntax: TokenSyntax = {
 export const copilotAdapter: Adapter = {
   id: 'copilot',
   name: 'GitHub Copilot',
+  verified: {
+    date: '2026-10-19',
+    docs: ['https://code.visualstudio.com/docs/agent-customization/prompt-files', 'https://code.visualstudio.com/docs/agent-customization/custom-agents'],
+  },
   render(input) {
     const ctx = renderContext(input, 'copilot');
     const files: GeneratedFile[] = [];

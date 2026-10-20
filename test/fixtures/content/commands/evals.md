@@ -1,4 +1,5 @@
 ---
+schema_version: 1
 id: evals
 title: Evals
 description: AI-only command.

@@ -55,7 +55,7 @@ describe('detectWorkspace', () => {
 
   test('a non-repo root with two child repos is a polyrepo', () => {
     const root = makeTree({
-      'api/.git/': '',
+      'api/.git/config': '[core]\n\tbare = false\n[remote "origin"]\n\turl = git@github.com:acme/api.git\n',
       'api/go.mod': 'module api',
       'web/.git/': '',
       'web/package.json': pkg('web'),
@@ -65,8 +65,8 @@ describe('detectWorkspace', () => {
       mode: 'polyrepo',
       rootIsRepo: false,
       projects: [
-        { name: 'api', path: 'api', repo: true },
-        { name: 'web', path: 'web', repo: true },
+        { name: 'api', path: 'api', repo: 'git@github.com:acme/api.git' },
+        { name: 'web', path: 'web', repo: 'local' },
       ],
     });
   });
