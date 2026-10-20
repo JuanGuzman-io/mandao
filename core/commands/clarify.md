@@ -16,7 +16,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
 capabilities: [read, edit, shell, mcp]
 templates: [rules/context.md, rules/consistency-check.md]
-scripts: [trace]
+scripts: [trace, diagram]
 approval: required
 ---
 
@@ -38,3 +38,6 @@ Follow `{{template:rules/context.md}}` and `{{template:rules/consistency-check.m
    who answered, what changed) and update requirements and design.
 5. Re-run `{{script:trace}} {{arg:spec}}`. A critical finding still open keeps blocking
    {{command:tasks}}; say so.
+
+If an answer changes `design.md` and `{{script:diagram}} <ID>` then reports `stale: true`, regenerate the
+approval diagram as `/mandao-specify` step 7 describes before asking for approval again.

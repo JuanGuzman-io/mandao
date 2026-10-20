@@ -66,3 +66,14 @@ internals.
   `architecture.md` template and in the Reviewer's checklist.
 - **Pending until `close` and Kaizen exist:** the comparison of specs with and without TDD. The data is
   already in `execution.md` (RED rows, FAILs).
+
+**Diagrams — implemented in specify; drift waits for `close`.**
+- `mandao run diagram <spec>` reports `required` (`yes` at standard/full depth across projects,
+  `if-new-flow` in one project, `optional` at lite), the stamp and `stale`. `--stamp` records the diagram
+  just generated (Archify file, or Mermaid embedded as the fallback) with the hash of `design.md`
+  without its `## Diagram` section, so any later change to the design reports `stale: true`.
+- `specify` step 7 derives the diagram from `design.md` by type (design §18.3), shows it in the approval
+  and offers to attach the PNG to the story through the tracker MCP after confirmation; `clarify`
+  regenerates it when an answer changes the design.
+- Pending until `close` exists: the diagram of what was built, derived from the diff, compared with the
+  approved one as drift.

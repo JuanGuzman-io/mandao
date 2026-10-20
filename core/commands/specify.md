@@ -28,7 +28,7 @@ templates:
   - spec/story.md
   - spec/requirements.md
   - spec/design.md
-scripts: [spec-new, trace]
+scripts: [spec-new, trace, diagram]
 approval: required
 ---
 
@@ -123,11 +123,31 @@ Run `{{script:trace}} <ID>` for the structural part (GAP, ORPHAN, broken referen
 and `{{template:rules/consistency-check.md}}` for the semantic part, over story, requirements and design. Write the table in
 `requirements.md` even when it is empty.
 
-## 7. Close
+## 7. Diagram for approval
+
+`{{script:diagram}} <ID>` says whether the spec needs it (ADR 0022): `yes` (standard or full depth across
+projects), `if-new-flow` (standard or full in one project: required when the design adds a flow that
+did not exist), `optional` (lite).
+
+- **Derive it from `design.md`, never draw it from memory.** Pick the type by the kind of change:
+  new endpoint or integration → `sequence` · pipeline, RAG, ETL → `data-flow` · new module or service →
+  `architecture` · user or approval process → `workflow` · entity states → `lifecycle` · changes to
+  existing behavior → `before-after`.
+- Generate it with the Archify skill when it is available, into `diagrams/proposed.html` in the spec
+  folder (plus a PNG export), then record it:
+  `{{script:diagram}} <ID> --stamp --tool archify --type <type> --file diagrams/proposed.html`.
+  Without Archify, write Mermaid to a file and run
+  `{{script:diagram}} <ID> --stamp --tool mermaid --type <type> --mermaid <file>`, which embeds it.
+- The stamp records which `design.md` it came from. Whenever `design.md` changes, `{{script:diagram}}`
+  reports `stale: true`: regenerate it before asking for approval.
+- With a tracker MCP, offer to attach the PNG to the story — only after the user confirms.
+
+## 8. Close
 
 - If there are `[NEEDS CLARIFICATION]` items or findings, recommend {{command:clarify}} and list them
   by impact. A critical finding blocks {{command:tasks}}.
-- Otherwise ask for approval of requirements and design. On approval set `status: approved` in both
+- Otherwise ask for approval of requirements and design — **showing the diagram** when there is one;
+  the PO or lead approves looking at it. On approval set `status: approved` in both
   (and in `story.md` if it was still `draft`).
 - Summarize: depth, FR/NFR counts, AC coverage, Premise Ledger rows marked `UNVERIFIED`, risk tags,
   and the next mandao.
