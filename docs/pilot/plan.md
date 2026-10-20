@@ -80,6 +80,8 @@ What real runs on the Mandao repository cost, as reported by each Claude Code se
 | Run | Spec | Commands | Cost (USD) | Notes |
 |---|---|---|---|---|
 | 2026-10-20 | MDO-0004 (3 tasks, standard depth, public-api) | specify 1.64 · clarify 1.63 · tasks 1.16 · implement 9.88 · verify 0.94 · close 1.92 | **17.18** | Leader on Opus 5.5; implementers on Sonnet and Haiku; reviews on Opus. `story` not measured (no JSON output). Implement includes one FAIL and rework. |
+| 2026-10-20 | MDO-0005 (1 task, lite depth, test-only) | story 1.20 · specify 2.18 · clarify 2.00 · tasks 1.14 · implement 1.84 · verify 0.67 · close 1.64 | **10.67** | One Reviewer FAIL and rework; specify ran the real CLI to check premises. |
+| 2026-10-20 | Two `quick` changes (docs, test) | quick 0.60 + 0.44 | **1.03** | Gates, separate review, log row and commit each. |
 
 ## 7. Risks
 
