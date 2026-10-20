@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import type { Command } from 'commander';
 import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
@@ -8,9 +8,11 @@ import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
+import { hasExecutionLog, logPath } from '../scripts/spec-log.js';
 import {
   acStatus,
   type BugsAfterMerge,
+  type CloseLink,
   type CloseSummary,
   compareTdd,
   impactItems,
@@ -48,7 +50,7 @@ function bugsAfterMerge(config: ReturnType<typeof readConfig>, spec: SpecFolder,
 
 function metricsOf(config: ReturnType<typeof readConfig>, spec: SpecFolder, trackerBugs?: number) {
   const bugs = bugsAfterMerge(config, spec, trackerBugs);
-  return specMetrics(spec.name, spec.tasks, spec.execution, forcedRunCount(readIf(join(spec.dir, 'execution.md'))), bugs);
+  return specMetrics(spec.name, spec.tasks, spec.execution, forcedRunCount(readIf(logPath(spec.dir, 'execution.md'))), bugs);
 }
 
 function registerKaizen(run: Command, ctx: CliContext) {
@@ -68,7 +70,7 @@ function registerKaizen(run: Command, ctx: CliContext) {
     .action(() => {
       const config = readConfig(ctx.root());
       const dir = join(ctx.root(), config.paths.specs);
-      const specs = existsSync(dir) ? readdirSync(dir).filter((d) => existsSync(join(dir, d, 'execution.md'))) : [];
+      const specs = existsSync(dir) ? readdirSync(dir).filter((d) => hasExecutionLog(join(dir, d))) : [];
       const metrics = specs.map((d) => metricsOf(config, readSpec(join(dir, d))));
       json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), specs: metrics });
     });
@@ -117,6 +119,21 @@ function updatedSummary(config: ReturnType<typeof readConfig>, spec: SpecFolder,
   return s;
 }
 
+/** Links to what the close produced, only for files that exist, relative to the spec folder. */
+function closeLinks(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder): CloseLink[] {
+  const id = spec.story?.meta.id ?? spec.name;
+  const candidates = [
+    { label: 'Release notes', file: join(root, config.paths.releases, id, 'release-notes.md') },
+    { label: 'Technical notes', file: join(root, config.paths.releases, id, 'technical.md') },
+    { label: 'Kaizen', file: join(root, 'docs', 'kaizen', `${id}.md`) },
+    { label: 'Verify report', file: join(spec.dir, 'verify-report.md') },
+    { label: 'Quickstart', file: join(spec.dir, 'quickstart.md') },
+  ];
+  return candidates
+    .filter((c) => existsSync(c.file))
+    .map((c) => ({ label: c.label, href: relative(spec.dir, c.file).split(sep).join('/') }));
+}
+
 function registerSummary(run: Command, ctx: CliContext) {
   run
     .command('close-summary <spec>')
@@ -131,7 +148,7 @@ function registerSummary(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const summary = updatedSummary(config, spec, o);
-      writeText(join(spec.dir, 'close-summary.md'), renderCloseSummary(summary));
+      writeText(join(spec.dir, 'close-summary.md'), renderCloseSummary(summary, closeLinks(ctx.root(), config, spec)));
       json(summary);
     });
 }

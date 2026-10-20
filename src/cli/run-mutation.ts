@@ -8,6 +8,7 @@ import { agentIdentity, identityCell } from '../scripts/identity.js';
 import { applyPatch, checkPatch, mutationIssues, patchFiles, treeState } from '../scripts/mutation.js';
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
+import { logPath } from '../scripts/spec-log.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -101,7 +102,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
         return;
       }
       const n = spec.execution.filter((r) => r.task === id && r.verdict === 'MUTANT').length + 1;
-      const file = join(spec.dir, 'mutations', `${id}-${n}.md`);
+      const file = join(logPath(spec.dir, 'mutations'), `${id}-${n}.md`);
       writeText(file, evidence(id, n, tests, patch, result, after));
       const writer = agentIdentity(root, o.agent, o.harness);
       appendExecutionRow(spec.dir, spec.name, {

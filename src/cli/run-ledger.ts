@@ -11,6 +11,7 @@ import { agentIdentity, type Identity, identityCell, identityNotes } from '../sc
 import { changedRedTests } from '../scripts/red.js';
 import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
+import { logPath } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
@@ -288,7 +289,7 @@ function registerReview(run: Command, ctx: CliContext) {
       );
       const r = runReview(opts.via, ctx.root(), reviewer, prompt);
       const attempt = Math.max(1, ...spec.execution.filter((x) => x.task === task).map((x) => x.attempt));
-      const file = join(spec.dir, 'reviews', `${task}-${attempt}-${opts.via}.md`);
+      const file = join(logPath(spec.dir, 'reviews'), `${task}-${attempt}-${opts.via}.md`);
       writeText(file, r.output);
       const rel = relative(ctx.root(), file);
       if (r.verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, r.identity, r.verdict, rel));

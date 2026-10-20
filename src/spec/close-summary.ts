@@ -37,7 +37,14 @@ export function parseCloseSummary(text: string | undefined, spec: string): Close
 }
 
 /** Frontmatter plus a readable body regenerated from it. */
-export function renderCloseSummary(s: CloseSummary): string {
+export interface CloseLink {
+  label: string;
+  /** Relative to the spec folder. */
+  href: string;
+}
+
+/** The record lines, then one line per document the close produced: the summary only points to them. */
+export function renderCloseSummary(s: CloseSummary, links: CloseLink[] = []): string {
   const lines = [
     `# Close — ${s.spec}`,
     '',
@@ -45,6 +52,7 @@ export function renderCloseSummary(s: CloseSummary): string {
     `- Release: ${s.release ? `${s.release.branch} (${s.release.how})` : '—'}`,
     `- Environments: ${s.environments.length ? s.environments.map((e) => `${e.name} (${e.source}, ${e.at})`).join(', ') : '—'}`,
     `- Published: ${s.published.length ? s.published.map((p) => `${p.target} ${p.kind} ${p.id}`).join(', ') : '—'}`,
+    ...links.map((l) => `- [${l.label}](${l.href})`),
   ];
   return `---\n${stringifyYaml(s, { lineWidth: 0 })}---\n\n${lines.join('\n')}\n`;
 }

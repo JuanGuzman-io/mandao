@@ -5,6 +5,7 @@ import type { Config } from '../schemas/index.js';
 import { progressSchema } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { Budget, BudgetKind } from './resources.js';
+import { logPath } from './spec-log.js';
 
 /** The CLI's own log: one JSON line per event worth keeping. Machine-specific, git-ignored. */
 export const CLI_LOG = '.mandao/cli.log';
@@ -41,7 +42,7 @@ export function activeSpecDir(root: string, config: Config): string | undefined 
   const specs = join(root, config.paths.specs);
   if (!existsSync(specs)) return undefined;
   const active = readdirSync(specs).filter((d) => {
-    const file = join(specs, d, 'progress.yml');
+    const file = logPath(join(specs, d), 'progress.yml');
     if (!existsSync(file)) return false;
     const p = progressSchema.safeParse(parseYaml(readFileSync(file, 'utf8')));
     return p.success && p.data.current !== null;
@@ -56,8 +57,8 @@ export function recordForced(root: string, run: ForcedRun, specDir?: string): vo
   const log = join(root, CLI_LOG);
   const before = existsSync(log) ? readFileSync(log, 'utf8') : '';
   writeText(log, `${before}${JSON.stringify({ event: 'forced-run', ...run })}\n`);
-  if (!specDir || !existsSync(join(specDir, 'execution.md'))) return;
-  const file = join(specDir, 'execution.md');
+  if (!specDir || !existsSync(logPath(specDir, 'execution.md'))) return;
+  const file = logPath(specDir, 'execution.md');
   const text = readFileSync(file, 'utf8');
   const line = `- ${run.at} · ${run.operation} · ${run.label} · forced by ${run.by} · ${run.reason}`;
   writeText(file, appendToSection(text, line));

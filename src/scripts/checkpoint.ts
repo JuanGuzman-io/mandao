@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { stringify as stringifyYaml } from 'yaml';
 import { type ExecutionRow, executionRow, type ProgressInput, progressSchema, setTaskDone } from '../spec/index.js';
 import { snapshot, writeFromSnapshot, writeText } from '../writer/files.js';
+import { logPath } from './spec-log.js';
 
 const EXECUTION_TEMPLATE = (spec: string) => `---
 schema_version: 1
@@ -18,7 +19,7 @@ spec: ${spec}
 
 /** Appends a row to the execution log, creating the file from its template when missing. */
 export function appendExecutionRow(dir: string, spec: string, row: ExecutionRow): void {
-  const file = join(dir, 'execution.md');
+  const file = logPath(dir, 'execution.md');
   const snap = snapshot(file);
   const content = snap.content ?? EXECUTION_TEMPLATE(spec);
   const lines = content.split('\n');
@@ -33,7 +34,7 @@ export function appendExecutionRow(dir: string, spec: string, row: ExecutionRow)
 export function writeProgress(dir: string, progress: ProgressInput): void {
   const valid = progressSchema.parse(progress);
   writeText(
-    join(dir, 'progress.yml'),
+    logPath(dir, 'progress.yml'),
     `# Written by mandao run checkpoint after every Leader step (ADR 0018).\n${stringifyYaml(valid, { lineWidth: 0 })}`,
   );
 }
