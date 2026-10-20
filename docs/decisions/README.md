@@ -33,3 +33,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0024](0024-resource-floors-and-verified-suggestions.md) | Memory floors per operation, recorded forced runs, verified model suggestions | Accepted |
 | [0025](0025-opencode-2-and-supported-version-ranges.md) | OpenCode 2, and a supported version range per adapter | Accepted |
 | [0026](0026-verify-and-close.md) | Iteration 3: verify and close | Accepted |
+| [0027](0027-iteration-3-decisions.md) | Iteration 3 decisions: release, gates, diagram freshness, free models, Antigravity status | Accepted |
