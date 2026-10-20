@@ -18,6 +18,7 @@ const ANSI = /\x1b\[/;
 
 const ttyDescriptor = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
 const noColor = process.env.NO_COLOR;
+const mandaoHome = process.env.MANDAO_HOME;
 let log: ReturnType<typeof vi.spyOn>;
 let write: ReturnType<typeof vi.spyOn>;
 
@@ -34,6 +35,8 @@ afterEach(() => {
   else delete (process.stdout as { isTTY?: boolean }).isTTY;
   if (noColor === undefined) delete process.env.NO_COLOR;
   else process.env.NO_COLOR = noColor;
+  if (mandaoHome === undefined) delete process.env.MANDAO_HOME;
+  else process.env.MANDAO_HOME = mandaoHome;
   mocked.mockReset();
   vi.restoreAllMocks();
 });
