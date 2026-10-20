@@ -113,10 +113,24 @@ export function analyzeDiff(
   return { files, totals, projects, newDependencies, migrations, publicContracts, aiChanges, riskTags, withinLimits: reasons.length === 0, reasons };
 }
 
-const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
+
+const EMPTY_TREE = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
+
+/** A repository without commits has no HEAD yet; diff against the empty tree instead. */
+function resolveBase(repo: string, base: string): string {
+  try {
+    git(repo, ['rev-parse', '--verify', '--quiet', `${base}^{commit}`]);
+    return base;
+  } catch {
+    if (base === 'HEAD') return EMPTY_TREE;
+    throw new Error(`Unknown git ref "${base}" in ${repo}`);
+  }
+}
 
 /** Collects the working-tree diff against `base` (tracked changes plus untracked files) for one git repo. */
-export function collectDiff(repo: string, base: string, prefix = ''): { files: FileStat[]; manifests: ManifestChange[] } {
+export function collectDiff(repo: string, requestedBase: string, prefix = ''): { files: FileStat[]; manifests: ManifestChange[] } {
+  const base = resolveBase(repo, requestedBase);
   const files: FileStat[] = [];
   for (const line of git(repo, ['diff', '--numstat', base]).split('\n').filter(Boolean)) {
     const [a, d, path] = line.split('\t');

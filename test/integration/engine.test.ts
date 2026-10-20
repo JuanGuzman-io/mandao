@@ -97,3 +97,15 @@ test('syncGlobal installs only /mandao-init under the user folders', () => {
   expect(r.changes.map((c) => [c.path, c.action])).toEqual([['skills/mandao-init/SKILL.md', 'create']]);
   expect(existsSync(join(process.env.MANDAO_HOME!, '.claude/skills/mandao-init/SKILL.md'))).toBe(true);
 });
+
+describe('collectDiff', () => {
+  test('works in a repository without commits and counts untracked files', async () => {
+    const { execFileSync } = await import('node:child_process');
+    const { collectDiff } = await import('../../src/scripts/quick-check.js');
+    const root = makeTree({ 'src/a.ts': 'one\ntwo\n', 'package.json': pkg('x', { zod: '^4' }) });
+    execFileSync('git', ['init', '-q'], { cwd: root });
+    const diff = collectDiff(root, 'HEAD');
+    expect(diff.files.map((f) => f.path).sort()).toEqual(['package.json', 'src/a.ts']);
+    expect(diff.manifests).toEqual([{ path: 'package.json', before: undefined, after: pkg('x', { zod: '^4' }) }]);
+  });
+});
