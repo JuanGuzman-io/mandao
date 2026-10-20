@@ -24,14 +24,17 @@ export interface QuickLogEntry {
   /** Resolved by the script from the agent file, never typed by the model (ADR 0021, MDO-0005). */
   reviewer: Identity;
   claimedReviewer?: string;
+  /** The reviewer ran on the author's model (no alternative available). */
+  reducedIndependence?: boolean;
 }
 
 const cellText = (s: string) => s.replace(/\|/g, '\\|').replace(/\n+/g, ' ');
 
 /** The review cell: verdict, agent and the model its agent file pins, plus independence and mismatch notes. */
-export function reviewCell(e: Pick<QuickLogEntry, 'verdict' | 'reviewer' | 'claimedReviewer'>): string {
+export function reviewCell(e: Pick<QuickLogEntry, 'verdict' | 'reviewer' | 'claimedReviewer' | 'reducedIndependence'>): string {
   const who = e.reviewer.source === 'self' ? 'self' : `${e.reviewer.agent} on ${identityCell(e.reviewer)}`;
   const notes = identityNotes('reviewer', e.reviewer, e.claimedReviewer);
+  if (e.reducedIndependence && e.reviewer.source !== 'self') notes.push('reduced independence (the reviewer shares the author model)');
   return [`${e.verdict}, ${who}`, ...notes].join('; ');
 }
 

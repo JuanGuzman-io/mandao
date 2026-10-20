@@ -13,11 +13,11 @@ arguments:
     description: "Optional task id (default: the next eligible task)"
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true }
-  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
 outputs:
   - { path: "(code)", description: one local commit per task after PASS }
-  - { path: "{{paths.specs}}/<ID>-<slug>/execution.md" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/execution.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md]
@@ -42,7 +42,7 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
    `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
    spec to `verified`.
-4. Read `progress.yml`: if a task is in progress, continue it as `/mandao-resume` would.
+4. Read `_log/progress.yml` (older specs keep it in the spec root): if a task is in progress, continue it as `/mandao-resume` would.
 
 ## 1. For each task
 
@@ -65,7 +65,7 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    has risk tags or tier strong): send the brief to the `tester` agent, which writes the tests from the
    spec and records them with `mandao run red` (a `RED` row, only if they fail). Then implement. For other
    tasks with declared tests, the Implementer writes the red test first and records it the same way.
-   A `characterization: true` task (`tdd.evidence: mutation`) has no red step: its tests pin down existing
+   An `evidence: mutation` task (`tdd.evidence: mutation` in `loop`) has no red step: its tests pin down existing
    behavior, and the Implementer proves each assertion with `{{script:mutation}}` (rules/test-policy.md)
    before reporting.
    **Implement** in a fresh context with the implementer for the tier:
@@ -108,7 +108,7 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
    - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n> --reason "<the first blocking finding>"`
      (required: the log keeps why the task failed); back to step 3. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
-   - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `execution.md`,
+   - **The spec is wrong** → write a Pivot Record (`{{template:spec/pivot-record.md}}`) in `_log/execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
 7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;

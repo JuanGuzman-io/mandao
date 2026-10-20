@@ -13,6 +13,7 @@ interface QuickLogOptions {
   reviewer: string;
   harness: string;
   claimedReviewer?: string;
+  reducedIndependence?: boolean;
   base: string;
 }
 
@@ -28,11 +29,14 @@ export function registerQuickLog(run: Command, ctx: CliContext) {
     .requiredOption('--verdict <verdict>', 'the lite review verdict: PASS | FAIL')
     .requiredOption('--reviewer <agent>', 'agent that reviewed: mandao-reviewer[@<harness>], mandao-reviewer-alt or self')
     .option('--harness <id>', 'harness running the session', 'claude')
+    .option('--reduced-independence', 'the reviewer ran on the same model as the author (no alternative reviewer)')
     .option('--claimed-reviewer <text>', 'what the reviewer said about itself: compared, never recorded as the identity')
     .option('--project <name>', 'project touched (default: the only project)')
     .option('--base <ref>', 'git ref the change is measured against', 'HEAD')
     .action((name: string, o: QuickLogOptions) => {
       if (o.verdict !== 'PASS' && o.verdict !== 'FAIL') throw new Error('--verdict must be PASS or FAIL');
+      // MDO-0006: the independence note landed in the Gates column. It belongs to the review.
+      if (/independence/i.test(o.gates)) throw new Error('--gates lists gate results only; use --reduced-independence for the review');
       const root = ctx.root();
       const config = readConfig(root);
       const specsDir = join(root, config.paths.specs);
@@ -48,6 +52,7 @@ export function registerQuickLog(run: Command, ctx: CliContext) {
         verdict: o.verdict,
         reviewer,
         ...(o.claimedReviewer ? { claimedReviewer: o.claimedReviewer } : {}),
+        ...(o.reducedIndependence ? { reducedIndependence: true } : {}),
       });
       console.log(JSON.stringify({ written: relative(root, file), reviewer, files: files.map((f) => f.path) }, null, 2));
     });

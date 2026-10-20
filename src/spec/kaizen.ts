@@ -56,7 +56,7 @@ function practiceOf(withTests: number, withRed: number, characterized: number): 
 
 function tddPractice(tasks: Task[], rows: ExecutionRow[]): SpecMetrics['tdd'] {
   const has = (t: Task, verdict: string) => rows.some((r) => r.task === t.id && r.verdict === verdict);
-  const tested = tasks.filter((t) => t.tests.unit.length + t.tests.e2e.length > 0);
+  const tested = tasks.filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none');
   const characterized = tested.filter((t) => t.characterization);
   const withTests = tested.filter((t) => !t.characterization);
   const withRed = withTests.filter((t) => has(t, 'RED'));

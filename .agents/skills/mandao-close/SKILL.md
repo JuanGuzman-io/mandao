@@ -35,7 +35,13 @@ creation.
 
 ## 3. Sync
 
-Update the `AGENTS.md` of every touched module and the code graph (if graphify is present).
+Update the `AGENTS.md` of every touched module, the project skills the design names, and the code graph
+(if graphify is present).
+
+**A write the harness refuses** (for example under `.claude/`, which some harnesses protect from the
+session) is not a failure and never waits for a manual commit: list it as pending in the grouped
+confirmation of step 8 with its exact diff and the one instruction to apply it, and record it as an open
+item in the technical notes.
 
 ## 4. Diagram and drift
 
@@ -46,7 +52,7 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-In `docs/releases/<ID>/`:
+Following `.mandao/templates/app/rules/spec-docs.md` (summary first, evidence at the end), in `docs/releases/<ID>/`:
 - `technical.md` from `.mandao/templates/app/close/technical.md`, in `en`.
 - `release-notes.md` from `.mandao/templates/app/close/release-notes.md`, in `en`, one row per
   criterion with the status from `node .mandao/bin/mandao.mjs run release-status <spec>` — never upgraded by hand.
@@ -78,7 +84,8 @@ release notes as a block the user can paste.
 
 ## 8. Finish
 
-`node .mandao/bin/mandao.mjs run close-summary <spec> --closed`, set `status: closed` in story.md, then commit everything
+`node .mandao/bin/mandao.mjs run close-summary <spec> --closed` (it writes the record and the links to the documents
+the close produced; never edit it by hand), set `status: closed` in story.md, then commit everything
 close wrote on its own: `node .mandao/bin/mandao.mjs run commit-spec <spec> close` (the spec folder, `docs/releases/<ID>/`,
 `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.

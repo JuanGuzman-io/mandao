@@ -29,7 +29,7 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 - `/mandao-resume` — Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness.
 - `/mandao-specify` — Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check.
 - `/mandao-story` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
-- `/mandao-tasks` — Break an approved spec into Tn tasks with project, tier, files, risk tags, tests, AC, DoD and dependencies.
+- `/mandao-tasks` — Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies.
 - `/mandao-verify` — Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
 
 Not implemented yet: `/mandao-audit`, `/mandao-perf`.

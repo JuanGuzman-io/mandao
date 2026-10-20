@@ -8,6 +8,19 @@ export const TASK_ID = /^T\d+$/;
 export const TASK_KINDS = COMMIT_TYPES.filter((t) => t !== 'revert');
 export type TaskKind = (typeof TASK_KINDS)[number];
 
+const SCENARIO_ID = /^S-\d+\.\d+(\/C\d+)?$/;
+
+/** The test level a scenario is proven at (§16.1): what the Reviewer FAILs a missing test against. */
+export const TEST_LEVELS = ['unit', 'e2e', 'eval', 'none'] as const;
+export type TestLevel = (typeof TEST_LEVELS)[number];
+
+/** How a task proves its tests (ADR 0022, 0033): a red run, recorded mutations, or nothing to prove. */
+export const EVIDENCE = ['tdd', 'mutation', 'none'] as const;
+export type Evidence = (typeof EVIDENCE)[number];
+
+/** Fields of the older layout, prose in YAML: still read, reported by `mandao run tasks`. */
+export const LEGACY_TASK_FIELDS = ['tests', 'dod', 'characterization'] as const;
+
 export const taskFieldsSchema = z
   .object({
     project: z.string().min(1),
@@ -16,24 +29,44 @@ export const taskFieldsSchema = z
     tier,
     files: z.array(z.string()).default([]),
     exemplar: z.string().optional(),
-    risk_tags: z.array(riskTag).default([]),
     ac: z.array(z.string().regex(/^AC-\d+(\/C\d+)?$/)).default([]),
-    scenarios: z.array(z.string().regex(/^S-\d+\.\d+(\/C\d+)?$/)).default([]),
-    tests: z.object({ unit: z.array(z.string()).default([]), e2e: z.array(z.string()).default([]) }).prefault({}),
-    dod: z.array(z.string()).default([]),
-    verify: z.string().optional(),
+    scenarios: z.array(z.string().regex(SCENARIO_ID)).default([]),
+    test_levels: z.record(z.string().regex(SCENARIO_ID), z.enum(TEST_LEVELS)).optional(),
+    evidence: z.enum(EVIDENCE).optional(),
+    risk_tags: z.array(riskTag).default([]),
     depends_on: z.array(z.string().regex(TASK_ID)).default([]),
-    // Pins down behavior that already exists: mutation evidence replaces the red test (ADR 0022).
-    characterization: z.boolean().default(false),
     parallel_safe: z.boolean().default(false),
+    verify: z.string().optional(),
+    tests: z.object({ unit: z.array(z.string()).default([]), e2e: z.array(z.string()).default([]) }).optional(),
+    dod: z.array(z.string()).optional(),
+    characterization: z.boolean().optional(),
   })
   .strict();
 
-export interface Task extends z.infer<typeof taskFieldsSchema> {
+type TaskFields = z.infer<typeof taskFieldsSchema>;
+
+export interface Task extends Omit<TaskFields, 'tests' | 'dod' | 'characterization'> {
   id: string;
   title: string;
   done: boolean;
   line: number;
+  /** Declared tests: from `test_levels` (scenario ids by level), or the older `tests` lists. */
+  tests: { unit: string[]; e2e: string[] };
+  dod: string[];
+  /** Mutation evidence instead of a red run (`evidence: mutation`, or the older `characterization`). */
+  characterization: boolean;
+}
+
+/** One shape for both layouts, so loop, verify, trace and Kaizen read either. */
+function normalize(f: TaskFields): Omit<Task, 'id' | 'title' | 'done' | 'line'> {
+  const levels = Object.entries(f.test_levels ?? {});
+  const at = (...wanted: TestLevel[]) => levels.filter(([, l]) => wanted.includes(l)).map(([s]) => s);
+  const tests = f.test_levels ? { unit: at('unit', 'eval'), e2e: at('e2e') } : (f.tests ?? { unit: [], e2e: [] });
+  const characterization = f.evidence ? f.evidence === 'mutation' : (f.characterization ?? false);
+  const declared = tests.unit.length + tests.e2e.length > 0;
+  const evidence = f.evidence ?? (characterization ? 'mutation' : declared ? 'tdd' : 'none');
+  const { tests: _t, dod, characterization: _c, ...rest } = f;
+  return { ...rest, tests, dod: dod ?? [], characterization, evidence };
 }
 
 const HEADING = /^###\s+\[([ xX])\]\s+(T\d+)\s*[—–-]\s*(.+)$/;
@@ -66,7 +99,7 @@ function readTask(lines: string[], i: number, h: RegExpMatchArray, file: string,
     issues.push(...formatIssues(fields.error, `${file} ${id}`));
     return undefined;
   }
-  return { ...fields.data, id: id!, title: title!.trim(), done: mark !== ' ', line: i + 1 };
+  return { ...normalize(fields.data), id: id!, title: title!.trim(), done: mark !== ' ', line: i + 1 };
 }
 
 /** Parses tasks.md: `### [ ] T2 — title` followed by a fenced YAML block with the task's fields. */

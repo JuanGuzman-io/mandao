@@ -14,20 +14,19 @@ sources: []              # [{ ref, kind, date }] every source consulted
 
 # <Title in business language>
 
+<2–3 lines: who needs what, and how we will know it is done.>
+
 ## Who
-<!-- The user or role, in the product's own words (see glossary.md). -->
 
 ## Problem
+
 ## Value
+
 ## Scope
+
 ## Out of scope
 
 ## Acceptance criteria
-
-<!--
-One block per AC. Numbers are stable. Flag critical: true when the AC touches a flow in
-critical-flows.md. Use BUT it must NOT / AND IT MUST for the edges that matter.
--->
 
 ### AC-1 — <short name>
 critical: false
@@ -38,8 +37,10 @@ critical: false
 - **BUT it must NOT** … (C1)
 
 ## Dependencies
+
 ## UX references
+
 ## Data involved
 
+<a id="assumptions"></a>
 ## Assumptions and open questions
-<!-- ASSUMPTION / OPEN / CONFLICT, each with its source. A critical OPEN blocks specify. -->

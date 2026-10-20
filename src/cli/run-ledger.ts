@@ -184,6 +184,8 @@ function registerCheckpoint(run: Command, ctx: CliContext) {
 const SPEC_STEPS = {
   specify: (id: string) => `approve the ${id} requirements and design`,
   clarify: (id: string) => `record the ${id} clarification answers`,
+  tasks: (id: string) => `approve the ${id} task plan`,
+  verify: (id: string) => `record the ${id} verify report`,
   close: (id: string) => `close ${id} with release docs and Kaizen`,
 } as const;
 
@@ -194,11 +196,11 @@ function closePaths(ctx: CliContext, config: ReturnType<typeof readConfig>, repo
   return [rel(join(config.paths.releases, id)), rel(join('docs', 'kaizen', `${id}.md`)), rel(config.paths.constitution), ...guides];
 }
 
-/** `mandao run commit-spec`: the spec documents in their own docs commit (specify, clarify, close). */
+/** `mandao run commit-spec`: the spec documents in their own docs commit, at every step that writes them. */
 function registerCommitSpec(run: Command, ctx: CliContext) {
   run
     .command('commit-spec <spec> <step>')
-    .description('Commit the spec documents as a docs commit with Refs: specify on approval, clarify after answers, close at the end')
+    .description('Commit the spec documents as a docs commit with Refs: specify, clarify, tasks, verify and close')
     .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
     .action((ref: string, step: string, opts: { trailer?: string[] }) => {
       if (!(step in SPEC_STEPS)) throw new Error(`step must be one of ${Object.keys(SPEC_STEPS).join(', ')}`);

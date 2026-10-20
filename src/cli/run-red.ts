@@ -1,19 +1,22 @@
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
+import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
+import type { HarnessId } from '../schemas/index.js';
 import { appendExecutionRow, writeProgress } from '../scripts/checkpoint.js';
 import { repoRoot } from '../scripts/commits.js';
-import { agentIdentity, identityCell } from '../scripts/identity.js';
+import { agentIdentity, type Identity, identityCell } from '../scripts/identity.js';
 import { detectRunner, fillCommand, projectDir, RUNNER_COMMANDS } from '../scripts/impact.js';
 import { fileHash, redCheck } from '../scripts/red.js';
 import { runTests } from '../scripts/run-tests.js';
-import { findSpec, readSpec } from '../scripts/spec.js';
+import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
+import { type Task, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 
 const json = (value: unknown) => console.log(JSON.stringify(value, null, 2));
 
 interface RedOptions {
-  agent: string;
+  self?: boolean;
   force?: boolean;
   harness?: string;
   attempt: string;
@@ -27,6 +30,24 @@ export function testCommand(root: string, project: { path: string; tests: { impa
 }
 
 /**
+ * Who wrote the tests: the agent Mandao routed the task to (`testWriter`), its model read from the agent
+ * file the harness loads; `--self` only when the Leader wrote them in its own context. Never a name the
+ * model types (MDO-0006: an Implementer recorded itself as `self`).
+ */
+export function routedWriter(
+  root: string,
+  config: ReturnType<typeof readConfig>,
+  spec: SpecFolder,
+  task: Task,
+  harness: string,
+  self?: boolean,
+): Identity {
+  if (self) return agentIdentity(root, 'self', harness);
+  const mode = resolveWorkspaceModels(root, config, readRecommendations())[harness as HarnessId]?.mode;
+  return agentIdentity(root, testWriter(task, spec.execution, mode === 'simple'), harness);
+}
+
+/**
  * `mandao run red`: TDD red evidence (ADR 0022). Runs the given tests under the budget and queue, and
  * records a RED row only when they fail; their hashes go to progress.yml so a later change is flagged.
  */
@@ -34,7 +55,7 @@ export function registerRed(run: Command, ctx: CliContext) {
   run
     .command('red <spec> <task> <tests...>')
     .description('Record TDD red evidence: run the task tests, require them to fail, and remember them')
-    .requiredOption('--agent <agent>', 'who wrote the tests: mandao-tester[@<harness>], mandao-implementer-<tier>[@<harness>] or self')
+    .option('--self', 'the Leader wrote the tests in its own context (no subagent): reduced independence')
     .option('--harness <id>', 'harness running the Leader', 'claude')
     .option('--attempt <n>', 'attempt for the execution row', '1')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
@@ -54,7 +75,7 @@ export function registerRed(run: Command, ctx: CliContext) {
         process.exitCode = 1;
         return;
       }
-      const writer = agentIdentity(root, o.agent, o.harness ?? 'claude');
+      const writer = routedWriter(root, config, spec, task, o.harness ?? 'claude', o.self);
       const repo = repoRoot(spec.dir);
       const files = tests.map((path) => ({ path, sha256: fileHash(repo, path) }));
       appendExecutionRow(spec.dir, spec.name, {

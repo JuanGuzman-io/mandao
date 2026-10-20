@@ -146,10 +146,8 @@ describe('#1 and #5: identity comes from agent files and models.yml, never from 
         'mandao run checkpoint --claimed-reviewer',
         'mandao run checkpoint --implementer',
         'mandao run checkpoint --reviewer',
-        'mandao run mutation --agent',
         'mandao run quick-log --claimed-reviewer',
         'mandao run quick-log --reviewer',
-        'mandao run red --agent',
       ].sort(),
     );
   });
@@ -283,6 +281,8 @@ describe('#4 and #6: commit-spec has fixed subjects, and close commits its docum
     writeFileSync(join(root, SPEC, 'requirements.md'), `${readFileSync(join(root, SPEC, 'requirements.md'), 'utf8')}\n`);
     await run(root, 'commit-spec', 'MDO-0001', 'clarify');
     expect(lastJson().header).toBe('📝 docs(mandao): record the MDO-0001 clarification answers');
-    await expect(run(root, 'commit-spec', 'MDO-0001', 'approve')).rejects.toThrow(/step must be one of specify, clarify, close/);
+    await expect(run(root, 'commit-spec', 'MDO-0001', 'approve')).rejects.toThrow(
+      /step must be one of specify, clarify, tasks, verify, close/,
+    );
   });
 });

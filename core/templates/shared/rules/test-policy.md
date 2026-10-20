@@ -5,8 +5,9 @@ rule: test-policy
 
 # Test policy
 
-Risk-based. Tests are declared per task in `tasks.md`; each scenario is proven at the **cheapest
-level that demonstrates it**. Coverage percentages are not a goal.
+Risk-based. Each task declares in `tasks.md` the level of every scenario it cites (`test_levels`:
+`unit | e2e | eval | none`); each scenario is proven at the **cheapest level that demonstrates it**.
+Concrete test names are chosen by whoever writes the tests. Coverage percentages are not a goal.
 
 ## Unit tests
 
@@ -19,14 +20,15 @@ level that demonstrates it**. Coverage percentages are not a goal.
 | `BUT it must NOT` / `AND IT MUST` edge cases | Pass-throughs, trivial getters |
 | Regression of every fixed bug | |
 
-The Reviewer fails a task with a missing mandatory test and flags unnecessary tests as noise.
+The Reviewer fails a task when a scenario has no test at its declared level, and flags unnecessary
+tests as noise.
 
 ## TDD where tests are mandatory (ADR 0022)
 
 Where the table says **Always**: red test first, derived from the scenario or clause; then the minimum
 code to pass it; then refactor within the task's scope. Where it says **Never**, TDD does not apply.
 
-- **Red evidence:** `mandao run red <spec> <Tn> <test files> --agent <agent>` runs the tests and records
+- **Red evidence:** `mandao run red <spec> <Tn> <test files>` runs the tests and records
   a `RED` row only if they fail. No red evidence on a task with mandatory tests → the Reviewer FAILs it.
 - **No weakening a red test.** Mandao remembers each red test's hash; a later change shows up as
   `red test changed` in `execution.md` and in the brief, and the Reviewer judges it.
@@ -36,10 +38,10 @@ code to pass it; then refactor within the task's scope. Where it says **Never**,
 
 ### Characterization tests
 
-A task that **only pins down behavior that already exists** declares `characterization: true`. Its tests
+A task that **only pins down behavior that already exists** declares `evidence: mutation`. Its tests
 pass from the start, so a red run proves nothing; the evidence is a recorded mutation instead:
 
-- `mandao run mutation <spec> <Tn> <test files> --patch <diff> --agent <agent>` applies the mutation,
+- `mandao run mutation <spec> <Tn> <test files> --patch <diff>` applies the mutation,
   runs the tests, reverts it and checks the mutated files are back exactly as they were. Only a failing
   run with a clean revert is recorded: a `MUTANT` row, and the diff with the failing output in
   `mutations/<Tn>-<n>.md`. A surviving mutation means the tests do not protect that code.

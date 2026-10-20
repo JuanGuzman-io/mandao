@@ -10,10 +10,10 @@ arguments:
     description: "Spec id to continue (empty for the dashboard)"
 inputs:
   - { path: "{{paths.specs}}/" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
 outputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/progress.yml" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/execution.md" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/_log/execution.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md]
 scripts: [where, models, tasks, loop, checkpoint, commit]

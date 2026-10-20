@@ -16,7 +16,8 @@ disable-model-invocation: true
 Arguments: $ARGUMENTS
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,
-`.mandao/templates/app/rules/traceability.md` and `.mandao/templates/app/rules/test-policy.md`.
+`.mandao/templates/app/rules/traceability.md`, `.mandao/templates/app/rules/test-policy.md` and, for how each document
+reads, `.mandao/templates/app/rules/spec-docs.md`.
 
 Write requirements and design content in `en` and anything addressed to the PO
 (story text, business questions) in `en`. Headings and keywords stay in English.
@@ -79,18 +80,26 @@ From `.mandao/templates/app/spec/requirements.md`:
 
 From `.mandao/templates/app/spec/design.md`:
 
-- **Premise Ledger**: one row per claim about existing code that the design depends on, with
-  evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before relying on it`. If there
-  are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
+- **Premise Ledger** (at the end of the design): one entry per claim about existing code that the
+  design depends on, with evidence as run (and commit SHA) or `UNVERIFIED — confirm at source before
+  relying on it`. If there are none, write that explicitly. A premise of **High** impact is verified by **running** it, not by
   reading code (MDO-0004 read one and was wrong): cite the command and an excerpt of its output. Only
   safe runs: read-only, inside the worktree or a sandbox, no writes to real systems and no external
   effects, with a timeout, and through `node .mandao/bin/mandao.mjs run resources` when it builds or tests (never force the
   guard). If it cannot run safely, it stays `UNVERIFIED`.
-- Decisions with alternatives, changes per project and module, and an **exemplar file** per change.
+- Decisions first, each with why and the alternatives rejected; changes per project and module, and an
+  **exemplar file** per change.
 - Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
 - `Constitution Impact`, `Product Impact` and `Module Docs Impact`: record, never apply. Only
   `/mandao-close` applies them.
+
+## 5b. quickstart.md (only with visible behavior)
+
+When the spec has behavior a user or a PO can see, write `quickstart.md` from
+`.mandao/templates/app/spec/quickstart.md`: prerequisites in one line, 3–6 steps with the exact command or click
+and what appears, and the expected result; about 400 tokens at most. Not for test-only specs,
+refactors or internal infrastructure.
 
 ## 6. Consistency Check
 

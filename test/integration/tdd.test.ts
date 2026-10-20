@@ -105,7 +105,7 @@ describe('mandao run red', () => {
 
   test('records RED with the writer from its agent file, remembers the tests, and flags a later change', async () => {
     const root = workspace();
-    await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts', '--agent', 'mandao-tester');
+    await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
     expect(JSON.parse(out.at(-1)!)).toMatchObject({ red: true, task: 'T2' });
     const spec = readSpec(join(root, SPEC));
     expect(spec.execution.at(-1)).toMatchObject({ verdict: 'RED', task: 'T2', implementer: 'claude-sonnet-5-5' });
@@ -185,7 +185,7 @@ describe('mandao run red', () => {
     const root = workspace();
     vi.stubEnv('RED', '0');
     try {
-      await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts', '--agent', 'mandao-tester');
+      await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
     } finally {
       vi.unstubAllEnvs();
     }

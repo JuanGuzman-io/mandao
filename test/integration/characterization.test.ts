@@ -78,17 +78,7 @@ describe('decision 1: characterization tests with recorded mutations (ADR 0022)'
 
   test('a killed mutation is recorded with its diff and failing output, and reverted to a clean tree', async () => {
     const root = characterizationRepo();
-    await run(
-      root,
-      'mutation',
-      'MDO-0001',
-      'T2',
-      'test/a.test.ts',
-      '--patch',
-      patch(root, 'export const answer = "MUTATED";\n'),
-      '--agent',
-      'mandao-implementer-standard',
-    );
+    await run(root, 'mutation', 'MDO-0001', 'T2', 'test/a.test.ts', '--patch', patch(root, 'export const answer = "MUTATED";\n'));
     expect(lastJson()).toMatchObject({ recorded: true, mutation: 1, files: ['src/code.js'] });
     expect(git(root, 'status', '--porcelain')).toMatch(/specs\//);
     expect(git(root, 'status', '--porcelain')).not.toMatch(/src\/code\.js/);
@@ -105,17 +95,7 @@ describe('decision 1: characterization tests with recorded mutations (ADR 0022)'
 
   test('a surviving mutation, a mutation of a test, and a task that is not characterization are not evidence', async () => {
     const root = characterizationRepo();
-    await run(
-      root,
-      'mutation',
-      'MDO-0001',
-      'T2',
-      'test/a.test.ts',
-      '--patch',
-      patch(root, 'export const answer = 41;\n'),
-      '--agent',
-      'mandao-implementer-standard',
-    );
+    await run(root, 'mutation', 'MDO-0001', 'T2', 'test/a.test.ts', '--patch', patch(root, 'export const answer = 41;\n'));
     expect(lastJson()).toMatchObject({ recorded: false, problem: expect.stringMatching(/survived/) });
     expect(process.exitCode).toBe(1);
     expect(existsSync(join(root, SPEC, 'mutations'))).toBe(false);
@@ -123,19 +103,9 @@ describe('decision 1: characterization tests with recorded mutations (ADR 0022)'
     expect(mutationIssues(['test/a.test.ts'], [])).toEqual([expect.stringMatching(/changes tests/)]);
     expect(mutationIssues(['src/x.ts'], ['src/x.ts'])).toEqual([expect.stringMatching(/task's own files/)]);
     expect(patchFiles('--- a/src/x.ts\n+++ b/src/x.ts\n@@\n')).toEqual(['src/x.ts']);
-    await expect(
-      run(
-        root,
-        'mutation',
-        'MDO-0001',
-        'T1',
-        'test/a.test.ts',
-        '--patch',
-        patch(root, 'MUTATED\n'),
-        '--agent',
-        'mandao-implementer-standard',
-      ),
-    ).rejects.toThrow(/not a characterization task: new behavior needs a red test/);
+    await expect(run(root, 'mutation', 'MDO-0001', 'T1', 'test/a.test.ts', '--patch', patch(root, 'MUTATED\n'))).rejects.toThrow(
+      /not a characterization task: new behavior needs a red test/,
+    );
   });
 
   test('Kaizen counts characterization tasks apart from tdd and no-tdd', () => {
@@ -169,6 +139,8 @@ describe('decision 2: high-impact premises are executed in specify', () => {
     expect(specify).toMatch(/\*\*High\*\* impact is verified by \*\*running\*\* it/);
     expect(specify).toMatch(/read-only, inside the worktree or a sandbox, no writes to real systems/);
     expect(specify).toContain('{{script:resources}}');
-    expect(readFileSync(join(core, 'templates/shared/spec/design.md'), 'utf8')).toMatch(/Impact High: the evidence is an executed command/);
+    expect(readFileSync(join(core, 'templates/shared/rules/spec-docs.md'), 'utf8')).toMatch(
+      /A High\s+premise counts as verified only with an executed command/,
+    );
   });
 });

@@ -73,7 +73,7 @@ export function verifyPlan(input: {
   const { tasks, execution } = input;
   const findings = trace(input.story, input.requirements, tasks, input.commits).findings;
   const missingRed = tasks
-    .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0)
+    .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none')
     .filter((t) => !execution.some((r) => r.task === t.id && r.verdict === (t.characterization ? 'MUTANT' : 'RED')))
     .map((t) => t.id);
   const deferred = input.progress?.deferred_to_ci ?? [];

@@ -1,6 +1,6 @@
 ---
 name: mandao-tasks
-description: Break an approved spec into Tn tasks with project, tier, files, risk tags, tests, AC, DoD and dependencies.
+description: "Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies."
 argument-hint: <spec>
 arguments:
   - spec
@@ -18,14 +18,29 @@ Write task content in `en`; headings, ids and YAML keys stay in English.
 1. **Gate.** Run `node .mandao/bin/mandao.mjs run where $spec`; work in the spec's worktree. Run
    `node .mandao/bin/mandao.mjs run trace $spec`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend /mandao-clarify.
-2. **Write `tasks.md`** from `.mandao/templates/app/spec/tasks.md`: `### [ ] Tn — title` plus a YAML block per
-   task with project, kind (what the task changes, which becomes its commit type: a task that only
-   adds or changes tests is `test`, only documentation is `docs`), tier (`fast | standard | strong`), files and modules from the graph, an exemplar
-   file, risk tags (`.mandao/templates/app/rules/review.md`), the AC and scenario clauses it implements
-   (`.mandao/templates/app/rules/traceability.md`), the tests the policy requires
-   (`.mandao/templates/app/rules/test-policy.md`), DoD (module `AGENTS.md` and its `CLAUDE.md` pointer), a verify
-   command, dependencies and parallel safety.
-5. **Check:** `node .mandao/bin/mandao.mjs run tasks $spec` must show no issues and no cycles;
+2. **Write `## Details`** in `tasks.md` from `.mandao/templates/app/spec/tasks.md`, following
+   `.mandao/templates/app/rules/spec-docs.md`. Per task: `### [ ] Tn — <result>` (never a file path), **What**
+   (1–2 sentences, linking the design for the how), **Done when** (3–5 behavior bullets citing scenarios
+   by id), **Notes** only for a visible exception, and the YAML block without prose:
+   - `kind`: what the task changes, which becomes its commit type (only tests → `test`, only
+     documentation → `docs`);
+   - `tier` (`fast | standard | strong`), `files` and an `exemplar` from the graph, `risk_tags`
+     (`.mandao/templates/app/rules/review.md`), the `ac` and `scenarios` it implements
+     (`.mandao/templates/app/rules/traceability.md`);
+   - `test_levels`: the level of every scenario it cites, `unit | e2e | eval | none`, as
+     `.mandao/templates/app/rules/test-policy.md` requires; concrete test names are chosen by whoever writes them;
+   - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
+   - `verify`, `depends_on`, `parallel_safe`.
+   The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
+   not list it.
+3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a
+   command goes into the **Done when** of the first task that can run it, so a false premise fails in
+   implement, not in verify. A search never counts as proof.
+4. **Write `## Overview`:** `node .mandao/bin/mandao.mjs run tasks $spec --index --write` generates it from the details,
+   grouped by acceptance criterion, with a checkpoint per group. Never edit it by hand.
+7. **Check:** `node .mandao/bin/mandao.mjs run tasks $spec` must show no issues and no cycles;
    `node .mandao/bin/mandao.mjs run trace $spec` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
-6. **Approve:** show the waves and the first eligible task; on approval set `status: approved`.
-   Pushing subtasks to the tracker is not available yet. Next: /mandao-implement.
+8. **Approve:** show the overview and the first eligible task; on approval set `status: approved` and
+   commit the spec documents on their own: `node .mandao/bin/mandao.mjs run commit-spec $spec tasks` (a `docs` commit
+   with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
+   available yet. Next: /mandao-implement.
