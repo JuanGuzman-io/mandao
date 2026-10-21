@@ -1,5 +1,5 @@
 ---
-schema_version: 1
+schema_version: 2
 tracker: none            # jira | linear | clickup | monday | none
 type: story              # epic | story | bug | enhancement | task | performance
 id: MDO-0000             # tracker id, or a local id when there is no tracker

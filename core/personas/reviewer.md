@@ -29,7 +29,8 @@ Check, in order:
 7. **Module boundaries** (`architecture.md`): one responsibility per module, modules talk only through
    public contracts, no reaching into another module's internals. A violation is blocking.
 
-Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`. Start each finding's line with
+Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`. Put this attempt's findings under a
+`## Findings` heading. Start each finding's line with
 `[<lens>/<severity>]` (lens: core, security, performance, data, accessibility or ai; severity: low,
 medium, high or critical), then what and where, the violated rule quoted with its source file, blocking
 or advisory, and the remediation. A security finding of high or critical severity is always blocking:

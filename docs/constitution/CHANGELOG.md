@@ -4,6 +4,17 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-21 — MDO-0011 close (one fixed layout for every spec folder)
+- critical-flows.md: the "Script-owned logs…" row adds "a version 2 spec commits six log files and the
+  rest stays in the local cache" (`log-v2.test.ts`). The "Closure…" row adds "drift does not apply to
+  lite specs, and close commits what it recorded" (`close-drift.test.ts`, `close-commit.test.ts`).
+- architecture.md: the Spec domain owns the folder layout manifest (`layout.ts`); `.mandao/cache/` is
+  local, never committed.
+- standards.md: a spec's layout version is its story's `schema_version`; readers support every version
+  still in the repo.
+- product.md capability map: "Checks every spec folder against one layout per depth", implemented.
+- Approved by: maintainer in the MDO-0011 close session, item by item.
+
 ## 2026-10-21 — MDO-0010 close (guide the next step and keep the session in the spec worktree)
 - critical-flows.md: the "Human approval refuses critical OPENs and records its provenance" row adds
   "running the next command approves, except open items or a changed document" (`approve.test.ts`).

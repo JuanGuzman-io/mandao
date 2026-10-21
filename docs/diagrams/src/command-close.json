@@ -11,7 +11,7 @@
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "24169d112095227eaffaef9203e4fb4e4b75ed853073f3648523f42d049c6d12"
+      "sha256": "d2a55727ee10630b1570f2b0901adf90d86387ab984418d3c0305adcccd7bb95"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "8a4d5c66015aa7634429b078ade152fd9b35ff302e478905ec3353d6443d9006"
+      "sha256": "64237584166cc8f66162eb2757a1bfb0f2720cd538a7a8f2809dde9f61cd63a1"
     },
     {
       "path": "core/commands/init.md",
@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "2ed8d155a38c99652a53644040d548e5f61b11f6d0618dafc7970cb6877ff956"
+      "sha256": "c110bb915d420834b215d56977c12a861f5a482a5edc26c24d14b176aaffd235"
     },
     {
       "path": "core/commands/story.md",
@@ -47,14 +47,14 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "c6b2345f5206822347cb8e230813f82a49974c4cfe52ca7923f6f65ab0c5fc12"
+      "sha256": "124975931aec6736bcb0d7557c6493f9f102f9b4b2f9e10d461c1c278bacca8e"
     },
     {
       "path": "core/commands/verify.md",
       "sha256": "ca1abdb14e4641315cf3bcc3e80b482b74eb879e9dab96978f1279bfda00ab28"
     }
   ],
-  "specSha256": "12b2fccbab73bf4ec0e087a3aa3058aed25d1c4c0c300c90a30bad7a248e804d",
+  "specSha256": "c8c9c507b239a40082b73288246133c739daa1ce253bc87c8284b0d68238c46c",
   "spec": {
     "schema_version": 2,
     "diagram_type": "workflow",
@@ -132,8 +132,8 @@
         "col": 2,
         "type": "backend",
         "label": "2. Constitution and…",
-        "sublabel": "mandao run impacts",
-        "width": 164
+        "sublabel": "mandao run impacts +1",
+        "width": 171
       },
       {
         "id": "s3",
@@ -158,8 +158,8 @@
         "col": 1,
         "type": "backend",
         "label": "5. Documents",
-        "sublabel": "mandao run release-status",
-        "width": 199
+        "sublabel": "mandao run close-summary +1",
+        "width": 213
       },
       {
         "id": "s6",
@@ -209,24 +209,24 @@
         "lane": "writes",
         "col": 1,
         "type": "database",
-        "label": "docs/releases/<ID>/",
-        "width": 157
+        "label": "docs/CHANGELOG.md",
+        "width": 143
       },
       {
         "id": "w2",
         "lane": "writes",
         "col": 2,
         "type": "database",
-        "label": "docs/kaizen/<ID>.md",
-        "width": 157
+        "label": "docs/kaizen/lessons.md",
+        "width": 178
       },
       {
         "id": "w3",
         "lane": "writes",
         "col": 3,
         "type": "database",
-        "label": "docs/constitution/CHANGELOG.md",
-        "width": 234
+        "label": "docs/releases/<ID>/",
+        "width": 157
       }
     ],
     "edges": [

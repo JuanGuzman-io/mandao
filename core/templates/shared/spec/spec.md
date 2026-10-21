@@ -60,28 +60,4 @@ No findings.
 
 ## Premise Ledger
 
-## Tasks
-
-### [ ] T1 — <result, in plain words>
-
-- **What:** <what it does and why>.
-- **Done when:**
-  - S-1.1 holds: <behavior>.
-
-```yaml
-project: <project>
-kind: feat
-tier: standard
-files: [path/to/file.ts]
-exemplar: path/to/similar.ts
-ac: [AC-1]
-scenarios: [S-1.1]
-test_levels: { S-1.1: unit }
-evidence: tdd
-risk_tags: []
-depends_on: []
-parallel_safe: false
-verify: <command>
-```
-
 ## Evidence

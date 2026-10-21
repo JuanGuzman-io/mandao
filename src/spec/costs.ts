@@ -43,6 +43,17 @@ export function sessionDelta(entries: CostEntry[], session: string, now: Record<
   return out;
 }
 
+/**
+ * Per-model spend the session's earlier records hold, summed from their `models`: the per-model baseline a
+ * version 2 entry derives instead of storing `model:` lines in `cumulative` (C-2).
+ */
+export function sessionModelTotals(entries: CostEntry[], session: string): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const e of entries.filter((x) => x.session === session))
+    for (const [model, usd] of Object.entries(e.models)) out[model] = (out[model] ?? 0) + usd;
+  return out;
+}
+
 export type BudgetStatus = 'ok' | 'warn' | 'over' | 'no-budget';
 
 export interface CostSummary {

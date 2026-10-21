@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { parseApprovals, parseCosts, specBudget, summarizeCosts } from '../spec/index.js';
-import { logPath } from './spec-log.js';
+import { parseCosts, specBudget, summarizeCosts } from '../spec/index.js';
+import { logPath, readApprovalLog } from './spec-log.js';
 
 const read = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
 
@@ -10,5 +10,5 @@ const read = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : 
  */
 export function specSpend(specDir: string, perSpec: number | undefined) {
   const costs = parseCosts(read(logPath(specDir, 'costs.yml')));
-  return summarizeCosts(costs, specBudget(parseApprovals(read(logPath(specDir, 'approvals.yml'))), perSpec));
+  return summarizeCosts(costs, specBudget(readApprovalLog(specDir), perSpec));
 }

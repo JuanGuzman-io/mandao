@@ -5,7 +5,7 @@ import { repoRoot } from '../scripts/commits.js';
 import { testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
+import { cachePath, logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt, UNTAGGED_NOTE, untaggedSecurityMentions } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { acceptLogs, logDiscrepancies } from '../writer/log-integrity.js';
@@ -34,7 +34,8 @@ function readReview(source: string): string {
 }
 
 /**
- * A Reviewer's verdict is recorded with its whole answer (`--review`), kept in `_log/reviews/`. The script
+ * A Reviewer's verdict is recorded with its whole answer (`--review`), kept in `_log/reviews/` (version 2:
+ * one `## Tn — attempt k` section of `_log/reviews.md`). The script
  * checks it: the answer's VERDICT must match, and a PASS with a high or critical security finding is
  * refused (MDO-0008). Returns a note for the row when untagged prose looks like a severe security issue.
  */
@@ -52,8 +53,9 @@ export function checkReview(
   if (blockers.length) {
     throw new Error(`a PASS cannot carry an open high-severity security finding: record FAIL and rework. ${blockers.join(' | ')}`);
   }
-  const file = join(logPath(spec.dir, 'reviews'), `${o.task}-${taskAttempt(spec.execution, o.task)}-review.md`);
-  writeText(file, text);
+  const attempt = taskAttempt(spec.execution, o.task);
+  if (specLogInCache(spec.dir)) writeLogSection(spec.dir, 'reviews.md', `${o.task} — attempt ${attempt}`, text);
+  else writeText(join(logPath(spec.dir, 'reviews'), `${o.task}-${attempt}-review.md`), text);
   const untagged = untaggedSecurityMentions(text);
   return untagged.length ? `${UNTAGGED_NOTE}: ${untagged.join(' | ')}` : undefined;
 }
@@ -66,7 +68,8 @@ export function checkReview(
 export function recordLogEdits(spec: SpecFolder, at: string, context: string): string | undefined {
   const edited = logDiscrepancies(spec.dir);
   if (!edited.length) return undefined;
-  const file = logPath(spec.dir, 'discrepancies.md');
+  // Version 2: the row's note is the committed record; the list itself stays in the local cache.
+  const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'discrepancies.md') : logPath(spec.dir, 'discrepancies.md');
   const before = existsSync(file) ? readFileSync(file, 'utf8') : '# Discrepancies (logs edited outside the scripts)\n\n';
   writeText(file, `${before}- ${at} · ${context} · ${edited.join(', ')}\n`);
   acceptLogs(spec.dir, edited);

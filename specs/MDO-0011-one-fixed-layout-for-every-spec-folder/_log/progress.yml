@@ -1,0 +1,272 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0011-one-fixed-layout-for-every-spec-folder
+updated_at: 2026-10-21T22:11:39.728Z
+current: null
+open_questions: []
+next_step: implement summary, then verify
+deferred_to_ci: []
+red_tests:
+  - task: T1
+    files:
+      - path: test/unit/layout.test.ts
+        sha256: 23bc51a1606e627c0db5f965c178f11efc6d59463d17515e1769338d5be6936a
+        tests:
+          - "S-2.3/C1: version 1 manifest lists the files version 1 allowed, including root execution.md and progress.yml"
+          - "S-2.3/C1: a version 1 folder with execution.md and progress.yml at its root is ok"
+          - "S-2.3/C1: the version is the story schema_version, never inferred from the files present"
+          - "S-2.3/C1: a schema_version other than 1 or 2 is an error"
+          - "S-2.1: a version 2 standard folder names the missing design.md and the stray notes.md"
+          - "a separate layout: key does not change the version"
+          - "S-8.1: every file the manifest lists per depth appears in the page table"
+          - "S-8.1: the README links the page"
+          - "S-2.3/C1: version 1 lite with requirements.md + design.md (depth: lite) is lite and ok (D1)"
+          - "D1: with no depth: in any document, lite is the fallback only when spec.md exists"
+          - "S-2.1: a version 2 standard input names the missing design.md and the stray notes.md"
+          - "S-2.3/C1: the real MDO-0001 folder, version 1 lite, is ok"
+          - "S-2.3/C1: the same files with the story at schema_version 2 do not pass"
+          - a schema_version of 3 is an error
+          - "parseStory sets removed for status: removed and only for it"
+          - trace gives no GAP for a removed AC
+          - acStatus leaves a removed AC out
+          - "S-8.1: the page contains the tables rendered from the manifest, exactly"
+          - "S-8.1: every file the manifest lists per depth is in the rendered tables"
+      - path: test/integration/layout.test.ts
+        sha256: 88ad59e095f31ac671fd056d94aed4fc408f0b380590f0d0b7306a9cf21eff5c
+        tests:
+          - "S-2.1: names the missing design.md and the stray notes.md, ok false"
+          - "S-2.2: status closed is not allowed and the problem names the layout findings"
+          - "S-2.3: MDO-0001, version 1 with execution.md and progress.yml at its root, is ok"
+          - "S-2.3 and D1: MDO-0001 reports depth lite (its documents say depth: lite), not standard"
+  - task: T2
+    files:
+      - path: test/integration/lite-spec.test.ts
+        sha256: 77f861fced352eb6def5aa1023bb1d52985e820caa76b9ee5e569021fd7cd8f9
+        tests:
+          - requirements, design and inline tasks are read from spec.md; trace and tasks work the same
+          - the checkpoint ticks the task inside spec.md
+          - more than 3 inline tasks go to tasks.md; the task rules apply inline too
+          - "S-1.1: one task is in tasks.md, and spec.md has no ## Tasks"
+          - "S-1.2: 3 and 4 tasks give the same file set, and tasks are never read from spec.md"
+          - 'S-1.2/C2: with 4 tasks the check never says "more than 3 go to tasks.md"'
+          - "S-1.1: before the tasks step, the tasks path is tasks.md, not spec.md"
+          - "S-1.2/C2: four tasks written inline in spec.md are not read as the spec tasks"
+          - "S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone"
+          - "S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue"
+          - "S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone (regression pin)"
+          - "S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue (regression pin)"
+          - "S-1.2/C2: approve tasks with no tasks.md refuses, and never approves tasks written inline in spec.md"
+      - path: test/unit/content.test.ts
+        sha256: d9f6fdc5c70221cb129385af0fd54581bee268785006130facc950bf6e57848d
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-1.2: no command or lite rule decides where tasks go by how many there are"
+          - "S-1.2/C2: the spec template has no ## Tasks, and the tasks step writes tasks.md at every depth"
+          - "S-1.3: specify writes quickstart.md only for visible behavior and data-model.md only for data changes"
+          - "S-1.3/C1: neither file is conditioned on the number of tasks, requirements or scenarios"
+          - "AC-1: a story rendered from the template starts at layout version 2"
+          - "S-1.2: the tasks command warns on an open version 1 spec, does not convert it, and never writes tasks in spec.md"
+      - path: test/unit/layout.test.ts
+        sha256: 6fedde2ebf7fa11e49dd125a3e2e86afd3bae3632cea1f157b3e54d02463e6dc
+        tests:
+          - "S-2.3/C1: version 1 manifest lists the files version 1 allowed, including root execution.md and progress.yml"
+          - "S-2.3/C1: version 1 lite with requirements.md + design.md (depth: lite) is lite and ok (D1)"
+          - "D1: with no depth: in any document, lite is the fallback only when spec.md exists"
+          - "S-2.3/C1: the version is the story schema_version, never inferred from the files present"
+          - "S-2.3/C1: a schema_version other than 1 or 2 is an error"
+          - "S-2.1: a version 2 standard input names the missing design.md and the stray notes.md"
+          - "S-2.3/C1: the real MDO-0001 folder, version 1 lite, is ok"
+          - "S-2.3/C1: the same files with the story at schema_version 2 do not pass"
+          - a schema_version of 3 is an error
+          - "a separate layout: key does not change the version"
+          - "parseStory sets removed for status: removed and only for it"
+          - trace gives no GAP for a removed AC
+          - acStatus leaves a removed AC out
+          - "S-8.1: the page contains the tables rendered from the manifest, exactly"
+          - "S-8.1: every file the manifest lists per depth is in the rendered tables"
+          - "S-8.1: the README links the page"
+          - version 2 always has tasks.md, version 1 does not; any other value is no known layout
+  - task: T3
+    files:
+      - path: test/integration/state-log.test.ts
+        sha256: 68b71ab02f0de6bbd27167a3258d5898db0a8f1640805eadf9f720e375bcda06
+        tests:
+          - "S-3.5: run status without a target lists approvals by date among the execution rows"
+          - "S-3.5: implement-summary shows the same timeline"
+          - "S-3.5/C1: showing the timeline writes nothing, and approving writes no row into execution.md"
+          - approve writes the approvals section of state.yml and no approvals.yml
+          - run next --shown records the shown hashes in state.yml and no approvals.yml
+          - checkpoint writes the progress section, keeps the approvals, and readSpec still reads the progress
+          - "(regression pin) a version 1 spec still writes approvals.yml and no state.yml: older specs are read as they are"
+          - cut estimates go to the cut_estimates section, and Kaizen reads them from there
+          - the request and the baseline go to state.yml; start.yml and baseline.md are not written
+          - a new entry has cumulative per role and no per-model lines
+          - (regression pin) the cross-spec baseline gives 0.5 from a version 1 record with model lines and from a version 2 record without
+          - a story changed after its approval is reported by run next (hashes read from state.yml)
+          - approve --by-running asks about a document changed after the summary was shown (shown row read from state.yml)
+          - cutEstimateRows on a version 2 spec with a bad approval row surfaces the schema error
+          - a version 2 record followed by a quick entry counts only the new model spend (0.5, not the whole session)
+      - path: test/unit/state.test.ts
+        sha256: bdfb0e78f5295de245b75a0f6205c7f1dccc8a7bb97b3f24a334b13c75320fab
+        tests:
+          - an absent or empty file reads as no approvals and no cut estimates
+          - approvals and progress written to the file read back unchanged
+          - the start request and the baseline survive a round trip beside the other sections
+          - a row that is not a valid approval is rejected, not dropped
+      - path: test/unit/layout-version.test.ts
+        sha256: 1728ab31dfeab0100e66312389f0344ee6c00a0c3e1d7aafa69ed59dc347b000
+        tests:
+          - the story template names CURRENT_LAYOUT_VERSION, the last known layout version
+  - task: T4
+    files:
+      - path: test/integration/log-v2.test.ts
+        sha256: 016d1286ac235de63c4340f680233b5543999cf1226be6f5e314662b0ed05df7
+        tests:
+          - "S-3.1: after attempts, gates, reviews and premises, git ls-files _log lists exactly the six files, in at most 1000 lines"
+          - "S-3.1 (regression pin): a version 1 spec still keeps its per-attempt files in _log/"
+          - "S-3.2: the pack and the full gate output are written under .mandao/cache/MDO-0001/"
+          - "S-3.2/C1: git status does not show the cache, and the managed ignore block lists it"
+          - "S-3.3: trace, verify-plan, implement-summary, kaizen, kaizen-compare and next"
+          - "S-3.3/C2: the integrity check sees a hand edit of a log on both versions, and nothing before it"
+          - "S-3.4: reviews.md has the FAIL verdict and findings, gates.md the failing output of the task files, state.yml the approval, premises.md the exit and excerpt"
+          - "S-3.4/C3: the readers find a recorded premise in premises.md, so a premise run is not lost"
+          - "logs.level: the default summary deletes the cache at close, full keeps it, and neither commits it"
+          - "S-3.1: every task commit touches only the six files in _log/, and the committed _log is at most 1000 lines"
+          - "S-3.2: a pack per attempt, the full 10,000-line gate output and the mutation are in the cache, none in _log/"
+          - "S-3.1: the mutation is a MUTANT row in execution.md and its evidence path points into the cache"
+          - "S-3.4: premises.md keeps the exit code and at most 20 lines of a long probe output"
+          - "S-3.4: a not-installed gate is named once per attempt in gates.md, with no output block"
+          - 'S-3.1: recordFullRun lands in "## Full runs" of execution.md and adds no file to _log/'
+          - "S-3.3: a version 1 spec still gets full-runs.md"
+          - close-summary --closed with id %s deletes nothing outside the cache
+          - a story id that is a path writes no log or hash outside .mandao/cache/
+      - path: test/unit/log-cache.test.ts
+        sha256: 49c8669b52f1660470ade0c75f77189a4a5173c0b24470d90624e041e145b0f7
+        tests:
+          - a valid id %s gives .mandao/cache/%s
+          - the story id %s is refused
+          - "the folder-name fallback is validated the same way: a name that is not a story id is refused"
+          - the folder-name fallback accepts a folder that starts with a story id
+          - dropLogCache with the story id %s refuses, and the config and files survive
+          - dropLogCache removes only the spec cache folder, not its siblings or .mandao/
+          - a log write for a spec whose id is a path writes no integrity file outside .mandao/cache/
+          - "schema_version: %s routes both to the cache: %s"
+  - task: T5
+    files:
+      - path: test/unit/release.test.ts
+        sha256: 772f2629be4cf269df6a30368309e1015aedbead6a5ebac21d831f77c087c03d
+        tests:
+          - met needs every covering task committed and verify PASS; otherwise partial or pending
+          - impacts are the bullet items of the design sections, without comments or "none"
+          - first publication shows a preview; the same payload is unchanged; new content is an update
+      - path: test/integration/spec-log.test.ts
+        sha256: a0942889b08907c9c2dea730a850af6a563ce1cb4d87a7dd02e7f254a1450656
+        tests:
+          - release-status, kaizen and kaizen-compare give the same answers with the log in the root or in _log/
+          - a new spec writes its log in _log/; an older spec keeps writing in the root, never split
+          - checkpoint writes to _log/ once the spec has moved
+          - close-summary writes the links itself, only to documents that exist
+      - path: test/unit/content.test.ts
+        sha256: 5f75161f2881bf7e2ffdf875c33159b4edad4f983c8acb81fb4064f2cd0fb6f2
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-1.2: no command or lite rule decides where tasks go by how many there are"
+          - "S-1.2/C2: the spec template has no ## Tasks, and the tasks step writes tasks.md at every depth"
+          - "S-1.3: specify writes quickstart.md only for visible behavior and data-model.md only for data changes"
+          - "S-1.3/C1: neither file is conditioned on the number of tasks, requirements or scenarios"
+          - "S-1.2: the tasks command warns on an open version 1 spec, does not convert it, and never writes tasks in spec.md"
+          - "AC-1: a story rendered from the template starts at layout version 2"
+          - "S-4.2: with business es and technical en, the close command writes For the PO in es and For developers in en"
+          - "S-4.2/C1: the languages come from the configuration, not fixed in the text"
+          - "S-4.2: the template has the five sections in order and names each prose language by its setting"
+          - "S-4.3/C2: the template and the command seed no empty field and no `—` placeholder"
+          - "AC-4: the close command writes the CHANGELOG line and the lessons, not docs/releases or docs/kaizen per spec"
+          - 'AC-4: spec-docs.md no longer says close-summary.md is the "generated record and links"'
+      - path: test/integration/close.test.ts
+        sha256: 74a3d942c33ddd93244127cca369df9f888fa9e656a9889a61a022ac14fca615
+        tests:
+          - "bugs after merge: fix commits that reference the spec, after it closed"
+          - "gitflow: the release branch that contains every commit of the spec"
+          - close-summary keeps real ISO timestamps as text across a round trip
+          - "close-summary is idempotent: an environment or a publication is recorded once and updated"
+          - derives the implemented graph from the spec commits and compares it by identity
+          - "mandao run kaizen has sessions: pauses, turns per task, verify, close, after tasks and the missing sessions"
+          - after mandao sync the close command carries the step and the Kaizen template has a Sessions section
+          - "S-4.1: the summary has the five sections, CHANGELOG has one line, and no per-spec release or kaizen document exists"
+          - "S-4.1/C2: the summary points to no docs/releases or docs/kaizen file"
+          - "S-4.3: with no environment and no publication, no `—` field and no empty section is written"
+          - "S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line"
+          - "AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases"
+          - "S-4.4: the lead written between the title and Outcome survives a first and a second --closed"
+  - task: T6
+    files:
+      - path: test/integration/close-commit.test.ts
+        sha256: f4ad18bca7e196e4f2530c0295eef160ee868165cfe34ffec1c7264abc8ec7cb
+        tests:
+          - "S-5.1: one commit holds the spec, the changelog line, the applied edit, the regenerated files and the lock"
+          - "S-5.2: an unrecorded change to src/cli/start.ts is not committed"
+          - "S-5.2/C1: the result names the file it left out"
+      - path: test/integration/mdo-0005-defects.test.ts
+        sha256: 23527528ee84ee75b287a72823578afa58bd9c2a48d9dc58b14bbfd436e9380f
+        tests:
+          - free text that names no model is not a claim; the same model in other words is not a mismatch
+          - "a record never takes its identity from the model: claims are compared, cells come from agent files"
+          - the quick-log review cell comes from the reviewer agent file, whatever the reviewer said
+          - every CLI option that records who did a step takes an agent (resolved from its file) or is a compared claim
+          - no command or persona asks the model to type a model name into a record
+          - declared kinds the diff contradicts are issues; without a kind the diff decides
+          - mandao run commit refuses a kind the diff contradicts and commits a test-only task as ✅ test
+          - x
+          - mandao run tasks reports a task without a kind
+          - FAIL without --reason is refused; with it the row says why
+          - close of a version 2 spec commits the changelog and lessons, not per-spec release or Kaizen documents
+          - close commits release docs, Kaizen, constitution and changed module guides with the spec; nothing else (version 1)
+          - specify and clarify get fixed, unambiguous subjects; an unknown step is refused
+  - task: T7
+    files:
+      - path: test/integration/close.test.ts
+        sha256: 20e8387201f6134e03bb9db3cae261afbf614dca0a8f81142a7334d10acc76ac
+        tests:
+          - "bugs after merge: fix commits that reference the spec, after it closed"
+          - "gitflow: the release branch that contains every commit of the spec"
+          - close-summary keeps real ISO timestamps as text across a round trip
+          - "close-summary is idempotent: an environment or a publication is recorded once and updated"
+          - derives the implemented graph from the spec commits and compares it by identity
+          - "mandao run kaizen has sessions: pauses, turns per task, verify, close, after tasks and the missing sessions"
+          - after mandao sync the close command carries the step and the Kaizen template has a Sessions section
+          - "S-4.1: the summary has the five sections, CHANGELOG has one line, and no per-spec release or kaizen document exists"
+          - "S-4.1/C2: the summary points to no docs/releases or docs/kaizen file"
+          - "S-4.3: with no environment and no publication, no `—` field and no empty section is written"
+          - "S-4.4: the lead written between the title and Outcome survives a first and a second --closed"
+          - "S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line"
+          - "AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases"
+          - "S-6.1: a lite spec reports applicable false with the reason, exits 0, and stamps no graph"
+          - "S-6.2: a standard spec with a stamped graph reports its drift as today"
+          - "S-6.2/C1: a standard spec without a stamp still fails"
+      - path: test/integration/close-drift.test.ts
+        sha256: b0bbaf8fcd8fa25254c5f906a0e97fc0ae303407904f113bd6e0d9759392d288
+        tests:
+          - "S-6.1: a lite spec reports applicable false with the reason, exits 0, and stamps no graph"
+          - "S-6.2: a standard spec with a stamped graph reports its drift as today"
+          - "S-6.2/C1: a standard spec without a stamp still fails"
+pending_commits: []

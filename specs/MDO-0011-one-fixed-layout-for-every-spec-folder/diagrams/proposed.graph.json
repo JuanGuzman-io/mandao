@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    { "id": "src/spec", "label": "layout manifest, state.yml, timeline, close summary", "kind": "module", "role": "changed" },
+    { "id": "src/scripts", "label": "logPath v1/v2 and cache, gates, publish", "kind": "module", "role": "changed" },
+    { "id": "src/cli", "label": "run layout, status timeline, close-summary, commit-spec, diagram-drift", "kind": "module", "role": "changed" },
+    { "id": "src/writer", "label": "integrity hashes in the cache", "kind": "module", "role": "changed" },
+    { "id": "src/engine", "label": "managed ignore block", "kind": "module", "role": "changed" },
+    { "id": "src/schemas", "label": "story schema_version 1|2, logs.level", "kind": "module", "role": "changed" },
+    { "id": "core/commands", "label": "specify, tasks, implement, close", "kind": "module", "role": "changed" },
+    { "id": "mandao run layout", "label": "layout check JSON", "kind": "contract", "role": "changed" }
+  ],
+  "edges": [
+    { "from": "core/commands", "to": "src/cli" },
+    { "from": "src/cli", "to": "mandao run layout" },
+    { "from": "src/cli", "to": "src/spec" },
+    { "from": "src/cli", "to": "src/scripts" },
+    { "from": "src/scripts", "to": "src/spec" },
+    { "from": "src/scripts", "to": "src/writer" },
+    { "from": "src/cli", "to": "src/engine" },
+    { "from": "src/spec", "to": "src/schemas" }
+  ]
+}

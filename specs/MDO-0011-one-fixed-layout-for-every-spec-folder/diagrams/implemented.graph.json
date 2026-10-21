@@ -1,0 +1,129 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "src/cli",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/engine",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/schemas",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/scripts",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/spec",
+      "kind": "module",
+      "role": "changed"
+    },
+    {
+      "id": "src/writer",
+      "kind": "module",
+      "role": "changed"
+    }
+  ],
+  "edges": [
+    {
+      "from": "src/engine",
+      "to": "src/writer"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/adapters"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/scripts"
+    },
+    {
+      "from": "src/engine",
+      "to": "src/scripts"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/spec"
+    },
+    {
+      "from": "src/scripts",
+      "to": "src/spec"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/writer"
+    },
+    {
+      "from": "src/scripts",
+      "to": "src/writer"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/engine"
+    },
+    {
+      "from": "src/spec",
+      "to": "src/engine"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/models"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/util"
+    },
+    {
+      "from": "src/writer",
+      "to": "src/util"
+    },
+    {
+      "from": "src/scripts",
+      "to": "src/schemas"
+    },
+    {
+      "from": "src/spec",
+      "to": "src/schemas"
+    },
+    {
+      "from": "src/writer",
+      "to": "src/schemas"
+    },
+    {
+      "from": "src/engine",
+      "to": "src/adapters"
+    },
+    {
+      "from": "src/cli",
+      "to": "src/schemas"
+    },
+    {
+      "from": "src/engine",
+      "to": "src/schemas"
+    },
+    {
+      "from": "src/cli",
+      "to": "."
+    },
+    {
+      "from": "src/schemas",
+      "to": "."
+    },
+    {
+      "from": "src/scripts",
+      "to": "."
+    },
+    {
+      "from": "src/spec",
+      "to": "."
+    }
+  ]
+}

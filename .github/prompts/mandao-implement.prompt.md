@@ -98,8 +98,9 @@ their short JSON, and decide; never paste their full output into the conversatio
      If it fails (not logged in, no verdict), fall back to the next option and say why.
    - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>` and
      the Reviewer's **whole answer** on stdin, `--review - <<'EOF'` … `EOF`. The script checks its
-     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding,
-     and keeps the answer in `_log/reviews/`.
+     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding
+     (counting the tagged findings of the answer's `Findings` section, or every tagged line when it has
+     none), and keeps the answer in `_log/reviews/`.
    With neither, review in your own context: `--reviewer self`, which the script records as `reduced
    independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**

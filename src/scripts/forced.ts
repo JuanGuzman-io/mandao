@@ -1,11 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import type { Config } from '../schemas/index.js';
-import { progressSchema } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { Budget, BudgetKind } from './resources.js';
-import { logPath } from './spec-log.js';
+import { logPath, readProgress, specLogInCache } from './spec-log.js';
 
 /** The CLI's own log: one JSON line per event worth keeping. Machine-specific, git-ignored. */
 export const CLI_LOG = '.mandao/cli.log';
@@ -42,10 +40,9 @@ export function activeSpecDir(root: string, config: Config): string | undefined 
   const specs = join(root, config.paths.specs);
   if (!existsSync(specs)) return undefined;
   const active = readdirSync(specs).filter((d) => {
-    const file = logPath(join(specs, d), 'progress.yml');
-    if (!existsSync(file)) return false;
-    const p = progressSchema.safeParse(parseYaml(readFileSync(file, 'utf8')));
-    return p.success && p.data.current !== null;
+    if (!existsSync(logPath(join(specs, d), 'progress.yml'))) return false;
+    const p = readProgress(join(specs, d)).progress;
+    return p !== undefined && p.current !== null;
   });
   return active.length === 1 ? join(specs, active[0]!) : undefined;
 }
@@ -64,26 +61,41 @@ export function recordForced(root: string, run: ForcedRun, specDir?: string): vo
   writeText(file, appendToSection(text, line));
 }
 
-/** Adds a line at the end of the `## Forced runs` section, creating it at the end of the file. */
-function appendToSection(text: string, line: string): string {
-  const start = text.indexOf(SECTION);
-  if (start < 0)
-    return `${text.trimEnd()}\n\n${SECTION}\n<!-- Runs a resource budget deferred and someone forced (ADR 0024). -->\n\n${line}\n`;
-  const next = text.indexOf('\n## ', start + SECTION.length);
+/** A section of `execution.md` outside the verdict table: its heading and the comment under it. */
+interface Section {
+  heading: string;
+  intro: string;
+}
+
+const FORCED: Section = { heading: SECTION, intro: '<!-- Runs a resource budget deferred and someone forced (ADR 0024). -->' };
+const FULL_RUNS: Section = { heading: '## Full runs', intro: '<!-- Full-suite runs outside CI, with their reason (MDO-0007). -->' };
+
+/** Adds a line at the end of a section of `execution.md` (`## Forced runs` by default), creating it at the end of the file. */
+function appendToSection(text: string, line: string, section: Section = FORCED): string {
+  const start = text.indexOf(section.heading);
+  if (start < 0) return `${text.trimEnd()}\n\n${section.heading}\n${section.intro}\n\n${line}\n`;
+  const next = text.indexOf('\n## ', start + section.heading.length);
   const end = next < 0 ? text.length : next;
   return `${text.slice(0, end).trimEnd()}\n${line}\n${next < 0 ? '' : `\n${text.slice(next + 1)}`}`;
 }
 
 /**
  * A full-suite run outside CI (`mandao run tests --full --reason …`): always in the CLI log, and in the
- * active spec's `_log/full-runs.md` with its reason, so Kaizen and the Reviewer see it (MDO-0007).
+ * active spec's `_log/full-runs.md` with its reason, so Kaizen and the Reviewer see it (MDO-0007). A
+ * version 2 spec keeps them in the `## Full runs` section of `execution.md`, beside the forced runs.
  */
 export function recordFullRun(root: string, run: { at: string; project: string; reason: string; status: string }, specDir?: string): void {
   const log = join(root, CLI_LOG);
   const before = existsSync(log) ? readFileSync(log, 'utf8') : '';
   writeText(log, `${before}${JSON.stringify({ event: 'full-run', ...run })}\n`);
   if (!specDir) return;
+  const line = `- ${run.at} · ${run.project} · ${run.status} · ${run.reason}`;
+  if (specLogInCache(specDir)) {
+    const execution = logPath(specDir, 'execution.md');
+    writeText(execution, appendToSection(existsSync(execution) ? readFileSync(execution, 'utf8') : '', line, FULL_RUNS));
+    return;
+  }
   const file = logPath(specDir, 'full-runs.md');
   const text = existsSync(file) ? readFileSync(file, 'utf8') : '# Full-suite runs outside CI\n\n';
-  writeText(file, `${text}- ${run.at} · ${run.project} · ${run.status} · ${run.reason}\n`);
+  writeText(file, `${text}${line}\n`);
 }

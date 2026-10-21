@@ -18,3 +18,15 @@ Applies the principles in `spec-docs.md`.
 - **Technical notes:** what was built per project and module, with the commits found by their trailers;
   decisions and pivots; contract changes; the built diagram against the approved one, explaining every
   node or edge `mandao run diagram-drift` reports; how to test; links.
+
+## Version 2: one document
+
+A version 2 spec's close is `close-summary.md` (template `close/close-summary.md`), and the sections above
+become its sections:
+- `## For the PO` follows the release-notes rules, in `language.business`.
+- `## For developers` follows the technical-notes rules, in `language.technical`.
+- `## Kaizen` follows the Kaizen rules, in `language.technical`; each approved lesson is also one line in
+  `docs/kaizen/lessons.md`.
+- `## Outcome` and `## Delivery` are written by `mandao run close-summary`, never by hand.
+- A section or field with nothing to say is left out: no empty section, no `—`.
+- Nothing is copied to `docs/releases/<ID>/` or `docs/kaizen/<ID>.md`.

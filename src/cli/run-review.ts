@@ -8,7 +8,7 @@ import { repoRoot } from '../scripts/commits.js';
 import { type Identity, identityCell } from '../scripts/identity.js';
 import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
+import { logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, securityBlockers, taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
@@ -46,6 +46,15 @@ function reviewRow(
   };
 }
 
+/** The review's whole answer: `_log/reviews/Tn-k-<via>.md`, or (version 2) its section of `_log/reviews.md`. */
+function keepReview(spec: SpecFolder, task: string, via: string, output: string): string {
+  const attempt = taskAttempt(spec.execution, task);
+  if (specLogInCache(spec.dir)) return writeLogSection(spec.dir, 'reviews.md', `${task} — attempt ${attempt} (via ${via})`, output);
+  const file = join(logPath(spec.dir, 'reviews'), `${task}-${attempt}-${via}.md`);
+  writeText(file, output);
+  return file;
+}
+
 interface ReviewOptions {
   via: string;
   gates: string;
@@ -65,8 +74,7 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
     readFileSync(opts.gates, 'utf8'),
   );
   const r = runReview(opts.via, ctx.root(), reviewer, prompt);
-  const file = join(logPath(spec.dir, 'reviews'), `${task}-${taskAttempt(spec.execution, task)}-${opts.via}.md`);
-  writeText(file, r.output);
+  const file = keepReview(spec, task, opts.via, r.output);
   const rel = relative(ctx.root(), file);
   // A PASS with an open high-severity security finding is recorded as a FAIL (MDO-0008).
   const blockers = r.verdict === 'PASS' ? securityBlockers(r.output) : [];

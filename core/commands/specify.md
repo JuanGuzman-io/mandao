@@ -2,7 +2,7 @@
 schema_version: 1
 id: specify
 title: Specify
-description: "Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story, spec and tasks in one session."
+description: "Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session."
 status: stable
 flow: { after: [story], next: [clarify, tasks, implement] }
 arguments:
@@ -20,8 +20,8 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: standard and full }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md", description: standard and full }
-  - { path: "{{paths.specs}}/<ID>-<slug>/spec.md", description: "lite: requirements, design and up to 3 tasks" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: only when the spec has behavior a user or PO can see }
+  - { path: "{{paths.specs}}/<ID>-<slug>/spec.md", description: "lite: requirements and design" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: "only when the spec has behavior a user or PO can see" }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
 capabilities: [read, search, edit, shell, mcp]
 templates:
@@ -74,7 +74,7 @@ in the output which skill was missing.
 ## 1. Resolve the spec
 
 1. **From `mandao start`** (the default): the session runs in the spec's worktree and
-   `{{paths.specs}}/<ID>-<slug>/_log/start.yml` holds the request (id, title, type, lane). Use it; the
+   the `start` section of `{{paths.specs}}/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the
    branch and worktree already exist and are set up, so skip the worktree step below.
 2. **From a story**: if `{{arg:ref}}` names a folder in `{{paths.specs}}/` with `story.md`, inherit its
    frontmatter (tracker, type, id, projects). Ask nothing.
@@ -173,7 +173,7 @@ refactors or internal infrastructure.
 
 ## 5c. data-model.md (only when data changes)
 
-When the spec adds or changes entities, fields, relationships or states, write `data-model.md` from
+When the spec adds or changes entities, fields, relationships or states (never by how many tasks, requirements or scenarios there are), write `data-model.md` from
 `{{template:spec/data-model.md}}` following `{{template:rules/doc-data-model.md}}`.
 
 ## 6. Consistency Check

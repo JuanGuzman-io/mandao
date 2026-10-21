@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import type { Config, ModelPrice } from '../schemas/index.js';
 import { writeText } from '../writer/files.js';
-import { logPath } from './spec-log.js';
+import { logPath, specKeepsState, updateState } from './spec-log.js';
 
 /**
  * When the Leader should end the session at a task boundary and resume from the checkpoint in a new one
@@ -165,14 +165,31 @@ export function parseCutEstimates(text: string): CutEstimateRow[] {
 const CUTS_HEADER =
   '# Session cut estimates (ADR 0038)\n\n| At | Task | Context | Base | Turns left | Savings (USD) | Decision |\n|---|---|---|---|---|---|---|\n';
 
-/** Every boundary estimate goes to `_log/session-cuts.md`, so Kaizen can recalibrate the constants. */
+/**
+ * Every boundary estimate goes to the `cut_estimates` section of `state.yml` (version 2, C-3) or to
+ * `_log/session-cuts.md` (version 1), so Kaizen can recalibrate the constants.
+ */
 export function recordCutEstimate(
   specDir: string,
   row: { at: string; task: string; session: SessionContext; tasksLeft: number; advice: CutAdvice; decision: string },
 ): void {
+  const turns = TURNS_PER_TASK * row.tasksLeft + TURNS_AFTER_TASKS;
+  const base = row.session.first + RELOAD_TOKENS;
+  if (specKeepsState(specDir)) {
+    const estimate = {
+      at: row.at,
+      task: row.task,
+      context: row.session.last,
+      base,
+      turns_left: turns,
+      savings: Math.round(row.advice.savings * 100) / 100,
+      decision: row.decision,
+    };
+    updateState(specDir, (s) => ({ ...s, cut_estimates: [...s.cut_estimates, estimate] }));
+    return;
+  }
   const file = logPath(specDir, 'session-cuts.md');
   const before = existsSync(file) ? readFileSync(file, 'utf8') : CUTS_HEADER;
-  const turns = TURNS_PER_TASK * row.tasksLeft + TURNS_AFTER_TASKS;
-  const cells = [row.at, row.task, row.session.last, row.session.first + RELOAD_TOKENS, turns, row.advice.savings.toFixed(2), row.decision];
+  const cells = [row.at, row.task, row.session.last, base, turns, row.advice.savings.toFixed(2), row.decision];
   writeText(file, `${before}| ${cells.join(' | ')} |\n`);
 }

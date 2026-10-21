@@ -9,8 +9,9 @@ import type { Config, HarnessId } from '../schemas/index.js';
 import { excerpt } from '../scripts/gates.js';
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { proposeSpec, type SpecProposal } from '../scripts/spec.js';
-import { LOG_DIR } from '../scripts/spec-log.js';
+import { keepsStateFile, LOG_DIR, STATE_FILE, updateState } from '../scripts/spec-log.js';
 import { dependencyInstalls, includePlan } from '../scripts/worktree-setup.js';
+import { CURRENT_LAYOUT_VERSION } from '../spec/layout.js';
 import { onPath } from '../util/which.js';
 import { copyInto, writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
@@ -120,25 +121,36 @@ async function baselineRuns(root: string, config: Config, worktree: string): Pro
 }
 
 /** Cheap gates on the clean worktree, recorded so later failures that were already there are not blamed on the spec. */
-async function baseline(root: string, config: Config, worktree: string, file: string): Promise<Step> {
+async function baseline(root: string, config: Config, worktree: string, log: SpecLog): Promise<Step> {
   const runs = await baselineRuns(root, config, worktree);
   if (!runs.length) return { step: 'baseline', status: 'skipped', detail: 'no lint, typecheck or build gate configured' };
   const red = runs.filter((r) => r.run.status === 'FAIL' || r.run.status === 'TIMEOUT');
-  writeText(
-    file,
-    [
-      '# Baseline',
-      '',
-      `${red.length ? "Red before any change: these failures are not the spec's." : 'Green before any change.'} The test baseline is the base branch's last CI result.`,
-      '',
-      '| Project | Gate | Result |',
-      '|---|---|---|',
-      ...runs.map((r) => `| ${r.project} | ${r.gate} | ${r.run.status} |`),
-      '',
-      ...red.map((r) => `### ${r.project} — ${r.gate}\n\n\`\`\`\n${excerpt(r.run.output, 30)}\n\`\`\``),
-      '',
-    ].join('\n'),
-  );
+  const verdict = `${red.length ? "Red before any change: these failures are not the spec's." : 'Green before any change.'} The test baseline is the base branch's last CI result.`;
+  const file = log.state ? join(log.dir, STATE_FILE) : join(log.dir, `baseline${log.suffix}.md`);
+  if (log.state) {
+    const value = {
+      text: verdict,
+      at: new Date().toISOString(),
+      gates: runs.map((r) => ({ project: r.project, gate: r.gate, result: r.run.status })),
+      failures: red.map((r) => ({ project: r.project, gate: r.gate, output: excerpt(r.run.output, 30) })),
+    };
+    updateState(log.specDir, (s) => ({ ...s, baseline: value }));
+  } else
+    writeText(
+      file,
+      [
+        '# Baseline',
+        '',
+        verdict,
+        '',
+        '| Project | Gate | Result |',
+        '|---|---|---|',
+        ...runs.map((r) => `| ${r.project} | ${r.gate} | ${r.run.status} |`),
+        '',
+        ...red.map((r) => `### ${r.project} — ${r.gate}\n\n\`\`\`\n${excerpt(r.run.output, 30)}\n\`\`\``),
+        '',
+      ].join('\n'),
+    );
   return {
     step: 'baseline',
     status: red.length ? 'warning' : 'done',
@@ -165,9 +177,21 @@ function copyEnvFiles(root: string, worktree: string): Step[] {
   ];
 }
 
-/** Where the spec's log lives in the worktree, and the name suffix quick changes use. */
-function logOf(config: Config, p: SpecProposal, quick?: boolean) {
-  return { dir: join(p.worktree, quick ? join(config.paths.specs, 'quick') : p.folder, LOG_DIR), suffix: quick ? `-${p.slug}` : '' };
+/** A new spec starts at the current layout version; quick changes keep their own files in the quick log. */
+const NEW_SPEC_KEEPS_STATE = keepsStateFile(CURRENT_LAYOUT_VERSION);
+
+interface SpecLog {
+  specDir: string;
+  dir: string;
+  suffix: string;
+  /** The request and the baseline go to sections of `_log/state.yml` instead of their own files. */
+  state: boolean;
+}
+
+/** Where the spec's log lives in the worktree, the name suffix quick changes use, and whether it keeps `state.yml`. */
+function logOf(config: Config, p: SpecProposal, quick?: boolean): SpecLog {
+  const specDir = join(p.worktree, quick ? join(config.paths.specs, 'quick') : p.folder);
+  return { specDir, dir: join(specDir, LOG_DIR), suffix: quick ? `-${p.slug}` : '', state: !quick && NEW_SPEC_KEEPS_STATE };
 }
 
 /** §14.5 setup, in order: worktree, env files, dependencies, project hooks, graph cache, baseline. */
@@ -177,13 +201,19 @@ async function setUp(root: string, config: Config, p: SpecProposal, o: StartOpti
   if (o.install) steps.push(...(await installDependencies(root, config, wt)));
   steps.push(...(await projectSetup(root, config, wt)), graphCache(root, wt));
   const log = logOf(config, p, o.quick);
-  if (o.baseline) steps.push(await baseline(root, config, wt, join(log.dir, `baseline${log.suffix}.md`)));
+  if (o.baseline) steps.push(await baseline(root, config, wt, log));
   return steps;
 }
 
 /** The request waits for the first command in the spec's log: specify and quick read it. */
 function recordRequest(config: Config, p: SpecProposal, title: string, o: StartOptions) {
   const log = logOf(config, p, o.quick);
+  const lane = o.hotfix ? 'hotfix' : 'normal';
+  const created_at = new Date().toISOString();
+  if (log.state) {
+    const start = { id: p.id, title, type: o.type, lane, branch: p.branch, base: p.base, created_at };
+    return updateState(log.specDir, (s) => ({ ...s, start }));
+  }
   writeText(
     join(log.dir, `start${log.suffix}.yml`),
     [
@@ -191,10 +221,10 @@ function recordRequest(config: Config, p: SpecProposal, title: string, o: StartO
       `id: ${p.id}`,
       `title: ${JSON.stringify(title)}`,
       `type: ${o.type}`,
-      `lane: ${o.hotfix ? 'hotfix' : 'normal'}`,
+      `lane: ${lane}`,
       `branch: ${p.branch}`,
       `base: ${p.base}`,
-      `created_at: ${new Date().toISOString()}`,
+      `created_at: ${created_at}`,
       '',
     ].join('\n'),
   );

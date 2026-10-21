@@ -42,21 +42,23 @@ export function acStatus(
   committed: Set<string>,
   verify: Map<string, string>,
 ): AcRelease[] {
-  return story.acs.map((ac) => {
-    const covering = tasks.filter((t) => t.ac.some((a) => a === ac.id || a.startsWith(`${ac.id}/`)));
-    const done = covering.filter((t) => finished(t, rows, committed));
-    const verified = verify.get(ac.id);
-    const base = { ref: ac.id, critical: ac.critical };
-    if (!covering.length) return { ...base, status: 'pending' as const, why: 'no task covers it' };
-    if (!done.length) return { ...base, status: 'pending' as const, why: `${covering.map((t) => t.id).join(', ')} not finished` };
-    if (done.length < covering.length) {
-      const open = covering.filter((t) => !done.includes(t)).map((t) => t.id);
-      return { ...base, status: 'partial' as const, why: `${open.join(', ')} not finished` };
-    }
-    if (verified !== 'PASS')
-      return { ...base, status: 'partial' as const, why: verified ? `verify: ${verified}` : 'not in verify-report.md' };
-    return { ...base, status: 'met' as const, why: `${done.map((t) => t.id).join(', ')} committed; verify PASS` };
-  });
+  return story.acs
+    .filter((ac) => !ac.removed)
+    .map((ac) => {
+      const covering = tasks.filter((t) => t.ac.some((a) => a === ac.id || a.startsWith(`${ac.id}/`)));
+      const done = covering.filter((t) => finished(t, rows, committed));
+      const verified = verify.get(ac.id);
+      const base = { ref: ac.id, critical: ac.critical };
+      if (!covering.length) return { ...base, status: 'pending' as const, why: 'no task covers it' };
+      if (!done.length) return { ...base, status: 'pending' as const, why: `${covering.map((t) => t.id).join(', ')} not finished` };
+      if (done.length < covering.length) {
+        const open = covering.filter((t) => !done.includes(t)).map((t) => t.id);
+        return { ...base, status: 'partial' as const, why: `${open.join(', ')} not finished` };
+      }
+      if (verified !== 'PASS')
+        return { ...base, status: 'partial' as const, why: verified ? `verify: ${verified}` : 'not in verify-report.md' };
+      return { ...base, status: 'met' as const, why: `${done.map((t) => t.id).join(', ')} committed; verify PASS` };
+    });
 }
 
 /** Items proposed under a design.md section (`## Constitution Impact`, `## Product Impact`), comments removed. */

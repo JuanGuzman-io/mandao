@@ -92,7 +92,7 @@ function taskIssues(lines: string[], task: Task): string[] {
   return out;
 }
 
-/** A lite `spec.md` carries its tasks inline, up to this many; more go to `tasks.md`. */
+/** Version 1 only: a lite `spec.md` carries its tasks inline, up to this many; more go to `tasks.md`. */
 export const MAX_INLINE_TASKS = 3;
 
 /**

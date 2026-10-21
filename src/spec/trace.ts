@@ -60,10 +60,12 @@ export interface Trace {
 
 /** Every AC and edge clause of the story, as `AC-1` and `AC-1/C1`. */
 function storyRefs(story: Story): { ref: string; critical: boolean }[] {
-  return story.acs.flatMap((ac) => [
-    { ref: ac.id, critical: ac.critical },
-    ...ac.clauses.filter((c) => c.id).map((c) => ({ ref: `${ac.id}/${c.id}`, critical: ac.critical })),
-  ]);
+  return story.acs
+    .filter((ac) => !ac.removed)
+    .flatMap((ac) => [
+      { ref: ac.id, critical: ac.critical },
+      ...ac.clauses.filter((c) => c.id).map((c) => ({ ref: `${ac.id}/${c.id}`, critical: ac.critical })),
+    ]);
 }
 
 /** Every scenario and edge clause, as `S-1.1` and `S-1.1/C1`. */

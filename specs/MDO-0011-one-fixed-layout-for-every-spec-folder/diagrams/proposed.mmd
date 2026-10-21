@@ -1,0 +1,12 @@
+flowchart LR
+  cmds["core/commands<br/>specify · tasks · implement · close"]:::changed --> cli["src/cli<br/>run layout · status timeline<br/>close-summary · commit-spec · diagram-drift"]:::changed
+  cli --> layout(["mandao run layout"]):::changed
+  cli --> spec["src/spec<br/>layout manifest · state.yml · timeline · close summary"]:::changed
+  cli --> scripts["src/scripts<br/>logPath v1/v2 + cache"]:::changed
+  scripts --> spec
+  scripts --> writer["src/writer<br/>integrity in .mandao/cache"]:::changed
+  cli --> engine["src/engine<br/>managed ignore block"]:::changed
+  spec --> schemas["src/schemas<br/>story schema_version 1|2 · logs.level"]:::changed
+  scripts -. "v2: 6 files committed" .-> log[("specs/&lt;ID&gt;/_log")]
+  scripts -. "bulk, local only" .-> cache[(".mandao/cache/&lt;ID&gt;")]
+  classDef changed fill:#fde68a,stroke:#b45309

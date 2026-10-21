@@ -288,7 +288,7 @@ describe('generated support files', () => {
     expect(graphignore).toContain('dist/');
     expect(graphignore).not.toContain('AGENTS.md');
     expect(readFileSync(join(root, '.gitignore'), 'utf8')).toMatch(
-      /^node_modules\/\n\n# mandao:begin\n.*\ngraphify-out\/\n\.mandao\/run\.lock\n\.mandao\/cli\.log\n\.claude\/settings\.local\.json\n# mandao:end\n$/s,
+      /^node_modules\/\n\n# mandao:begin\n.*\ngraphify-out\/\n\.mandao\/run\.lock\n\.mandao\/cli\.log\n\.mandao\/cache\/\n\.claude\/settings\.local\.json\n# mandao:end\n$/s,
     );
     expect(readFileSync(join(root, 'src/billing/CLAUDE.md'), 'utf8')).toBe('<!-- mandao:begin -->\n@AGENTS.md\n<!-- mandao:end -->\n');
 

@@ -6,7 +6,7 @@ import type { Command } from 'commander';
 import { repoRoot } from '../scripts/commits.js';
 import { excerpt } from '../scripts/gates.js';
 import { runTests } from '../scripts/run-tests.js';
-import { docPath, logPath } from '../scripts/spec-log.js';
+import { cachePath, docPath, logPath, logSections, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { parsePremises, premiseFindings } from '../spec/index.js';
 import { ensureDir, removeScratchDir, writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
@@ -14,11 +14,30 @@ import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { loadSpec } from './spec-context.js';
 
-/** Premises with a run recorded by `mandao run premise` (`_log/premises/<Pn>.md`). */
+/** Premises with a run recorded by `mandao run premise`: `_log/premises/<Pn>.md`, or (version 2) a `## Pn — …` section of `_log/premises.md`. */
 export function recordedPremises(specDir: string): Set<string> {
+  if (specLogInCache(specDir)) return new Set([...logSections(specDir, 'premises.md').keys()].flatMap((t) => /^P\d+/.exec(t)?.[0] ?? []));
   const dir = logPath(specDir, 'premises');
   return new Set(existsSync(dir) ? readdirSync(dir).flatMap((f) => (/^(P\d+)\.md$/.exec(f)?.[1] ? [f.slice(0, -3)] : [])) : []);
 }
+
+/** Lines of a premise run's output kept in a version 2 `premises.md` (version 1 kept 40 in its own file). */
+const PREMISE_LINES = 20;
+
+/** Records a premise run where the spec keeps them; returns the file written. */
+function recordRun(specDir: string, id: string, claim: string | undefined, command: string, at: string, exit: unknown, output?: string) {
+  const facts = [`- Command: \`${command}\` (from the worktree root)`, `- Ran at: ${new Date().toISOString()} on ${at}`, `- Exit: ${exit}`];
+  if (specLogInCache(specDir)) {
+    const body = [...(claim ? [`- Claim: ${claim}`] : []), ...facts, '', '```', excerpt(output, PREMISE_LINES), '```'].join('\n');
+    return writeLogSection(specDir, 'premises.md', `${id} — run`, body);
+  }
+  const file = join(logPath(specDir, 'premises'), `${id}.md`);
+  writeText(file, [`# ${id} — run`, '', ...facts, '', '```', excerpt(output, 40), '```', ''].join('\n'));
+  return file;
+}
+
+/** Where a premise's probes and scratch folders live: the spec's log (version 1) or its local cache (version 2). */
+const premiseWorkDir = (specDir: string) => (specLogInCache(specDir) ? cachePath(specDir, 'premises') : logPath(specDir, 'premises'));
 
 /** PREMISE_UNPROVEN findings for a spec: its design (or lite spec.md) against the recorded runs. */
 export function specPremiseFindings(specDir: string) {
@@ -26,8 +45,8 @@ export function specPremiseFindings(specDir: string) {
   return premiseFindings(existsSync(design) ? readFileSync(design, 'utf8') : undefined, recordedPremises(specDir));
 }
 
-/** Where a spec's probe scripts live: inside its log, committed with the premise records. */
-export const probesDir = (specDir: string) => join(logPath(specDir, 'premises'), 'probes');
+/** Where a spec's probe scripts live: inside its log, committed with the premise records (version 2: the local cache). */
+export const probesDir = (specDir: string) => join(premiseWorkDir(specDir), 'probes');
 
 /**
  * The paths a command names that leave the worktree: absolute or `~` paths outside it, and relative
@@ -82,9 +101,10 @@ export function registerPremise(run: Command, ctx: CliContext) {
         );
       const project = config.projects[0]!;
       const budget = budgetFor(ctx.root(), config, project, 'unit', `${id} premise`, o.force, spec.dir);
-      // Temporary files the probe makes go inside the spec's log, and are removed after the run.
-      const scratch = join(logPath(spec.dir, 'premises'), 'tmp', id);
-      const home = join(logPath(spec.dir, 'premises'), 'tmp', `${id}-home`);
+      // Temporary files the probe makes go inside the spec's log (version 2: its local cache), removed after the run.
+      const work = premiseWorkDir(spec.dir);
+      const scratch = join(work, 'tmp', id);
+      const home = join(work, 'tmp', `${id}-home`);
       ensureDir(scratch);
       ensureDir(home);
       let result: Awaited<ReturnType<typeof runTests>>;
@@ -95,30 +115,15 @@ export function registerPremise(run: Command, ctx: CliContext) {
           env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch, HOME: home, USERPROFILE: home },
         });
       } finally {
-        removeScratchDir(join(logPath(spec.dir, 'premises'), 'tmp'), spec.dir);
+        removeScratchDir(join(work, 'tmp'), work);
       }
       if (result.status !== 'PASS' && result.status !== 'FAIL') {
         json({ premise: id, recorded: false, status: result.status, reason: result.reason });
         process.exitCode = 1;
         return;
       }
-      const file = join(logPath(spec.dir, 'premises'), `${id}.md`);
-      const cut = excerpt(result.output, 40);
-      writeText(
-        file,
-        [
-          `# ${id} — run`,
-          '',
-          `- Command: \`${command}\` (from the worktree root)`,
-          `- Ran at: ${new Date().toISOString()} on ${sha(cwd)}`,
-          `- Exit: ${result.exitCode}`,
-          '',
-          '```',
-          cut,
-          '```',
-          '',
-        ].join('\n'),
-      );
+      const claim = parsePremises(readFileSync(design, 'utf8')).find((p) => p.id === id)?.claim;
+      const file = recordRun(spec.dir, id, claim, command, sha(cwd), result.exitCode, result.output);
       json({
         premise: id,
         recorded: true,

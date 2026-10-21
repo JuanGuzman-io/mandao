@@ -12,7 +12,7 @@ arguments:
   - name: task
     description: "Optional task id (default: the next eligible task)"
 inputs:
-  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true, description: "spec.md § Tasks at lite depth with 3 tasks or fewer" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true, description: "every depth, including lite" }
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
 outputs:
   - { path: "(code)", description: one local commit per task after PASS }
@@ -128,8 +128,9 @@ their short JSON, and decide; never paste their full output into the conversatio
      If it fails (not logged in, no verdict), fall back to the next option and say why.
    - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>` and
      the Reviewer's **whole answer** on stdin, `--review - <<'EOF'` … `EOF`. The script checks its
-     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding,
-     and keeps the answer in `_log/reviews/`.
+     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding
+     (counting the tagged findings of the answer's `Findings` section, or every tagged line when it has
+     none), and keeps the answer in `_log/reviews/`.
 <!-- mandao:if harness=codex -->
    In Codex: the `mandao_reviewer` custom agent. If custom agents are not loaded (untrusted project),
    use `{{script:review}} … --via codex`, which runs `codex exec` read-only on the reviewer model.

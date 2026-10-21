@@ -29,8 +29,12 @@ Spec: {{arg:spec}}
 
 Write task content in `{{language.technical}}`; headings, ids and YAML keys stay in English.
 
-At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
-nothing to do here. Otherwise:
+The tasks go in `tasks.md` at every depth (lite, standard and full), whatever their number, even a
+single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs this step in its own session.
+
+Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite keeps its tasks inside
+`spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
+open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
 
 1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
@@ -58,7 +62,9 @@ nothing to do here. Otherwise:
    - `verify`, `depends_on`, `parallel_safe`.
    A task's **Done when** lists every entry point, list item and clause of the FRs it serves, and states
    each rejected option of its decisions as a must-not. A task added after specify declares scenarios
-   through {{command:clarify}}, never `scenarios: []`.
+   through {{command:clarify}}, never `scenarios: []`. A task that builds a filesystem path from spec
+   or story content and deletes or writes there carries the `input` risk tag and a Done-when item that
+   the path stays inside its root.
    The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
    not list it.
 3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a

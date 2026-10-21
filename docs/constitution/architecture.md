@@ -38,7 +38,7 @@ cli ──▶ engine ──▶ adapters ──▶ render ──▶ schemas
 | Skills | `src/skills/` | Catalog installs and verification | schemas |
 | Scripts | `src/scripts/` | `mandao run` helpers, JSON out (ADR 0006) | schemas, workspace |
 | Workspace | `src/workspace/` | Read-only layout detection (ADR 0005) | schemas |
-| Spec domain | `src/spec/` | Task planning, TDD/review loop, checkpoints, costs, traceability and closure | models, schemas, pure helpers from scripts and engine/frontmatter; IO belongs in scripts/writer |
+| Spec domain | `src/spec/` | Task planning, TDD/review loop, checkpoints, costs, traceability, closure and the folder layout manifest (`layout.ts`) | models, schemas, pure helpers from scripts and engine/frontmatter; IO belongs in scripts/writer |
 | Commit policy | `src/commits/` | Generated commitlint configuration | schemas |
 | Utilities | `src/util/` | Package roots, hashing and shared primitives | Node APIs, schemas as needed |
 | Schemas | `src/schemas/` | zod schemas, single source of types | zod, semver |
@@ -48,6 +48,9 @@ change plan, and user-intent files (`config.yml`, `models.yml`, the lock, `.giti
 `writeText`, `createIfMissing` and `editYaml`, which are idempotent and refuse to overwrite a file that
 changed on disk mid-edit. `test/unit/architecture.test.ts` fails on any write elsewhere. The
 `CONFLICT` raised by the first constitution run is resolved.
+
+`.mandao/cache/` is local, never committed: a spec's bulky evidence (packs, full gate output, probes,
+integrity hashes) lives there, ignored by the managed `.gitignore` block (ADR 0041).
 
 ## Patterns and conventions
 

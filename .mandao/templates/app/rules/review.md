@@ -72,7 +72,9 @@ its source file), and the remediation.
 
 - **Blocking**: violates the spec, the constitution, the contract, a mandatory test, or a high-severity
   security rule. Rework. Every finding is tagged `[<lens>/<severity>]`; `[security/high]` and
-  `[security/critical]` are always blocking, and `mandao run checkpoint` refuses a PASS that carries one.
+  `[security/critical]` are always blocking, and `mandao run checkpoint` refuses a PASS that carries one
+  among the tagged findings of the answer's `Findings` section, or among every tagged line when the
+  answer has none.
 - **Advisory**: improvements and preferences. Recorded in `execution.md`, feeds Kaizen, never reopens
   the loop.
 

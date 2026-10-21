@@ -37,7 +37,7 @@ templates are skeletons and this file says what goes in each section.
 | `quickstart.md` | How can a PO check it by hand? (only when it has visible behavior) | specify; verify updates |
 | `tasks.md` | What work, in what order? | tasks |
 | `verify-report.md` | Does it do what was asked? | verify |
-| `close-summary.md` | What shipped? (generated record and links) | close |
+| `close-summary.md` | What shipped? (version 2: outcome, notes for the PO and for developers, Kaizen, delivery) | close |
 
 Where each fact lives:
 - **Clarifications** live only in `requirements.md` (`## Clarifications`); story and design link there.

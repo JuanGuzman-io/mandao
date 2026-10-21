@@ -285,7 +285,40 @@ describe('#3: a FAIL keeps its reason', () => {
 });
 
 describe('#4 and #6: commit-spec has fixed subjects, and close commits its documents', () => {
-  test('close commits release docs, Kaizen, constitution and changed module guides with the spec; nothing else', async () => {
+  test('close of a version 2 spec commits the changelog and lessons, not per-spec release or Kaizen documents', async () => {
+    const root = repo();
+    const story = join(root, SPEC, 'story.md');
+    writeFileSync(story, readFileSync(story, 'utf8').replace(/^schema_version: 1$/m, 'schema_version: 2'));
+    for (const [f, c] of Object.entries({
+      'docs/CHANGELOG.md': '| MDO-0001 | line |\n',
+      'docs/kaizen/lessons.md': '- a lesson\n',
+      'docs/releases/MDO-0001/release-notes.md': 'notes\n',
+      'docs/kaizen/MDO-0001.md': 'kaizen\n',
+      'docs/constitution/CHANGELOG.md': 'entry\n',
+      'src/AGENTS.md': 'guide\n',
+      'src/unrelated.ts': 'export {};\n',
+    })) {
+      mkdirSync(dirname(join(root, f)), { recursive: true });
+      writeFileSync(join(root, f), c);
+    }
+    writeFileSync(join(root, SPEC, 'close-summary.md'), 'closed\n');
+    await run(root, 'commit-spec', 'MDO-0001', 'close');
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD').split('\n').sort()).toEqual(
+      [
+        'docs/CHANGELOG.md',
+        'docs/constitution/CHANGELOG.md',
+        'docs/kaizen/lessons.md',
+        `${SPEC}/close-summary.md`,
+        `${SPEC}/story.md`,
+        'src/AGENTS.md',
+      ].sort(),
+    );
+    expect(lastJson().leftOut).toEqual(
+      expect.arrayContaining(['docs/kaizen/MDO-0001.md', 'docs/releases/MDO-0001/release-notes.md', 'src/unrelated.ts']),
+    );
+  });
+
+  test('close commits release docs, Kaizen, constitution and changed module guides with the spec; nothing else (version 1)', async () => {
     const root = repo();
     for (const [f, c] of Object.entries({
       'docs/releases/MDO-0001/release-notes.md': 'notes\n',

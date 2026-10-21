@@ -1,23 +1,24 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import type { Config } from '../schemas/index.js';
 import { type SpecStatus, specStatus } from '../schemas/index.js';
 import {
   type ExecutionRow,
+  frontmatterOf,
+  type LayoutFindings,
+  layoutFindings,
   type Progress,
   parseExecution,
   parseRequirements,
   parseStory,
   parseTasks,
-  progressSchema,
   type Requirements,
   type Story,
   type Task,
 } from '../spec/index.js';
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
-import { docPath, LITE_DOC, logPath } from './spec-log.js';
+import { docPath, LITE_DOC, logPath, readProgress, specKeepsState } from './spec-log.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -31,6 +32,19 @@ export interface SpecFolder {
   execution: ExecutionRow[];
   progress?: Progress;
   issues: string[];
+}
+
+/** Reads a spec folder's story frontmatter, depth-bearing documents and entries, and checks them against the layout. */
+export function readLayout(dir: string): LayoutFindings {
+  const story = readIf(join(dir, 'story.md'));
+  if (story === undefined) throw new Error('story.md is missing: the layout version is its schema_version');
+  const docs: Record<string, { depth?: unknown }> = {};
+  for (const f of ['spec.md', 'requirements.md', 'design.md']) {
+    const text = readIf(join(dir, f));
+    if (text !== undefined) docs[f] = frontmatterOf(text).data;
+  }
+  const entries = readdirSync(dir, { withFileTypes: true }).map((e) => (e.isDirectory() ? `${e.name}/` : e.name));
+  return layoutFindings({ story: frontmatterOf(story).data, docs, entries });
 }
 
 const specsDir = (root: string, config: Config) => join(root, config.paths.specs);
@@ -74,12 +88,9 @@ export function readSpec(dir: string): SpecFolder {
     issues.push(...r.issues);
     out.execution = r.rows;
   }
-  const progress = readIf(logPath(dir, 'progress.yml'));
-  if (progress) {
-    const r = progressSchema.safeParse(parseYaml(progress));
-    if (r.success) out.progress = r.data;
-    else issues.push('progress.yml does not match its schema');
-  }
+  const progress = readProgress(dir);
+  if (progress.progress) out.progress = progress.progress;
+  if (progress.invalid) issues.push(`${specKeepsState(dir) ? 'state.yml progress' : 'progress.yml'} does not match its schema`);
   return out;
 }
 
