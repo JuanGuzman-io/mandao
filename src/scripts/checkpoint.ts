@@ -1,7 +1,7 @@
 import { stringify as stringifyYaml } from 'yaml';
 import { type ExecutionRow, executionRow, type ProgressInput, progressSchema, setTaskDone } from '../spec/index.js';
 import { snapshot, writeFromSnapshot, writeText } from '../writer/files.js';
-import { docPath, logPath } from './spec-log.js';
+import { docPath, logPath, specKeepsState, updateState } from './spec-log.js';
 
 const EXECUTION_TEMPLATE = (spec: string) => `---
 schema_version: 1
@@ -29,13 +29,15 @@ export function appendExecutionRow(dir: string, spec: string, row: ExecutionRow)
   writeFromSnapshot(snap, lines.join('\n'));
 }
 
-/** Writes progress.yml (the checkpoint) after validating it. */
+/** Writes the checkpoint after validating it: the `progress` section of state.yml (version 2), or progress.yml. */
 export function writeProgress(dir: string, progress: ProgressInput): void {
   const valid = progressSchema.parse(progress);
-  writeText(
-    logPath(dir, 'progress.yml'),
-    `# Written by mandao run checkpoint after every Leader step (ADR 0018).\n${stringifyYaml(valid, { lineWidth: 0 })}`,
-  );
+  if (specKeepsState(dir)) updateState(dir, (s) => ({ ...s, progress: valid }));
+  else
+    writeText(
+      logPath(dir, 'progress.yml'),
+      `# Written by mandao run checkpoint after every Leader step (ADR 0018).\n${stringifyYaml(valid, { lineWidth: 0 })}`,
+    );
 }
 
 /** Flips a task's checkbox in tasks.md, leaving everything else as it was. */

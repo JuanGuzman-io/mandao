@@ -6,6 +6,7 @@ import { buildProgram } from '../../src/cli/program.js';
 import { openCommand, parseRequest } from '../../src/cli/start.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { dependencyInstalls } from '../../src/scripts/worktree-setup.js';
+import { parseState } from '../../src/spec/state.js';
 import { makeTree, pkg } from '../helpers.js';
 
 const git = (cwd: string, ...args: string[]) =>
@@ -81,13 +82,14 @@ describe('mandao start (§14.5, ADR 0037)', () => {
     );
     expect(existsSync(join(wt, 'generated.txt'))).toBe(true);
     expect(existsSync(join(wt, 'graphify-out/graph.json'))).toBe(true);
-    // Baseline: the cheap gates on the clean worktree; a red one is reported before any change.
+    // Baseline: the cheap gates on the clean worktree; a red one is reported before any change. A new spec
+    // is version 2: the baseline and the request are sections of `_log/state.yml` (MDO-0011 D3).
     const folder = `specs/${r.id}-add-a-login-rate-limit`;
-    const baseline = readFileSync(join(wt, folder, '_log/baseline.md'), 'utf8');
-    expect(baseline).toContain('| shop | typecheck | FAIL |');
-    expect(baseline).toContain('error TS1: broken on main');
+    const state = parseState(readFileSync(join(wt, folder, '_log/state.yml'), 'utf8'));
+    expect(state.baseline?.gates).toContainEqual({ project: 'shop', gate: 'typecheck', result: 'FAIL' });
+    expect(state.baseline?.failures[0]?.output).toContain('error TS1: broken on main');
     expect(r.steps).toContainEqual(expect.objectContaining({ step: 'baseline', status: 'warning' }));
-    expect(readFileSync(join(wt, folder, '_log/start.yml'), 'utf8')).toContain('title: "Add a login rate limit"');
+    expect(state.start).toMatchObject({ id: r.id, title: 'Add a login rate limit', type: 'story', lane: 'normal', branch: r.branch });
     expect(r.open).toBe(`cd ${JSON.stringify(wt)} && claude "/mandao-specify ${r.id} --depth lite"`);
     expect(git(root, 'status', '--porcelain')).toBe('');
   });

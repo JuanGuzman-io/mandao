@@ -34,7 +34,7 @@ in the output which skill was missing.
 ## 1. Resolve the spec
 
 1. **From `mandao start`** (the default): the session runs in the spec's worktree and
-   `specs/<ID>-<slug>/_log/start.yml` holds the request (id, title, type, lane). Use it; the
+   the `start` section of `specs/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the
    branch and worktree already exist and are set up, so skip the worktree step below.
 2. **From a story**: if `$ref` names a folder in `specs/` with `story.md`, inherit its
    frontmatter (tracker, type, id, projects). Ask nothing.

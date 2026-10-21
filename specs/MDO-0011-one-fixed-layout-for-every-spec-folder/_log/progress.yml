@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T19:50:04.695Z
+updated_at: 2026-10-21T20:25:25.839Z
 current: null
 open_questions: []
 next_step: ""
@@ -96,4 +96,35 @@ red_tests:
           - "S-8.1: every file the manifest lists per depth is in the rendered tables"
           - "S-8.1: the README links the page"
           - version 2 always has tasks.md, version 1 does not; any other value is no known layout
+  - task: T3
+    files:
+      - path: test/integration/state-log.test.ts
+        sha256: 68b71ab02f0de6bbd27167a3258d5898db0a8f1640805eadf9f720e375bcda06
+        tests:
+          - "S-3.5: run status without a target lists approvals by date among the execution rows"
+          - "S-3.5: implement-summary shows the same timeline"
+          - "S-3.5/C1: showing the timeline writes nothing, and approving writes no row into execution.md"
+          - approve writes the approvals section of state.yml and no approvals.yml
+          - run next --shown records the shown hashes in state.yml and no approvals.yml
+          - checkpoint writes the progress section, keeps the approvals, and readSpec still reads the progress
+          - "(regression pin) a version 1 spec still writes approvals.yml and no state.yml: older specs are read as they are"
+          - cut estimates go to the cut_estimates section, and Kaizen reads them from there
+          - the request and the baseline go to state.yml; start.yml and baseline.md are not written
+          - a new entry has cumulative per role and no per-model lines
+          - (regression pin) the cross-spec baseline gives 0.5 from a version 1 record with model lines and from a version 2 record without
+          - a story changed after its approval is reported by run next (hashes read from state.yml)
+          - approve --by-running asks about a document changed after the summary was shown (shown row read from state.yml)
+          - cutEstimateRows on a version 2 spec with a bad approval row surfaces the schema error
+          - a version 2 record followed by a quick entry counts only the new model spend (0.5, not the whole session)
+      - path: test/unit/state.test.ts
+        sha256: bdfb0e78f5295de245b75a0f6205c7f1dccc8a7bb97b3f24a334b13c75320fab
+        tests:
+          - an absent or empty file reads as no approvals and no cut estimates
+          - approvals and progress written to the file read back unchanged
+          - the start request and the baseline survive a round trip beside the other sections
+          - a row that is not a valid approval is rejected, not dropped
+      - path: test/unit/layout-version.test.ts
+        sha256: 1728ab31dfeab0100e66312389f0344ee6c00a0c3e1d7aafa69ed59dc347b000
+        tests:
+          - the story template names CURRENT_LAYOUT_VERSION, the last known layout version
 pending_commits: []

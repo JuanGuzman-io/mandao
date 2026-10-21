@@ -1,7 +1,12 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { tasksHaveOwnFile } from '../spec/layout.js';
+import { parse as parseYaml } from 'yaml';
+import { type Approval, parseApprovals, renderApprovals } from '../spec/approvals.js';
+import { LAYOUT_VERSIONS, layoutManifest, tasksHaveOwnFile } from '../spec/layout.js';
 import { frontmatterOf } from '../spec/markdown.js';
+import { type Progress, progressSchema } from '../spec/progress.js';
+import { parseState, renderState, type State } from '../spec/state.js';
+import { writeText } from '../writer/files.js';
 
 /**
  * Machine files of a spec live in `_log/` (the readability pass): people read the documents in the spec
@@ -23,8 +28,32 @@ export type LogFile =
   | 'session-cuts.md'
   | 'discrepancies.md';
 
-/** Where a machine file of the spec is: `_log/<name>`, or the root when an older spec keeps it there. */
+/** The version 2 home of the logical logs merged into `_log/state.yml` (design D3). */
+export const STATE_FILE = 'state.yml';
+const IN_STATE: ReadonlySet<LogFile> = new Set<LogFile>(['progress.yml', 'approvals.yml', 'session-cuts.md']);
+
+/** True when a layout version (a story's `schema_version`) keeps start, baseline, progress, approvals and cut estimates in `state.yml`. */
+export function keepsStateFile(schemaVersion: unknown): boolean {
+  const version = LAYOUT_VERSIONS.find((v) => v === schemaVersion);
+  return version !== undefined && layoutManifest(version, 'lite').log.includes(STATE_FILE);
+}
+
+/** The story's `schema_version`, or undefined when there is no story (the quick folder, a spec not specified yet). */
+function storyVersion(specDir: string): unknown {
+  const story = join(specDir, 'story.md');
+  return existsSync(story) ? frontmatterOf(readFileSync(story, 'utf8')).data.schema_version : undefined;
+}
+
+/** True when this spec keeps its state in `_log/state.yml`; a version 1 spec, or a folder without a story, keeps its own files. */
+export const specKeepsState = (specDir: string) => keepsStateFile(storyVersion(specDir));
+
+/**
+ * Where a machine file of the spec is: `_log/<name>`, or the root when an older spec keeps it there. In a
+ * version 2 spec, `progress.yml`, `approvals.yml` and `session-cuts.md` are sections of `_log/state.yml`:
+ * read and write them with the section helpers below, never as whole files.
+ */
 export function logPath(specDir: string, name: LogFile): string {
+  if (IN_STATE.has(name) && specKeepsState(specDir)) return join(specDir, LOG_DIR, STATE_FILE);
   const inLog = join(specDir, LOG_DIR, name);
   if (existsSync(inLog)) return inLog;
   const legacy = join(specDir, name);
@@ -46,10 +75,7 @@ export type SpecDoc = 'requirements' | 'design' | 'tasks';
 export const LITE_DOC = 'spec.md';
 
 /** True when the story's layout version keeps the tasks in `tasks.md` (the rule lives in `src/spec/layout.ts`). */
-function tasksAlwaysOwnFile(specDir: string): boolean {
-  const story = join(specDir, 'story.md');
-  return existsSync(story) && tasksHaveOwnFile(frontmatterOf(readFileSync(story, 'utf8')).data.schema_version);
-}
+const tasksAlwaysOwnFile = (specDir: string) => tasksHaveOwnFile(storyVersion(specDir));
 
 /**
  * The file holding a role: its own document when present, else `spec.md` when present, else its own name.
@@ -61,4 +87,41 @@ export function docPath(specDir: string, doc: SpecDoc): string {
   if (doc === 'tasks' && tasksAlwaysOwnFile(specDir)) return own;
   const lite = join(specDir, LITE_DOC);
   return existsSync(lite) ? lite : own;
+}
+
+const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
+
+/** `_log/state.yml` of a version 2 spec; empty when it does not exist yet. A section that breaks its schema throws. */
+export const readState = (specDir: string): State => parseState(readIf(join(specDir, LOG_DIR, STATE_FILE)));
+
+/** Rewrites `_log/state.yml` with one change applied, keeping every other section as it was. */
+export function updateState(specDir: string, change: (state: State) => State): void {
+  writeText(join(specDir, LOG_DIR, STATE_FILE), renderState(change(readState(specDir))));
+}
+
+/** Every approval row of the spec: the `approvals` section of `state.yml` (version 2) or `approvals.yml` (version 1). */
+export function readApprovalLog(specDir: string): Approval[] {
+  return specKeepsState(specDir) ? readState(specDir).approvals : parseApprovals(readIf(logPath(specDir, 'approvals.yml')));
+}
+
+/** Appends an approval row, never rewriting the earlier ones. */
+export function appendApprovalLog(specDir: string, row: Approval): void {
+  if (specKeepsState(specDir)) updateState(specDir, (s) => ({ ...s, approvals: [...s.approvals, row] }));
+  else writeText(logPath(specDir, 'approvals.yml'), renderApprovals([...readApprovalLog(specDir), row]));
+}
+
+/**
+ * The spec's checkpoint, from the `progress` section of `state.yml` (version 2) or `progress.yml`
+ * (version 1, read as before). `invalid` when the checkpoint is there but does not match its schema.
+ */
+export function readProgress(specDir: string): { progress?: Progress; invalid?: true } {
+  const text = readIf(logPath(specDir, 'progress.yml'));
+  if (!text) return {};
+  let data: unknown = parseYaml(text);
+  if (specKeepsState(specDir)) {
+    data = (data as { progress?: unknown } | null)?.progress;
+    if (data === undefined) return {};
+  }
+  const r = progressSchema.safeParse(data);
+  return r.success ? { progress: r.data } : { invalid: true };
 }

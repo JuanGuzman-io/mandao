@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import type { Config } from '../schemas/index.js';
 import { type SpecStatus, specStatus } from '../schemas/index.js';
 import {
@@ -14,13 +13,12 @@ import {
   parseRequirements,
   parseStory,
   parseTasks,
-  progressSchema,
   type Requirements,
   type Story,
   type Task,
 } from '../spec/index.js';
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
-import { docPath, LITE_DOC, logPath } from './spec-log.js';
+import { docPath, LITE_DOC, logPath, readProgress, specKeepsState } from './spec-log.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -90,12 +88,9 @@ export function readSpec(dir: string): SpecFolder {
     issues.push(...r.issues);
     out.execution = r.rows;
   }
-  const progress = readIf(logPath(dir, 'progress.yml'));
-  if (progress) {
-    const r = progressSchema.safeParse(parseYaml(progress));
-    if (r.success) out.progress = r.data;
-    else issues.push('progress.yml does not match its schema');
-  }
+  const progress = readProgress(dir);
+  if (progress.progress) out.progress = progress.progress;
+  if (progress.invalid) issues.push(`${specKeepsState(dir) ? 'state.yml progress' : 'progress.yml'} does not match its schema`);
   return out;
 }
 

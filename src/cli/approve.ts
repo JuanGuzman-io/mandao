@@ -6,7 +6,7 @@ import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot } from '../scripts/commits.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { docPath, LITE_DOC, logPath } from '../scripts/spec-log.js';
+import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
 import {
   APPROVAL_STEPS,
   type Approval,
@@ -17,9 +17,7 @@ import {
   type NextFacts,
   nextStep,
   openItems,
-  parseApprovals,
   planTasks,
-  renderApprovals,
   taskLayoutIssues,
   withStatus,
 } from '../spec/index.js';
@@ -115,15 +113,12 @@ export function currentHashes(dir: string, only?: string[]): Record<string, stri
   return Object.fromEntries(files.map((f) => [f, docHash(readFileSync(join(dir, f), 'utf8'))]));
 }
 
-const readApprovals = (spec: SpecFolder) => {
-  const log = logPath(spec.dir, 'approvals.yml');
-  return parseApprovals(existsSync(log) ? readFileSync(log, 'utf8') : undefined);
-};
+const readApprovals = (spec: SpecFolder) => readApprovalLog(spec.dir);
 
-/** Appends a row to `_log/approvals.yml`, never rewriting the earlier ones, and returns it. */
+/** Appends a row to the approvals (state.yml in version 2, approvals.yml in version 1), never rewriting the earlier ones, and returns it. */
 function appendApproval(spec: SpecFolder, row: Omit<Approval, 'by' | 'at'>, by?: string): Approval {
   const record = { ...row, by: approver(spec.dir, by), at: new Date().toISOString() };
-  writeText(logPath(spec.dir, 'approvals.yml'), renderApprovals([...readApprovals(spec), record]));
+  appendApprovalLog(spec.dir, record);
   return record;
 }
 
@@ -168,7 +163,7 @@ export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>)
   });
 }
 
-/** Appends the approval to `_log/approvals.yml` and returns it. */
+/** Appends the approval to the spec's approvals and returns it. */
 function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions, docs: string[]) {
   const note = o.byRunning ? `approved by running ${o.byRunning}` : o.note;
   const hashes = currentHashes(spec.dir, docs);

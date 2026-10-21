@@ -18,6 +18,7 @@
 | `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session: `story`, `design`, `spec`, `tasks`, `close` (`--items`), `budget` (`--to <usd\|none>`) |
 | `mandao run cost <spec>` | Spend per command and role, with its basis (billed or subscription equivalent); see [Cost](#cost) |
 | `mandao run layout <spec>` | Compare the spec folder with the layout of its version and depth ([spec anatomy](spec-anatomy.md)): prints `{ version, depth, stage, missing, unexpected, ok }` and exits 1 when `ok` is false. `run status <spec> closed` refuses a folder that does not match, naming these findings |
+| `mandao run status <spec>` | Without a target status: the spec's status and its `timeline`, the approvals merged by date among the execution rows. Read only: an approval never becomes an `execution.md` row. `run implement-summary` prints the same `timeline` |
 | `mandao run …` | Helper scripts the commands call, with compact JSON on stdout (`MANDAO_JSON=pretty` for people). `mandao run --help` lists them all: planning (`spec-new`, `trace`, `tasks`, `brief`), the Leader loop (`step`, `checkpoint`, `gates`, `review-pack`, `review`, `red`, `mutation`, `commit`, `implement-summary`), verify and close (`verify-plan`, `kaizen`, `impacts`, `publish-plan`, `pr-plan`), and tests under the resource budget (`impact`, `tests`, `build`, `resources`) |
 
 ## Entering the spec worktree

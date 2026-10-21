@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { type CostEntry, parseCosts } from '../spec/index.js';
 import { findClaudeTranscript } from './session-cost.js';
-import { mainResponse, parseCutEstimates } from './session-cut.js';
-import { logPath } from './spec-log.js';
+import { type CutEstimateRow, mainResponse, parseCutEstimates } from './session-cut.js';
+import { logPath, readState, specKeepsState } from './spec-log.js';
 
 /**
  * What the session-cut constants (ADR 0038) assume, measured on a spec's Claude Code sessions (MDO-0008
@@ -236,8 +236,10 @@ function reloadOf(sessions: Session[]): number | undefined {
   return reloads.length ? Math.round(reloads.reduce((a, b) => a + b, 0) / reloads.length) : undefined;
 }
 
-/** Each logged estimate against the main turns after its time up to the close record, across the sessions. */
-function estimatesOf(specDir: string, sessions: Session[]): CutEstimateActual[] {
+/** The logged estimates: `cut_estimates` of `state.yml` (version 2) or `_log/session-cuts.md` (version 1). */
+function cutEstimateRows(specDir: string): CutEstimateRow[] {
+  // A section of state.yml that breaks its schema throws: it is never read as "no estimates".
+  if (specKeepsState(specDir)) return readState(specDir).cut_estimates.map((e) => ({ at: e.at, task: e.task, turnsLeft: e.turns_left }));
   const file = logPath(specDir, 'session-cuts.md');
   let text: string;
   try {
@@ -245,9 +247,14 @@ function estimatesOf(specDir: string, sessions: Session[]): CutEstimateActual[] 
   } catch {
     text = ''; // an unreadable cut log has no estimates to compare, which is not an error of the measure
   }
+  return parseCutEstimates(text);
+}
+
+/** Each logged estimate against the main turns after its time up to the close record, across the sessions. */
+function estimatesOf(specDir: string, sessions: Session[]): CutEstimateActual[] {
   const closes = sessions.flatMap((s) => s.records.filter((r) => r.command === 'close').map((r) => r.at));
   const closeAt = closes.length ? Math.max(...closes) : undefined;
-  return parseCutEstimates(text).map((row) => {
+  return cutEstimateRows(specDir).map((row) => {
     const from = Date.parse(row.at);
     const out: CutEstimateActual = { at: row.at, task: row.task, estimated: row.turnsLeft };
     const unknown = closeAt === undefined || sessions.some((s) => !s.data && s.records.some((r) => r.at > from));

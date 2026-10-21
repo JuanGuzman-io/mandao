@@ -9,9 +9,18 @@ import { decideBudget, effectiveResources, probeMachine } from '../scripts/resou
 import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
+import { logPath, readApprovalLog } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
-import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, securityMentions, type Task, taskAttempt } from '../spec/index.js';
+import {
+  type ExecutionRow,
+  type LoopState,
+  loopState,
+  NOTE_FLAGS,
+  securityMentions,
+  type Task,
+  taskAttempt,
+  timeline,
+} from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -277,7 +286,8 @@ function registerImplementSummary(run: Command, ctx: CliContext) {
       const { config, spec } = loadSpec(ctx, ref);
       const state = commitState(spec, config.commits.trailers);
       const cut = verifyCut(spec, harnessOption(o.harness));
-      json({ ...implementSummary(spec, state.committed, state.pending), ...(cut ? { session: cut } : {}) });
+      const history = timeline(spec.execution, readApprovalLog(spec.dir));
+      json({ ...implementSummary(spec, state.committed, state.pending), timeline: history, ...(cut ? { session: cut } : {}) });
     });
 }
 

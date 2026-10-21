@@ -107,7 +107,7 @@ parallel_safe: false
 verify: npx vitest run test/integration/lite-spec.test.ts test/unit/content.test.ts test/unit/layout.test.ts
 ```
 
-### [ ] T3 — One state file holds the start, progress, approvals and cut estimates
+### [x] T3 — One state file holds the start, progress, approvals and cut estimates
 
 - **What:** `state.yml` replaces `start.yml`, `baseline.md`, `progress.yml`, `approvals.yml` and `session-cuts.md` for version 2, behind `logPath` and one zod schema ([D3](design.md#d3), C-1, C-3). `costs.yml` keeps one cumulative per role (C-2). `run status <ID>` without a target, and `implement-summary`, show the timeline.
 - **Done when:**

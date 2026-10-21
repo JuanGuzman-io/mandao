@@ -5,8 +5,8 @@ import { readConfig } from '../engine/files.js';
 import { readRecommendations } from '../models/load.js';
 import { claudeCostBasis, claudeSessionCost, findClaudeTranscript } from '../scripts/session-cost.js';
 import { findSpec } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
-import { type CostEntry, parseApprovals, parseCosts, renderCosts, sessionDelta, specBudget, summarizeCosts } from '../spec/index.js';
+import { logPath, readApprovalLog, specKeepsState } from '../scripts/spec-log.js';
+import { type CostEntry, parseCosts, renderCosts, sessionDelta, sessionModelTotals, specBudget, summarizeCosts } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -36,9 +36,9 @@ function specBasis(entries: CostEntry[]): string {
 }
 
 /** `--record`: the session's spend since its last record (Claude Code) or the amount given by hand. */
-function newEntry(entries: CostEntry[], o: CostOptions): CostEntry {
+function newEntry(entries: CostEntry[], o: CostOptions, rolesOnly: boolean): CostEntry {
   if (!o.command) throw new Error('--record needs --command <mandao>');
-  if (!o.usd) return claudeEntry(entries, { ...o, command: o.command });
+  if (!o.usd) return claudeEntry(entries, { ...o, command: o.command }, rolesOnly);
   return {
     at: new Date().toISOString(),
     command: o.command,
@@ -50,11 +50,6 @@ function newEntry(entries: CostEntry[], o: CostOptions): CostEntry {
     basis: manualBasis(o.basis),
   };
 }
-
-const approvalsOf = (dir: string) => {
-  const file = logPath(dir, 'approvals.yml');
-  return parseApprovals(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-};
 
 /** The main session's role: the Leader in implement, the command itself elsewhere. */
 const mainRole = (command: string) => (command === 'implement' ? 'leader' : command);
@@ -79,8 +74,34 @@ function allEntries(ctx: CliContext): CostEntry[] {
 const MODEL_KEY = 'model:';
 const MAIN = 'main-session';
 
-/** What a Claude Code session spent since its previous record, from its transcript and the official prices. */
-function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string }): CostEntry {
+/**
+ * The session's per-model spend already recorded: the `model:` lines of its last `cumulative` when that record
+ * is version 1 (the numbers version 1 always used), else the sum of its earlier `models`, so a version 2 record
+ * (no `model:` lines) followed by a version 1 or quick record does not count the whole session again.
+ */
+function modelBaseline(entries: CostEntry[], session: string): Record<string, number> {
+  const last = [...entries].reverse().find((e) => e.session === session && e.cumulative)?.cumulative ?? {};
+  const kept = Object.entries(last).filter(([k]) => k.startsWith(MODEL_KEY));
+  return kept.length ? Object.fromEntries(kept.map(([k, v]) => [k.slice(MODEL_KEY.length), v])) : sessionModelTotals(entries, session);
+}
+
+/** Per-model spend since the session's earlier records (keys `model:<id>`). */
+function modelDelta(entries: CostEntry[], session: string, now: Record<string, number>): Record<string, number> {
+  const before = modelBaseline(entries, session);
+  const out: Record<string, number> = {};
+  for (const [key, usd] of Object.entries(now)) {
+    const d = usd - (before[key.slice(MODEL_KEY.length)] ?? 0);
+    if (d > 0.000001) out[key] = d;
+  }
+  return out;
+}
+
+/**
+ * What a Claude Code session spent since its previous record, from its transcript and the official prices.
+ * `rolesOnly` (version 2, C-2): `cumulative` keeps one running total per role; version 1 also keeps the
+ * `model:` lines in it. The per-model part comes from `modelDelta` on both versions.
+ */
+function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string }, rolesOnly: boolean): CostEntry {
   const session = o.session ?? process.env.CLAUDE_CODE_SESSION_ID;
   if (!session) throw new Error('no session: run inside Claude Code or pass --session <id>');
   const transcript = findClaudeTranscript(session);
@@ -89,8 +110,9 @@ function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string })
   // The main session accumulates under one key whatever command runs in it, so a second command in the
   // same session counts only its own part; the delta takes this command's role.
   const cost = claudeSessionCost(transcript, MAIN, prices);
-  const now = { ...cost.roles, ...Object.fromEntries(Object.entries(cost.models).map(([m, usd]) => [`${MODEL_KEY}${m}`, usd])) };
-  const delta = sessionDelta(entries, session, now);
+  const models = Object.fromEntries(Object.entries(cost.models).map(([m, usd]) => [`${MODEL_KEY}${m}`, usd]));
+  const now = { ...cost.roles, ...models };
+  const delta = { ...sessionDelta(entries, session, cost.roles), ...modelDelta(entries, session, models) };
   const pick = (model: boolean) =>
     Object.fromEntries(
       Object.entries(delta)
@@ -107,7 +129,7 @@ function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string })
     usd: Math.round(Object.values(roles).reduce((a, b) => a + b, 0) * 1e4) / 1e4,
     roles,
     models: pick(true),
-    cumulative: now,
+    cumulative: rolesOnly ? cost.roles : now,
     source: 'claude-code',
     basis: claudeCostBasis(),
   };
@@ -133,14 +155,14 @@ export function registerCost(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const file = logPath(costsDir(ctx, ref), 'costs.yml');
       const entries = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-      const recorded = o.record ? newEntry(allEntries(ctx), o) : undefined;
+      const recorded = o.record ? newEntry(allEntries(ctx), o, specKeepsState(costsDir(ctx, ref))) : undefined;
       if (recorded) writeText(file, renderCosts([...entries, recorded]));
       const all = recorded ? [...entries, recorded] : entries;
       json({
         ...(recorded ? { recorded: { command: recorded.command, usd: recorded.usd, roles: recorded.roles } } : {}),
         ...summarizeCosts(
           all,
-          ref === 'quick' ? config.budget.per_spec : specBudget(approvalsOf(costsDir(ctx, ref)), config.budget.per_spec),
+          ref === 'quick' ? config.budget.per_spec : specBudget(readApprovalLog(costsDir(ctx, ref)), config.budget.per_spec),
         ),
         basis: specBasis(all),
       });

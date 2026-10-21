@@ -4,7 +4,11 @@ import { harnessId, schemaVersion } from '../schemas/index.js';
 /** `implementing`, `awaiting-review`, or `rework-n` (the n-th rework of the task). */
 export const phase = z.union([z.enum(['implementing', 'awaiting-review']), z.string().regex(/^rework-\d+$/)]);
 
-/** `progress.yml`: the machine-readable checkpoint a Leader writes after every step (ADR 0018). */
+/**
+ * `progress.yml` (version 1) or the `progress` section of `state.yml` (version 2): the machine-readable
+ * checkpoint a Leader writes after every step (ADR 0018). Its `schema_version` is the record's own
+ * format version, always 1, separate from the spec layout version.
+ */
 export const progressSchema = z.object({
   schema_version: schemaVersion,
   spec: z.string().min(1),

@@ -1,11 +1,9 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import type { Config } from '../schemas/index.js';
-import { progressSchema } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { Budget, BudgetKind } from './resources.js';
-import { logPath } from './spec-log.js';
+import { logPath, readProgress } from './spec-log.js';
 
 /** The CLI's own log: one JSON line per event worth keeping. Machine-specific, git-ignored. */
 export const CLI_LOG = '.mandao/cli.log';
@@ -42,10 +40,9 @@ export function activeSpecDir(root: string, config: Config): string | undefined 
   const specs = join(root, config.paths.specs);
   if (!existsSync(specs)) return undefined;
   const active = readdirSync(specs).filter((d) => {
-    const file = logPath(join(specs, d), 'progress.yml');
-    if (!existsSync(file)) return false;
-    const p = progressSchema.safeParse(parseYaml(readFileSync(file, 'utf8')));
-    return p.success && p.data.current !== null;
+    if (!existsSync(logPath(join(specs, d), 'progress.yml'))) return false;
+    const p = readProgress(join(specs, d)).progress;
+    return p !== undefined && p.current !== null;
   });
   return active.length === 1 ? join(specs, active[0]!) : undefined;
 }

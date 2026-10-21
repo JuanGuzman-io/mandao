@@ -10,7 +10,7 @@ import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, proposeSpec, readLayout, whereAmI } from '../scripts/spec.js';
-import { docPath, LITE_DOC } from '../scripts/spec-log.js';
+import { docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
 import {
   blockingMarkers,
   commitMessage,
@@ -20,6 +20,7 @@ import {
   TASK_KINDS,
   taskIndex,
   taskLayoutIssues,
+  timeline,
   trace,
   withIndex,
 } from '../spec/index.js';
@@ -107,7 +108,7 @@ function registerNext(run: Command, ctx: CliContext) {
   run
     .command('next <spec>')
     .description("The command that follows from the spec's state, and the others that can; --shown records the summary shown")
-    .option('--shown', 'record the hashes of the documents just shown to the person (approvals.yml)')
+    .option('--shown', 'record the hashes of the documents just shown to the person (the approvals log)')
     .action((ref: string, o: { shown?: boolean }) => {
       const { config, spec } = loadSpec(ctx, ref);
       if (o.shown) recordShown(spec);
@@ -171,12 +172,16 @@ function closeLayoutProblems(dir: string): string[] {
 /** Spec status changes and the worktree check. */
 function registerState(run: Command, ctx: CliContext) {
   run
-    .command('status <spec> <to>')
-    .description('Check a spec status change (verified needs CI confirmation of deferred runs)')
+    .command('status <spec> [to]')
+    .description(
+      'Check a spec status change (verified needs CI confirmation of deferred runs); without <to>, the status and the timeline (approvals among the execution rows, by date)',
+    )
     .option('--ci-confirmed', 'CI passed every DEFERRED_TO_CI run')
-    .action((ref: string, to: string, opts: { ciConfirmed?: boolean }) => {
+    .action((ref: string, to: string | undefined, opts: { ciConfirmed?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
       const from = spec.story?.meta.status ?? 'draft';
+      // Read only: the approvals stay in their log and are merged here, never written into execution.md (C-1).
+      if (to === undefined) return json({ status: from, timeline: timeline(spec.execution, readApprovalLog(spec.dir)) });
       const problems = checkTransition(from, to, spec.progress, Boolean(opts.ciConfirmed));
       if (to === 'closed') problems.push(...closeLayoutProblems(spec.dir));
       json({ from, to, allowed: problems.length === 0, problems });

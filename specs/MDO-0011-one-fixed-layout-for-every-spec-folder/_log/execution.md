@@ -33,3 +33,14 @@ spec: MDO-0011-one-fixed-layout-for-every-spec-folder
 | 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/lite-spec.test.ts, test/unit/content.test.ts, test/unit/layout.test.ts; `npx vitest run test/integration/lite-spec.test.ts test/unit/content.test.ts test/unit/layout.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
 | 2026-10-21 | T2 | 2 | standard | claude | — | claude-opus-5-5 | PASS |  |
+| 2026-10-21 | T3 | 1 | strong | claude | — | — | STARTED |  |
+| 2026-10-21 | T3 | 1 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/state.test.ts, test/integration/state-log.test.ts; `npx vitest run test/unit/state.test.ts test/integration/state-log.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T3 | 1 | strong | claude | — | — | STARTED |  |
+| 2026-10-21 | T3 | 1 | strong | claude | claude-opus-5-5 | — | REPORTED | red test changed: test/integration/state-log.test.ts |
+| 2026-10-21 | T3 | 1 | strong | claude | — | claude-opus-5-5 | FAIL | red test changed: test/integration/state-log.test.ts; FAIL: readers not tested on version 2: next change-after-approval and approve --by-running shown rows from state.yml |
+| 2026-10-21 | T3 | 2 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/state-log.test.ts, test/unit/state.test.ts; `npx vitest run test/integration/state-log.test.ts test/unit/state.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T3 | 2 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/state-log.test.ts, test/unit/state.test.ts; `npx vitest run test/integration/state-log.test.ts test/unit/state.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T3 | 2 | strong | claude | — | — | STARTED |  |
+| 2026-10-21 | T3 | 2 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/layout-version.test.ts; `npx vitest run test/unit/layout-version.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T3 | 2 | strong | claude | claude-opus-5-5 | — | REPORTED | red test changed: test/integration/state-log.test.ts, test/unit/state.test.ts |
+| 2026-10-21 | T3 | 2 | strong | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/state-log.test.ts, test/unit/state.test.ts |
