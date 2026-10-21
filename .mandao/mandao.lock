@@ -165,7 +165,7 @@ files:
     harness: codex
     from: command:tasks
     ownership: owned
-    hash: sha256-dl1vvBdvYxQFA247oMGLaJtwcUpAWuin7UD6SvGNpRk=
+    hash: sha256-PxlQmabR2MDhV8OOvR6e18WhuTDSFFPeA0JBEXd4yL4=
     scope: project
   - path: .agents/skills/mandao-verify/agents/openai.yaml
     harness: codex
@@ -285,7 +285,7 @@ files:
     harness: claude
     from: command:tasks
     ownership: owned
-    hash: sha256-IlzMhCaAtKq1GVhiXM4h5o1tPa+0UTdbpAFBnpDfgPI=
+    hash: sha256-YAlOUBH2Q3qQ9tq6WHop3/Ued0Av1v1CCVO7Zz+xqig=
     scope: project
   - path: .claude/skills/mandao-verify/SKILL.md
     harness: claude
@@ -453,7 +453,7 @@ files:
     harness: copilot
     from: command:tasks
     ownership: owned
-    hash: sha256-rgITtRVpoHJnXkRfISyLLjGrtOiJ3niPRO+loLkhfEg=
+    hash: sha256-kHdgczzkIghxNjHDqndXjBMyVv0Z19A86SpzHL+C2Es=
     scope: project
   - path: .github/prompts/mandao-verify.prompt.md
     harness: copilot

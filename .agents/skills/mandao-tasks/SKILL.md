@@ -33,6 +33,9 @@ nothing to do here. Otherwise:
      `.mandao/templates/app/rules/test-policy.md` requires; concrete test names are chosen by whoever writes them;
    - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
    - `verify`, `depends_on`, `parallel_safe`.
+   A task's **Done when** lists every entry point, list item and clause of the FRs it serves, and states
+   each rejected option of its decisions as a must-not. A task added after specify declares scenarios
+   through $mandao-clarify, never `scenarios: []`.
    The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
    not list it.
 3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a
