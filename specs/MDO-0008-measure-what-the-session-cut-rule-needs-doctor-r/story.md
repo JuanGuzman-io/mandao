@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: in-progress
+status: verified
 sources:
   - { ref: "user request (/mandao-specify input) and specs/MDO-0008-…/_log/start.yml", kind: chat, date: 2026-10-20 }
   - { ref: "docs/decisions/0038-session-cut-at-task-boundaries.md (Measurements, Consequences)", kind: repo, date: 2026-10-20 }

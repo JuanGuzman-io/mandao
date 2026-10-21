@@ -1,16 +1,15 @@
 ---
 schema_version: 1
 spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
-verdict: blocked
+verdict: verified
 date: 2026-10-20
 ---
 
 # Verify — Measure what the session-cut rule needs
 
-Blocked on one thing that was never done. Every AC holds in code: the unit suite passes 378/378 and
-the rebuilt CLI behaves as the quickstart says. But this repo's generated close command and Kaizen
-template were not re-synced after T3 and T4, so `/mandao-close` here would not write `## Sessions` or
-report `sessionCut` ([B1](#b1)).
+Verified. Every AC holds: the unit suite passes 378/378, the rebuilt CLI behaves as the quickstart
+says, and the generated close command and Kaizen template in every harness carry the Sessions step and
+`sessionCut`. Nothing blocks, and doctor reports every generated file in sync.
 
 ## Acceptance criteria → tests
 
@@ -62,28 +61,12 @@ None.
 
 ## Blockers
 
-<a id="b1"></a>
-### B1 — this repo's generated outputs are not synced
-
-The spec's change table says to edit `core/commands/close.md` and `core/templates/shared/close/kaizen.md`,
-"then `mandao sync`". The `core/` sources have the Sessions step and section. These generated outputs
-have neither `## Sessions` nor `sessionCut`:
-
-- `.claude/skills/mandao-close/SKILL.md`
-- `.agents/skills/mandao-close/SKILL.md`
-- `.mandao/templates/app/close/kaizen.md`
-
-The built `doctor` warns that 4 generated files are out of date, `kaizen.md` among them. `close.test.ts`
-proves a fresh sync produces the step and the section. Fix: run `mandao sync` and commit the outputs.
-This is trivial, so `/mandao-quick` fits.
+None. Commit `7af5b78` synced the generated close files and the Kaizen template ([Evidence](#generated)).
 
 ## Consistency Check
 
-| ID | Type | Finding | Severity | Owner |
-|---|---|---|---|---|
-| CC-1 | `GAP` | T3 "Done when" says "After `mandao sync`, the generated close command and Kaizen template carry the step and the section" (`tasks.md`). In this repo they do not ([B1](#b1)). | normal | dev |
-
-Story, spec and the built behaviour otherwise agree. P3 and P4 are still unverified by a run and
+No findings. Story, spec, tasks and the built behaviour agree, including T3's "after `mandao sync`"
+condition in this repo. P3 and P4 are still unverified by a run and
 still marked as assumptions in `spec.md`. Nothing observed contradicts them: the real MDO-0007 and
 MDO-0008 transcripts measured without errors.
 
@@ -136,13 +119,27 @@ Settings files, `mtime size` and shasum, identical before and after every run:
 `.claude/settings.local.json` absent before and after. Output held counts, durations and ids only, no prompt text.
 </details>
 
-<details><summary>Generated outputs (B1)</summary>
+<a id="generated"></a>
+<details><summary>Generated outputs at 7af5b78</summary>
 
 ```
-$ grep "## Sessions|sessionCut" over .mandao/templates/**, .claude/skills/mandao-close/**, core/…
-core/commands/close.md:53:2. **Sessions:** show `sessions` …
-core/commands/close.md:56:   Also report `sessionCut` …
-core/templates/shared/close/kaizen.md:13:## Sessions
-(no match in .claude/skills/mandao-close/SKILL.md or .mandao/templates/app/close/kaizen.md)
+$ grep "## Sessions|sessionCut" over the generated close files
+.claude/skills/mandao-close/SKILL.md:33:2. **Sessions:** show `sessions` … under `## Sessions` …
+.claude/skills/mandao-close/SKILL.md:36:   Also report `sessionCut` …
+.agents/skills/mandao-close/SKILL.md:28:2. **Sessions:** …   :31: Also report `sessionCut` …
+.github/prompts/mandao-close.prompt.md:35:2. **Sessions:** … :38: Also report `sessionCut` …
+.mandao/templates/app/close/kaizen.md:13:## Sessions
+
+$ node dist/cli.js doctor
+ok    harness claude: files in sync …
+ok    harness copilot: files in sync …
+ok    harness codex: files in sync …
+ok    131 generated file(s) in sync
+
+$ node .mandao/bin/mandao.mjs run verify-plan MDO-0008
+"missingRed":[],"deferred":[],"findings":[],"blockers":[],"issues":[],"securityMentions":[]
+
+$ node .mandao/bin/mandao.mjs run status MDO-0008 verified
+{"from":"in-progress","to":"verified","allowed":true,"problems":[]}
 ```
 </details>
