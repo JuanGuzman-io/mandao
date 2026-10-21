@@ -1,7 +1,7 @@
 {
   "_log/approvals.yml": "sha256-vahHkBhZPYasYjbS5cdO/iUgZ2cNkstJVAjvkd6Uh7I=",
   "_log/baseline.md": "sha256-bKBrkJqzYerT+222smbwFY94nuJsFwulpS4FRSEXhOA=",
-  "_log/costs.yml": "sha256-IbGcj3Bhau0dnRfdDLfnRs6crlrng54GWJ5VKtB9NHQ=",
+  "_log/costs.yml": "sha256-IkDU7OcR3CJhs425NAeXQGD9Qo2cf1AkAW4ozylfuOM=",
   "_log/execution.md": "sha256-q+zg5vm16VW1QdDFlj8Qf7pCcQTHmgtO1pfIGh5QtjY=",
   "_log/gates/T1-1.md": "sha256-Oy3wpYd6WdrUcHuXFYVfQeAYy/VPcisSTdBxxqWY2sg=",
   "_log/gates/T1-2.md": "sha256-Tj08i9/qUQWA1y0J8NDpE/RZ2hLWufp5oV4euHg/TxY=",
@@ -25,6 +25,6 @@
   "_log/reviews/T3-1-review.md": "sha256-3UJnlFIpU2XCwUtkzfBQQdHn9rG+q/tgkM2YT+7RG/0=",
   "_log/reviews/T3-2-pack.md": "sha256-uQ2y6FTznCaNCKEEWn70dJuQf2gwksDmzoYdsridZI8=",
   "_log/reviews/T3-2-review.md": "sha256-h9Pt3DqJNKk4G4rWe9tZ42YHG0nMfF8YJ3xpzHcQQSM=",
-  "_log/session-cuts.md": "sha256-m6jl/0GhvVVS4ZueP8YfyTbHE51x7B6G+FPWfGhSAn8=",
+  "_log/session-cuts.md": "sha256-Y4ttSJBLcCX3IH7xho7kRegQxP/Y8+M/LKu41gN9V8c=",
   "_log/start.yml": "sha256-e3iLwbkUlgTuzGseI0imescVCApbJiXsxA9W4pTL+rQ="
 }

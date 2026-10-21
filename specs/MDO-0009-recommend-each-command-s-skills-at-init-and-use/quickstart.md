@@ -14,7 +14,8 @@ access to GitHub.
    software-architect, each with what it does, source, version, the commands that use it and where it
    would be copied (`.claude/skills`, `.agents/skills`). Nothing is selected.
 2. Select only brainstorming and confirm.
-   You should see: `installed brainstorming`; `.claude/skills/brainstorming/SKILL.md` and
+   You should see: `installed brainstorming`, with the scripts it left out named (add them with
+   `--with-scripts`); `.claude/skills/brainstorming/SKILL.md` and
    `.agents/skills/brainstorming/SKILL.md` exist, and `.mandao/mandao.lock` pins it with commit
    `bb92a77…`.
 3. Run `node <worktree>/dist/cli.js doctor`.
