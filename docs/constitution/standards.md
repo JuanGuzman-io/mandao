@@ -19,6 +19,8 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 - Schemas first: every file Mandao reads is a zod schema in `src/schemas/`; types are `z.infer`.
 - User-facing YAML keys are snake_case (`schema_version`, `default_profile`); TypeScript identifiers
   are camelCase.
+- A spec's layout version is its story's `schema_version`; readers support every version still in the
+  repo (ADR 0041).
 - Commits: `.mandao/templates/<profile>/rules/commits.md`.
 - Tests create temporary folders only through `makeTree` (`test/helpers.ts`), which removes them when
   the test file finishes, and never build a path with a `..` segment through `join` or `resolve`, nor

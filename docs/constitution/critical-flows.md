@@ -19,8 +19,8 @@ Flows that require e2e coverage and performance budgets. AC touching them carry 
 | Start creates an isolated spec worktree and resolves the next session | mandao | `test/integration/start.test.ts`, `branching.test.ts`, `shadow.test.ts` | no measured budget |
 | Human approval refuses critical OPENs and records its provenance; running the next command approves, except open items or a changed document | mandao | `test/integration/approve.test.ts`, `premise.test.ts` | — |
 | RED precedes implementation; FAIL escalates; tagged security findings block PASS | mandao | `test/integration/tdd.test.ts`, `enforced-rules.test.ts`, `review.test.ts` | — |
-| Script-owned logs record outside edits and preserve task commit evidence | mandao | `test/integration/ledger.test.ts`, `spec-log.test.ts`, `run-queue.test.ts` | — |
-| Closure preserves publication identity and detects diagram drift | mandao | `test/integration/close.test.ts` | — |
+| Script-owned logs record outside edits and preserve task commit evidence; a version 2 spec commits six log files and the rest stays in the local cache | mandao | `test/integration/ledger.test.ts`, `spec-log.test.ts`, `run-queue.test.ts`, `log-v2.test.ts` | — |
+| Closure preserves publication identity and detects diagram drift; drift does not apply to lite specs, and close commits what it recorded | mandao | `test/integration/close.test.ts`, `close-drift.test.ts`, `close-commit.test.ts` | — |
 | Packed package installs and initializes from scratch | mandao | `scripts/smoke.mjs`, CI Node 22/24 | — |
 
 Coverage labels above describe existing suites: integration/unit coverage is not a live harness e2e
