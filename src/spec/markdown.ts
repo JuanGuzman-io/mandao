@@ -128,9 +128,30 @@ export function listField(body: string, key: string): string[] {
     : [];
 }
 
-/** Markers that block the next phase: a critical OPEN or a `[NEEDS CLARIFICATION]`. */
+/** Fenced blocks emptied (their lines kept, so line numbers hold). */
+export function withoutFences(markdown: string): string {
+  let inFence = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return '';
+      }
+      return inFence ? '' : line;
+    })
+    .join('\n');
+}
+
+/** The prose of a document: fenced blocks and inline code spans removed, because a marker shown as an example is not an open item. */
+export function withoutCode(markdown: string): string {
+  return withoutFences(markdown).replace(/(`+)[^\n]*?\1/g, '');
+}
+
+/** Markers that block the next phase: a critical OPEN or a `[NEEDS CLARIFICATION]`. Only real ones: code is not read. */
 export function blockingMarkers(markdown: string): { criticalOpen: string[]; needsClarification: string[] } {
-  const criticalOpen = [...markdown.matchAll(/OPEN\(critical[^)]*\):?\s*([^\n]*)/g)].map((m) => m[1]!.trim());
-  const needsClarification = [...markdown.matchAll(/\[NEEDS CLARIFICATION\]:?\s*([^\n]*)/g)].map((m) => m[1]!.trim());
+  const prose = withoutCode(markdown);
+  const criticalOpen = [...prose.matchAll(/OPEN\(critical[^)]*\):?\s*([^\n]*)/g)].map((m) => m[1]!.trim());
+  const needsClarification = [...prose.matchAll(/\[NEEDS CLARIFICATION\]:?\s*([^\n]*)/g)].map((m) => m[1]!.trim());
   return { criticalOpen, needsClarification };
 }

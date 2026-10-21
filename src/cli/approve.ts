@@ -5,7 +5,7 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot } from '../scripts/commits.js';
-import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
+import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { docPath, LITE_DOC, logPath } from '../scripts/spec-log.js';
 import {
   APPROVAL_STEPS,
@@ -14,6 +14,7 @@ import {
   changedSince,
   docHash,
   frontmatterOf,
+  type NextFacts,
   nextStep,
   openItems,
   parseApprovals,
@@ -131,12 +132,36 @@ export function recordShown(spec: SpecFolder): Approval {
   return appendApproval(spec, { step: 'shown', sha256: currentHashes(spec.dir) });
 }
 
-/** The next step from the spec's state and its facts: pending commits, approvals and the documents' hashes. */
+const gitOk = (cwd: string, args: string[]) => {
+  try {
+    execFileSync('git', args, { cwd, stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** Where the spec's own branch stands: merged into `origin/<base>` (a local-only merge is not delivered), pushed (its remote branch holds it), or neither. No fact when the branch or git is missing. Read only. */
+function deliveryOf(spec: SpecFolder, config: ReturnType<typeof readConfig>): NextFacts['delivery'] {
+  const repo = repoRoot(spec.dir);
+  const base = branchingFor(config, spec.story?.meta.projects[0]).base;
+  const { branch } = expectedPlace(repo, config, spec);
+  if (!gitOk(repo, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`])) return undefined;
+  if (gitOk(repo, ['merge-base', '--is-ancestor', branch, `origin/${base}`])) return 'merged';
+  return gitOk(repo, ['merge-base', '--is-ancestor', branch, `origin/${branch}`]) ? 'pushed' : 'unpushed';
+}
+
+/** The next step from the spec's state and its facts: pending commits, approvals, the documents' hashes, the verify verdict and, once closed, the delivery. */
 export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>) {
   const tasks = join(spec.dir, 'tasks.md');
   const tasksStatus = existsSync(tasks) ? frontmatterOf(readFileSync(tasks, 'utf8')).data.status : undefined;
+  const report = join(spec.dir, 'verify-report.md');
+  const verdict = existsSync(report) ? frontmatterOf(readFileSync(report, 'utf8')).data.verdict : undefined;
+  const delivery = spec.story?.meta.status === 'closed' ? deliveryOf(spec, config) : undefined;
   return nextStep(spec, {
     ...(typeof tasksStatus === 'string' ? { tasksStatus } : {}),
+    ...(typeof verdict === 'string' ? { verifyVerdict: verdict } : {}),
+    ...(delivery ? { delivery } : {}),
     pendingCommits: commitState(spec, config.commits.trailers).pending,
     approvals: readApprovals(spec),
     hashes: currentHashes(spec.dir),

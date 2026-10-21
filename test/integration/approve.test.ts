@@ -7,7 +7,7 @@ import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { logPath } from '../../src/scripts/spec-log.js';
-import { parseApprovals, withStatus } from '../../src/spec/index.js';
+import { parseApprovals, setTaskDone, withStatus } from '../../src/spec/index.js';
 import { makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
@@ -308,5 +308,72 @@ describe('mandao approve --by-running: more refusals (AC-5)', () => {
     expect(process.exitCode).toBe(1);
     expect(status(root, 'tasks.md')).toBe('draft');
     expect(readApprovals(root)).toBe(before);
+  });
+});
+
+/** MDO-0010 T5 (D1): `run next` reads a failed verify from the report and a closed spec's delivery from git. */
+describe('mandao run next: a failed verify and a closed spec (T5)', () => {
+  const closedRepo = () => {
+    const root = repo();
+    const file = join(specDir(root), 'story.md');
+    writeFileSync(file, withStatus(readFileSync(file, 'utf8'), 'closed'));
+    append(root, 'requirements.md', '- [NEEDS CLARIFICATION]: left behind?');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'closed');
+    return root;
+  };
+  const names = async (root: string) => text(await run(root, 'next', 'MDO-0001'));
+
+  test('a verify-report.md with verdict blocked recommends implement, not verify', async () => {
+    const root = repo();
+    for (const f of ['story.md', 'requirements.md', 'tasks.md']) {
+      const file = join(specDir(root), f);
+      writeFileSync(file, withStatus(readFileSync(file, 'utf8'), 'approved'));
+    }
+    const tasks = join(specDir(root), 'tasks.md');
+    writeFileSync(tasks, setTaskDone(readFileSync(tasks, 'utf8'), 'T2', true));
+    expect((await run(root, 'next', 'MDO-0001')).recommended.command).toBe('/mandao-verify');
+    writeFileSync(join(specDir(root), 'verify-report.md'), '---\nverdict: blocked\n---\n# Verify\n');
+    const n = await run(root, 'next', 'MDO-0001');
+    expect(n.recommended.command).toBe('/mandao-implement');
+  });
+
+  test('closed, branch only local: names the push; pushed: names the PR and merge; merged: nothing', async () => {
+    const root = closedRepo();
+    const unpushed = await run(root, 'next', 'MDO-0001');
+    expect(unpushed.recommended.command).toMatch(/push/);
+    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
+
+    const remote = realpathSync(makeTree({}));
+    git(remote, 'init', '-q', '--bare');
+    git(root, 'remote', 'add', 'origin', remote);
+    git(root, 'push', '-q', '-u', 'origin', 'feat/MDO-0001-skills-list');
+    const pushed = await run(root, 'next', 'MDO-0001');
+    expect(pushed.recommended.command).toMatch(/PR|pull request/i);
+    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
+
+    git(root, 'branch', 'main');
+    const local = await run(root, 'next', 'MDO-0001');
+    expect(local.recommended.command, 'a merge only into the local base is not delivered').toMatch(/push|PR|pull request/i);
+    expect(local.options).not.toEqual([]);
+
+    git(root, 'push', '-q', 'origin', 'main');
+    const merged = await run(root, 'next', 'MDO-0001');
+    expect(merged.options).toEqual([]);
+    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
+  });
+
+  test('the delivery is read from the spec branch, not from the checked-out one', async () => {
+    const root = closedRepo();
+    git(root, 'commit', '-q', '--allow-empty', '-m', 'more work');
+    git(root, 'branch', 'main', 'HEAD~1');
+    git(root, 'checkout', '-q', 'main');
+    expect((await run(root, 'next', 'MDO-0001')).recommended.command).toMatch(/push/);
+  });
+
+  test('run next on a closed spec writes nothing', async () => {
+    const root = closedRepo();
+    await run(root, 'next', 'MDO-0001');
+    expect(git(root, 'status', '--porcelain')).toBe('');
   });
 });

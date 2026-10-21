@@ -18,7 +18,7 @@ Five tasks, in order:
 ### AC-1, AC-5 — The next step fits the spec's state; Running the next command approves the spec, unless something is open
 
 - [x] T1 [AC-1, AC-5] Mandao names the next command from the spec's state — `src/spec/next.ts`
-- [ ] T5 [AC-1, AC-5] The next step reads only real markers and knows failed and closed specs — `src/spec/next.ts`
+- [x] T5 [AC-1, AC-5] The next step reads only real markers and knows failed and closed specs — `src/spec/next.ts`
 
 **Checkpoint:** `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts` passes (T1, T5); this confirms AC-1, AC-5 before the next group.
 
@@ -36,7 +36,7 @@ Five tasks, in order:
 
 ### AC-4 — A quick records only its own cost
 
-- [ ] T4 [AC-4] [P] A quick's cost excludes what other specs already recorded — `src/spec/costs.ts`
+- [x] T4 [AC-4] [P] A quick's cost excludes what other specs already recorded — `src/spec/costs.ts`
 
 **Checkpoint:** `npx vitest run test/integration/costs.test.ts test/unit/session-turns.test.ts` passes (T4); this confirms AC-4 before the next group.
 
@@ -156,7 +156,7 @@ parallel_safe: true
 verify: npx vitest run test/integration/costs.test.ts test/unit/session-turns.test.ts
 ```
 
-### [ ] T5 — The next step reads only real markers and knows failed and closed specs
+### [x] T5 — The next step reads only real markers and knows failed and closed specs
 
 - **What:** the next-step rules ([D1](spec.md#d1), [D6](spec.md#d6)), added by the maintainer after the T1 and T2 reviews:
   - markers (`[NEEDS CLARIFICATION]`, `OPEN`, `CONFLICT`) inside inline code spans or fenced code blocks are not open items; only real markers count (otherwise MDO-0010 blocks itself);

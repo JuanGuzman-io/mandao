@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
-updated_at: 2026-10-21T15:19:36.305Z
+updated_at: 2026-10-21T15:31:30.029Z
 current: null
 open_questions: []
 next_step: ""
@@ -153,4 +153,56 @@ red_tests:
           - the header is not a row, and each row gets its own actual
           - without a close record the actual is not known, never zero
           - no session-cuts.md gives no estimates
+  - task: T5
+    files:
+      - path: test/unit/next.test.ts
+        sha256: 6eb752870b085c7c1dddc4254d1d41d6677b9fda83d7d412db2d35f7eface2ea
+        tests:
+          - "S-1.1: an open [NEEDS CLARIFICATION] leads to clarify, gives the item, offers neither tasks nor implement"
+          - "S-1.2: an approved lite spec leads to implement; an approved standard spec with nothing open leads to tasks"
+          - "S-1.3: a critical OPEN, or a draft spec, never recommends nor offers implement"
+          - "S-1.4: a spec.md that differs from the recorded hash recommends approving again and names spec.md"
+          - "S-1.4/C1: an approval without a recorded hash makes no claim about changes"
+          - "S-1.5: tasks left -> implement; pending commits -> run commit; every task done -> verify; verified -> close"
+          - "AC-1/C1: an unresolved critical row never recommends nor offers implement, and leads to clarify"
+          - "AC-1/C1: a resolved critical row does not block implement"
+          - "S-5.2: an unresolved CONFLICT table row leads to clarify"
+          - "S-5.2: the inline non-bullet CONFLICT(a: ..., b: ..., decides: ...) form leads to clarify"
+          - "S-1.4: a later shown row with the new hash does not replace the approval hash"
+          - "FR-1: a spec folder with spec.md and no depth line is lite: no /mandao-tasks"
+          - ${name} in an inline code span or a fenced block is ignored, in prose it still counts
+          - a pending decision in a code span or block is ignored too
+          - "MDO-0010 itself: a marker named in backticks in prose does not recommend clarify"
+          - a spec whose verify was blocked recommends the rework, even with every task done
+          - a closed spec not pushed recommends the push, never story or clarify, whatever markers remain
+          - a closed spec pushed and not merged recommends the PR and merge
+          - a closed spec whose branch is merged recommends nothing
+          - a closed spec without a delivery fact still never recommends story or clarify
+          - the rule states the row shape and the statuses it names
+          - "a row with each status the rule names is read as it says: open blocks, resolved does not"
+          - leading formatting is not a resolution, and the rule says a status must start with resolved
+          - a backticked Type still counts, and the rule scopes the backtick exemption to prose
+      - path: test/integration/approve.test.ts
+        sha256: 429976212be0af60db295d375f1f5e75af198000f4a1965e39edb52b3b6b50ac
+        tests:
+          - "design: statuses approved, who and when recorded, the specify commit made with its fixed subject"
+          - a lite spec is approved under its own subject (MDO-0007)
+          - "a critical OPEN blocks the approval: nothing changes"
+          - close records the approved items for the close session to apply, and changes no status
+          - an unknown step is refused
+          - changes only the status value and keeps its comment
+          - "S-1.3/C1: approve lists no implement among its options for a draft spec"
+          - "S-1.3/C1: run next lists no implement for a spec with a critical OPEN"
+          - "S-1.4: after approve records a hash, a changed spec.md recommends approving again and names spec.md"
+          - "S-1.6 and S-1.6/C1: plain run next writes nothing: the spec folder is byte-identical, still draft, no approval"
+          - "S-5.1: nothing open and the summary shown: approves, records the command, date and person, says go"
+          - "S-5.3 and S-5.3/C2: spec.md changed after --shown returns ask naming spec.md and records nothing"
+          - "S-5.4 and S-5.4/C3: a critical OPEN is refused, whatever the answer (%j)"
+          - "S-5.5: the words written next to the command are recorded verbatim, with the command, date and person"
+          - "S-5.2: a resolved critical Consistency Check row does not ask"
+          - "S-5.4/C3: on the tasks step a critical OPEN in requirements.md is refused and nothing is recorded"
+          - a verify-report.md with verdict blocked recommends implement, not verify
+          - "closed, branch only local: names the push; pushed: names the PR and merge; merged: nothing"
+          - the delivery is read from the spec branch, not from the checked-out one
+          - run next on a closed spec writes nothing
 pending_commits: []

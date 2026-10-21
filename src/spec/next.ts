@@ -1,5 +1,5 @@
 import type { Approval } from './approvals.js';
-import { blockingMarkers } from './markdown.js';
+import { blockingMarkers, withoutCode, withoutFences } from './markdown.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
 import type { Task } from './tasks.js';
@@ -23,6 +23,10 @@ export interface NextFacts {
   tasksStatus?: string;
   /** The current hash of each approvable document, by file name (`docHash`). */
   hashes?: Record<string, string>;
+  /** The `verdict:` of `verify-report.md` when there is one: `blocked` means the verify failed. */
+  verifyVerdict?: string;
+  /** Where a closed spec's branch stands in git: not pushed, pushed and not merged, or merged into its base. */
+  delivery?: 'unpushed' | 'pushed' | 'merged';
 }
 
 export interface NextStep {
@@ -33,7 +37,7 @@ export interface NextStep {
 
 /** A Consistency Check row: `| ID | Type | Finding | Severity | Owner | Status |`. Header and separator rows have no `critical`/`normal` severity. */
 function checkRows(text: string): { type: string; finding: string; severity: string; resolved: boolean }[] {
-  const rows = text
+  const rows = withoutFences(text)
     .split('\n')
     .filter((l) => l.trimStart().startsWith('|'))
     .map((l) =>
@@ -45,7 +49,7 @@ function checkRows(text: string): { type: string; finding: string; severity: str
     );
   return rows
     .filter((c) => c.length >= 6 && /^(critical|normal)$/i.test(c[3]!))
-    .map((c) => ({ type: c[1]!.replace(/`/g, ''), finding: c[2]!, severity: c[3]!.toLowerCase(), resolved: /^\W*resolved/i.test(c[5]!) }));
+    .map((c) => ({ type: c[1]!.replace(/`/g, ''), finding: c[2]!, severity: c[3]!.toLowerCase(), resolved: /^resolved/i.test(c[5]!) }));
 }
 
 /** Items that need one question: unresolved critical or `CONFLICT` Consistency Check rows, and inline `CONFLICT(a: …, b: …, decides: …)`. */
@@ -53,7 +57,7 @@ function conflictsAndFindings(text: string): string[] {
   const rows = checkRows(text)
     .filter((r) => !r.resolved && (r.severity === 'critical' || r.type.toUpperCase() === 'CONFLICT'))
     .map((r) => r.finding);
-  const inline = text
+  const inline = withoutCode(text)
     .split('\n')
     .filter((l) => !l.trimStart().startsWith('|') && !/\bresolved\b/i.test(l))
     .flatMap((l) => [...l.matchAll(/\bCONFLICT\(([^\n]*)/g)].map((m) => `CONFLICT(${m[1]!.trim()}`));
@@ -67,7 +71,7 @@ export function openItems(spec: Pick<NextSpec, 'story' | 'requirements'>): { cri
   const ask = raw.flatMap((t) => [
     ...blockingMarkers(t).needsClarification.map((q) => q || '[NEEDS CLARIFICATION]'),
     ...conflictsAndFindings(t),
-    ...[...t.matchAll(/^[ \t]*(?:[-*][ \t]+)?(\*\*Decision:\*\*[ \t]*pending\b[^\n]*)/gim)].map((m) => m[1]!.trim()),
+    ...[...withoutCode(t).matchAll(/^[ \t]*(?:[-*][ \t]+)?(\*\*Decision:\*\*[ \t]*pending\b[^\n]*)/gim)].map((m) => m[1]!.trim()),
   ]);
   return { criticalOpen, ask };
 }
@@ -111,7 +115,7 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
 function stage(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep {
   const id = spec.story?.meta.id ?? spec.name;
   const status = spec.story?.meta.status ?? 'draft';
-  if (status === 'closed' || status === 'abandoned') return rec('/mandao-story', `the spec is ${status}`);
+  if (status === 'abandoned') return rec('/mandao-story', `the spec is ${status}`);
   if (status === 'blocked') return rec('/mandao-clarify', 'the spec is blocked');
   if (!spec.requirements) return rec('/mandao-specify', 'the story is approved and has no requirements yet');
   if (facts.pendingCommits?.length) {
@@ -120,8 +124,18 @@ function stage(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep {
   if (status === 'verified') return rec('/mandao-close', 'the spec is verified');
   if (facts.tasksStatus === 'draft') return rec('/mandao-tasks', 'tasks.md is not approved yet', '/mandao-clarify');
   if (!lite && !spec.tasks.length) return rec('/mandao-tasks', 'the spec is approved and has no tasks yet', '/mandao-clarify');
+  if (facts.verifyVerdict === 'blocked')
+    return rec('/mandao-implement', 'the verify failed: rework what it listed', '/mandao-verify', '/mandao-clarify');
   if (spec.tasks.length && spec.tasks.every((t) => t.done)) return rec('/mandao-verify', 'every task is done');
   return rec('/mandao-implement', spec.tasks.length ? 'tasks are left' : 'the spec is approved', '/mandao-clarify');
+}
+
+/** A closed spec has only its delivery left (push, PR, merge), read from git by the caller; naming it performs nothing (MDO-0012 does). */
+function delivery(facts: NextFacts): NextStep {
+  if (facts.delivery === 'merged')
+    return { recommended: { command: 'none', reason: 'the spec is closed and its branch is merged' }, options: [] };
+  if (facts.delivery === 'pushed') return rec('open the PR and merge it', 'the spec is closed and its branch is pushed, not merged');
+  return rec('push the branch', 'the spec is closed and its branch is not pushed');
 }
 
 /**
@@ -131,5 +145,6 @@ function stage(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep {
  */
 export function nextStep(spec: NextSpec, facts: NextFacts): NextStep {
   const lite = spec.lite ?? false;
+  if (spec.story?.meta.status === 'closed') return delivery(facts);
   return settle(spec, facts, lite) ?? stage(spec, facts, lite);
 }

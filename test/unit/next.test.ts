@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs';
+// mandao-scans: core/templates/shared/rules/ specs/ — reads the consistency-check rule and the MDO-0010 spec folder by path.
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { readSpec } from '../../src/scripts/spec.js';
@@ -165,5 +166,108 @@ describe('nextStep: approval hashes and depth (S-1.4, FR-1)', () => {
     const n = nextStep(readSpec(dir), {});
     expect(n.recommended.command).toBe('/mandao-implement');
     expect(all(n)).not.toContain('/mandao-tasks');
+  });
+});
+
+/** MDO-0010 T5 (D1, D6): only real markers count, a failed verify reworks, a closed spec is delivered. */
+const ticks = '`';
+const fence = '```';
+describe('nextStep: markers inside code are not open items', () => {
+  const markers = ['[NEEDS CLARIFICATION]: who pays?', 'OPEN(critical, PO): who pays?', 'CONFLICT(a: x, b: y, decides: PO): which?'];
+  for (const marker of markers) {
+    const name = marker.split(/[(:\]]/)[0]!.replace('[', '');
+    test(`${name} in an inline code span or a fenced block is ignored, in prose it still counts`, () => {
+      const inline = nextStep(spec({ depth: 'lite', extra: `The marker ${ticks}${marker}${ticks} is explained here.` }).spec, {});
+      const fenced = nextStep(spec({ depth: 'lite', extra: `${fence}\n${marker}\n${fence}` }).spec, {});
+      expect(inline.recommended.command).toBe('/mandao-implement');
+      expect(fenced.recommended.command).toBe('/mandao-implement');
+      const real = nextStep(spec({ depth: 'lite', extra: `- ${marker}` }).spec, {});
+      expect(real.recommended.command).toBe('/mandao-clarify');
+    });
+  }
+
+  test('a pending decision in a code span or block is ignored too', () => {
+    const extra = `Write ${ticks}**Decision:** pending${ticks} for it.\n\n${fence}\n**Decision:** pending\n${fence}`;
+    expect(nextStep(spec({ depth: 'lite', extra }).spec, {}).recommended.command).toBe('/mandao-implement');
+    expect(nextStep(spec({ depth: 'lite', extra: '**Decision:** pending' }).spec, {}).recommended.command).toBe('/mandao-clarify');
+  });
+
+  test('MDO-0010 itself: a marker named in backticks in prose does not recommend clarify', () => {
+    const specs = join(import.meta.dirname, '../../specs');
+    const folder = readdirSync(specs).find((n) => n.startsWith('MDO-0010-'));
+    expect(folder, 'the MDO-0010 spec folder is under specs/').toBeDefined();
+    expect(nextStep(readSpec(join(specs, folder as string)), {}).recommended.command).not.toBe('/mandao-clarify');
+  });
+});
+
+describe('nextStep: a failed verify and a closed spec', () => {
+  test('a spec whose verify was blocked recommends the rework, even with every task done', () => {
+    const s = spec({ depth: 'standard', tasks: 'done' }).spec;
+    expect(nextStep(s, {}).recommended.command).toBe('/mandao-verify');
+    const n = nextStep(s, { verifyVerdict: 'blocked' });
+    expect(n.recommended.command).toBe('/mandao-implement');
+    expect(n.recommended.reason).toContain('verify');
+  });
+
+  const closed = (extra?: string) => spec({ depth: 'lite', story: 'closed', ...(extra ? { extra } : {}) }).spec;
+  const marker = '- [NEEDS CLARIFICATION]: who pays?\n- OPEN(critical, PO): who?';
+
+  test('a closed spec not pushed recommends the push, never story or clarify, whatever markers remain', () => {
+    const n = nextStep(closed(marker), { delivery: 'unpushed' });
+    expect(n.recommended.command).toMatch(/push/);
+    expect(all(n)).not.toMatch(/mandao-story|mandao-clarify/);
+  });
+
+  test('a closed spec pushed and not merged recommends the PR and merge', () => {
+    const n = nextStep(closed(), { delivery: 'pushed' });
+    expect(n.recommended.command).toMatch(/PR|pull request/i);
+    expect(n.recommended.command).toMatch(/merge/);
+    expect(all(n)).not.toMatch(/mandao-story|mandao-clarify/);
+  });
+
+  test('a closed spec whose branch is merged recommends nothing', () => {
+    const n = nextStep(closed(marker), { delivery: 'merged' });
+    expect(n.options).toEqual([]);
+    expect(n.recommended.command).toBe('none');
+    expect(all(n)).not.toMatch(/mandao-story|mandao-clarify/);
+  });
+
+  test('a closed spec without a delivery fact still never recommends story or clarify', () => {
+    expect(all(nextStep(closed(marker), {}))).not.toMatch(/mandao-story|mandao-clarify/);
+  });
+});
+
+describe('consistency-check.md and the code agree on when a row is resolved', () => {
+  const rule = readFileSync(join(import.meta.dirname, '../../core/templates/shared/rules/consistency-check.md'), 'utf8');
+
+  test('the rule states the row shape and the statuses it names', () => {
+    expect(rule).toContain('| ID | Type | Finding | Severity | Owner | Status |');
+    expect(rule).toMatch(/^Status values: `open`.*`resolved/m);
+  });
+
+  test('a row with each status the rule names is read as it says: open blocks, resolved does not', () => {
+    const line = rule.match(/^Status values:(.*)$/m)![1]!;
+    const names = [...line.matchAll(/`([^`]+)`/g)].map((m) => m[1]!);
+    expect(names.length).toBeGreaterThanOrEqual(2);
+    for (const status of names) {
+      const resolved = status.startsWith('resolved');
+      const row = `| CC-1 | PREMISE | The limit is unknown. | critical | PO | ${status} |`;
+      const n = nextStep(withCheck(cc(row)), {});
+      expect(n.recommended.command, status).toBe(resolved ? '/mandao-implement' : '/mandao-clarify');
+    }
+    const open = nextStep(withCheck(cc('| CC-1 | PREMISE | x | critical | PO | unresolved |')), {});
+    expect(open.recommended.command).toBe('/mandao-clarify');
+  });
+
+  test('leading formatting is not a resolution, and the rule says a status must start with resolved', () => {
+    const row = '| CC-1 | PREMISE | x | critical | PO | **resolved** |';
+    expect(nextStep(withCheck(cc(row)), {}).recommended.command).toBe('/mandao-clarify');
+    expect(rule).toMatch(/starts with `resolved`/);
+  });
+
+  test('a backticked Type still counts, and the rule scopes the backtick exemption to prose', () => {
+    const row = '| CC-1 | `CONFLICT` | x | normal | PO | open |';
+    expect(nextStep(withCheck(cc(row)), {}).recommended.command).toBe('/mandao-clarify');
+    expect(rule).toMatch(/Table rows are read by their cells; a backticked Type still counts/);
   });
 });

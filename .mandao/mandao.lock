@@ -597,7 +597,7 @@ files:
     harness: mandao
     from: template:shared/rules/consistency-check.md
     ownership: owned
-    hash: sha256-twkkBQwfOt6LYf6SLU4qbV1lREF9El9csnWhd8wITZQ=
+    hash: sha256-+sHR7/SnX22JrGAEUGGz8UvajhoR2POr6W+xwDon/VI=
     scope: project
   - path: .mandao/templates/app/rules/context.md
     harness: mandao
