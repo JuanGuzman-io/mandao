@@ -10,8 +10,7 @@ status: approved
 
 A spec folder at layout version 2 holds a fixed file set per depth. Its log has six committed files, and
 its close is whole in `close-summary.md`. `mandao run layout` checks this and close refuses a mismatch.
-Version 1 specs are read as they are, and MDO-0008 to MDO-0010 move to version 2 without changing any
-recorded value.
+Version 1 specs are read as they are, by their story's `schema_version`.
 
 ## Functional requirements
 
@@ -188,35 +187,6 @@ full spec without a stamped graph is still an error.
 - **When** `diagram-drift` runs
 - **Then** the first reports its drift as today, and the second fails as today (C1)
 
-<a id="fr7"></a>
-### FR-7 — MDO-0008, MDO-0009 and MDO-0010 move to version 2
-Serves: AC-7, AC-7/C1, AC-7/C2
-Projects: mandao
-
-`mandao run migrate-spec <ID>` converts a closed version 1 spec to version 2:
-- tasks to `tasks.md`;
-- the log to the six files;
-- `docs/releases/<ID>/` and `docs/kaizen/<ID>.md` into `close-summary.md`, plus its `docs/CHANGELOG.md` line.
-
-It captures the answers of trace, kaizen, implement-summary and release-status before the move and
-compares them after. It writes nothing when any answer differs.
-
-#### S-7.1 — The three specs pass
-- **Given** MDO-0008, MDO-0009 and MDO-0010 on this branch
-- **When** each is migrated
-- **Then** `mandao run layout` gives `ok: true` for each, at version 2
-
-#### S-7.2 — Same answers
-- **Given** each spec before and after the move
-- **When** trace, kaizen, implement-summary and release-status run
-- **Then** the JSON answers are equal (C1)
-
-#### S-7.3 — Recorded values do not change
-- **Given** a migrated spec
-- **When** its verdicts, cost entries, approvals and task commit links are compared with version 1
-- **Then** they are identical
-- **BUT it must NOT** write anything when a comparison differs (C2)
-
 <a id="fr8"></a>
 ### FR-8 — `docs/spec-anatomy.md`
 Serves: AC-1, AC-2
@@ -236,7 +206,7 @@ built from the same manifest.
 ### NFR-1 — The committed log stays small
 Serves: AC-3
 
-MDO-0010 after migration has 6 files and at most 2,000 lines in `_log/`. Today it has 39 files and 18,699 lines. Its review texts and other logs total about 1,000 lines without the packs and the full gate output. Measured with `git ls-files <spec>/_log | wc -l` and `wc -l`.
+A version 2 fixture with 3 tasks × 2 attempts, each with a 10,000-line failing gate output and a 5,000-line Reviewer pack, commits 6 files and at most 1,000 lines in `_log/`. Measured in the T4 test with `git ls-files <spec>/_log` and the line count of those files. For scale: MDO-0010 commits 39 files and 18,699 lines today, about 1,000 of them without the packs and the full gate output.
 
 ### NFR-2 — The layout check is fast
 Serves: AC-2
@@ -263,9 +233,7 @@ Serves: AC-2
 | AC-5 | C1: nothing unrecorded | FR-5 / S-5.2 | covered |
 | AC-6 | main | FR-6 / S-6.1 | covered |
 | AC-6 | C1: standard and full unchanged | FR-6 / S-6.2 | covered |
-| AC-7 | main | FR-7 / S-7.1 | covered |
-| AC-7 | C1: same answers | FR-7 / S-7.2 | covered |
-| AC-7 | C2: recorded values unchanged | FR-7 / S-7.3 | covered |
+| AC-7 | all | — | removed (C-5) |
 
 ## Clarifications
 
@@ -285,9 +253,14 @@ Serves: AC-2
 - **Effect:** FR-3.
 
 ### C-4 — Lite specs, close commit, migration (2026-10-21)
-- **Answer:** lite has no diagram, and drift says "not applicable". Close commits all it wrote and was approved. MDO-0008 to MDO-0010 are migrated.
+- **Answer:** lite has no diagram, and drift says "not applicable". Close commits all it wrote and was approved.
 - **Answered by:** maintainer, in the story session.
-- **Effect:** FR-5, FR-6, FR-7.
+- **Effect:** FR-5, FR-6. The migration part is replaced by C-5.
+
+### C-5 — The migration leaves this spec (2026-10-21)
+- **Answer:** MDO-0011 builds only the new layout (T1 to T7). The migration of MDO-0008, MDO-0009 and MDO-0010 goes to the backlog as a separate spec, to run once the new layout has been proven on a real spec. Until then the scripts read both layouts by `schema_version`.
+- **Answered by:** maintainer, before implement.
+- **Effect:** AC-7 is `removed`, FR-7 and D8 are dropped, and NFR-1 is measured on a fixture instead of on migrated MDO-0010.
 
 ## Consistency Check
 

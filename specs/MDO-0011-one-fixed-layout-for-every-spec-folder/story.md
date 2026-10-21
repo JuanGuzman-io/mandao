@@ -23,7 +23,8 @@ sources:
 
 A person who opens any spec folder finds the same files for the same depth, a short log that does not
 grow with every retry, and the whole close in one document inside the spec. We will know it is done
-when every new spec, and MDO-0008 to MDO-0010, match a published layout that a check enforces.
+when every new spec matches a published layout that a check enforces, and older specs are still read
+as they are.
 
 ## Who
 
@@ -66,8 +67,7 @@ the maintainer who compares specs in Kaizen.
 - **Close commits everything it wrote**, including approved edits outside the spec folder and the
   files regenerated from them.
 - **Lite specs have no diagram**, and drift reports "not applicable" for them.
-- **Migration of MDO-0008, MDO-0009 and MDO-0010** to the new folder, log and close. Older specs are
-  read as they are.
+- **Older specs read as they are:** every script reads both layouts by the story's `schema_version`.
 - `docs/spec-anatomy.md`: which file exists at each depth and what it is for, linked from the README.
 
 ## Out of scope
@@ -75,7 +75,8 @@ the maintainer who compares specs in Kaizen.
 - **Delivery** (MDO-0012): push, PR, merge, promotion, cleanup, the `Delivery` record written before the
   merge, and the environment reached derived from git. This story only gives `close-summary.md` its
   `Delivery` section.
-- Migrating MDO-0001 to MDO-0007.
+- **Migrating MDO-0008, MDO-0009 and MDO-0010**: a separate backlog spec, once the new layout has been
+  proven on a real spec. Migrating MDO-0001 to MDO-0007.
 - Changing what Kaizen measures, or the session-cut constants.
 
 ## Acceptance criteria
@@ -144,14 +145,10 @@ critical: true
 
 ### AC-7 — The recent specs match the layout
 critical: false
+status: removed
 
-- **GIVEN** MDO-0008, MDO-0009 and MDO-0010, already closed
-- **WHEN** they are migrated
-- **THEN** each one passes the layout check, with its tasks in `tasks.md`, its six-file log and its
-  whole close in `close-summary.md`
-- **AND IT MUST** keep trace, Kaizen, implement-summary and release status giving the same answers as
-  before the move (C1)
-- **BUT it must NOT** change a verdict, a cost, an approval or a commit link in the move (C2)
+Moved to a separate backlog spec by the maintainer on 2026-10-21, before implement: migrate MDO-0008 to
+MDO-0010 once the new layout has been proven on a real spec.
 
 ## Dependencies
 
@@ -179,9 +176,6 @@ No personal or business data.
   [requirements.md](requirements.md#clarifications) (C-1 to C-3).
 - `ASSUMPTION` (source: maintainer request): the local cache is deleted at close unless the project
   asks to keep full logs. In a worktree it disappears with the worktree anyway.
-- `ASSUMPTION` (source: maintainer answer): the migration of MDO-0008 to MDO-0010 moves content and
-  never edits a recorded value. Where a recorded value cannot move without a script, the old file
-  stays and the check accepts it, and that is reported.
 - `OPEN` (not critical, owner: maintainer): tracker publication takes the `For the PO` text and the
   diagram. A lite spec has no diagram, so does it publish text only? There is no tracker today
   (`tracker: none`).

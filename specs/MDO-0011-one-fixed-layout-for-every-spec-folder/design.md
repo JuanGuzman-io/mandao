@@ -11,8 +11,8 @@ status: approved
 One manifest in `src/spec/layout.ts`, keyed by layout version, depth and stage, drives the folder check,
 the close gate and `docs/spec-anatomy.md`. `logPath` gains a version 2 resolution that maps the old log
 files onto six files and the local cache. The close summary becomes a document with a record, not a
-generated list of links. A one-shot `migrate-spec` moves MDO-0008 to MDO-0010 and refuses any move
-that changes an answer.
+generated list of links. Version 1 specs keep being read as they are; their migration is a separate
+spec (C-5).
 
 ## Decisions
 
@@ -21,7 +21,7 @@ that changes an answer.
 
 - **Why:**
   - Today nothing reads a spec's version, and "lite" means "`spec.md` exists" (`src/scripts/spec.ts:52`). A version field already exists in every story.
-  - Bumping it to 2 marks new and migrated specs, and leaves 1 for the older ones.
+  - Bumping it to 2 marks new specs, and leaves 1 for the older ones.
   - `layoutManifest(version, depth)` returns the required files per stage and the allowed conditionals. `layoutFindings(folder)` is pure.
 - **Depth:** read from `depth:` in `spec.md`, or in `requirements.md` / `design.md`. When the frontmatter has no `depth:`, it falls back to `lite` if `spec.md` exists.
 - **Stages:** draft (story), specified (spec docs), planned (tasks), verified (verify-report), closed (close-summary). The stage is taken from the story status.
@@ -73,7 +73,7 @@ that changes an answer.
 
 - `logPath` already resolves older specs at the root (`spec-log.ts:35`). Version 1 keeps today's mapping; version 2 uses D3.
 - Every reader is tested on both layouts, as `spec-log.test.ts` already does for root versus `_log/`.
-- **Rejected:** migrating MDO-0001 to MDO-0007, which is out of scope.
+- **Rejected:** migrating any closed spec here. MDO-0008 to MDO-0010 move in a separate spec, once version 2 has been proven on a real spec (C-5).
 
 <a id="d5"></a>
 ### D5 — `close-summary.md` is a document with a record
@@ -113,41 +113,27 @@ that changes an answer.
 - Standard and full keep the error when there is no stamp, and keep drift as today.
 - **Rejected:** stamping a graph for lite specs (C-4).
 
-<a id="d8"></a>
-### D8 — `migrate-spec` is a checked one-shot script
-
-- **Steps:**
-  1. Capture the JSON of `trace`, `kaizen`, `implement-summary` and `release-status`.
-  2. Build the version 2 files in memory and run the same four readers on them, in a temporary copy.
-  3. Write only when all four are equal and every verdict, cost entry, approval and task commit link is identical.
-  4. Remove the version 1 files with `git rm`, and bump the story's `schema_version`.
-- **Content:** gate outputs, packs and probes go to the cache. They stay in git history.
-- **Commits:** one commit per spec.
-- **Rejected:** a hand migration, because recorded values would be retyped.
-
 ## Changes by project and module
 
 | Project | Module | Change | Exemplar file |
 |---|---|---|---|
 | mandao | Spec domain (`src/spec/`) | `layout.ts`: manifest and `layoutFindings` (D1); `state.ts`: the `state.yml` schema; timeline merge (C-1); `close-summary.ts`: sections, `applied` (D5); `task-index.ts`: inline rule only for v1 (D2) | `src/spec/next.ts`, `src/spec/close-summary.ts` |
 | mandao | Scripts (`src/scripts/`) | `spec-log.ts`: v2 mapping and cache paths (D3, D4); `spec.ts`: version and depth (D1); `gates.ts`: the capped failing-only section; `publish.ts`: the `For the PO` source | `src/scripts/spec-log.ts` |
-| mandao | CLI (`src/cli/`) | `run layout`; `run status <ID>` timeline; `run-ledger.ts` `closePaths` (D6); `run-close.ts` summary sections and CHANGELOG (D5); `run-diagram.ts` lite (D7); `run migrate-spec` (D8); writers of start, baseline, approvals, cuts, reviews, premises, mutations moved behind `logPath` | `src/cli/run-close.ts`, `src/cli/run-spec.ts` |
+| mandao | CLI (`src/cli/`) | `run layout`; `run status <ID>` timeline; `run-ledger.ts` `closePaths` (D6); `run-close.ts` summary sections and CHANGELOG (D5); `run-diagram.ts` lite (D7); writers of start, baseline, approvals, cuts, reviews, premises, mutations moved behind `logPath` | `src/cli/run-close.ts`, `src/cli/run-spec.ts` |
 | mandao | Writer / Engine | `.integrity.json` path to the cache; `.mandao/cache/` in the managed `.gitignore` block | `src/writer/log-integrity.ts`, `src/engine/graph.ts` |
 | mandao | Schemas | `story` `schema_version: 1 \| 2`; config `logs.level` | `src/schemas/story.ts`, `src/schemas/config.ts` |
 | mandao | Content (`core/`) | `doc-lite.md`, `spec-docs.md`, `doc-close.md`; specify, tasks, implement, close commands; new template `close/close-summary.md`; story template `schema_version: 2` | `core/commands/close.md` |
 | mandao | Docs | `docs/spec-anatomy.md` (from the manifest), README link, `docs/CHANGELOG.md`, `docs/kaizen/lessons.md`, ADR 0041 (spec folder layout v2) | `docs/decisions/0040-approval-by-running-the-next-command.md` |
-| mandao | Specs | MDO-0008, MDO-0009, MDO-0010 migrated by `migrate-spec` (D8) | — |
 
 ## Diagram
 
-<!-- mandao:diagram type=architecture tool=mermaid file=inline graph=diagrams/proposed.graph.json graphHash=sha256:d88bd03efbd355df source=sha256:4b0f32061d6a0edf -->
+<!-- mandao:diagram type=architecture tool=mermaid file=inline graph=diagrams/proposed.graph.json graphHash=sha256:25ed077d0be1531f source=sha256:6fbedcfe62aef94d -->
 Derived from this design; regenerated whenever it changes. Part of the design approval.
 
 ```mermaid
 flowchart LR
-  cmds["core/commands<br/>specify · tasks · implement · close"]:::changed --> cli["src/cli<br/>run layout · migrate-spec · status timeline<br/>close-summary · commit-spec · diagram-drift"]:::changed
+  cmds["core/commands<br/>specify · tasks · implement · close"]:::changed --> cli["src/cli<br/>run layout · status timeline<br/>close-summary · commit-spec · diagram-drift"]:::changed
   cli --> layout(["mandao run layout"]):::changed
-  cli --> migrate(["mandao run migrate-spec"]):::changed
   cli --> spec["src/spec<br/>layout manifest · state.yml · timeline · close summary"]:::changed
   cli --> scripts["src/scripts<br/>logPath v1/v2 + cache"]:::changed
   scripts --> spec
@@ -165,9 +151,8 @@ Single project; no cross-project contract.
 
 ## Risks and risk tags
 
-- `migration`: the move of three closed specs (D8). It is guarded by the before/after comparison and lands as one commit per spec.
 - `public-api`:
-  - new `run layout`, `run migrate-spec` and `run status <ID>` without a target;
+  - new `run layout` and `run status <ID>` without a target;
   - the `close-summary.md` shape and `state.yml`;
   - `diagram-drift` returning `applicable`.
   All other changes are additive, except the removal of `docs/releases` for version 2.

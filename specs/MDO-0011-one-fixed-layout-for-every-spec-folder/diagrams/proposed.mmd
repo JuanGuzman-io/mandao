@@ -1,7 +1,6 @@
 flowchart LR
-  cmds["core/commands<br/>specify · tasks · implement · close"]:::changed --> cli["src/cli<br/>run layout · migrate-spec · status timeline<br/>close-summary · commit-spec · diagram-drift"]:::changed
+  cmds["core/commands<br/>specify · tasks · implement · close"]:::changed --> cli["src/cli<br/>run layout · status timeline<br/>close-summary · commit-spec · diagram-drift"]:::changed
   cli --> layout(["mandao run layout"]):::changed
-  cli --> migrate(["mandao run migrate-spec"]):::changed
   cli --> spec["src/spec<br/>layout manifest · state.yml · timeline · close summary"]:::changed
   cli --> scripts["src/scripts<br/>logPath v1/v2 + cache"]:::changed
   scripts --> spec

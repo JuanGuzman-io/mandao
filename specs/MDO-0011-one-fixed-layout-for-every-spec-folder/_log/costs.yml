@@ -36,3 +36,37 @@ costs:
       model:claude-sonnet-5-5: 0.136773
     source: claude-code
     basis: equivalent
+  - at: 2026-10-21T18:56:56.416Z
+    command: tasks
+    harness: claude
+    session: 7efb77a2-39a2-4656-ae3a-03ba59d9bb85
+    usd: 1.067
+    roles:
+      tasks: 1.067
+    models:
+      claude-opus-5-5: 1.067
+    cumulative:
+      main-session: 6.709273
+      Explore: 1.457195
+      mandao-tester: 0.136773
+      model:claude-opus-5-5: 8.166468
+      model:claude-sonnet-5-5: 0.136773
+    source: claude-code
+    basis: equivalent
+  - at: 2026-10-21T19:07:43.758Z
+    command: tasks
+    harness: claude
+    session: 7efb77a2-39a2-4656-ae3a-03ba59d9bb85
+    usd: 2.0408
+    roles:
+      tasks: 2.0408
+    models:
+      claude-opus-5-5: 2.0408
+    cumulative:
+      main-session: 8.750115
+      Explore: 1.457195
+      mandao-tester: 0.136773
+      model:claude-opus-5-5: 10.207309
+      model:claude-sonnet-5-5: 0.136773
+    source: claude-code
+    basis: equivalent

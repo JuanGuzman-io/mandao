@@ -8,10 +8,28 @@ approvals:
       requirements.md: sha256-EqBRHUppBoBHuUSBreC43rantNEBgVihDb46mDZgtJ0=
       design.md: sha256-XQA8G7AeV1DNokUGqT/AGrmZgmO2PpR6g56KhBqdDOc=
   - step: design
+    by: Juan D. Guzmán
+    at: 2026-10-21T18:54:35.477Z
     note: approved by running /mandao-tasks
     sha256:
       story.md: sha256-MFynFheFt2SeX9kUvnM5j1QvzcrAsbgcw0DslSt0n/c=
       requirements.md: sha256-EqBRHUppBoBHuUSBreC43rantNEBgVihDb46mDZgtJ0=
       design.md: sha256-XQA8G7AeV1DNokUGqT/AGrmZgmO2PpR6g56KhBqdDOc=
+  - step: shown
     by: Juan D. Guzmán
-    at: 2026-10-21T18:54:35.477Z
+    at: 2026-10-21T18:56:56.244Z
+    sha256:
+      story.md: sha256-MFynFheFt2SeX9kUvnM5j1QvzcrAsbgcw0DslSt0n/c=
+      requirements.md: sha256-EqBRHUppBoBHuUSBreC43rantNEBgVihDb46mDZgtJ0=
+      design.md: sha256-XQA8G7AeV1DNokUGqT/AGrmZgmO2PpR6g56KhBqdDOc=
+  - step: shown
+    by: Juan D. Guzmán
+    at: 2026-10-21T19:07:43.567Z
+    sha256:
+      story.md: sha256-tq1jQ2WLOV8dozYML5Hxj3YnoudBDJBb8YsPZWdVSQw=
+      requirements.md: sha256-PwRbps/vMXcfH/xMoGtFznFHwc60v/cDqD782okabSk=
+      design.md: sha256-zBzAMou/7ljC2AZTLiuDHv4XjWI5Na+lwRGRZM+mcZk=
+  - step: tasks
+    note: approved by running /mandao-implement
+    by: Juan D. Guzmán
+    at: 2026-10-21T19:10:31.900Z
