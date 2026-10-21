@@ -1,12 +1,15 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
+import { keepsLogCache } from '../schemas/index.js';
 import { type Approval, parseApprovals, renderApprovals } from '../spec/approvals.js';
+import { renderCosts } from '../spec/costs.js';
 import { LAYOUT_VERSIONS, layoutManifest, tasksHaveOwnFile } from '../spec/layout.js';
 import { frontmatterOf } from '../spec/markdown.js';
 import { type Progress, progressSchema } from '../spec/progress.js';
 import { parseState, renderState, type State } from '../spec/state.js';
-import { writeText } from '../writer/files.js';
+import { createIfMissing, removeScratchDir, writeText } from '../writer/files.js';
+import { cacheRoot, specCacheDir } from '../writer/log-integrity.js';
 
 /**
  * Machine files of a spec live in `_log/` (the readability pass): people read the documents in the spec
@@ -96,6 +99,7 @@ export const readState = (specDir: string): State => parseState(readIf(join(spec
 
 /** Rewrites `_log/state.yml` with one change applied, keeping every other section as it was. */
 export function updateState(specDir: string, change: (state: State) => State): void {
+  ensureLogFiles(specDir);
   writeText(join(specDir, LOG_DIR, STATE_FILE), renderState(change(readState(specDir))));
 }
 
@@ -124,4 +128,74 @@ export function readProgress(specDir: string): { progress?: Progress; invalid?: 
   }
   const r = progressSchema.safeParse(data);
   return r.success ? { progress: r.data } : { invalid: true };
+}
+
+/** True when the spec keeps a six-file `_log/` (layout version 2): reviews, gates and premises are one file each. */
+export const specLogInCache = (specDir: string) => keepsLogCache(storyVersion(specDir));
+
+/** A path in the spec's local cache, `.mandao/cache/<ID>/…`: never committed, deleted at close unless `logs.level: full`. */
+export const cachePath = (specDir: string, ...parts: string[]) => join(specCacheDir(specDir), ...parts);
+
+/**
+ * At close: deletes the spec's local cache, unless `logs.level: full` keeps it. A version 1 spec has none.
+ * Throws when the story id is not a story id; the removal never reaches outside `.mandao/cache/`.
+ */
+export function dropLogCache(specDir: string, level: 'summary' | 'full'): boolean {
+  if (level === 'full' || !specLogInCache(specDir)) return false;
+  const dir = specCacheDir(specDir);
+  if (!existsSync(dir)) return false;
+  removeScratchDir(dir, cacheRoot(specDir));
+  return true;
+}
+
+/** The version 2 log files made of one section per task attempt or per premise. */
+export type SectionLog = 'reviews.md' | 'gates.md' | 'premises.md';
+
+/** A section heading of a merged log: `## Tn — attempt k…` or `## Pn — …`. Other headings inside a section's body do not end it. */
+const SECTION_HEAD = /^## (?:T\d+ — attempt \d+|P\d+ — )/;
+
+const FILE_TITLE: Record<SectionLog, string> = {
+  'reviews.md': '# Reviews',
+  'gates.md': '# Gates',
+  'premises.md': '# Premises',
+};
+
+/** The sections of a merged log by title (the heading without `## `), in file order. */
+export function logSections(specDir: string, file: SectionLog): Map<string, string> {
+  const sections = new Map<string, string>();
+  let title: string | undefined;
+  let body: string[] = [];
+  const flush = () => {
+    if (title !== undefined) sections.set(title, body.join('\n').trim());
+  };
+  for (const line of (readIf(join(specDir, LOG_DIR, file)) ?? '').split('\n')) {
+    if (SECTION_HEAD.test(line)) {
+      flush();
+      title = line.slice(3).trim();
+      body = [];
+    } else if (title !== undefined) body.push(line);
+  }
+  flush();
+  return sections;
+}
+
+/**
+ * The six files of a version 2 log are always there (FR-3): the first write to the log creates the ones
+ * whose events may never happen (no review, no gate, no premise, no cost recorded) with their empty form.
+ * `state.yml` and `execution.md` keep being created by their own writers.
+ */
+function ensureLogFiles(specDir: string): void {
+  if (!specLogInCache(specDir)) return;
+  for (const [file, title] of Object.entries(FILE_TITLE)) createIfMissing(join(specDir, LOG_DIR, file), `${title}\n`);
+  createIfMissing(join(specDir, LOG_DIR, 'costs.yml'), renderCosts([]));
+}
+
+/** Writes one section of a merged log, replacing the section with the same title and keeping every other one. */
+export function writeLogSection(specDir: string, file: SectionLog, title: string, body: string): string {
+  ensureLogFiles(specDir);
+  const sections = logSections(specDir, file);
+  sections.set(title, body.trim());
+  const path = join(specDir, LOG_DIR, file);
+  writeText(path, `${FILE_TITLE[file]}\n\n${[...sections].map(([t, b]) => `## ${t}\n\n${b}\n`).join('\n')}`);
+  return path;
 }

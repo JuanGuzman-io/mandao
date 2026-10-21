@@ -133,7 +133,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/state.test.ts test/integration/state-log.test.ts test/integration/approve.test.ts test/integration/costs.test.ts test/unit/next.test.ts
 ```
 
-### [ ] T4 — The committed log is six files; the bulk stays in a local cache
+### [x] T4 — The committed log is six files; the bulk stays in a local cache
 
 - **What:** `reviews.md`, `gates.md` and `premises.md` replace their per-attempt files for version 2. Packs, full gate output, probes, mutations, discrepancies and integrity hashes go to `.mandao/cache/<ID>/`, which the managed ignore block lists. Full runs become a section of `execution.md` ([D3](design.md#d3), [D4](design.md#d4)).
 - **Done when:**
@@ -147,7 +147,7 @@ verify: npx vitest run test/unit/state.test.ts test/integration/state-log.test.t
 project: mandao
 kind: feat
 tier: strong
-files: [src/scripts/spec-log.ts, src/scripts/gates.ts, src/scripts/forced.ts, src/cli/run-leader.ts, src/cli/run-review.ts, src/cli/checkpoint-guards.ts, src/cli/run-premise.ts, src/cli/run-mutation.ts, src/writer/log-integrity.ts, src/engine/graph.ts, src/schemas/config.ts, src/cli/run-verify.ts, test/integration/spec-log.test.ts, test/integration/ledger.test.ts, test/integration/log-v2.test.ts, test/integration/enforced-rules.test.ts]
+files: [src/scripts/spec-log.ts, src/scripts/gates.ts, src/scripts/forced.ts, src/cli/run-leader.ts, src/cli/run-review.ts, src/cli/checkpoint-guards.ts, src/cli/run-premise.ts, src/cli/run-mutation.ts, src/writer/log-integrity.ts, src/engine/graph.ts, src/schemas/config.ts, src/cli/run-verify.ts, test/integration/log-v2.test.ts]
 exemplar: src/scripts/spec-log.ts
 ac: [AC-3, AC-3/C1, AC-3/C2, AC-3/C3]
 scenarios: [S-3.1, S-3.2, S-3.2/C1, S-3.3, S-3.3/C2, S-3.4, S-3.4/C3]

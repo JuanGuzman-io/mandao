@@ -11,5 +11,6 @@ coverage/
 graphify-out/
 .mandao/run.lock
 .mandao/cli.log
+.mandao/cache/
 .claude/settings.local.json
 # mandao:end

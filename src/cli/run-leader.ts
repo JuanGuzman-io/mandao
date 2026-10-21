@@ -3,13 +3,13 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { composeBrief } from '../scripts/brief.js';
 import { changedFiles, commitState, repoRoot } from '../scripts/commits.js';
-import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed } from '../scripts/gates.js';
+import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
-import { logPath, readApprovalLog } from '../scripts/spec-log.js';
+import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import {
   type ExecutionRow,
@@ -31,7 +31,7 @@ import { harnessOption, impactFor, loadSpec, loopContext, modelsFor } from './sp
 
 /**
  * Leader scripts (cost-conscious design): the mechanical part of a Leader step runs here and returns only
- * what the Leader decides on. Full outputs stay in `_log/` for the Reviewer and verify.
+ * what the Leader decides on. Full outputs stay in `_log/` (version 2: `.mandao/cache/<ID>/`) for the Reviewer and verify.
  */
 
 const DEP_MANIFEST =
@@ -100,15 +100,50 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
     results.push(gateResult(gate, run));
     if (run.output) outputs[gate] = run.output;
   }
-  const file = join(logPath(spec.dir, 'gates'), `${task.id}-${attempt}.md`);
-  writeText(file, gatesLog(task.id, attempt, results, outputs, notConfigured));
-  return { results, notConfigured, log: relative(ctx.root(), file).split('\\').join('/') };
+  const full = gatesLog(task.id, attempt, results, outputs, notConfigured);
+  const rel = (f: string) => relative(ctx.root(), f).split('\\').join('/');
+  if (!specLogInCache(spec.dir)) {
+    const file = join(logPath(spec.dir, 'gates'), `${task.id}-${attempt}.md`);
+    writeText(file, full);
+    return { results, notConfigured, log: rel(file) };
+  }
+  // Version 2: the whole output in the local cache, the table and the task's failing lines in gates.md.
+  const cached = gatesCacheFile(spec, task.id, attempt);
+  writeText(cached, full);
+  const logged = logSections(spec.dir, 'gates.md');
+  const earlier = Array.from({ length: attempt - 1 }, (_, i) => attempt - 1 - i).flatMap((k) => {
+    const section = logged.get(attemptTitle(task.id, k));
+    return section === undefined ? [] : [{ attempt: k, section }];
+  });
+  const section = gatesSection(results, outputs, notConfigured, task.files ?? [], earlier);
+  const file = writeLogSection(spec.dir, 'gates.md', attemptTitle(task.id, attempt), section);
+  return { results, notConfigured, log: rel(file), output: rel(cached) };
+}
+
+const attemptTitle = (task: string, attempt: number) => `${task} — attempt ${attempt}`;
+const gatesCacheFile = (spec: SpecFolder, task: string, attempt: number) => cachePath(spec.dir, 'gates', `${task}-${attempt}.md`);
+
+/** The gate results the Reviewer reads (verdict line and status table), and where the full output is. */
+function recordedGates(spec: SpecFolder, id: string, attempt: number): { table?: string; full: string } {
+  if (!specLogInCache(spec.dir)) {
+    const file = join(logPath(spec.dir, 'gates'), `${id}-${attempt}.md`);
+    const table = existsSync(file) ? readFileSync(file, 'utf8').split('\n## Output')[0]! : undefined;
+    return { ...(table ? { table } : {}), full: relative(spec.dir, file).split('\\').join('/') };
+  }
+  const section = logSections(spec.dir, 'gates.md').get(attemptTitle(id, attempt));
+  const full = relative(repoRoot(spec.dir), gatesCacheFile(spec, id, attempt))
+    .split('\\')
+    .join('/');
+  if (section === undefined) return { full };
+  return { table: `# Gates — ${id}, attempt ${attempt}\n\n${section.split('\n### ')[0]!.trimEnd()}\n`, full };
 }
 
 function registerGates(run: Command, ctx: CliContext) {
   run
     .command('gates <spec> <task>')
-    .description("Run the task's level 0 gates and impacted tests; pass/fail and the failure excerpt, full output in _log/gates/")
+    .description(
+      "Run the task's level 0 gates and impacted tests; pass/fail and the failure excerpt, full output in _log/gates/ (version 2: .mandao/cache/<ID>/)",
+    )
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
     .action(async (ref: string, id: string, o: { force?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
@@ -167,17 +202,17 @@ function leaderStep(ctx: CliContext, ref: string, id: string, o: CheckpointOptio
 function registerReviewPack(run: Command, ctx: CliContext) {
   run
     .command('review-pack <spec> <task>')
-    .description('Write what the Reviewer reads (brief, gate results, diff) to one file in _log/reviews/; prints its path')
+    .description(
+      'Write what the Reviewer reads (brief, gate results, diff) to one file in _log/reviews/ (version 2: .mandao/cache/<ID>/); prints its path',
+    )
     .option('--harness <id>', 'harness running the Leader', 'claude')
     .action((ref: string, id: string, o: { harness?: string }) => {
       const { config, spec } = loadSpec(ctx, ref);
       const task = taskOf(spec, id);
       const harness = harnessOption(o.harness);
       const attempt = currentAttempt(spec, id);
-      const gatesFile = join(logPath(spec.dir, 'gates'), `${id}-${attempt}.md`);
-      const gates = existsSync(gatesFile)
-        ? readFileSync(gatesFile, 'utf8').split('\n## Output')[0]!
-        : 'No gate results recorded for this attempt: run `mandao run gates` first.';
+      const recorded = recordedGates(spec, id, attempt);
+      const gates = recorded.table ?? 'No gate results recorded for this attempt: run `mandao run gates` first.';
       const brief = composeBrief(
         ctx.root(),
         config,
@@ -192,7 +227,7 @@ function registerReviewPack(run: Command, ctx: CliContext) {
         `# Review pack — ${id}, attempt ${attempt}`,
         '',
         'Review exactly this task. The Leader already ran the gates and the impacted tests; their full output is in',
-        `\`${relative(spec.dir, gatesFile).split('\\').join('/')}\`.`,
+        `\`${recorded.full}\`.`,
         '',
         '## Brief',
         '',
@@ -209,12 +244,14 @@ function registerReviewPack(run: Command, ctx: CliContext) {
         '```',
         '',
       ].join('\n');
-      const file = join(logPath(spec.dir, 'reviews'), `${id}-${attempt}-pack.md`);
+      // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
+      const name = `${id}-${attempt}-pack.md`;
+      const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);
       writeText(file, pack);
       json({
         pack: relative(ctx.root(), file).split('\\').join('/'),
         bytes: Buffer.byteLength(pack),
-        gatesRecorded: existsSync(gatesFile),
+        gatesRecorded: recorded.table !== undefined,
       });
     });
 }

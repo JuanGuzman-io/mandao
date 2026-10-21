@@ -49,6 +49,8 @@ export function gitIgnoreBlock(childRepos: string[], version: string): Generated
       '.mandao/run.lock',
       // The CLI's own log (forced runs, ADR 0024) belongs to this machine.
       '.mandao/cli.log',
+      // Each spec's local bulk: Reviewer packs, full gate output, probes, mutations, integrity (MDO-0011 D3).
+      '.mandao/cache/',
       // Machine-specific agent settings (ADR 0015).
       '.claude/settings.local.json',
       ...childRepos.map((p) => `/${p}/`),

@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T20:25:25.839Z
+updated_at: 2026-10-21T21:33:30.822Z
 current: null
 open_questions: []
 next_step: ""
@@ -127,4 +127,38 @@ red_tests:
         sha256: 1728ab31dfeab0100e66312389f0344ee6c00a0c3e1d7aafa69ed59dc347b000
         tests:
           - the story template names CURRENT_LAYOUT_VERSION, the last known layout version
+  - task: T4
+    files:
+      - path: test/integration/log-v2.test.ts
+        sha256: 016d1286ac235de63c4340f680233b5543999cf1226be6f5e314662b0ed05df7
+        tests:
+          - "S-3.1: after attempts, gates, reviews and premises, git ls-files _log lists exactly the six files, in at most 1000 lines"
+          - "S-3.1 (regression pin): a version 1 spec still keeps its per-attempt files in _log/"
+          - "S-3.2: the pack and the full gate output are written under .mandao/cache/MDO-0001/"
+          - "S-3.2/C1: git status does not show the cache, and the managed ignore block lists it"
+          - "S-3.3: trace, verify-plan, implement-summary, kaizen, kaizen-compare and next"
+          - "S-3.3/C2: the integrity check sees a hand edit of a log on both versions, and nothing before it"
+          - "S-3.4: reviews.md has the FAIL verdict and findings, gates.md the failing output of the task files, state.yml the approval, premises.md the exit and excerpt"
+          - "S-3.4/C3: the readers find a recorded premise in premises.md, so a premise run is not lost"
+          - "logs.level: the default summary deletes the cache at close, full keeps it, and neither commits it"
+          - "S-3.1: every task commit touches only the six files in _log/, and the committed _log is at most 1000 lines"
+          - "S-3.2: a pack per attempt, the full 10,000-line gate output and the mutation are in the cache, none in _log/"
+          - "S-3.1: the mutation is a MUTANT row in execution.md and its evidence path points into the cache"
+          - "S-3.4: premises.md keeps the exit code and at most 20 lines of a long probe output"
+          - "S-3.4: a not-installed gate is named once per attempt in gates.md, with no output block"
+          - 'S-3.1: recordFullRun lands in "## Full runs" of execution.md and adds no file to _log/'
+          - "S-3.3: a version 1 spec still gets full-runs.md"
+          - close-summary --closed with id %s deletes nothing outside the cache
+          - a story id that is a path writes no log or hash outside .mandao/cache/
+      - path: test/unit/log-cache.test.ts
+        sha256: 49c8669b52f1660470ade0c75f77189a4a5173c0b24470d90624e041e145b0f7
+        tests:
+          - a valid id %s gives .mandao/cache/%s
+          - the story id %s is refused
+          - "the folder-name fallback is validated the same way: a name that is not a story id is refused"
+          - the folder-name fallback accepts a folder that starts with a story id
+          - dropLogCache with the story id %s refuses, and the config and files survive
+          - dropLogCache removes only the spec cache folder, not its siblings or .mandao/
+          - a log write for a spec whose id is a path writes no integrity file outside .mandao/cache/
+          - "schema_version: %s routes both to the cache: %s"
 pending_commits: []

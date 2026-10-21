@@ -465,7 +465,7 @@ files:
     harness: mandao
     from: block:gitignore
     ownership: managed-block
-    hash: sha256-NgofJ7RT9LyxKD0WNgQ4nLkCA0urPwsv2glNDKZUwTg=
+    hash: sha256-Nat7t+D0vf/wNbfjoMn2AUrTvfkhXngsDtS8B5xxeZU=
     scope: project
   - path: .graphifyignore
     harness: mandao

@@ -188,7 +188,7 @@ export function withCheckpointOptions(cmd: Command): Command {
     .option('--reason <text>', 'why the Reviewer failed the task: its first blocking finding (required with FAIL)')
     .option(
       '--review <file|->',
-      "with a Reviewer's PASS or FAIL: its whole answer (a file, or - for stdin), checked and kept in _log/reviews/",
+      "with a Reviewer's PASS or FAIL: its whole answer (a file, or - for stdin), checked and kept in _log/reviews/ (version 2: a section of _log/reviews.md)",
     )
     .option('--done <id>', 'mark a task done in tasks.md')
     .option('--clear', 'no task in progress')

@@ -145,6 +145,9 @@ Rules the commands state as prose become checks a script enforces.
 - **`mandao approve` can revoke an approval.** The revocation is recorded with its reason; nothing is
   deleted.
 - **Decide where `.integrity.json` lives:** in git on every task, only at close, or outside git.
+- **Red first only for the tests the task added or changed.** The red-first guard (`testsWithoutRed`)
+  asks for red only for tests added or changed in the task's diff against the base, not for every test
+  in the declared files. A declared file the diff does not touch asks for nothing (MDO-0011 T4 pivot).
 
 ## Security gates from the user's CI
 

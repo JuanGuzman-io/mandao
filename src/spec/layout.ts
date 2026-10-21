@@ -1,11 +1,12 @@
+import { LAYOUT_VERSIONS, type LayoutVersion } from '../schemas/spec.js';
+
 /** The depths a spec can have, and the stages its story status moves it through (design D1). */
 export const DEPTHS = ['lite', 'standard', 'full'] as const;
 export type Depth = (typeof DEPTHS)[number];
 export const STAGES = ['draft', 'specified', 'planned', 'verified', 'closed'] as const;
 export type Stage = (typeof STAGES)[number];
-/** The layout versions a story's `schema_version` may name: the one place the set is written. */
-export const LAYOUT_VERSIONS = [1, 2] as const;
-export type LayoutVersion = (typeof LAYOUT_VERSIONS)[number];
+/** The layout versions are written once, in `src/schemas/spec.ts`, where the writer can read them too. */
+export { LAYOUT_VERSIONS, type LayoutVersion };
 /** The version a new spec starts at: the last one, and the `schema_version` of the story template (pinned by a test). */
 export const CURRENT_LAYOUT_VERSION: LayoutVersion = LAYOUT_VERSIONS[LAYOUT_VERSIONS.length - 1]!;
 

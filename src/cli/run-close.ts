@@ -11,7 +11,7 @@ import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { measureSessions } from '../scripts/session-turns.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { docPath, hasExecutionLog, logPath } from '../scripts/spec-log.js';
+import { docPath, dropLogCache, hasExecutionLog, logPath } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import {
   acStatus,
@@ -195,6 +195,8 @@ function registerSummary(run: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const summary = updatedSummary(config, spec, o);
       writeText(join(spec.dir, 'close-summary.md'), renderCloseSummary(summary, closeLinks(ctx.root(), config, spec)));
+      // A version 2 spec's local cache goes at close, unless `logs.level: full` keeps it (MDO-0011 D3).
+      if (o.closed) dropLogCache(spec.dir, config.logs.level);
       json(summary);
     });
 }

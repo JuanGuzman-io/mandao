@@ -8,7 +8,7 @@ import { identityCell } from '../scripts/identity.js';
 import { applyPatch, checkPatch, mutationIssues, patchFiles, treeState } from '../scripts/mutation.js';
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
+import { cachePath, logPath, specLogInCache } from '../scripts/spec-log.js';
 import { taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
@@ -47,9 +47,25 @@ function evidence(task: string, n: number, tests: string[], patch: string, run: 
 }
 
 /**
+ * Writes a mutation's evidence: `mutations/` in a version 1 log, the local cache in version 2 (the MUTANT
+ * row is the committed record). `where` is how the row names it.
+ */
+function keepEvidence(specDir: string, repo: string, name: string, content: string): { file: string; where: string } {
+  if (!specLogInCache(specDir)) {
+    const file = join(logPath(specDir, 'mutations'), name);
+    writeText(file, content);
+    return { file, where: relative(specDir, file) };
+  }
+  const file = cachePath(specDir, 'mutations', name);
+  writeText(file, content);
+  return { file, where: relative(repo, file).split('\\').join('/') };
+}
+
+/**
  * `mandao run mutation`: characterization evidence (ADR 0022). Applies a mutation to the code the tests
  * pin down, runs them, always reverts it and checks the tree is back as it was. Only a failing run with a
- * clean revert is recorded: a `MUTANT` row plus the diff and the failing output in `mutations/`.
+ * clean revert is recorded: a `MUTANT` row plus the diff and the failing output in `mutations/` (version 2:
+ * in the spec's local cache).
  */
 export function registerMutation(run: Command, ctx: CliContext) {
   run
@@ -100,8 +116,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
         return;
       }
       const n = spec.execution.filter((r) => r.task === id && r.verdict === 'MUTANT').length + 1;
-      const file = join(logPath(spec.dir, 'mutations'), `${id}-${n}.md`);
-      writeText(file, evidence(id, n, tests, patch, result, after));
+      const { file, where } = keepEvidence(spec.dir, repo, `${id}-${n}.md`, evidence(id, n, tests, patch, result, after));
       const writer = routedWriter(root, config, spec, task, o.harness, o.self);
       appendExecutionRow(spec.dir, spec.name, {
         date: new Date().toISOString().slice(0, 10),
@@ -112,7 +127,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
         implementer: identityCell(writer),
         reviewer: '—',
         verdict: 'MUTANT',
-        notes: `mutation ${n} on ${files.join(', ')}: \`${result.command}\` failed (exit ${result.exitCode}); reverted clean; evidence ${relative(spec.dir, file)}`,
+        notes: `mutation ${n} on ${files.join(', ')}: \`${result.command}\` failed (exit ${result.exitCode}); reverted clean; evidence ${where}`,
       });
       json({ recorded: true, task: id, mutation: n, files, evidence: relative(root, file), run: { ...result, outputTail: undefined } });
     });
