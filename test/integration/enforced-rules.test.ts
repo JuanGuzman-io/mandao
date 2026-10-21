@@ -128,6 +128,67 @@ describe('a high-severity security finding blocks a PASS', () => {
       'A3 high: untrusted input reaches exec',
     ]);
   });
+
+  // A rework PASS recapped the earlier attempt's finding as fixed and was refused: only this attempt's
+  // `Findings` section holds open findings.
+  const recap = '## Attempt-1 blocking findings\n**1. [security/high] Close could recursively delete the cache root. Fixed.**\n';
+
+  test('a resolved finding outside the Findings section does not block', () => {
+    expect(securityBlockers(`${recap}\n## Findings\n- [core/low] a long line\n`)).toEqual([]);
+  });
+
+  test('a finding inside the Findings section blocks, up to the next heading of its level', () => {
+    expect(securityBlockers(`${recap}\n## Findings\n### Blocking\n- [security/high] cache root deleted\n## Notes\nok\n`)).toEqual([
+      '- [security/high] cache root deleted',
+    ]);
+    expect(securityBlockers('# Review\n## Findings\n- [core/low] x\n## Earlier\n- [security/high] old, fixed\n')).toEqual([]);
+    expect(securityBlockers('## Findings\n### Findings\n- [core/low] x\n### Security\n- [security/high] y\n')).toEqual([
+      '- [security/high] y',
+    ]);
+  });
+
+  test('without a Findings heading every tagged line still blocks', () => {
+    expect(securityBlockers(recap)).toEqual(['**1. [security/high] Close could recursively delete the cache root. Fixed.**']);
+    // A heading quoted in a code block is not one: it cannot hide the finding.
+    expect(securityBlockers('```md\n## Findings\n```\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
+  });
+
+  test('indented code is not a heading', () => {
+    expect(securityBlockers('    ## Findings\n    - [core/low] y\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
+  });
+
+  test('a heading inside an HTML comment is not one', () => {
+    expect(securityBlockers('<!--\n## Findings\n-->\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
+  });
+
+  test('a fence closes only on its own character, at least as long', () => {
+    expect(securityBlockers('```\n~~~\n## Findings\n~~~\n```\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
+    expect(securityBlockers('````\n```\n## Findings\n```\n````\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
+  });
+
+  test('only a heading whose text is Findings scopes', () => {
+    for (const h of ['## Findings (attempt 1)', '**Findings**', 'Findings\n---']) {
+      expect(securityBlockers(`${recap}${h}\n- [core/low] y`)).toHaveLength(1);
+    }
+    expect(securityBlockers(`${recap}## findings:\n- [core/low] y`)).toEqual([]);
+  });
+
+  test('every Findings section counts', () => {
+    expect(securityBlockers('## Findings\n- [security/high] a\n## Notes\nok\n## Findings\n- [security/critical] b\n')).toEqual([
+      '- [security/high] a',
+      '- [security/critical] b',
+    ]);
+  });
+
+  test('a rework PASS recapping a fixed finding is accepted; one with an open finding is refused', async () => {
+    const root = workspace();
+    const pass = (findings: string) => checkpoint(root, '--verdict', 'PASS', ...reviewer, '--review', reviewFile('PASS', findings));
+    await expect(pass(`${recap}\n## Findings\n- [security/high] src/x.ts:3 cache root deleted\n`)).rejects.toThrow(
+      /open high-severity security finding/,
+    );
+    await pass(`${recap}\n## Findings\n- [core/low] a long line\n`);
+    expect(rows(root).at(-1)).toMatchObject({ verdict: 'PASS' });
+  });
 });
 
 describe('past the budget, step waits for a person', () => {
