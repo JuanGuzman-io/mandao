@@ -210,7 +210,7 @@ parallel_safe: false
 verify: npx vitest run test/integration/close-commit.test.ts test/integration/mdo-0005-defects.test.ts
 ```
 
-### [ ] T7 — Drift says "not applicable" for lite specs
+### [x] T7 — Drift says "not applicable" for lite specs
 
 - **What:** `diagram-drift` returns `{ applicable: false, reason }` and exits 0 for a lite spec ([D7](design.md#d7)).
 - **Done when:**

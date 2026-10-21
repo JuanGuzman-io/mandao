@@ -82,6 +82,9 @@ describe('mandao run diagram-drift', () => {
     });
     const spec = join(root, 'specs/MDO-0001-skills-list');
     cpSync(join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list'), spec, { recursive: true });
+    // The fixture's requirements.md says lite; this spec is standard, so its depth is standard in both documents.
+    const requirements = join(spec, 'requirements.md');
+    writeFileSync(requirements, readFileSync(requirements, 'utf8').replace('depth: lite', 'depth: standard'));
     mkdirSync(join(spec, 'diagrams'));
     writeFileSync(
       join(spec, 'diagrams/proposed.graph.json'),

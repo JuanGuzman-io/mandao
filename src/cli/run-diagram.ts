@@ -4,7 +4,7 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { repoRoot, taskCommits } from '../scripts/commits.js';
 import { graphFile, isTestFile, readGraph } from '../scripts/impact.js';
-import { findSpec, readSpec } from '../scripts/spec.js';
+import { findSpec, readLayout, readSpec } from '../scripts/spec.js';
 import { docPath } from '../scripts/spec-log.js';
 import type { DiagramGraph } from '../spec/index.js';
 import {
@@ -102,6 +102,11 @@ function registerDrift(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       if (!spec.story) throw new Error(`${spec.name} needs story.md`);
+      // A lite spec has no diagram to compare: report it and stamp nothing (ADR 0026, D7).
+      if (readLayout(spec.dir).depth === 'lite') {
+        json({ applicable: false, reason: 'lite specs have no diagram' });
+        return;
+      }
       const stamp = readStamp(readFileSync(docPath(spec.dir, 'design'), 'utf8'));
       if (!stamp?.graph) throw new Error('design.md has no diagram with a structured graph: stamp it with --graph in specify');
       const proposed = diagramGraphSchema.parse(JSON.parse(readFileSync(join(spec.dir, stamp.graph), 'utf8')));

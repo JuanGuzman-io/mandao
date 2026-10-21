@@ -1,10 +1,10 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T22:04:36.771Z
+updated_at: 2026-10-21T22:11:39.728Z
 current: null
 open_questions: []
-next_step: commit T6, then T7
+next_step: implement summary, then verify
 deferred_to_ci: []
 red_tests:
   - task: T1
@@ -242,4 +242,31 @@ red_tests:
           - close of a version 2 spec commits the changelog and lessons, not per-spec release or Kaizen documents
           - close commits release docs, Kaizen, constitution and changed module guides with the spec; nothing else (version 1)
           - specify and clarify get fixed, unambiguous subjects; an unknown step is refused
+  - task: T7
+    files:
+      - path: test/integration/close.test.ts
+        sha256: 20e8387201f6134e03bb9db3cae261afbf614dca0a8f81142a7334d10acc76ac
+        tests:
+          - "bugs after merge: fix commits that reference the spec, after it closed"
+          - "gitflow: the release branch that contains every commit of the spec"
+          - close-summary keeps real ISO timestamps as text across a round trip
+          - "close-summary is idempotent: an environment or a publication is recorded once and updated"
+          - derives the implemented graph from the spec commits and compares it by identity
+          - "mandao run kaizen has sessions: pauses, turns per task, verify, close, after tasks and the missing sessions"
+          - after mandao sync the close command carries the step and the Kaizen template has a Sessions section
+          - "S-4.1: the summary has the five sections, CHANGELOG has one line, and no per-spec release or kaizen document exists"
+          - "S-4.1/C2: the summary points to no docs/releases or docs/kaizen file"
+          - "S-4.3: with no environment and no publication, no `—` field and no empty section is written"
+          - "S-4.4: the lead written between the title and Outcome survives a first and a second --closed"
+          - "S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line"
+          - "AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases"
+          - "S-6.1: a lite spec reports applicable false with the reason, exits 0, and stamps no graph"
+          - "S-6.2: a standard spec with a stamped graph reports its drift as today"
+          - "S-6.2/C1: a standard spec without a stamp still fails"
+      - path: test/integration/close-drift.test.ts
+        sha256: b0bbaf8fcd8fa25254c5f906a0e97fc0ae303407904f113bd6e0d9759392d288
+        tests:
+          - "S-6.1: a lite spec reports applicable false with the reason, exits 0, and stamps no graph"
+          - "S-6.2: a standard spec with a stamped graph reports its drift as today"
+          - "S-6.2/C1: a standard spec without a stamp still fails"
 pending_commits: []

@@ -70,6 +70,11 @@ spec: MDO-0011-one-fixed-layout-for-every-spec-folder
 | 2026-10-21 | T6 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/integration/close-commit.test.ts; FAIL: S-5.1 fixture locks docs/commands and docs/diagrams files, so the unlocked derived-path branch that commits diagram sources is never tested |
 | 2026-10-21 | T6 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/close-commit.test.ts |
 | 2026-10-21 | T6 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/close-commit.test.ts |
+| 2026-10-21 | T7 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T7 | 1 | standard | claude | claude-haiku-5-5 | — | RED | red tests by mandao-implementer-fast: test/integration/close.test.ts; `npx vitest run test/integration/close.test.ts --maxWorkers=4` failed (exit 1) |
+| 2026-10-21 | T7 | 1 | standard | claude | claude-haiku-5-5 | — | RED | red tests by mandao-implementer-fast: test/integration/close-drift.test.ts; `npx vitest run test/integration/close-drift.test.ts --maxWorkers=4` failed (exit 1) |
+| 2026-10-21 | T7 | 1 | standard | claude | claude-haiku-5-5 | — | REPORTED | red test changed: test/integration/close.test.ts |
+| 2026-10-21 | T7 | 1 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/close.test.ts |
 
 ### Pivot Record — T4 — 2026-10-21
 
