@@ -6,5 +6,6 @@ Purpose: plan changes against disk and lock, detect drift and orphans, apply (AD
 - Owned files are hashed whole; managed blocks are hashed block-only.
 - Never overwrite drift without `force`; keep the old lock entry so drift stays visible.
 
-Gotcha: user-intent files (`config.yml`, `models.yml`, the lock) are written by `src/engine/files.ts`
-and the CLI, not here (see the CONFLICT in `docs/constitution/architecture.md`).
+Gotcha: engine and CLI orchestration writes user-intent files through this module's `writeText`,
+`createIfMissing` and `editYaml` helpers; it must not call filesystem writes directly (ADR 0007).
+`log-integrity.ts` tracks script-owned spec evidence; preserve discrepancy detection when changing it.
