@@ -41,7 +41,9 @@ a new session's cache (32%), not output (26%).
    adversarial review only at `full`.
 6. **A budget per spec** (`budget.per_spec` in `.mandao/config.yml`, USD): a warning at 80%; at 100% the
    command asks to continue, inside its grouped confirmation (with external or irreversible actions).
-   Only a person, or a rule they approved, sets the budget; an agent never picks or suggests a number.
+   **Off by default** (decided 2026-10-20): spend is recorded and reported and nothing stops. Only a
+   person, or a rule they approved, sets a budget; an agent never picks or suggests a number. A person
+   sets or removes one spec's cap with `mandao approve <spec> budget --to <usd|none>`.
    `init` asks for it with no default, and without one there is no cap: the spend is recorded and
    reported. (Amended 2026-10-20: the dogfood run had an 8 USD budget an agent chose; it was removed.)
 

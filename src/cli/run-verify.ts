@@ -3,7 +3,7 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
-import { verifyPlan } from '../spec/index.js';
+import { securityMentions, verifyPlan } from '../spec/index.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 
@@ -52,6 +52,8 @@ export function registerVerify(run: Command, ctx: CliContext) {
           ciConfirmed: Boolean(opts.ciConfirmed),
         }),
         issues: spec.issues,
+        // Untagged security mentions from the reviews: not blocking, listed in the report (MDO-0008).
+        securityMentions: securityMentions(spec.execution),
       });
     });
 }

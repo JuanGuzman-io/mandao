@@ -133,17 +133,17 @@ function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions)
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
   requireRedFirst(spec, o.task, o.verdict);
-  checkReview(spec, o);
+  const reviewNote = checkReview(spec, o);
   const pending = pendingEntry(spec, o);
   for (const p of pending) checkPendingSubject(readConfig(ctx.root()), spec, p.task, p.subject, p.files);
-  return pending;
+  return { pending, reviewNote };
 }
 
 export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
-  const pending = checkedPending(ctx, spec, o);
+  const { pending, reviewNote } = checkedPending(ctx, spec, o);
   const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim());
-  const notes = [o.notes, edited].filter(Boolean).join('; ');
+  const notes = [o.notes, reviewNote, edited].filter(Boolean).join('; ');
   if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, { ...o, notes }, now));
   if (o.done) markTask(spec.dir, o.done, true);
   const current = currentTask(ctx, o);

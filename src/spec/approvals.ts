@@ -12,8 +12,8 @@ export const approvalSchema = z.object({
   /** close: the proposals approved (impacts, standardizations); the next close session applies them. */
   items: z.array(z.string()).optional(),
   note: z.string().optional(),
-  /** budget: the spend (USD) the person authorizes for this spec, past `budget.per_spec` (ADR 0036). */
-  to: z.number().positive().optional(),
+  /** budget: the spend (USD) the person authorizes for this spec, or `none` to remove its cap (ADR 0036). */
+  to: z.union([z.number().positive(), z.literal('none')]).optional(),
 });
 export type Approval = z.infer<typeof approvalSchema>;
 
@@ -37,9 +37,11 @@ export function withStatus(markdown: string, status: string): string {
 }
 
 /**
- * The spec's spend cap: the last budget a person authorized for it (`mandao approve <spec> budget --to`),
- * else `budget.per_spec`; none means no cap. Never set by an agent.
+ * The spec's spend cap: the last budget a person set for it (`mandao approve <spec> budget --to <usd|none>`),
+ * else `budget.per_spec`. Off by default: without either there is no cap, only the record. Never set by an agent.
  */
 export function specBudget(approvals: Approval[], perSpec: number | undefined): number | undefined {
-  return approvals.filter((a) => a.step === 'budget' && a.to).at(-1)?.to ?? perSpec;
+  const last = approvals.filter((a) => a.step === 'budget' && a.to).at(-1)?.to;
+  if (last === 'none') return undefined;
+  return last ?? perSpec;
 }

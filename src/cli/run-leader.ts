@@ -11,7 +11,7 @@ import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
-import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task, taskAttempt } from '../spec/index.js';
+import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, securityMentions, type Task, taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -244,6 +244,8 @@ export function implementSummary(spec: SpecFolder, committed: Set<string>, pendi
     pendingCommits: pending,
     deferredToCi: spec.progress?.deferred_to_ci ?? [],
     advisories,
+    // Not blocking, but a person reads them (MDO-0008).
+    securityMentions: securityMentions(spec.execution),
   };
 }
 

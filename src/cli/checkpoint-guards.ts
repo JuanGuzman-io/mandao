@@ -6,7 +6,7 @@ import { testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
-import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt } from '../spec/index.js';
+import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt, UNTAGGED_NOTE, untaggedSecurityMentions } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { acceptLogs, logDiscrepancies } from '../writer/log-integrity.js';
 
@@ -36,7 +36,7 @@ function readReview(source: string): string {
 /**
  * A Reviewer's verdict is recorded with its whole answer (`--review`), kept in `_log/reviews/`. The script
  * checks it: the answer's VERDICT must match, and a PASS with a high or critical security finding is
- * refused (MDO-0008). Returns the stored file, relative to the spec.
+ * refused (MDO-0008). Returns a note for the row when untagged prose looks like a severe security issue.
  */
 export function checkReview(
   spec: SpecFolder,
@@ -54,7 +54,8 @@ export function checkReview(
   }
   const file = join(logPath(spec.dir, 'reviews'), `${o.task}-${taskAttempt(spec.execution, o.task)}-review.md`);
   writeText(file, text);
-  return file.slice(spec.dir.length + 1);
+  const untagged = untaggedSecurityMentions(text);
+  return untagged.length ? `${UNTAGGED_NOTE}: ${untagged.join(' | ')}` : undefined;
 }
 
 /**

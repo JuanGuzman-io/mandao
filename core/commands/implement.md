@@ -163,7 +163,8 @@ The Definition of Done includes the module's `AGENTS.md` and, when the workspace
 
 Report from `{{script:implement-summary}} {{arg:spec}}` (verdicts, FAIL reasons, identities, commits,
 deferred tests and advisories, read from the log and git): tasks done, FAILs and escalations, reduced or
-provider independence, deferred tests, commits.
+provider independence, deferred tests, commits, and every `securityMentions` entry verbatim: they did not
+block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.

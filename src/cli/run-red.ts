@@ -13,6 +13,7 @@ import { type Task, taskAttempt, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { rowTier } from './run-ledger.js';
 
 interface RedOptions {
   self?: boolean;
@@ -92,7 +93,7 @@ export function registerRed(run: Command, ctx: CliContext) {
         date: new Date().toISOString().slice(0, 10),
         task: id,
         attempt: taskAttempt(spec.execution, id),
-        tier: task.tier,
+        tier: rowTier(spec, id),
         harness: writer.harness,
         implementer: identityCell(writer),
         reviewer: '—',
