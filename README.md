@@ -1,160 +1,251 @@
+<div align="center">
+
+<img src="docs/assets/logo.webp" alt="Mandao" width="120">
+
 # Mandao
 
-> *mandao*: Cali slang for an errand you send someone to run.
+**Spec-Driven Development for AI coding agents. Any harness.**
 
-Spec-Driven Development for AI coding agents, across harnesses. Every command is a *mandao* given to
-the agent: a clear list, done exactly as asked, with a receipt at the end.
+*mandao* · Cali slang for an errand you send someone to run — and expect done right.
 
-Mandao is mostly content (commands, templates, personas and a skills catalog in neutral Markdown and
-YAML) plus a thin CLI that installs it, resolves overrides and renders it for each harness.
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+<!-- After the repository is public (the URL returns 404 today):
+[![CI](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml)
+-->
+<!-- After the first publish:
+[![npm](https://img.shields.io/npm/v/mandao.svg)](https://www.npmjs.com/package/mandao)
+[![provenance](https://img.shields.io/badge/npm-provenance-green.svg)](https://www.npmjs.com/package/mandao)
+-->
 
-## Quick start
+> **Beta.** Mandao is in public beta: the core flow is stable and tested on real specs; some commands are still planned. Feedback welcome.
 
-```bash
-npx mandao init            # or: pnpm dlx mandao init · bunx mandao init
-```
+[Quick start](#quick-start) · [How it works](#how-it-works) · [Choose your path](#choose-your-path) · [Harnesses](#harnesses) · [Commands](#commands) · [Docs](#docs)
 
-`init` detects the workspace (single repo, monorepo or polyrepo), asks which harnesses to generate
-for, and writes `.mandao/` plus the harness folders. Then, in your agent:
+</div>
 
-```
-/mandao-constitution       # foundation: technical constitution, product context, AGENTS.md, skills
-/mandao-specify PROJ-123   # requirements + design for one story
-/mandao-quick "fix the checkout button label"
-```
+---
 
-To get `/mandao-init` in every repository: `npx mandao init --scope global`.
+## Why Mandao
 
-## Flow
+AI agents write code fast. They also guess, skip tests, and say "done" when it isn't. Mandao gives every piece of work a clear errand — a spec — and doesn't sign off until there's a receipt.
+
+- **Specs your PO can read.** Stories with acceptance criteria, traced to requirements, tasks, tests and commits.
+- **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't. Tests are written red first, with evidence.
+- **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
+- **A constitution that learns.** Project rules live in the repo and improve with every closed spec.
+
+## How it works
+
+<!-- Diagram: uncomment when docs/diagrams/overview-*.svg exist
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/overview-dark.svg">
+  <img alt="Mandao overview: commands and how processes connect" src="docs/diagrams/overview-light.svg">
+</picture>
+-->
 
 ```
 constitution → story → specify → [clarify] → tasks → implement → verify → close
 ```
 
-Utilities: `quick`, `perf`, `audit`, `resume`. Implemented: `constitution`, `story`, `specify`,
-`clarify`, `tasks`, `implement`, `quick` and `resume`; `verify`, `close`, `perf` and `audit` are declared
-with their contracts and say so when invoked. Work can move between harnesses mid-spec: every Leader
-step is checkpointed in the spec folder and `/mandao-resume <ID>` continues it anywhere.
+1. **Constitution** — once per project. Maps the code, writes the technical rules and the product context, and picks the right skills for your stack.
+2. **Spec** — a story becomes requirements, a design (with a diagram you approve) and small tasks.
+3. **Implement** — a Leader hands each task to an Implementer; a Reviewer checks it; one commit per approved task. Never a push.
+4. **Close** — after `verify` checks every acceptance criterion, `close` writes release notes and feeds what was learned back into the constitution.
 
-At `lite` depth `/mandao-specify` writes the story, a single `spec.md` and up to three tasks in one
-session, with one approval.
+Every spec works in its own git worktree, so your main checkout stays clean.
 
-### Recommended flow
+---
+
+## Quick start
+
+**Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) recommended for diagrams (without it, diagrams fall back to Mermaid) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
+
+<!-- Diagram: uncomment when docs/diagrams/install-*.svg exist
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/install-dark.svg">
+  <img alt="Which install do I need?" src="docs/diagrams/install-light.svg">
+</picture>
+-->
+
+### Start a new project
+
+```bash
+npx mandao@beta init my-project --harness claude,codex
+cd my-project
+```
+`init my-project` creates the folder and runs `git init` when needed. Then, in your agent: `/mandao-constitution` — in a new project it asks what you're building and helps you decide the stack.
+
+### Add Mandao to an existing project
+
+```bash
+cd my-repo
+npx mandao@beta init
+```
+`init` detects single repo, monorepo or polyrepo and asks which harnesses you use. Then run `/mandao-constitution`: it reads your code and writes everything as **draft** until you approve it.
+
+### Join a team that already uses Mandao
+
+```bash
+git clone <repo> && cd <repo>
+npx mandao@beta sync      # regenerates the harness files from the team's .mandao/config.yml
+npx mandao@beta doctor    # checks everything is ready
+```
+Your harness isn't in the team's config yet? `mandao harness add <id>`.
+
+### Make `/mandao-init` available in every repo
+
+```bash
+npx mandao@beta init --scope global --harness claude,codex
+```
+
+### Add a harness, update, check
+
+```bash
+mandao harness add opencode
+mandao update
+mandao doctor
+```
+
+<details>
+<summary><b>Monorepo or polyrepo?</b></summary>
+
+- **Monorepo:** `init` registers each app or package as a project. One constitution for the workspace, one per project for what differs.
+- **Polyrepo** (a folder with several independent repos): `init` offers to turn the root into a workspace repo, so specs that touch several repos are versioned in one place. Each repo gets its own slice of the spec (`specs/<ID>/spec-ref.md`).
+
+</details>
+
+<details>
+<summary><b>Trying it on a team repo without changing it?</b></summary>
+
+`npx mandao@beta init --shadow` keeps every generated file out of git (via `.git/info/exclude`). Only your code reaches the repo, through normal PRs.
+
+</details>
+
+<sub>Prefer another runner? `pnpm dlx mandao@beta …` and `bunx mandao@beta …` work too.</sub>
+
+### The recommended flow
+
+```bash
+mandao start "add a remember-me option to login"   # branch + worktree + setup, no model tokens
+```
+
+1. Open your agent **inside the worktree** (`mandao start` prints the exact command; `--open` launches it).
+2. Run `/mandao-specify` — at lite depth, one session writes the story, the spec and the tasks.
+3. Approve from the terminal: `mandao approve <ID> spec` — no model session, no tokens. It prints the command for the next step.
+4. In a **new** session, from the worktree: `/mandao-implement`, then `/mandao-verify` and `/mandao-close`. A fresh session costs less than re-reading the whole specify context on every turn ([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)).
+
+Started from the main checkout by mistake? Mandao creates the worktree anyway and tells you how to resume there.
+
+## Your first mandao in 5 minutes
+
+```bash
+mandao start --quick "fix the label on the checkout button"
+```
+
+Then, in your agent inside the worktree: `/mandao-quick`.
+
+What you'll see:
+
+1. A **gate check**: is this really small? (one module, no contracts or public interfaces, no risky areas such as auth, payments or migrations). If not, Mandao suggests a spec instead.
+2. The change, lint and the impacted tests — never the whole suite on your laptop.
+3. An **independent review**.
+4. One commit, in the team's format. No push.
 
 ```
-mandao start "<description or tracker id>"    # branch, worktree and its setup, no model tokens
-cd <worktree> && claude "/mandao-specify <ID> --depth lite"   # the exact command is printed
-mandao approve <ID> spec                      # from the terminal, no model session
-# back in the same session: /mandao-implement <ID>, /mandao-verify <ID>, /mandao-close <ID>
+🐛 fix(web): correct checkout button label
+
+Mandao-Quick: checkout-label
 ```
 
-`mandao start` copies the env files listed in `.mandao/worktree-include`, installs dependencies by
-lockfile, runs the project's `worktree.setup` hooks, copies the code graph and records a baseline of the
-cheap gates, so the session is born in the worktree in any harness. `--open` launches Claude Code or
-Codex there; `mandao start --quick "<change>"` does the same for quick changes; `mandao worktree list |
-clean` handles leftovers.
+---
 
-### Approving without a model session
+## Choose your path
 
-`mandao approve <spec> <step>` (`story`, `design`, `spec`, `tasks`, `close`) checks the same gates the
-command would, sets the status, records who approved and when in `_log/approvals.yml`, and makes the
-spec commit. No model runs, so it costs no tokens. For `close` it records which proposals you approved;
-`/mandao-close` applies them.
+✅ required · ⚙️ triggers on its own · ➕ optional
 
-After approving the spec or the tasks, start `/mandao-implement` in a **new session**: `approve` prints
-the command (`newSession`). Staying in the specify session would re-read its whole context on every
-implement turn (ADR 0038).
+| You want to… | Path |
+|---|---|
+| **Set up a project** | `init` ✅ → `constitution` ✅ → `constitution --product` ➕ |
+| **Build a story** | `story` ➕ → `specify` ✅ → `clarify` ⚙️ → `tasks` ✅ → `implement` ✅ → `verify` ✅ → `close` ✅ |
+| **Break down an epic** | `story` ✅ → `specify` proposes the stories → each one follows its own path |
+| **Fix a bug** | `specify` ✅ (lite: spec and tasks in one session, regression test red first) → `implement` → `verify` → `close` |
+| **Ship a hotfix** | `specify --hotfix` ✅ → … → `close` (reminds you to back-merge) |
+| **Make a small change** | `quick` ✅ — escalates to a spec if it grows |
+| **Pick up where you left off** | `resume` — in any harness |
 
-### Cost
+At lite depth `specify` writes the tasks itself; `tasks` is a separate step at standard and full depth.
 
-Each command records what its session spent in the spec's `_log/costs.yml`; `mandao run cost <spec>`
-shows the total per command and role.
-
-- **How it is measured (Claude Code).**
-  - Mandao reads the session's transcript, `~/.claude/projects/<folder>/<session>.jsonl`, or under
-    `$CLAUDE_CONFIG_DIR`, plus its `subagents/*.jsonl`.
-  - For each response it takes the last line per message id. The fields are `input_tokens`,
-    `cache_creation.ephemeral_5m_input_tokens` / `ephemeral_1h_input_tokens`, `cache_read_input_tokens`
-    and `output_tokens`.
-  - It prices them with the list prices in `core/models/recommendations.yml` (source and review date
-    are in the file).
-  - Checked against the cost Claude Code itself reports on 29 sessions: a difference of 0.11% overall,
-    and at most 0.44% in one session. Claude Code makes some helper requests that it does not write to
-    the transcript, so Mandao counts slightly less.
-  - Other harnesses record by hand with `--usd`.
-- **Billed or equivalent.**
-  - With an API key or a cloud provider, the figure is money billed at those prices (`basis: billed`).
-  - With a Claude subscription, it is what the same tokens would cost at API prices, not what you pay
-    (`basis: equivalent`). The subscription has its own limits, and usage beyond the plan is charged
-    as credits Mandao cannot see.
-  - The basis is read from `claude auth status`; billed and equivalent amounts are never added up as one.
-- **Budget: off by default.** Spend is recorded and reported, and nothing stops. `budget.per_spec` is
-  optional and only you set it: `init` asks, with no suggested number. With a budget, Mandao warns at
-  80%, and past 100% `mandao run step` stops delegating until you run
-  `mandao approve <spec> budget --to <usd|none>`.
+<!-- Uncomment when docs/process-map.md exists:
+Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
+-->
 
 ## Harnesses
 
-| Harness | Commands | Personas | Verified | Tested |
-|---|---|---|---|---|
-| Claude Code | `.claude/skills/mandao-*/SKILL.md` | `.claude/agents/mandao-*.md` | 2026-10-19 | live |
-| GitHub Copilot (VS Code) | `.github/prompts/mandao-*.prompt.md` | `.github/agents/mandao-*.agent.md` | 2026-10-19 | snapshots |
-| Codex (OpenAI) | `.agents/skills/mandao-*/SKILL.md` (`$mandao-<id>`) | `.codex/agents/mandao-*.toml` | 2026-10-20 | live |
-| OpenCode (2.1.1 – 2.x) | `.opencode/commands/mandao-*.md` | `.opencode/agents/mandao-*.md` | 2026-10-20 | **live-tested (TUI)**; non-interactive invocation needs OpenCode 2's server API (OPEN) |
-| Antigravity (Google) — **experimental** | `.agents/skills/mandao-*/SKILL.md`, shared with Codex | `.agents/agents/mandao-*.md` | 2026-10-20 | **not live-tested**: snapshots only |
-| Any other agent | `AGENTS.md` (managed block) | — | — | — |
-
-Supported versions per harness are checked by `mandao doctor` (ADR 0025).
-
-## CLI
-
-| Command | What it does |
+| Harness | Status |
 |---|---|
-| `mandao init` | Set up the workspace (or `--scope global` for `/mandao-init`) |
-| `mandao sync` | Regenerate harness files from `.mandao/config.yml`; never overwrites hand edits without `--force` |
-| `mandao doctor` | Validate config, content and generated files; report optional tools and their fallbacks |
-| `mandao doctor --json` | Same findings as one JSON document for CI (`counts` per level, `findings`); nothing else on stdout. See [`docs/schemas.md`](docs/schemas.md) |
-| `mandao update` | Re-resolve with the installed version; overrides are never touched |
-| `mandao harness add <id>` | Generate files for another harness |
-| `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` · `models profile <peak\|balanced\|economy>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester); a profile switches every role at once and keeps your own choices |
-| `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool (after confirmation), verify and pin them |
-| `mandao skills list` | List skills pinned in the workspace lock |
-| `mandao start "<description\|ID>"` | Create the spec's branch and worktree and set it up (env files, dependencies, setup hooks, graph, baseline); print or `--open` the harness there |
-| `mandao worktree list \| clean` | Spec worktrees; remove the merged ones that hold no work |
-| `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session |
-| `mandao run cost <spec>` | Spend per command and role against `budget.per_spec`, with its basis (billed or subscription equivalent); commands record their own spend (see [Cost](#cost)) |
-| `mandao run …` | Helper scripts the commands call, compact JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
+| Claude Code | 🟢 live-tested |
+| Codex (OpenAI) | 🟢 live-tested |
+| OpenCode 2.x (2.1.1+) | 🟢 live-tested in the TUI · non-interactive use pending |
+| GitHub Copilot (VS Code) | 🟡 snapshot-tested |
+| Antigravity (Google) | 🧪 experimental · not live-tested |
+| Any other agent | ⚪ via `AGENTS.md` |
 
-## Customizing
+`mandao doctor` checks supported versions. Where files go for each harness: [docs/harnesses.md](docs/harnesses.md).
 
-Files in `.mandao/overrides/` win over presets and core:
+**Models are your call.** `init` asks one question — a profile: `peak` (best per role, default), `balanced` or `economy` — and shows the resulting models per harness for you to accept or tweak. Mandao recommends from each vendor's docs, dated, and **never changes a model without you**.
 
-- `commands/<id>.md` replaces a command; `commands/<id>.patch.yml` changes only its frontmatter.
-- `templates/<shared|app|ai|data>/<path>` replaces a template, e.g. `templates/shared/rules/review.md`.
-- `personas/<id>.md` or `personas/<id>.patch.yml` for the Leader, Implementer, Reviewer and Tester.
+**Cost, in the open.** Every spec records its cost per command and per role. On a subscription these are list-price equivalents, not billed money. There's no budget cap by default; set `budget.per_spec` if you want one. How it is measured: [docs/cli.md](docs/cli.md#cost).
+
+## Commands
+
+| Command | What it does | Status |
+|---|---|---|
+| `constitution` | Project foundation: rules, product context, AGENTS.md, skills | 🟢 stable |
+| `story` | A story with enough context, from your tracker or from scratch | 🟢 stable |
+| `specify` | Requirements, design, data model and diagram for approval (lite: one `spec.md`) | 🟢 stable |
+| `clarify` | Resolve open questions and conflicts (asks the PO when needed) | 🟢 stable |
+| `tasks` | Small, traceable tasks with test levels declared | 🟢 stable |
+| `implement` | Leader → Implementer → Reviewer, red tests first, one commit per task | 🟢 stable |
+| `verify` | Impacted tests, e2e on critical flows, AC traceability | 🟢 stable |
+| `close` | Release notes, diagram drift, Kaizen, publish to your tracker | 🟢 stable |
+| `quick` | Small changes behind a gate | 🟢 stable |
+| `resume` | Continue a spec from its checkpoint, in any harness | 🟢 stable |
+| `init` | Set up Mandao in a repo from inside your agent (after `init --scope global`) | 🟢 stable |
+| `research` | Sourced research for technical decisions | ⚪ planned |
+| `perf` | Measured performance work: before and after, every time | ⚪ planned |
+| `audit` | Project health by lens: drift, security, quality… | ⚪ planned |
+
+From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao doctor`, `mandao models`.
+
+CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cli.md](docs/cli.md).
+
+---
 
 ## Docs
 
-- [Design document](MANDAO-DESIGN.md): the source of truth
-- [Command format](docs/command-format.md) and [schemas](docs/schemas.md)
-- [Decisions](docs/decisions/)
+- [Design document](MANDAO-DESIGN.md) — the source of truth
+- [CLI reference](docs/cli.md) · [Harnesses](docs/harnesses.md)
+- [Customizing with overrides](docs/customizing.md)
+- [Command format](docs/command-format.md) · [Schemas](docs/schemas.md) · [Decisions](docs/decisions/)
 
-## Development
+## Contributing
 
 ```bash
 npm install
-npm run check      # typecheck, Biome (lint, format, complexity) and tests
-npm run build
-npm link           # expose this checkout as the global `mandao` until it is published
+npm run check   # typecheck, lint, tests
+npm link        # use this checkout as `mandao`
 ```
 
-Generated commands call `node .mandao/bin/mandao.mjs`, which runs Mandao from local
-`node_modules/.bin`, then a global install (such as `npm link`), then `npx mandao@<locked version>`.
-Force one with `scripts.runner` in `.mandao/config.yml`; `mandao doctor` shows which one it uses.
-Undo the link with `npm rm -g mandao`.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for commits, releases and trusted publishing.
 
-Contributing and releasing (trusted publishing with OIDC, no npm token): [CONTRIBUTING.md](CONTRIBUTING.md).
+## Roadmap
 
-Requires Node ≥ 22.18. Commits follow the format in `core/templates/shared/rules/commits.md`.
+Work types beyond apps and AI: ML, infrastructure, DevOps and security.
 
-Planned: work types for ML, infrastructure, DevOps and security.
+## Acknowledgments
+
+Mandao stands on ideas from [GitHub Spec Kit](https://github.com/github/spec-kit) and [AKILI-SPECS](https://github.com/JuankCadavid/akili-specs).
+
+## License
+
+[MIT](LICENSE) © Juan David Delgado Guzmán
