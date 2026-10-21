@@ -1,9 +1,9 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0009-recommend-each-command-s-skills-at-init-and-use
-updated_at: 2026-10-21T04:02:06.602Z
+updated_at: 2026-10-21T04:25:35.873Z
 current:
-  task: T2
+  task: T3
   phase: implementing
   harness: claude
   model: claude-opus-5-5
@@ -37,4 +37,49 @@ red_tests:
           - the catalog is valid
           - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
           - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+  - task: T2
+    files:
+      - path: test/unit/skills.test.ts
+        sha256: 2a6c693d4806710f0a1a3a4302e07e1c5066346a105202861a0072be2ce2eaf9
+        tests:
+          - runs the ecosystem installer, then verifies
+          - installer commands run in order and stop at the first failure
+          - a missing tool leaves the skill pending so the command can be printed
+          - an installer that succeeds without a verifiable skill is a failure
+          - agent-side installs are never run by Mandao
+          - pinSkills records only verified skills
+          - plugin skills are verified inside the plugins folder
+          - "S-3.1 AC-3: each harness maps to the folder it reads, with no duplicates"
+          - "S-3.1 AC-3: OpenCode and Copilot add no folder when .claude or .agents is already a target"
+          - "S-3.1: copies the pinned folder into both harness folders, pins the commit, and removes the temporary folder"
+          - "S-3.1/C1: a folder that already exists is left as is, the output says so, and the other folder is still copied"
+          - "S-3.2: a tag that moved to another commit copies nothing, fails with both commits, and is not pinned"
+          - "S-3.3: git not on PATH leaves the skill pending with the manual step, runs nothing and copies nothing"
+          - "S-3.3: a fetch that exits non-zero leaves the skill pending with the manual step and nothing behind"
+          - "S-3.4 and S-3.4/C1: without --with-scripts, documents are copied and no script is, and each one left out is named"
+          - "S-3.5: with --with-scripts the whole folder is copied and the lock records that scripts were copied"
+          - "S-3.5/C1: the warning (third-party code, brainstorming starts a local server) comes before anything is copied"
+      - path: test/integration/init-skills.test.ts
+        sha256: 2d34baefffd7d83c88db1ac33be38b0efde069a4dda824709385e7bd05c8b7ac
+        tests:
+          - "S-2.1 and AC-1/C1: before the question, each skill shows what it does, source, version, vetted state and its commands"
+          - "S-2.1/C1: before the question, it shows how each is installed: the shell commands, or repository, tag and the folders"
+          - "S-2.3/C1 and AC-1/C2: no skill starts selected and the question is not required"
+          - "S-2.3/C1: nothing was run and no folder written when the question is asked"
+          - "S-2.2 and AC-1/C3: selecting product-manager-toolkit only copies it into both folders and pins it with its commit"
+          - "S-2.3: selecting nothing finishes init and pins no skill"
+          - "S-2.3: cancelling the question finishes init without exiting and pins no skill"
+          - "AC-3: with only Codex chosen the same skills are offered and the accepted one lands where Codex reads"
+          - "AC-1/C4: by default the accepted skill is copied without its scripts, which are named; --with-scripts copies them"
+          - "AC-1/C4: --with-scripts on init copies the scripts, warns, and records it in the lock"
+          - "S-3.3/C1 and AC-3/C1: an accepted skill whose fetch fails does not fail init; it is reported pending and not pinned"
+          - "S-4.1: init --yes lists each skill with its version and source and the line `mandao skills add <ids>`"
+          - "S-4.1/C1 and AC-2/C1: init --yes runs no installer, copies no folder and pins no skill"
+      - path: test/unit/git-copy.test.ts
+        sha256: 1b3f67d205d889b7541342fb40c425fed5e3e99151eb10364eb31d23fcb5782a
+        tests:
+          - 'S-2.2 and D3: empty existing folders are reported pending, "already exists" and "not verified", with the kept folders and the manual step'
+          - "S-2.2 and D3: the lock does not pin the skill with the catalog commit"
+          - "S-3.1/C1: the existing folders are left untouched and nothing is left in temp"
+          - "S-2.2 and D3: a folder holding other files but no SKILL.md is not verified either, and is left as is"
 pending_commits: []

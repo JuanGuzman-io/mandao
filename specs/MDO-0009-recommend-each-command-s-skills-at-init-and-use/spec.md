@@ -409,7 +409,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/command-skills.test.ts test/unit/content.test.ts
 ```
 
-### [ ] T2 — init offers the skills and copies only what the person selects
+### [x] T2 — init offers the skills and copies only what the person selects
 
 - **What:** `init-skills.ts` and the shared install path of [D2](#d2); the `git` copy and the folder
   map of [D3](#d3).

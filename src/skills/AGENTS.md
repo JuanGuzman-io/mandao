@@ -1,0 +1,27 @@
+# src/skills — catalog installs
+
+Purpose: say how a catalog skill installs, run or copy it after the person confirms, verify it, and
+pin it in the lock (`installSkills`, `pinSkills` in `install.ts`; `commandSkills` in `command-skills.ts`).
+
+- `installSkills(ids, catalog, root, home, runner, { harnesses, withScripts, warn })` is the one path
+  `mandao skills add` and `init` share (through `installAndPin` in `src/cli/skills.ts`).
+- A `git` source is copied, not run (`git-copy.ts`, MDO-0009 D3): shallow sparse clone of `ref` into
+  a scratch folder under `os.tmpdir()`, `HEAD` must equal the catalog `commit`, then `path` is copied
+  as `<folder>/<id>/` into each folder of `skillFolders(harnesses)`. The scratch folder is removed in
+  every outcome. An existing `<folder>/<id>/` is never overwritten. When every target already exists
+  (or there is none), nothing is fetched and the skill is `pending` ("already exists, not verified"),
+  never pinned with a commit nobody checked. A copy that fails midway removes the targets this call
+  created and returns `failed`. Each git call has a timeout and runs ssh in `BatchMode` (no prompt can
+  block init); a timeout is `pending`.
+- Scripts (executable bit, script extension, or under `scripts/`) are left out and named unless
+  `withScripts`; then `warn` is called before any copy and the lock records `scripts: true`.
+- `pending` means the person must act (tool missing, fetch failed: the detail is the manual step);
+  `failed` means something was wrong (moved tag, unsafe path, installer error). Neither throws.
+
+Security: git runs with an argument array (never a shell string), `protocol.ext.allow=never` and only
+`https`, `http`, `ssh`, `git` or `file` URLs. A `path` with `..`, a leading `-` or an absolute path is
+refused, the resolved folder must stay inside the clone, and symlinks are never followed nor copied.
+Writes go through `src/writer` (`makeScratchDir`, `copyNewFile`, `removeScratchDir`, ADR 0007).
+
+Gotcha: tests copy from a local tagged repository (`file://`) and need `uploadpack.allowFilter` for
+the `--filter=blob:none` clone; no test touches the network.

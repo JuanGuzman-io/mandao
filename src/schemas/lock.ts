@@ -32,6 +32,8 @@ export const lockSchema = z.object({
           .string()
           .regex(/^[0-9a-f]{40}$/)
           .optional(),
+        /** True when a `git` source was copied with its executable scripts (`--with-scripts`). */
+        scripts: z.boolean().optional(),
       }),
     )
     .default([]),

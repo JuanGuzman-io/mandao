@@ -19,7 +19,7 @@ Spec-driven development with [Mandao](https://www.npmjs.com/package/mandao): com
 | Render | `src/render/` | Tokens, conditionals, template install | — |
 | Writer | `src/writer/` | Change plan, drift, orphans | `src/writer/AGENTS.md` |
 | Models | `src/models/` | Role → model resolution | — |
-| Skills | `src/skills/` | Catalog installs | — |
+| Skills | `src/skills/` | Catalog installs and `git` skill copies | `src/skills/AGENTS.md` |
 | Scripts | `src/scripts/` | `mandao run` helpers | — |
 | Spec domain | `src/spec/` | Loop, evidence, costs, tracing and closure | `src/spec/AGENTS.md` |
 | Commit policy | `src/commits/` | Generated commitlint rules | — |

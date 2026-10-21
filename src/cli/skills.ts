@@ -3,8 +3,17 @@ import * as p from '@clack/prompts';
 import { readCatalog } from '../engine/catalog.js';
 import { LOCK_FILE, LOCK_HEADER, readConfig, readLock, writeYaml } from '../engine/files.js';
 import { home } from '../engine/global.js';
-import { type Catalog, type Lock, MAX_PROJECT_SKILLS } from '../schemas/index.js';
-import { installSkills, installStep, pinSkills, type SkillResult, shellRunner } from '../skills/install.js';
+import { type Catalog, type HarnessId, type Lock, MAX_PROJECT_SKILLS } from '../schemas/index.js';
+import {
+  describeStep,
+  type InstallOptions,
+  installSkills,
+  installStep,
+  pinSkills,
+  type SkillResult,
+  shellRunner,
+  skillFolders,
+} from '../skills/install.js';
 import { type CliContext, editConfig } from './context.js';
 import { c } from './output.js';
 
@@ -26,14 +35,16 @@ export function selectSkills(ids: string[], catalog: Catalog, lock: Lock): { wan
   return { wanted, packs };
 }
 
-function printPlan(wanted: string[], catalog: Catalog) {
-  for (const id of wanted) {
-    const s = catalog.skills[id]!;
-    const step = installStep(id, s);
-    const how = step.kind === 'manual' ? step.note : step.commands.join(' && ');
-    const badge = s.vetted ? c.green('vetted  ') : c.yellow('unvetted');
-    console.log(`  ${badge} ${id}@${s.version} ${c.dim(`(${s.author}, ${s.license})`)}\n           ${how}`);
-  }
+/** One skill as the plan shows it: vetted state, id, version, author and license, then how it installs. Pure. */
+export function planLines(id: string, catalog: Catalog, harnesses: readonly HarnessId[]): string[] {
+  const s = catalog.skills[id]!;
+  const badge = s.vetted ? c.green('vetted  ') : c.yellow('unvetted');
+  const how = describeStep(id, installStep(id, s), skillFolders(harnesses));
+  return [`  ${badge} ${id}@${s.version} ${c.dim(`(${s.author}, ${s.license})`)}`, `           ${how}`];
+}
+
+function printPlan(wanted: string[], catalog: Catalog, harnesses: readonly HarnessId[]) {
+  for (const id of wanted) console.log(planLines(id, catalog, harnesses).join('\n'));
 }
 
 /** Pinned skills in the order every `skills list` output uses: by id. Pure. */
@@ -84,7 +95,7 @@ const STATUS_LABEL: Record<SkillResult['status'], string> = {
 function printResults(results: SkillResult[]) {
   for (const r of results) {
     console.log(`  ${STATUS_LABEL[r.status]} ${r.id}${r.detail ? c.dim(` — ${r.detail}`) : ''}`);
-    if (r.status !== 'pending' || r.step.kind === 'manual') continue;
+    if (r.status !== 'pending' || r.step.kind === 'manual' || r.step.kind === 'copy') continue;
     const where = r.step.kind === 'agent' ? 'in your agent' : 'in a terminal';
     for (const cmd of r.step.commands) console.log(`             run ${where}: ${cmd}`);
   }
@@ -94,23 +105,36 @@ function printResults(results: SkillResult[]) {
   );
 }
 
-/** `mandao skills add`: show the installers, confirm, run, verify, and pin what was verified. */
-export async function skillsAdd(ctx: CliContext, ids: string[], opts: { yes?: boolean }) {
-  const catalog = readCatalog();
-  const lockPath = join(ctx.root(), LOCK_FILE);
+/**
+ * The install-verify-pin path shared by `skills add` and `init` (D2): runs the installers or copies
+ * (the caller has already confirmed), prints each result and pins what was verified in the lock.
+ */
+export function installAndPin(root: string, ids: string[], catalog: Catalog, opts: InstallOptions): SkillResult[] {
+  const lockPath = join(root, LOCK_FILE);
   const lock = readLock(lockPath);
   if (!lock) throw new Error('No lock found: run `mandao sync` first.');
-  const { wanted, packs } = selectSkills(ids, catalog, lock);
+  const results = installSkills(ids, catalog, root, home(), shellRunner, opts);
+  printResults(results);
+  writeYaml(lockPath, pinSkills(lock, results, catalog), LOCK_HEADER);
+  return results;
+}
 
-  printPlan(wanted, catalog);
+/** `mandao skills add`: show the installers, confirm, run, verify, and pin what was verified. */
+export async function skillsAdd(ctx: CliContext, ids: string[], opts: { yes?: boolean; withScripts?: boolean }) {
+  const catalog = readCatalog();
+  const lock = readLock(join(ctx.root(), LOCK_FILE));
+  if (!lock) throw new Error('No lock found: run `mandao sync` first.');
+  const { wanted, packs } = selectSkills(ids, catalog, lock);
+  const harnesses = readConfig(ctx.root()).harnesses;
+
+  printPlan(wanted, catalog, harnesses);
   if (!opts.yes) {
     const ok = await p.confirm({ message: 'Run these installers now?' });
     if (p.isCancel(ok) || !ok) return console.log(c.dim('  Nothing installed.'));
   }
 
-  const results = installSkills(wanted, catalog, ctx.root(), home(), shellRunner);
-  printResults(results);
-  writeYaml(lockPath, pinSkills(lock, results, catalog), LOCK_HEADER);
+  const warn = (message: string) => console.log(c.yellow(`  ${message}`));
+  installAndPin(ctx.root(), wanted, catalog, { harnesses, withScripts: opts.withScripts, warn });
   if (packs.length) {
     const current = readConfig(ctx.root()).skill_packs;
     editConfig(ctx, (doc) => doc.set('skill_packs', [...new Set([...current, ...packs])]));

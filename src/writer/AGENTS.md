@@ -8,4 +8,6 @@ Purpose: plan changes against disk and lock, detect drift and orphans, apply (AD
 
 Gotcha: engine and CLI orchestration writes user-intent files through this module's `writeText`,
 `createIfMissing` and `editYaml` helpers; it must not call filesystem writes directly (ADR 0007).
+Skill copies (`src/skills/git-copy.ts`) use `makeScratchDir` + `removeScratchDir(dir, tmpdir())` for the
+temporary clone and `copyNewFile`, which never overwrites and refuses symlinks.
 `log-integrity.ts` tracks script-owned spec evidence; preserve discrepancy detection when changing it.
