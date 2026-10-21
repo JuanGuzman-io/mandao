@@ -30,7 +30,7 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 - **Specs your PO can read.** Stories with acceptance criteria, traced to requirements, tasks, tests and commits.
 - **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't. Tests are written red first, with evidence.
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
-- **A constitution that learns.** Project rules live in the repo and improve with every closed spec.
+- **Kaizen after every spec.** `close` measures the run (rework, review failures, cost, session turns), names up to three root causes with their evidence, and proposes one-line fixes to the commands or the constitution. Nothing changes until you approve it. Every lesson stays in [`docs/kaizen/`](docs/kaizen/).
 
 ## How it works
 
