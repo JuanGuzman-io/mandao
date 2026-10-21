@@ -27,6 +27,10 @@ reads, `.mandao/templates/app/rules/spec-docs.md`, `.mandao/templates/app/rules/
 Write requirements and design content in `en` and anything addressed to the PO
 (story text, business questions) in `en`. Headings and keywords stay in English.
 
+**Skills.** Use `brainstorming` when the story starts from nothing (no code and no tracker context) and
+`product-manager-toolkit` when there is code and product context. This command's steps continue after `brainstorming`: ignore its hand-off to `superpowers:writing-plans`, which is not installed. When a skill is missing, follow this command's own steps without it and note
+in the output which skill was missing.
+
 ## 1. Resolve the spec
 
 1. **From `mandao start`** (the default): the session runs in the spec's worktree and
