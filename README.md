@@ -28,7 +28,8 @@
 AI agents write code fast. They also guess, skip tests, and say "done" when it isn't. Mandao gives every piece of work a clear errand — a spec — and doesn't sign off until there's a receipt.
 
 - **Specs your PO can read.** Stories with acceptance criteria, traced to requirements, tasks, tests and commits.
-- **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't. Tests are written red first, with evidence.
+- **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't.
+- **Tests before code (TDD).** Write a failing test from the spec, make it pass, then refactor. Mandao requires recorded red evidence before implementation where TDD applies: the test demonstrates the missing behavior before the code addresses it, keeping implementation tied to the spec. [TDD in the task flow](#test-driven-development-tdd).
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
 - **Kaizen after every spec.** `close` measures the run (rework, review failures, cost, session turns), names up to three root causes with their evidence, and proposes one-line fixes to the commands or the constitution. Nothing changes until you approve it. Every lesson stays in [`docs/kaizen/`](docs/kaizen/).
 
@@ -51,6 +52,22 @@ constitution → story → specify → [clarify] → tasks → implement → ver
 4. **Close** — after `verify` checks every acceptance criterion, `close` writes release notes and feeds what was learned back into the constitution.
 
 Every spec works in its own git worktree, so your main checkout stays clean.
+
+### Test-driven development (TDD)
+
+TDD means writing a test for the expected behavior **before implementing it**. In `/mandao-implement`, tasks that require tests follow **RED → GREEN → REFACTOR**:
+
+1. **RED:** derive tests from the spec's scenarios and confirm they fail for the expected reason. For tasks with risk tags or tier `strong`, a separate **Tester** writes them; otherwise, the **Implementer** does.
+2. **GREEN:** the Implementer writes the minimum code that makes those tests pass.
+3. **REFACTOR:** improve the code within the task's scope while keeping the tests green. Gates and an independent Reviewer check the result before a local commit.
+
+**Why we use it:** tests written after the code can simply repeat its assumptions. Starting from the spec and seeing the tests fail first gives evidence that they can detect the missing behavior or reproduce the bug, before the implementation makes them pass.
+
+This is enforced in the execution flow: `mandao run red` records a `RED` row only after a failing run, and the loop withholds implementation until that evidence exists. Tests added during rework need red evidence too; changes to a red test are flagged for review.
+
+TDD applies where the test policy requires it. Documentation-only tasks need no red test. **Characterization tasks**, which protect existing behavior, use mutation evidence instead: their tests must catch a deliberate change to the behavior they protect.
+
+See the [test policy](core/templates/shared/rules/test-policy.md#tdd-where-tests-are-mandatory-adr-0022) and [TDD decision](docs/decisions/0022-tdd-discipline-and-spec-diagrams.md).
 
 <details>
 <summary><b>A spec's status, and how a task runs</b></summary>
