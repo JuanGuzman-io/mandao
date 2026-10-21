@@ -1,0 +1,193 @@
+{
+  "name": "lifecycle",
+  "derivedFrom": [
+    {
+      "path": "core/commands/audit.md",
+      "sha256": "379cf8121da300c5b03ad68be1e8aeb1df43ff8cf124540c697367da09dfbf14"
+    },
+    {
+      "path": "core/commands/clarify.md",
+      "sha256": "d8b2c87153b5e07b0bbb1c32cb6534225e73c143dd07a3e7d070ce068cba1f95"
+    },
+    {
+      "path": "core/commands/close.md",
+      "sha256": "b0cedcadd5a2e768676a2ae6cdb1cef9c4904716f98e6dceef60bd698f5a9b37"
+    },
+    {
+      "path": "core/commands/constitution.md",
+      "sha256": "59a033aa48192bfa3cdb7f89e9ce0f779c456d49bcad682075af107c9daca64f"
+    },
+    {
+      "path": "core/commands/implement.md",
+      "sha256": "70cf40b8dd5d4c3ef445900127c58a114357b561f86f90f12ea33faf1e225812"
+    },
+    {
+      "path": "core/commands/init.md",
+      "sha256": "7d52b84f11552d57e6d90ae9d966913acfde3170cea4ac44e565c4024be68267"
+    },
+    {
+      "path": "core/commands/perf.md",
+      "sha256": "75475b97e50cb0822dbada2566ad2b40e797bb5b5e5b06953f5d61f8c1f93568"
+    },
+    {
+      "path": "core/commands/quick.md",
+      "sha256": "3cc685f42c5abce6c7c4406b6b1b7511d8e18de9ac2b00caebe28fbb9a8f266d"
+    },
+    {
+      "path": "core/commands/resume.md",
+      "sha256": "196a1e1a70b4df2cf523b96e61259674e6b36d159a6efef1007f8f50dad0b4e3"
+    },
+    {
+      "path": "core/commands/specify.md",
+      "sha256": "d0362fe421870dc49585806e0eca65a8614c39478185d12f569681e1a753f9cb"
+    },
+    {
+      "path": "core/commands/story.md",
+      "sha256": "69b3d3e8a143b6a90278f9b4d7128ab64c621f2d55caaaf6e4e10a50427a6864"
+    },
+    {
+      "path": "core/commands/tasks.md",
+      "sha256": "6bcd6488844d8cbf65e4b5a610662dfdbe3520258853b7f53ff8843bd0c55e8b"
+    },
+    {
+      "path": "core/commands/verify.md",
+      "sha256": "9fdc2d3b6a358c5b27c618084efc8f54691dbfc95da23540e5469512903ed08a"
+    },
+    {
+      "path": "src/cli/approve.ts",
+      "sha256": "4a64c63fd42c948b217fabdead7a7c3a5cad066e869b34a9833562ad0d918fbc"
+    },
+    {
+      "path": "src/schemas/common.ts",
+      "sha256": "3a7136345759577a8a8b775074ab849ad5dd88a298379b0441706c1bc21f0fc3"
+    },
+    {
+      "path": "src/scripts/spec.ts",
+      "sha256": "43c51c14c6c438ae4943af17ddd53a7da83b546c31e54d0434f9e953892009bd"
+    }
+  ],
+  "specSha256": "0205591777369dc1d74376fb27b2c1ac32c7ac384ca7095cdbeb1a9045f3d949",
+  "spec": {
+    "schema_version": 3,
+    "diagram_type": "lifecycle",
+    "meta": {
+      "title": "A spec from draft to closed",
+      "output": "lifecycle.html",
+      "quality_profile": "showcase"
+    },
+    "mainPath": [
+      "draft",
+      "approved",
+      "in-progress",
+      "verified",
+      "closed"
+    ],
+    "states": [
+      {
+        "id": "draft",
+        "type": "start",
+        "label": "draft",
+        "step": "01"
+      },
+      {
+        "id": "approved",
+        "type": "waiting",
+        "label": "approved",
+        "step": "02"
+      },
+      {
+        "id": "in-progress",
+        "type": "active",
+        "label": "in-progress",
+        "step": "03"
+      },
+      {
+        "id": "blocked",
+        "type": "waiting",
+        "label": "blocked"
+      },
+      {
+        "id": "verified",
+        "type": "active",
+        "label": "verified",
+        "step": "04"
+      },
+      {
+        "id": "closed",
+        "type": "success",
+        "label": "closed",
+        "step": "05"
+      },
+      {
+        "id": "abandoned",
+        "type": "failure",
+        "label": "abandoned"
+      }
+    ],
+    "transitions": [
+      {
+        "id": "draft-approved",
+        "from": "draft",
+        "to": "approved",
+        "label": "mandao approve",
+        "variant": "emphasis"
+      },
+      {
+        "id": "approved-in-progress",
+        "from": "approved",
+        "to": "in-progress",
+        "label": "implement",
+        "variant": "emphasis"
+      },
+      {
+        "id": "approved-draft",
+        "from": "approved",
+        "to": "draft",
+        "label": "a person",
+        "variant": "dashed"
+      },
+      {
+        "id": "in-progress-blocked",
+        "from": "in-progress",
+        "to": "blocked",
+        "label": "a person",
+        "variant": "dashed"
+      },
+      {
+        "id": "in-progress-verified",
+        "from": "in-progress",
+        "to": "verified",
+        "label": "verify",
+        "variant": "emphasis"
+      },
+      {
+        "id": "blocked-in-progress",
+        "from": "blocked",
+        "to": "in-progress",
+        "label": "a person",
+        "variant": "dashed"
+      },
+      {
+        "id": "verified-closed",
+        "from": "verified",
+        "to": "closed",
+        "label": "close",
+        "variant": "emphasis"
+      },
+      {
+        "id": "verified-in-progress",
+        "from": "verified",
+        "to": "in-progress",
+        "label": "a person",
+        "variant": "dashed"
+      },
+      {
+        "id": "any-abandoned",
+        "from": "in-progress",
+        "to": "abandoned",
+        "label": "a person, any open state",
+        "variant": "security"
+      }
+    ]
+  }
+}

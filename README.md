@@ -36,12 +36,12 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 
 ## How it works
 
-<!-- Diagram: uncomment when docs/diagrams/overview-*.svg exist
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/overview-dark.svg">
   <img alt="Mandao overview: commands and how processes connect" src="docs/diagrams/overview-light.svg">
 </picture>
--->
+
+<sub>Green: agent commands (a model session) · red: you approve · orange: `mandao` scripts, no tokens. Every diagram is generated from the commands themselves (`npm run diagrams`).</sub>
 
 ```
 constitution → story → specify → [clarify] → tasks → implement → verify → close
@@ -54,18 +54,31 @@ constitution → story → specify → [clarify] → tasks → implement → ver
 
 Every spec works in its own git worktree, so your main checkout stays clean.
 
+<details>
+<summary><b>A spec's status, and how a task runs</b></summary>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/lifecycle-dark.svg">
+  <img alt="A spec's status from draft to closed, and what moves it" src="docs/diagrams/lifecycle-light.svg">
+</picture>
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/task-loop-dark.svg">
+  <img alt="How a task runs: red tests, Implementer, gates, Reviewer, escalation and commit" src="docs/diagrams/task-loop-light.svg">
+</picture>
+
+</details>
+
 ---
 
 ## Quick start
 
 **Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) recommended for diagrams (without it, diagrams fall back to Mermaid) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
 
-<!-- Diagram: uncomment when docs/diagrams/install-*.svg exist
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/install-dark.svg">
   <img alt="Which install do I need?" src="docs/diagrams/install-light.svg">
 </picture>
--->
 
 ### Start a new project
 
@@ -175,9 +188,7 @@ Mandao-Quick: checkout-label
 
 At lite depth `specify` writes the tasks itself; `tasks` is a separate step at standard and full depth.
 
-<!-- Uncomment when docs/process-map.md exists:
 Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
--->
 
 ## Harnesses
 
@@ -200,20 +211,20 @@ Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
 
 | Command | What it does | Status |
 |---|---|---|
-| `constitution` | Project foundation: rules, product context, AGENTS.md, skills | 🟢 stable |
-| `story` | A story with enough context, from your tracker or from scratch | 🟢 stable |
-| `specify` | Requirements, design, data model and diagram for approval (lite: one `spec.md`) | 🟢 stable |
-| `clarify` | Resolve open questions and conflicts (asks the PO when needed) | 🟢 stable |
-| `tasks` | Small, traceable tasks with test levels declared | 🟢 stable |
-| `implement` | Leader → Implementer → Reviewer, red tests first, one commit per task | 🟢 stable |
-| `verify` | Impacted tests, e2e on critical flows, AC traceability | 🟢 stable |
-| `close` | Release notes, diagram drift, Kaizen, publish to your tracker | 🟢 stable |
-| `quick` | Small changes behind a gate | 🟢 stable |
-| `resume` | Continue a spec from its checkpoint, in any harness | 🟢 stable |
-| `init` | Set up Mandao in a repo from inside your agent (after `init --scope global`) | 🟢 stable |
-| `research` | Sourced research for technical decisions | ⚪ planned |
-| `perf` | Measured performance work: before and after, every time | ⚪ planned |
-| `audit` | Project health by lens: drift, security, quality… | ⚪ planned |
+| [`constitution`](docs/commands/constitution.md) | Project foundation: rules, product context, AGENTS.md, skills | 🟢 stable |
+| [`story`](docs/commands/story.md) | A story with enough context, from your tracker or from scratch | 🟢 stable |
+| [`specify`](docs/commands/specify.md) | Requirements, design, data model and diagram for approval (lite: one `spec.md`) | 🟢 stable |
+| [`clarify`](docs/commands/clarify.md) | Resolve open questions and conflicts (asks the PO when needed) | 🟢 stable |
+| [`tasks`](docs/commands/tasks.md) | Small, traceable tasks with test levels declared | 🟢 stable |
+| [`implement`](docs/commands/implement.md) | Leader → Implementer → Reviewer, red tests first, one commit per task | 🟢 stable |
+| [`verify`](docs/commands/verify.md) | Impacted tests, e2e on critical flows, AC traceability | 🟢 stable |
+| [`close`](docs/commands/close.md) | Release notes, diagram drift, Kaizen, publish to your tracker | 🟢 stable |
+| [`quick`](docs/commands/quick.md) | Small changes behind a gate | 🟢 stable |
+| [`resume`](docs/commands/resume.md) | Continue a spec from its checkpoint, in any harness | 🟢 stable |
+| [`init`](docs/commands/init.md) | Set up Mandao in a repo from inside your agent (after `init --scope global`) | 🟢 stable |
+| [`research`](docs/commands/research.md) | Sourced research for technical decisions | ⚪ planned |
+| [`perf`](docs/commands/perf.md) | Measured performance work: before and after, every time | ⚪ planned |
+| [`audit`](docs/commands/audit.md) | Project health by lens: drift, security, quality… | ⚪ planned |
 
 From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao doctor`, `mandao models`.
 
@@ -225,6 +236,7 @@ CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cl
 
 - [Design document](MANDAO-DESIGN.md) — the source of truth
 - [CLI reference](docs/cli.md) · [Harnesses](docs/harnesses.md)
+- [Process map](docs/process-map.md) · [Commands, one page each](docs/commands/)
 - [Customizing with overrides](docs/customizing.md)
 - [Command format](docs/command-format.md) · [Schemas](docs/schemas.md) · [Decisions](docs/decisions/)
 
