@@ -1,0 +1,41 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0011-one-fixed-layout-for-every-spec-folder
+updated_at: 2026-10-21T19:32:57.768Z
+current: null
+open_questions: []
+next_step: ""
+deferred_to_ci: []
+red_tests:
+  - task: T1
+    files:
+      - path: test/unit/layout.test.ts
+        sha256: 23bc51a1606e627c0db5f965c178f11efc6d59463d17515e1769338d5be6936a
+        tests:
+          - "S-2.3/C1: version 1 manifest lists the files version 1 allowed, including root execution.md and progress.yml"
+          - "S-2.3/C1: a version 1 folder with execution.md and progress.yml at its root is ok"
+          - "S-2.3/C1: the version is the story schema_version, never inferred from the files present"
+          - "S-2.3/C1: a schema_version other than 1 or 2 is an error"
+          - "S-2.1: a version 2 standard folder names the missing design.md and the stray notes.md"
+          - "a separate layout: key does not change the version"
+          - "S-8.1: every file the manifest lists per depth appears in the page table"
+          - "S-8.1: the README links the page"
+          - "S-2.3/C1: version 1 lite with requirements.md + design.md (depth: lite) is lite and ok (D1)"
+          - "D1: with no depth: in any document, lite is the fallback only when spec.md exists"
+          - "S-2.1: a version 2 standard input names the missing design.md and the stray notes.md"
+          - "S-2.3/C1: the real MDO-0001 folder, version 1 lite, is ok"
+          - "S-2.3/C1: the same files with the story at schema_version 2 do not pass"
+          - a schema_version of 3 is an error
+          - "parseStory sets removed for status: removed and only for it"
+          - trace gives no GAP for a removed AC
+          - acStatus leaves a removed AC out
+          - "S-8.1: the page contains the tables rendered from the manifest, exactly"
+          - "S-8.1: every file the manifest lists per depth is in the rendered tables"
+      - path: test/integration/layout.test.ts
+        sha256: 88ad59e095f31ac671fd056d94aed4fc408f0b380590f0d0b7306a9cf21eff5c
+        tests:
+          - "S-2.1: names the missing design.md and the stray notes.md, ok false"
+          - "S-2.2: status closed is not allowed and the problem names the layout findings"
+          - "S-2.3: MDO-0001, version 1 with execution.md and progress.yml at its root, is ok"
+          - "S-2.3 and D1: MDO-0001 reports depth lite (its documents say depth: lite), not standard"
+pending_commits: []

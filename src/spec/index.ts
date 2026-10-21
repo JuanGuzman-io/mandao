@@ -8,6 +8,7 @@ export * from './execution.js';
 export * from './kaizen.js';
 export * from './kaizen-costs.js';
 export * from './kaizen-sessions.js';
+export * from './layout.js';
 export * from './loop.js';
 export * from './markdown.js';
 export * from './next.js';

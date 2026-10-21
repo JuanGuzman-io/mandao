@@ -9,11 +9,12 @@ import { activeSpecDir, recordFullRun } from '../scripts/forced.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
-import { checkTransition, expectedPlace, proposeSpec, whereAmI } from '../scripts/spec.js';
+import { checkTransition, expectedPlace, proposeSpec, readLayout, whereAmI } from '../scripts/spec.js';
 import { docPath, LITE_DOC } from '../scripts/spec-log.js';
 import {
   blockingMarkers,
   commitMessage,
+  layoutProblems,
   loopState,
   planTasks,
   TASK_KINDS,
@@ -158,6 +159,15 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
     });
 }
 
+/** Close refuses a folder that does not match its layout; an unreadable version is a problem too. */
+function closeLayoutProblems(dir: string): string[] {
+  try {
+    return layoutProblems(readLayout(dir));
+  } catch (e) {
+    return [`layout: ${(e as Error).message}`];
+  }
+}
+
 /** Spec status changes and the worktree check. */
 function registerState(run: Command, ctx: CliContext) {
   run
@@ -168,8 +178,19 @@ function registerState(run: Command, ctx: CliContext) {
       const { spec } = loadSpec(ctx, ref);
       const from = spec.story?.meta.status ?? 'draft';
       const problems = checkTransition(from, to, spec.progress, Boolean(opts.ciConfirmed));
+      if (to === 'closed') problems.push(...closeLayoutProblems(spec.dir));
       json({ from, to, allowed: problems.length === 0, problems });
       if (problems.length) process.exitCode = 1;
+    });
+
+  run
+    .command('layout <spec>')
+    .description('Compare the spec folder with the layout of its version and depth (missing, unexpected)')
+    .action((ref: string) => {
+      const { spec } = loadSpec(ctx, ref);
+      const found = readLayout(spec.dir);
+      json({ ...found });
+      if (!found.ok) process.exitCode = 1;
     });
 
   run

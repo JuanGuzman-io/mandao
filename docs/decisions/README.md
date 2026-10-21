@@ -47,3 +47,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0038](0038-session-cut-at-task-boundaries.md) | Cut the session at a task boundary when a new one is cheaper | Accepted |
 | [0039](0039-rules-enforced-by-scripts.md) | Rules the scripts enforce, not the text | Accepted |
 | [0040](0040-approval-by-running-the-next-command.md) | Approval by running the next command, unless something is open | Accepted |
+| [0041](0041-spec-folder-layout-v2.md) | Spec folder layout version 2 | Accepted |

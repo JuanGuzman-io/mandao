@@ -55,7 +55,7 @@ Older specs are read as they are, and their migration is a separate spec ([C-5](
 
 ## Details
 
-### [ ] T1 — Mandao checks every spec folder against one layout per depth
+### [x] T1 — Mandao checks every spec folder against one layout per depth
 
 - **What:** the manifest, `mandao run layout` and the close gate ([D1](design.md#d1)), with `docs/spec-anatomy.md` built from the same manifest. ADR 0041 records layout version 2.
 - **Done when:**

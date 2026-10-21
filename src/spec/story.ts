@@ -1,11 +1,13 @@
 import { z } from 'zod';
-import { formatIssues, schemaVersion, specStatus } from '../schemas/index.js';
+import { formatIssues, specStatus } from '../schemas/index.js';
+import { LAYOUT_VERSIONS } from './layout.js';
 import { type Clause, frontmatterOf, readClauses, sections, splitHeading } from './markdown.js';
 
 export const SPEC_TYPES = ['epic', 'story', 'bug', 'enhancement', 'task', 'performance'] as const;
 
 export const storyFrontmatterSchema = z.object({
-  schema_version: schemaVersion,
+  /** The layout version of the spec folder (ADR 0041): 1 for older specs, 2 for new ones. */
+  schema_version: z.literal(LAYOUT_VERSIONS),
   tracker: z.enum(['jira', 'linear', 'clickup', 'monday', 'none']).default('none'),
   type: z.enum(SPEC_TYPES).default('story'),
   id: z.string().regex(/^[A-Z][A-Z0-9_]*-\d+$/, 'must look like PROJ-123 or MDO-0001'),
@@ -23,6 +25,8 @@ export interface AcceptanceCriterion {
   id: string;
   title: string;
   critical: boolean;
+  /** `status: removed` (rules/traceability.md): the AC keeps its number, and trace and release-status skip it. */
+  removed: boolean;
   clauses: Clause[];
   line: number;
 }
@@ -50,6 +54,7 @@ export function parseStory(markdown: string, file = 'story.md'): { story?: Story
       id: h.id,
       title: h.title,
       critical: /^\s*critical:\s*true\s*$/im.test(s.body),
+      removed: /^\s*status:\s*removed\s*$/im.test(s.body),
       clauses: readClauses(s.body, `${file}:${s.line} ${h.id}`, issues),
       line: s.line,
     });

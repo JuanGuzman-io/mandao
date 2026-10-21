@@ -6,6 +6,9 @@ import type { Config } from '../schemas/index.js';
 import { type SpecStatus, specStatus } from '../schemas/index.js';
 import {
   type ExecutionRow,
+  frontmatterOf,
+  type LayoutFindings,
+  layoutFindings,
   type Progress,
   parseExecution,
   parseRequirements,
@@ -31,6 +34,19 @@ export interface SpecFolder {
   execution: ExecutionRow[];
   progress?: Progress;
   issues: string[];
+}
+
+/** Reads a spec folder's story frontmatter, depth-bearing documents and entries, and checks them against the layout. */
+export function readLayout(dir: string): LayoutFindings {
+  const story = readIf(join(dir, 'story.md'));
+  if (story === undefined) throw new Error('story.md is missing: the layout version is its schema_version');
+  const docs: Record<string, { depth?: unknown }> = {};
+  for (const f of ['spec.md', 'requirements.md', 'design.md']) {
+    const text = readIf(join(dir, f));
+    if (text !== undefined) docs[f] = frontmatterOf(text).data;
+  }
+  const entries = readdirSync(dir, { withFileTypes: true }).map((e) => (e.isDirectory() ? `${e.name}/` : e.name));
+  return layoutFindings({ story: frontmatterOf(story).data, docs, entries });
 }
 
 const specsDir = (root: string, config: Config) => join(root, config.paths.specs);
