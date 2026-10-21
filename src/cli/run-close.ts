@@ -6,9 +6,10 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { resolveModels } from '../models/resolve.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitsSize, fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
-import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
+import { commitState, repoRoot, taskCommits, taskCommitTimes } from '../scripts/commits.js';
 import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
+import { measureSessions } from '../scripts/session-turns.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { docPath, hasExecutionLog, logPath } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
@@ -26,6 +27,7 @@ import {
   planTasks,
   prPlan,
   renderCloseSummary,
+  sessionCutKaizen,
   specMetrics,
   verifyResults,
   withEnvironment,
@@ -79,6 +81,14 @@ function metricsOf(config: ReturnType<typeof readConfig>, spec: SpecFolder, trac
   return specMetrics(spec.name, spec.tasks, spec.execution, forcedRunCount(readIf(logPath(spec.dir, 'execution.md'))), bugs);
 }
 
+/** The spec's measured sessions: pauses, turns per task, verify, close and after tasks, and the missing sessions. */
+function sessionsOf(config: ReturnType<typeof readConfig>, spec: SpecFolder) {
+  const commitTimes = spec.story
+    ? taskCommitTimes(repoRoot(spec.dir), spec.story.meta.id, config.commits.trailers)
+    : new Map<string, number[]>();
+  return measureSessions({ specDir: spec.dir, commitTimes });
+}
+
 function registerKaizen(run: Command, ctx: CliContext) {
   run
     .command('kaizen <spec>')
@@ -90,6 +100,7 @@ function registerKaizen(run: Command, ctx: CliContext) {
       json({
         ...metricsOf(config, spec, o.trackerBugs === undefined ? undefined : Number(o.trackerBugs)),
         costs: specSpend(spec.dir, config.budget.per_spec),
+        sessions: sessionsOf(config, spec),
       });
     });
 
@@ -106,7 +117,8 @@ function registerKaizen(run: Command, ctx: CliContext) {
         folders.map((s) => ({ spec: s.name, costs: specCosts(s.dir), tasks: s.tasks, rows: s.execution })),
         leaderSwitch(ctx.root(), config),
       );
-      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, specs: metrics });
+      const sessionCut = sessionCutKaizen(folders.map((s) => ({ spec: s.name, measure: sessionsOf(config, s) })));
+      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, sessionCut, specs: metrics });
     });
 }
 

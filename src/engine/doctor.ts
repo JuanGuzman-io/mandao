@@ -12,6 +12,7 @@ import { onPath } from '../util/which.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
 import { readCatalog } from './catalog.js';
+import { cacheFindings } from './doctor-cache.js';
 import { harnessFindings } from './doctor-harness.js';
 import { modelFindings } from './doctor-models.js';
 import { branchingFindings, pendingCommitFindings } from './doctor-specs.js';
@@ -102,6 +103,10 @@ export interface DoctorOptions {
   probe?: Probe;
 }
 
+function cacheCheck(root: string, probe: Probe, harnesses: string[]): Finding[] {
+  return cacheFindings(root, home(), process.env, probe, harnesses);
+}
+
 export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   const probe = opts.probe ?? shellProbe;
   const findings: Finding[] = [];
@@ -149,7 +154,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   }
   findings.push(...build.warnings.map((m) => ({ level: 'warn' as const, message: m })));
   const recs = readRecommendations();
-  findings.push(...modelFindings(root, config, recs));
+  findings.push(...modelFindings(root, config, recs), ...cacheCheck(root, probe, config.harnesses));
   findings.push(...harnessFindings(root, config, build.files, lockForTools?.files ?? [], recs, probe));
   const catalog = readCatalog();
   findings.push(

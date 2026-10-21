@@ -17,8 +17,26 @@ const RECORD = '\x1e';
  * survive rebases and cherry-picks, so this is the only link between a task and its commit (ADR 0021).
  */
 export function taskCommits(repo: string, specId: string, trailers: Config['commits']['trailers']): Map<string, string[]> {
+  return specTaskLog(repo, specId, trailers, '%h');
+}
+
+/**
+ * The author times (ms) of each task's commits for the spec, keyed like `taskCommits`. The author time
+ * survives rebases, so it stays the moment the task was committed in its session (MDO-0008 D2).
+ */
+export function taskCommitTimes(repo: string, specId: string, trailers: Config['commits']['trailers']): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const [task, times] of specTaskLog(repo, specId, trailers, '%at')) {
+    const ms = times.map((t) => Number(t) * 1000).filter((t) => Number.isFinite(t) && t > 0);
+    if (ms.length) out.set(task, ms);
+  }
+  return out;
+}
+
+/** One `git log` field (`placeholder`) of every commit with `Refs: <specId>`, keyed by its task trailer. */
+function specTaskLog(repo: string, specId: string, trailers: Config['commits']['trailers'], placeholder: string): Map<string, string[]> {
   const format = [
-    '%h',
+    placeholder,
     `%(trailers:key=${trailers.refs},valueonly,separator=%x2C)`,
     `%(trailers:key=${trailers.task},valueonly,separator=%x2C)`,
   ];

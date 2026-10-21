@@ -42,8 +42,9 @@ reads cost more than starting over would have.
 
 ## Consequences
 
-- The constants (`TURNS_PER_TASK`, `TURNS_AFTER_TASKS`, `RELOAD_TOKENS`) are measurements. Kaizen
-  revisits them with each spec's turn counts.
+- The constants (`TURNS_PER_TASK`, `TURNS_AFTER_TASKS`, `RELOAD_TOKENS`) are measurements.
+  `mandao run kaizen-compare` (`sessionCut`) sets them against each spec's turn counts and proposes
+  values from 3 specs on; a person applies them.
 - The hybrid trial (MDO-0008: specify and approve in one session, implement/verify/close in another) tests
   the rule on a spec with four or more tasks.
 - OPEN: whether a smaller context also improves the quality of later tasks. MDO-0007 had no FAILs either
