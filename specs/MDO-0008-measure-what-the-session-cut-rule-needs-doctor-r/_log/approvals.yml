@@ -9,3 +9,8 @@ approvals:
     at: 2026-10-21T00:08:34.647Z
     note: "authorized by the maintainer in the session (2026-10-20): Option A, up to 16 USD in total"
     to: 16
+  - step: budget
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:17:45.857Z
+    note: the maintainer turned budgets off by default (2026-10-20); spend is recorded and reported only
+    to: none

@@ -9,16 +9,17 @@ spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
 with recorded costs (MDO-0007, or MDO-0008 after its close).
 
 1. `node dist/cli.js doctor`
-   You should see: an info line with the main and subagent cache TTL, where each comes from (or
-   "unset, default …"), and the hint that ADR 0036 recommends `promptCacheTtl: 5m`.
+   You should see: a `prompt-cache TTL` info line with the main and subagent TTL and where each comes
+   from (or "… are unset; main default …; subagents default 5m"), and the hint that ADR 0036
+   recommends `promptCacheTtl: 5m`.
 2. Add `"promptCacheTtl": "10m"` to `.claude/settings.local.json`, run `doctor` again, then remove it.
    You should see: a warning naming that file and "not 5m or 1h"; the file is otherwise untouched.
 3. `node dist/cli.js run kaizen MDO-0007`
    You should see: `sessions` with the pauses (count, median, ≤5m / 5–60m / >60m) and the main turns
-   for T1, T2, verify and close.
+   for T1, T2, verify and close. For a spec not yet closed, close reads `not recorded`.
 4. `node dist/cli.js run kaizen-compare`
    You should see: `sessionCut` with each constant next to its measured value and `n`, and
-   "insufficient data (minimum 3)" while fewer than 3 specs have sessions.
+   "insufficient data (minimum 3)" for each constant measured in fewer than 3 specs.
 
 **Expected result:** the cache duration in use and the real pauses and turns are visible without
 reading transcripts by hand, and no setting or constant changed.
