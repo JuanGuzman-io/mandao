@@ -30,7 +30,7 @@ Five tasks, in order:
 
 ### AC-2, AC-3, AC-4 — The session moves into the new worktree; Starting fresh happens in place; A quick records only its own cost
 
-- [ ] T3 [AC-2, AC-3, AC-4] The commands enter the worktree and end with the state's next step — `core/commands/specify.md`
+- [x] T3 [AC-2, AC-3, AC-4] The commands enter the worktree and end with the state's next step — `core/commands/specify.md`
 
 **Checkpoint:** `npx vitest run test/unit/content.test.ts test/integration/hook.test.ts test/integration/worktree-entry.test.ts test/unit/diagram.test.ts` passes (T3); this confirms AC-2, AC-3, AC-4 before the next group.
 
@@ -132,7 +132,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/content.test.ts test/integration/hook.test.ts test/integration/worktree-entry.test.ts test/unit/diagram.test.ts
 ```
 
-### [ ] T4 — A quick's cost excludes what other specs already recorded
+### [x] T4 — A quick's cost excludes what other specs already recorded
 
 - **What:** the cost delta subtracts the session's latest `cumulative` from any spec's `costs.yml` or the quick log, not only the file it writes ([D5](spec.md#d5), [P4](spec.md#p4)).
 - **Done when:**

@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
-updated_at: 2026-10-21T15:15:09.839Z
+updated_at: 2026-10-21T15:19:36.305Z
 current: null
 open_questions: []
 next_step: ""
@@ -117,4 +117,40 @@ red_tests:
           - 'S-3.2: Copilot names "New chat" with its shortcuts'
           - "S-3.2: Antigravity names its shortcuts"
           - "S-3.2/C2: a harness with no in-place action gets the open-session command and no action"
+  - task: T4
+    files:
+      - path: test/integration/costs.test.ts
+        sha256: 2a463d8ce7531c8b959a663cf625a047a26daf6743c04906ee7056dbe340d3da
+        tests:
+          - "one response priced like the provider bills it: input, 5m and 1h writes, reads, output"
+          - a session splits by role (main session, each subagent type) and keeps the last line of a streamed response
+          - records what the session spent since its last record, per role, and warns at 80% of the budget
+          - a subscription is an equivalent at list prices, an API key or a cloud provider is billed
+          - billed money and subscription equivalents are never added up as one basis
+          - other harnesses record by hand; quick changes have their own log
+          - "S-4.1: a quick records only what was spent after another spec recorded in the same session"
+          - "S-4.1/C1: the quick does not count what the other spec record already holds"
+          - "S-4.2: with no earlier record anywhere the quick records the whole session"
+          - the budget status follows 80% and 100%
+          - recommends with data and an estimated saving, never below the sample minimum
+      - path: test/unit/session-turns.test.ts
+        sha256: de055fa026f9abcc08806daf0900f1ea329ab4a4970294c8f63dfe89bbcf28c4
+        tests:
+          - "three pauses: median 7 minutes, one at most 5, one between 5 and 60, one over 60"
+          - "S-2.1/C1: the first prompt, tool results and meta lines are left out"
+          - each task, verify and close get the responses of their windows; after tasks is tail + verify + close
+          - "S-2.2/C1: a response written on several lines is one turn"
+          - a task committed outside every implement window is listed as unmeasured
+          - "S-2.3/C1: a session without a transcript is listed as missing, with no counts, and close is not recorded"
+          - "S-2.3: the measured session still counts while the missing one is named"
+          - a commit in a measured session's window is not claimed by a missing session's open-ended window
+          - "S-2.4/C2: sidechain lines and the subagents folder add no main-session turn"
+          - the prompt size of the first subagent call minus that of the first response
+          - a session that starts with verify has a reload too
+          - a session whose first record is another command has no reload, and never a zero
+          - no subagent call, or no transcript, gives no reload
+          - a row shows its estimate and the main turns after its time up to the close record
+          - the header is not a row, and each row gets its own actual
+          - without a close record the actual is not known, never zero
+          - no session-cuts.md gives no estimates
 pending_commits: []

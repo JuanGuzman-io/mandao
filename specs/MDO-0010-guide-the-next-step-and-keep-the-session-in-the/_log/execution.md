@@ -34,3 +34,7 @@ spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
 | 2026-10-21 | T3 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/unit/content.test.ts, test/integration/worktree-entry.test.ts, test/integration/where.test.ts, test/unit/session-advice.test.ts; `npx vitest run test/unit/content.test.ts test/integration/worktree-entry.test.ts test/integration/where.test.ts test/unit/session-advice.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T3 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/hook.test.ts, test/unit/content.test.ts, test/integration/worktree-entry.test.ts |
 | 2026-10-21 | T3 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/hook.test.ts, test/unit/content.test.ts, test/integration/worktree-entry.test.ts |
+| 2026-10-21 | T4 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T4 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/costs.test.ts, test/unit/session-turns.test.ts; `npx vitest run test/integration/costs.test.ts test/unit/session-turns.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T4 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T4 | 1 | standard | claude | — | claude-opus-5-5 | PASS |  |

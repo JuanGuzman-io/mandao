@@ -134,6 +134,42 @@ describe('mandao run cost', () => {
     expect(readFileSync(join(root, 'specs/quick/_log/costs.yml'), 'utf8')).toContain('source: manual');
     expect(await cost('quick')).toMatchObject({ basis: 'unknown' });
   });
+
+  /** A session whose only transcript line is one Sonnet response: 50_000 output tokens cost 0.5 USD. */
+  const sonnetSession = (id: string, usd: number) => {
+    const dir = join(home, 'projects', '-tmp-proj');
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, `${id}.jsonl`), line('m1', 'claude-sonnet-5-5', { output_tokens: usd * 100_000 }));
+  };
+  const earlier = (cumulative: number) =>
+    `costs:\n  - at: 2026-01-05T10:00:00.000Z\n    command: implement\n    harness: claude\n    session: s9\n    usd: ${cumulative}\n` +
+    `    roles:\n      leader: ${cumulative}\n    models: {}\n    cumulative:\n      main-session: ${cumulative}\n    source: claude-code\n`;
+
+  test('S-4.1: a quick records only what was spent after another spec recorded in the same session', async () => {
+    mkdirSync(join(root, 'specs/MDO-0009-y/_log'), { recursive: true });
+    writeFileSync(join(root, 'specs/MDO-0009-y/story.md'), '---\nschema_version: 1\nid: MDO-0009\n---\n# Y\n');
+    writeFileSync(join(root, 'specs/MDO-0009-y/_log/costs.yml'), earlier(9));
+    sonnetSession('s9', 9.5);
+    const quick = await cost('quick', '--record', '--command', 'quick', '--session', 's9');
+    expect(quick.recorded).toMatchObject({ usd: 0.5, roles: { quick: 0.5 } });
+    expect(quick.total).toBe(0.5);
+  });
+
+  test('S-4.1/C1: the quick does not count what the other spec record already holds', async () => {
+    mkdirSync(join(root, 'specs/MDO-0009-y/_log'), { recursive: true });
+    writeFileSync(join(root, 'specs/MDO-0009-y/story.md'), '---\nschema_version: 1\nid: MDO-0009\n---\n# Y\n');
+    writeFileSync(join(root, 'specs/MDO-0009-y/_log/costs.yml'), earlier(9));
+    sonnetSession('s9', 9.5);
+    const quick = await cost('quick', '--record', '--command', 'quick', '--session', 's9');
+    expect(quick.recorded.usd).not.toBe(9.5);
+    expect(readFileSync(join(root, 'specs/quick/_log/costs.yml'), 'utf8')).not.toContain('usd: 9.5');
+  });
+
+  test('S-4.2: with no earlier record anywhere the quick records the whole session', async () => {
+    sonnetSession('s9', 9.5);
+    const quick = await cost('quick', '--record', '--command', 'quick', '--session', 's9');
+    expect(quick.recorded).toMatchObject({ usd: 9.5, roles: { quick: 9.5 } });
+  });
 });
 
 describe('Kaizen on cost', () => {
