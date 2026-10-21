@@ -34,7 +34,11 @@ work. The mechanical parts (gates, the review input, the final report) are scrip
 their short JSON, and decide; never paste their full output into the conversation.
 
 1. **Checkpoint** before anything else:
-   `node .mandao/bin/mandao.mjs run step <spec> <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --attempt <n> --next "<what comes next>"`.
+   `node .mandao/bin/mandao.mjs run step <spec> <Tn> --phase implementing --harness <h> --verdict STARTED --tier <tier> --next "<what comes next>"`.
+   The script computes the attempt from the log (one plus the task's FAILs). When `loop.action` is
+   `await-budget`, the spec spent past its cap with no authorization recorded: stop, tell the user the
+   `reason`, and wait for `mandao approve <spec> budget --to <usd>`; with no person to ask (a headless
+   run), stop and leave it pending.
    When the reply has `session.stop: true` (a new session saves at least `session.cut_min_savings`,
    ADR 0038), stop before delegating: tell the user the `reason` and `savings`, and that a new session
    continues from the checkpoint with `/mandao-implement <spec>`. Otherwise go on without asking:
@@ -82,18 +86,25 @@ their short JSON, and decide; never paste their full output into the conversatio
      `node .mandao/bin/mandao.mjs run review <spec> <Tn> --via <harness> --brief <file> --gates _log/gates/<Tn>-<attempt>.md`. It writes the
      execution row (PASS or FAIL) with the identity it launched; do not checkpoint the verdict again.
      If it fails (not logged in, no verdict), fall back to the next option and say why.
-   - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>`.
+   - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>` and
+     the Reviewer's **whole answer** on stdin, `--review - <<'EOF'` … `EOF`. The script checks its
+     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding,
+     and keeps the answer in `_log/reviews/`.
    In Codex: the `mandao_reviewer` custom agent. If custom agents are not loaded (untrusted project),
    use `node .mandao/bin/mandao.mjs run review … --via codex`, which runs `codex exec` read-only on the reviewer model.
    With neither, review in your own context: `--reviewer self`, which the script records as `reduced
    independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
    - **FAIL** → checkpoint `--verdict FAIL --phase rework-<n> --reason "<the first blocking finding>"`
-     (required: the log keeps why the task failed); back to step 3. `loop`
+     (required: the log keeps why the task failed); back to step 3. A test the rework adds runs red
+     first too (`mandao run red`), before the fix: `REPORTED` is refused for a test no red run saw. `loop`
      moves the task one tier up after 2 FAILs and returns `halt` after 3 FAILs at strong: stop, report.
    - **The spec is wrong** → write a Pivot Record (`.mandao/templates/app/spec/pivot-record.md`) in `_log/execution.md`,
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
+   Logs (`_log/`, `progress.yml`, `execution.md`) are written only by the scripts. Never edit them by
+   hand: `checkpoint` records any such edit as a discrepancy. When a script refuses, fix the input
+   (for example a shorter `--pending-commit` subject), never the log.
 7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
    the script refuses). Hashes are never recorded: the commit is
    found by its `Refs` and `Mandao-Task` trailers, so the PASS row goes **inside** the task's commit.

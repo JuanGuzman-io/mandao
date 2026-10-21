@@ -2,7 +2,7 @@ import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { z } from 'zod';
 
 /** What a human approves without a model session (cost-conscious design, `mandao approve`). */
-export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close'] as const;
+export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close', 'budget'] as const;
 export type ApprovalStep = (typeof APPROVAL_STEPS)[number];
 
 export const approvalSchema = z.object({
@@ -12,6 +12,8 @@ export const approvalSchema = z.object({
   /** close: the proposals approved (impacts, standardizations); the next close session applies them. */
   items: z.array(z.string()).optional(),
   note: z.string().optional(),
+  /** budget: the spend (USD) the person authorizes for this spec, past `budget.per_spec` (ADR 0036). */
+  to: z.number().positive().optional(),
 });
 export type Approval = z.infer<typeof approvalSchema>;
 
@@ -32,4 +34,12 @@ export function withStatus(markdown: string, status: string): string {
   const body = fm[1]!;
   const next = /^status:/m.test(body) ? body.replace(/^status:[ \t]*\S+/m, `status: ${status}`) : `${body}\nstatus: ${status}`;
   return markdown.replace(fm[0], `---\n${next}\n---`);
+}
+
+/**
+ * The spec's spend cap: the last budget a person authorized for it (`mandao approve <spec> budget --to`),
+ * else `budget.per_spec`; none means no cap. Never set by an agent.
+ */
+export function specBudget(approvals: Approval[], perSpec: number | undefined): number | undefined {
+  return approvals.filter((a) => a.step === 'budget' && a.to).at(-1)?.to ?? perSpec;
 }

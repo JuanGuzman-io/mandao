@@ -77,6 +77,7 @@ const NEXT: Record<ApprovalStep, string> = {
   spec: '/mandao-implement',
   tasks: '/mandao-implement',
   close: '/mandao-close (it applies the approved items)',
+  budget: 'the command that stopped at the budget (`mandao run step` delegates again)',
 };
 
 /** The approved documents get `status: approved`; returns the ones that changed, relative to the spec. */
@@ -93,9 +94,16 @@ function approveDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
 }
 
 interface ApproveOptions {
+  to?: string;
   items?: string[];
   by?: string;
   note?: string;
+}
+
+function budgetTo(to: string | undefined): number {
+  const n = Number(to);
+  if (!(n > 0)) throw new Error('budget needs --to <USD>: the total this spec may spend');
+  return n;
 }
 
 /** Appends the approval to `_log/approvals.yml` and returns it. */
@@ -107,6 +115,7 @@ function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions)
     at: new Date().toISOString(),
     ...(o.items ? { items: o.items } : {}),
     ...(o.note ? { note: o.note } : {}),
+    ...(step === 'budget' ? { to: budgetTo(o.to) } : {}),
   };
   writeText(log, renderApprovals([...parseApprovals(existsSync(log) ? readFileSync(log, 'utf8') : undefined), record]));
   return record;
@@ -133,6 +142,7 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .command('approve <spec> <step>')
     .description(`Approve a step without a model session (${APPROVAL_STEPS.join(' | ')}): status, who and when, and the spec commit`)
     .option('--items <ids...>', 'close: the proposals approved (impact and standardization ids), or "all"')
+    .option('--to <usd>', 'budget: the total this spec may spend, past budget.per_spec')
     .option('--by <name>', 'who approves (default: git user.name)')
     .option('--note <text>', 'a note kept with the approval')
     .action((ref: string, step: string, o: ApproveOptions) => {

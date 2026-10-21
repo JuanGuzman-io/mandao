@@ -10,7 +10,8 @@ import { taskDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
-import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task } from '../spec/index.js';
+import { specSpend } from '../scripts/spend.js';
+import { type ExecutionRow, type LoopState, loopState, NOTE_FLAGS, type Task, taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -27,8 +28,7 @@ import { harnessOption, impactFor, loadSpec, loopContext, modelsFor } from './sp
 const DEP_MANIFEST =
   /(^|\/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|requirements[^/]*\.txt|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|Gemfile|composer\.json)$/;
 
-const currentAttempt = (spec: SpecFolder, task: string) =>
-  Math.max(1, ...spec.execution.filter((r) => r.task === task).map((r) => r.attempt));
+const currentAttempt = (spec: SpecFolder, task: string) => taskAttempt(spec.execution, task);
 
 function taskOf(spec: SpecFolder, id: string): Task {
   const task = spec.tasks.find((t) => t.id === id);
@@ -100,12 +100,11 @@ function registerGates(run: Command, ctx: CliContext) {
   run
     .command('gates <spec> <task>')
     .description("Run the task's level 0 gates and impacted tests; pass/fail and the failure excerpt, full output in _log/gates/")
-    .option('--attempt <n>', 'attempt (default: the current one from the log)')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
-    .action(async (ref: string, id: string, o: { attempt?: string; force?: boolean }) => {
+    .action(async (ref: string, id: string, o: { force?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
       const task = taskOf(spec, id);
-      const attempt = o.attempt ? Number(o.attempt) : currentAttempt(spec, id);
+      const attempt = currentAttempt(spec, id);
       const r = await runGates(ctx, spec, task, attempt, o.force);
       const passed = gatesPassed(r.results);
       json({ task: id, attempt, passed, results: r.results, notConfigured: r.notConfigured, log: r.log });
@@ -123,27 +122,37 @@ function registerStep(run: Command, ctx: CliContext) {
       .description('One Leader step: write the checkpoint (when given), then the next action, and the brief when delegating'),
   )
     .option('--no-brief', 'never include the brief')
-    .action((ref: string, id: string, o: CheckpointOptions & { brief: boolean }) => {
-      const loaded = loadSpec(ctx, ref);
-      const writes = Boolean(o.verdict || o.done || o.clear || o.pendingCommit || o.phase || o.next);
-      const checkpoint = writes ? writeCheckpoint(ctx, loaded.spec, { ...o, task: o.task ?? id }) : undefined;
-      const { config, spec } = writes ? loadSpec(ctx, ref) : loaded;
-      const task = taskOf(spec, id);
-      const harness = harnessOption(o.harness);
-      const models = modelsFor(ctx, harness, task.project);
-      const context = loopContext(ctx, spec, id, harness, task.project);
-      const loop = loopState(task, spec.execution, models, harness, context);
-      const withBrief = o.brief && NEEDS_BRIEF.includes(loop.action);
-      const project = config.projects.find((p) => p.name === task.project);
-      const workers = Math.max(1, decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit').workers);
-      const cut = NEEDS_BRIEF.includes(loop.action) ? stepCut(config, spec, id, harness) : undefined;
-      json({
-        ...(checkpoint ? { checkpoint: { written: true, pendingCommits: checkpoint.pendingCommits } } : {}),
-        loop,
-        ...(cut ? { session: cut } : {}),
-        ...(withBrief ? { brief: composeBrief(ctx.root(), config, spec, task, models, harness, workers, context) } : {}),
-      });
-    });
+    .action((ref: string, id: string, o: CheckpointOptions & { brief: boolean }) => json(leaderStep(ctx, ref, id, o)));
+}
+
+/** The step's checkpoint, next action, budget stop, session advice and brief. */
+function leaderStep(ctx: CliContext, ref: string, id: string, o: CheckpointOptions & { brief: boolean }) {
+  const loaded = loadSpec(ctx, ref);
+  const writes = Boolean(o.verdict || o.done || o.clear || o.pendingCommit || o.phase || o.next);
+  const checkpoint = writes ? writeCheckpoint(ctx, loaded.spec, { ...o, task: o.task ?? id }) : undefined;
+  const { config, spec } = writes ? loadSpec(ctx, ref) : loaded;
+  const task = taskOf(spec, id);
+  const harness = harnessOption(o.harness);
+  const models = modelsFor(ctx, harness, task.project);
+  const context = loopContext(ctx, spec, id, harness, task.project);
+  const loop = loopState(task, spec.execution, models, harness, context);
+  const spend = specSpend(spec.dir, config.budget.per_spec);
+  // Past the cap with no authorization recorded: no delegation, and the request waits for a person.
+  if (spend.status === 'over' && NEEDS_BRIEF.includes(loop.action)) {
+    const id = spec.story?.meta.id ?? spec.name;
+    const reason = `spent $${spend.total} of $${spend.budget}: a person authorizes more with \`mandao approve ${id} budget --to <usd>\``;
+    return { ...(checkpoint ? { checkpoint: { written: true } } : {}), loop: { ...loop, action: 'await-budget', reason }, spend };
+  }
+  const withBrief = o.brief && NEEDS_BRIEF.includes(loop.action);
+  const project = config.projects.find((p) => p.name === task.project);
+  const workers = Math.max(1, decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit').workers);
+  const cut = NEEDS_BRIEF.includes(loop.action) ? stepCut(config, spec, id, harness) : undefined;
+  return {
+    ...(checkpoint ? { checkpoint: { written: true, pendingCommits: checkpoint.pendingCommits } } : {}),
+    loop,
+    ...(cut ? { session: cut } : {}),
+    ...(withBrief ? { brief: composeBrief(ctx.root(), config, spec, task, models, harness, workers, context) } : {}),
+  };
 }
 
 function registerReviewPack(run: Command, ctx: CliContext) {

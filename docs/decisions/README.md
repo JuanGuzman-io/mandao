@@ -45,3 +45,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0036](0036-cost-conscious-by-design.md) | Cost-conscious by design | Accepted |
 | [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted |
 | [0038](0038-session-cut-at-task-boundaries.md) | Cut the session at a task boundary when a new one is cheaper | Accepted |
+| [0039](0039-rules-enforced-by-scripts.md) | Rules the scripts enforce, not the text | Accepted |

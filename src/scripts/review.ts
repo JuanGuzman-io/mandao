@@ -103,7 +103,7 @@ export function reviewPrompt(instructions: string, brief: unknown, diff: string,
     '```diff',
     diff,
     '```',
-    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then blocking findings (file:line, evidence), then advisories.',
+    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then blocking findings, then advisories, each line starting with `[<lens>/<severity>]` (lens: core, security, performance, data, accessibility, ai; severity: low, medium, high, critical) and giving file:line and evidence. A security finding of high or critical severity means FAIL.',
   ].join('\n\n');
 }
 
