@@ -71,7 +71,8 @@ receive the Implementer's reasoning.
 its source file), and the remediation.
 
 - **Blocking**: violates the spec, the constitution, the contract, a mandatory test, or a high-severity
-  security rule. Rework.
+  security rule. Rework. Every finding is tagged `[<lens>/<severity>]`; `[security/high]` and
+  `[security/critical]` are always blocking, and `mandao run checkpoint` refuses a PASS that carries one.
 - **Advisory**: improvements and preferences. Recorded in `execution.md`, feeds Kaizen, never reopens
   the loop.
 

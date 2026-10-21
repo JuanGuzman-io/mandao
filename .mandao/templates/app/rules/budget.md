@@ -13,7 +13,8 @@ spend.
   they approved, sets it. `warn` (80% of `budget.per_spec` or more): say it in one line. `over` (100% or
   more): before any work, ask whether to go on past the budget, inside the same grouped confirmation as
   the command's external or irreversible actions; stop if the answer is no, and stop too when no person
-  can answer (a headless run).
+  can answer (a headless run). A yes is recorded with `mandao approve <ID> budget --to <usd>`: the new
+  cap for this spec. Inside implement, `mandao run step` returns `await-budget` and no brief until it is.
 - **At the end:** `mandao run cost <ID> --record --command <this mandao> --harness <this harness>`
   (`quick` for quick changes). Claude Code: the script reads this session's own record. Other harnesses:
   add `--usd <amount>` when the harness shows the session's cost; otherwise say the cost was not
