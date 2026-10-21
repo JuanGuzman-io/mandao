@@ -22,10 +22,22 @@ Use Node.js >= 22.18 (CI covers Node 22 and 24), npm and Git.
 3. Make your change, then run:
 
    ```sh
-   npm run check     # TypeScript, Biome lint/format and tests
+   npm run lint
+   npm run typecheck
+   npx --no-install vitest related --run --maxWorkers=2 path/to/changed-file.ts
    npm run build
-   npm run smoke     # pack, install in a fresh repo, run init and doctor
+   npm run diagrams:check
    ```
+
+Pass all changed source files to `vitest related`; explicitly select tests that read changed documents
+or fixtures by path. Run lint, typecheck and the impacted tests after each change, and build before
+pushing. Keep test workers limited to available resources (at most two for this program). The full
+suite and smoke test run in PR CI. `npm run check` includes the full suite: do not use it locally.
+For documentation-only changes, report when there are no related tests.
+
+Use `npm run build` and `node dist/cli.js …` to exercise this checkout, never a global `mandao`.
+Temporary git repositories in tests must set local `user.name` and `user.email`. Test scripts and
+fixtures must use `process.exitCode` rather than `process.exit()` when output may still be pending.
 
 `npm run dev` rebuilds on changes. `npm run format` applies Biome corrections; review the diff before
 committing. Add meaningful tests for behavior changes and regressions. Follow the architecture and
@@ -85,11 +97,16 @@ stored anywhere. Provenance is attached to every release.
 
 ### First publication (once, by a maintainer)
 
+This historical bootstrap procedure is outside the improvement program. Do not run a manual
+`npm publish` during these phases: the current `prepublishOnly` lifecycle runs the full suite locally.
+Use PR CI and the trusted-publisher workflow for releases; Phase 6 will reconcile delivery lifecycles
+with the configured pre-push policy.
+
 The trusted publisher can only be configured on a package that exists, so the first version is
 published by hand:
 
 1. `npm login` with an account that has two-factor authentication.
-2. `npm ci && npm run check && npm run build && npm run smoke`
+2. Use a commit whose complete PR CI passed; run `npm ci`, lint, typecheck, build and impacted tests locally.
 3. `npm publish --tag next` (2FA prompt). `--tag next` keeps it off `latest` until it is validated.
 
 ### Configure GitHub Actions as trusted publisher (once)
