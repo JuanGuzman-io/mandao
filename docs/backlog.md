@@ -148,6 +148,8 @@ Rules the commands state as prose become checks a script enforces.
 - **Red first only for the tests the task added or changed.** The red-first guard (`testsWithoutRed`)
   asks for red only for tests added or changed in the task's diff against the base, not for every test
   in the declared files. A declared file the diff does not touch asks for nothing (MDO-0011 T4 pivot).
+- **`approve design` clears what `next` reports.** It hashes every approvable document it confirms, so
+  "changed after its approval" can be cleared by the command `next` recommends (Kaizen MDO-0011 L3).
 
 ## Security gates from the user's CI
 
