@@ -30,7 +30,7 @@ cli ──▶ engine ──▶ adapters ──▶ render ──▶ schemas
 |---|---|---|---|
 | CLI | `src/cli/` | `program.ts` assembles command groups (`setup`, `extensions`, `models-command`, `run`, `start`, `approve`, `worktree`, `hook`); prompts and printing | everything below |
 | Engine | `src/engine/` | Sync pipeline (`buildProject`, shared with doctor), doctor, launcher, graph exclusions, config/lock reads | adapters, resolver, writer, models, render, schemas, skills |
-| Adapters | `src/adapters/` | **Pure** canonical → harness files (ADR 0007) | render, resolver types, models types, schemas |
+| Adapters | `src/adapters/` | **Pure** canonical → harness files (ADR 0007), and the per-harness session table `session: { enterWorktree, newConversation, resume }` (MDO-0010 D2) | render, resolver types, models types, schemas |
 | Render | `src/render/` | Token and conditional rendering, template install (ADR 0002) | schemas |
 | Resolver | `src/resolver/` | overrides > presets > core (ADR 0004) | schemas |
 | Writer | `src/writer/` | Change plan, drift, orphans, applying files (ADR 0003) | schemas |

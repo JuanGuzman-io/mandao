@@ -4,6 +4,15 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-21 — MDO-0010 close (guide the next step and keep the session in the spec worktree)
+- critical-flows.md: the "Human approval refuses critical OPENs and records its provenance" row adds
+  "running the next command approves, except open items or a changed document" (`approve.test.ts`).
+- architecture.md: the Adapters layer owns the per-harness session table (D2).
+- product.md capability map: "Recommends the next command from the spec's state", implemented.
+- Not applied: the "start creates an isolated spec worktree…" row addition (in Claude Code the session
+  enters the worktree it creates); the maintainer did not approve it.
+- Approved by: maintainer in the MDO-0010 close session, item by item.
+
 ## 2026-10-21 — MDO-0009 close (recommend each command's skills at init)
 - critical-flows.md: new flow "`init` runs no skill installer or copy before the person selects it"
   (`test/integration/init-skills.test.ts`); the `skills add` row's `OPEN` is covered by the shared

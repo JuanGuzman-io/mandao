@@ -17,7 +17,7 @@ Flows that require e2e coverage and performance budgets. AC touching them carry 
 | `skills add` runs nothing before confirmation | mandao | `test/integration/init-skills.test.ts` (shared `installAndPin` path after the selection) | — |
 | `init` runs no skill installer or copy before the person selects it | mandao | `test/integration/init-skills.test.ts` (S-2.3/C1, S-4.1/C1) | — |
 | Start creates an isolated spec worktree and resolves the next session | mandao | `test/integration/start.test.ts`, `branching.test.ts`, `shadow.test.ts` | no measured budget |
-| Human approval refuses critical OPENs and records its provenance | mandao | `test/integration/approve.test.ts`, `premise.test.ts` | — |
+| Human approval refuses critical OPENs and records its provenance; running the next command approves, except open items or a changed document | mandao | `test/integration/approve.test.ts`, `premise.test.ts` | — |
 | RED precedes implementation; FAIL escalates; tagged security findings block PASS | mandao | `test/integration/tdd.test.ts`, `enforced-rules.test.ts`, `review.test.ts` | — |
 | Script-owned logs record outside edits and preserve task commit evidence | mandao | `test/integration/ledger.test.ts`, `spec-log.test.ts`, `run-queue.test.ts` | — |
 | Closure preserves publication identity and detects diagram drift | mandao | `test/integration/close.test.ts` | — |

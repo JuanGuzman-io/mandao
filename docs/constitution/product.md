@@ -46,6 +46,7 @@ levels differ; `docs/harnesses.md` and README distinguish live from snapshot evi
 | Blocks risky changes from the quick lane | `src/scripts/quick-check.ts` | §21 | implemented |
 | Installs vetted skills after confirmation | `src/skills/install.ts` | §17.2 | implemented |
 | Recommends the commands' skills at init, for every harness | `src/cli/init-skills.ts`, `src/skills/command-skills.ts` | MDO-0009 | implemented |
+| Recommends the next command from the spec's state | `src/spec/next.ts`, `src/cli/approve.ts` | MDO-0010 | implemented |
 | Doctor findings as JSON for CI | `src/cli/output.ts` (`doctorReport`), `src/cli/setup.ts` | `docs/schemas.md` | implemented |
 | Starts isolated work and approves documents from the terminal | `src/cli/start.ts`, `src/cli/approve.ts` | ADR 0037 | implemented |
 | Executes tasks with red evidence, gates, independent review and local commits | `src/spec/loop.ts`, `src/cli/run-leader.ts` | ADR 0022, 0039 | implemented |
