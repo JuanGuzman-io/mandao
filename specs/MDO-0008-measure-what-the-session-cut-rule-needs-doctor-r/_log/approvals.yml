@@ -4,3 +4,8 @@ approvals:
     by: Juan D. Guzmán
     at: 2026-10-20T22:22:54.589Z
     note: "trial run: approved by the maintainer's delegate"
+  - step: budget
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:08:34.647Z
+    note: "authorized by the maintainer in the session (2026-10-20): Option A, up to 16 USD in total"
+    to: 16

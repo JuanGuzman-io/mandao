@@ -1,8 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
 import semver from 'semver';
 import type { Finding } from './doctor.js';
+import { parseFrontmatter } from './frontmatter.js';
 import type { Probe } from './tools.js';
 
 const MIN_SETTINGS = '2.1.242';
@@ -96,7 +96,10 @@ function agentOverrides(root: string): Agent[] {
   const out: Agent[] = [];
   for (const file of files) {
     try {
-      const data = matter(readFileSync(join(dir, file), 'utf8')).data as { name?: unknown; experimental?: { cacheTtl?: unknown } };
+      const data = parseFrontmatter(readFileSync(join(dir, file), 'utf8')).data as {
+        name?: unknown;
+        experimental?: { cacheTtl?: unknown };
+      };
       const ttl = data.experimental?.cacheTtl;
       if (ttl !== undefined && ttl !== null)
         out.push({
@@ -105,7 +108,7 @@ function agentOverrides(root: string): Agent[] {
           ttl: String(ttl),
         });
     } catch {
-      // an unreadable agent file is not a TTL source
+      // an unreadable agent file, or one refused for a non-YAML fence, is not a TTL source
     }
   }
   return out.sort((a, b) => a.name.localeCompare(b.name));

@@ -36,3 +36,8 @@ spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
 | 2026-10-20 | T4 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/unit/kaizen-sessions.test.ts; FAIL: B1: TURNS_AFTER_TASKS mean and n include specs without verify and close recorded (D4 spec.md:223-224); B2: 20% threshold is an inline magic number |
 | 2026-10-20 | T4 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/kaizen-sessions.test.ts |
 | 2026-10-20 | T4 | 1 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/kaizen-sessions.test.ts; advisories: close 'not measured' exclusion untested; redundant S-4.2 comment; A4 (attempt 1) no end-to-end kaizen-compare test for sessionCut |
+| 2026-10-21 | T1 | 3 | strong | claude | — | — | FAIL | red test changed: test/unit/doctor-cache.test.ts; FAIL: security/high: doctor-cache reads agent front matter with gray-matter, which evaluates ---js front matter (Reviewer advisory A1); architecture test allows gray-matter only in src/engine/frontmatter.ts |
+| 2026-10-21 | T1 | 4 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/doctor-cache.test.ts; `npx vitest run test/unit/doctor-cache.test.ts --maxWorkers=3` failed (exit 1) |
+| 2026-10-21 | T1 | 4 | strong | claude | — | — | STARTED |  |
+| 2026-10-21 | T1 | 4 | strong | claude | claude-opus-5-5 | — | REPORTED | red test changed: test/unit/doctor-cache.test.ts |
+| 2026-10-21 | T1 | 4 | strong | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/doctor-cache.test.ts |

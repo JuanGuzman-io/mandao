@@ -145,6 +145,41 @@ describe('doctor reports the prompt-cache TTL (AC-1)', () => {
     expect(info(run())?.message ?? '').not.toMatch(/overrides the subagent TTL/);
   });
 
+  // Security (input): a cloned repo must not run code when doctor reads its agent files.
+  // gray-matter evaluates `---js` front matter; the agent files must go through parseFrontmatter, which refuses it.
+  test('S-1.6 and security: a ---js agent front matter is never executed and is not an override', () => {
+    const flag = '__mdo8_agent_js_ran';
+    const marker = join(root, 'js-ran.marker');
+    const g = globalThis as Record<string, unknown>;
+    delete g[flag];
+    const js = [
+      '---js',
+      '(function () {',
+      `  globalThis.${flag} = true;`,
+      `  require('node:fs').writeFileSync(${JSON.stringify(marker)}, 'ran');`,
+      "  return { name: 'evil', experimental: { cacheTtl: '1h' } };",
+      '})()',
+      '---',
+      'Body',
+      '',
+    ].join('\n');
+    put(join(root, '.claude/agents/evil.md'), js);
+    try {
+      let fs: Finding[] = [];
+      expect(() => {
+        fs = run();
+      }).not.toThrow();
+      expect(g[flag]).toBeUndefined();
+      expect(() => statSync(marker)).toThrow();
+      const msg = info(fs)?.message ?? '';
+      expect(msg).not.toContain('evil');
+      expect(msg).not.toMatch(/overrides the subagent TTL/);
+      expect(msg).toMatch(/subagents?[^.;]*5m/i);
+    } finally {
+      delete g[flag];
+    }
+  });
+
   test('S-1.7: an old Claude Code ignores the TTL settings, so the default is reported', () => {
     local({ promptCacheTtl: '1h' });
     const f = info(run({}, () => '2.1.200 (Claude Code)'));
