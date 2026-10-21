@@ -1,0 +1,6 @@
+# Written by mandao approve: who approved what, and when.
+approvals:
+  - step: spec
+    by: Juan D. Guzmán
+    at: 2026-10-21T13:56:45.222Z
+    note: approved by running /mandao-implement; CC-1 resolved by amending ADR 0037 (maintainer's answer to the one question)
