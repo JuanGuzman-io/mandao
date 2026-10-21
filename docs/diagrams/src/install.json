@@ -1,0 +1,310 @@
+{
+  "name": "install",
+  "derivedFrom": [
+    {
+      "path": "docs/process-map.md",
+      "sha256": "dbedcc6300d58440056c668dabca3b0c2cce3875fea7a4514751f99f52d39d39"
+    }
+  ],
+  "specSha256": "8856ad25ad6cb4db5fa345bd309b83f9ddee3be618275d582065fd188728933e",
+  "spec": {
+    "schema_version": 2,
+    "diagram_type": "workflow",
+    "meta": {
+      "title": "Which install do I need?",
+      "output": "install.html",
+      "quality_profile": "showcase",
+      "legend": {
+        "mode": "auto",
+        "entries": {
+          "backend": {
+            "label": "Agent command: a model session"
+          },
+          "security": {
+            "label": "A person approves or decides"
+          },
+          "messagebus": {
+            "label": "mandao script: no tokens"
+          },
+          "database": {
+            "label": "Files Mandao writes"
+          },
+          "external": {
+            "label": "You, your situation"
+          }
+        }
+      }
+    },
+    "lanes": [
+      {
+        "id": "ask",
+        "label": "Your situation"
+      },
+      {
+        "id": "run",
+        "label": "Run"
+      },
+      {
+        "id": "then",
+        "label": "Then"
+      }
+    ],
+    "mainPath": [
+      "new-ask",
+      "existing-ask",
+      "multi-ask",
+      "team-ask",
+      "global-ask",
+      "shadow-ask"
+    ],
+    "nodes": [
+      {
+        "id": "new-ask",
+        "lane": "ask",
+        "col": 0,
+        "type": "external",
+        "label": "New project?",
+        "width": 132
+      },
+      {
+        "id": "new-run",
+        "lane": "run",
+        "col": 0,
+        "type": "messagebus",
+        "label": "mandao init my-project",
+        "width": 178
+      },
+      {
+        "id": "new-then",
+        "lane": "then",
+        "col": 0,
+        "type": "backend",
+        "label": "/mandao-constitution",
+        "width": 164
+      },
+      {
+        "id": "existing-ask",
+        "lane": "ask",
+        "col": 1,
+        "type": "external",
+        "label": "Existing repo?",
+        "width": 132
+      },
+      {
+        "id": "existing-run",
+        "lane": "run",
+        "col": 1,
+        "type": "messagebus",
+        "label": "mandao init",
+        "width": 132
+      },
+      {
+        "id": "existing-then",
+        "lane": "then",
+        "col": 1,
+        "type": "backend",
+        "label": "/mandao-constitution",
+        "width": 164
+      },
+      {
+        "id": "multi-ask",
+        "lane": "ask",
+        "col": 2,
+        "type": "external",
+        "label": "Mono- or polyrepo?",
+        "width": 150
+      },
+      {
+        "id": "multi-run",
+        "lane": "run",
+        "col": 2,
+        "type": "messagebus",
+        "label": "mandao init",
+        "width": 132
+      },
+      {
+        "id": "multi-then",
+        "lane": "then",
+        "col": 2,
+        "type": "database",
+        "label": "one project each",
+        "width": 136
+      },
+      {
+        "id": "team-ask",
+        "lane": "ask",
+        "col": 3,
+        "type": "external",
+        "label": "Team uses Mandao?",
+        "width": 143
+      },
+      {
+        "id": "team-run",
+        "lane": "run",
+        "col": 3,
+        "type": "messagebus",
+        "label": "mandao sync",
+        "width": 132
+      },
+      {
+        "id": "team-then",
+        "lane": "then",
+        "col": 3,
+        "type": "messagebus",
+        "label": "mandao doctor",
+        "width": 132
+      },
+      {
+        "id": "global-ask",
+        "lane": "ask",
+        "col": 4,
+        "type": "external",
+        "label": "Want it in every repo?",
+        "width": 178
+      },
+      {
+        "id": "global-run",
+        "lane": "run",
+        "col": 4,
+        "type": "messagebus",
+        "label": "mandao init --scope global",
+        "width": 206
+      },
+      {
+        "id": "global-then",
+        "lane": "then",
+        "col": 4,
+        "type": "backend",
+        "label": "/mandao-init",
+        "width": 132
+      },
+      {
+        "id": "shadow-ask",
+        "lane": "ask",
+        "col": 5,
+        "type": "external",
+        "label": "Can't change the repo?",
+        "width": 178
+      },
+      {
+        "id": "shadow-run",
+        "lane": "run",
+        "col": 5,
+        "type": "messagebus",
+        "label": "mandao init --shadow",
+        "width": 164
+      },
+      {
+        "id": "shadow-then",
+        "lane": "then",
+        "col": 5,
+        "type": "backend",
+        "label": "/mandao-constitution",
+        "width": 164
+      }
+    ],
+    "edges": [
+      {
+        "id": "new-yes",
+        "from": "new-ask",
+        "to": "new-run",
+        "label": "yes"
+      },
+      {
+        "id": "new-then",
+        "from": "new-run",
+        "to": "new-then"
+      },
+      {
+        "id": "new-no",
+        "from": "new-ask",
+        "to": "existing-ask",
+        "label": "no",
+        "variant": "dashed"
+      },
+      {
+        "id": "existing-yes",
+        "from": "existing-ask",
+        "to": "existing-run",
+        "label": "yes"
+      },
+      {
+        "id": "existing-then",
+        "from": "existing-run",
+        "to": "existing-then"
+      },
+      {
+        "id": "existing-no",
+        "from": "existing-ask",
+        "to": "multi-ask",
+        "label": "no",
+        "variant": "dashed"
+      },
+      {
+        "id": "multi-yes",
+        "from": "multi-ask",
+        "to": "multi-run",
+        "label": "yes"
+      },
+      {
+        "id": "multi-then",
+        "from": "multi-run",
+        "to": "multi-then"
+      },
+      {
+        "id": "multi-no",
+        "from": "multi-ask",
+        "to": "team-ask",
+        "label": "no",
+        "variant": "dashed"
+      },
+      {
+        "id": "team-yes",
+        "from": "team-ask",
+        "to": "team-run",
+        "label": "yes"
+      },
+      {
+        "id": "team-then",
+        "from": "team-run",
+        "to": "team-then"
+      },
+      {
+        "id": "team-no",
+        "from": "team-ask",
+        "to": "global-ask",
+        "label": "no",
+        "variant": "dashed"
+      },
+      {
+        "id": "global-yes",
+        "from": "global-ask",
+        "to": "global-run",
+        "label": "yes"
+      },
+      {
+        "id": "global-then",
+        "from": "global-run",
+        "to": "global-then"
+      },
+      {
+        "id": "global-no",
+        "from": "global-ask",
+        "to": "shadow-ask",
+        "label": "no",
+        "variant": "dashed"
+      },
+      {
+        "id": "shadow-yes",
+        "from": "shadow-ask",
+        "to": "shadow-run",
+        "label": "yes"
+      },
+      {
+        "id": "shadow-then",
+        "from": "shadow-run",
+        "to": "shadow-then"
+      }
+    ]
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "name": "process-feature",
+  "derivedFrom": [
+    {
+      "path": "core/commands/audit.md",
+      "sha256": "379cf8121da300c5b03ad68be1e8aeb1df43ff8cf124540c697367da09dfbf14"
+    },
+    {
+      "path": "core/commands/clarify.md",
+      "sha256": "d8b2c87153b5e07b0bbb1c32cb6534225e73c143dd07a3e7d070ce068cba1f95"
+    },
+    {
+      "path": "core/commands/close.md",
+      "sha256": "b0cedcadd5a2e768676a2ae6cdb1cef9c4904716f98e6dceef60bd698f5a9b37"
+    },
+    {
+      "path": "core/commands/constitution.md",
+      "sha256": "59a033aa48192bfa3cdb7f89e9ce0f779c456d49bcad682075af107c9daca64f"
+    },
+    {
+      "path": "core/commands/implement.md",
+      "sha256": "70cf40b8dd5d4c3ef445900127c58a114357b561f86f90f12ea33faf1e225812"
+    },
+    {
+      "path": "core/commands/init.md",
+      "sha256": "7d52b84f11552d57e6d90ae9d966913acfde3170cea4ac44e565c4024be68267"
+    },
+    {
+      "path": "core/commands/perf.md",
+      "sha256": "75475b97e50cb0822dbada2566ad2b40e797bb5b5e5b06953f5d61f8c1f93568"
+    },
+    {
+      "path": "core/commands/quick.md",
+      "sha256": "3cc685f42c5abce6c7c4406b6b1b7511d8e18de9ac2b00caebe28fbb9a8f266d"
+    },
+    {
+      "path": "core/commands/resume.md",
+      "sha256": "196a1e1a70b4df2cf523b96e61259674e6b36d159a6efef1007f8f50dad0b4e3"
+    },
+    {
+      "path": "core/commands/specify.md",
+      "sha256": "d0362fe421870dc49585806e0eca65a8614c39478185d12f569681e1a753f9cb"
+    },
+    {
+      "path": "core/commands/story.md",
+      "sha256": "69b3d3e8a143b6a90278f9b4d7128ab64c621f2d55caaaf6e4e10a50427a6864"
+    },
+    {
+      "path": "core/commands/tasks.md",
+      "sha256": "6bcd6488844d8cbf65e4b5a610662dfdbe3520258853b7f53ff8843bd0c55e8b"
+    },
+    {
+      "path": "core/commands/verify.md",
+      "sha256": "9fdc2d3b6a358c5b27c618084efc8f54691dbfc95da23540e5469512903ed08a"
+    },
+    {
+      "path": "docs/process-map.md",
+      "sha256": "dbedcc6300d58440056c668dabca3b0c2cce3875fea7a4514751f99f52d39d39"
+    }
+  ],
+  "specSha256": "09612b74d0014b8534a45a886a646950cd4ea6e65a5a7fc7c95e2486f118d8f4",
+  "spec": {
+    "schema_version": 2,
+    "diagram_type": "workflow",
+    "meta": {
+      "title": "Build a story",
+      "output": "process-feature.html",
+      "quality_profile": "showcase",
+      "legend": {
+        "mode": "auto",
+        "entries": {
+          "backend": {
+            "label": "Agent command: a model session"
+          },
+          "security": {
+            "label": "A person approves or decides"
+          },
+          "messagebus": {
+            "label": "mandao script: no tokens"
+          },
+          "database": {
+            "label": "Files Mandao writes"
+          },
+          "external": {
+            "label": "You, your situation"
+          }
+        }
+      }
+    },
+    "lanes": [
+      {
+        "id": "steps",
+        "label": "Build a story"
+      },
+      {
+        "id": "auto",
+        "label": "Triggers on its own"
+      }
+    ],
+    "mainPath": [
+      "p0",
+      "p1",
+      "p3",
+      "p4",
+      "p5",
+      "p6"
+    ],
+    "nodes": [
+      {
+        "id": "p0",
+        "lane": "steps",
+        "col": 0,
+        "type": "backend",
+        "label": "/mandao-story",
+        "sublabel": "optional",
+        "tag": "you approve",
+        "width": 132
+      },
+      {
+        "id": "p1",
+        "lane": "steps",
+        "col": 1,
+        "type": "backend",
+        "label": "/mandao-specify",
+        "sublabel": "required",
+        "tag": "you approve",
+        "width": 132
+      },
+      {
+        "id": "p2",
+        "lane": "auto",
+        "col": 1,
+        "type": "backend",
+        "label": "/mandao-clarify",
+        "sublabel": "on its own",
+        "width": 132
+      },
+      {
+        "id": "p3",
+        "lane": "steps",
+        "col": 2,
+        "type": "backend",
+        "label": "/mandao-tasks",
+        "sublabel": "required",
+        "tag": "you approve",
+        "width": 132
+      },
+      {
+        "id": "p4",
+        "lane": "steps",
+        "col": 3,
+        "type": "backend",
+        "label": "/mandao-implement",
+        "sublabel": "required",
+        "width": 143
+      },
+      {
+        "id": "p5",
+        "lane": "steps",
+        "col": 4,
+        "type": "backend",
+        "label": "/mandao-verify",
+        "sublabel": "required",
+        "width": 132
+      },
+      {
+        "id": "p6",
+        "lane": "steps",
+        "col": 5,
+        "type": "backend",
+        "label": "/mandao-close",
+        "sublabel": "required",
+        "tag": "you approve",
+        "width": 132
+      }
+    ],
+    "edges": [
+      {
+        "id": "p0-p1",
+        "from": "p0",
+        "to": "p1"
+      },
+      {
+        "id": "p1-p2",
+        "from": "p1",
+        "to": "p2",
+        "label": "when needed",
+        "variant": "dashed",
+        "role": "branch"
+      },
+      {
+        "id": "p1-p3",
+        "from": "p1",
+        "to": "p3"
+      },
+      {
+        "id": "p3-p4",
+        "from": "p3",
+        "to": "p4"
+      },
+      {
+        "id": "p4-p5",
+        "from": "p4",
+        "to": "p5"
+      },
+      {
+        "id": "p5-p6",
+        "from": "p5",
+        "to": "p6"
+      }
+    ]
+  }
+}

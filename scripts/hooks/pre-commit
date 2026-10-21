@@ -4,3 +4,7 @@
 set -e
 npx --no-install biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true
 npx --no-install tsc --noEmit
+# Diagrams and their pages follow the commands, the code they read and docs/process-map.md (no Archify needed).
+if git diff --cached --name-only | grep -qE '^(core/commands/|docs/process-map\.md|docs/diagrams/|src/(scripts/spec|spec/loop|schemas/common|cli/(approve|start))\.ts|scripts/diagrams/)'; then
+  node scripts/diagrams/check.mjs
+fi
