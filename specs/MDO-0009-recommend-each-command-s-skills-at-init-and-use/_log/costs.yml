@@ -14,3 +14,17 @@ costs:
       model:claude-opus-5-5: 1.814863
     source: claude-code
     basis: equivalent
+  - at: 2026-10-21T03:42:59.462Z
+    command: clarify
+    harness: claude
+    session: 34171b07-ebc8-4678-a367-bd38c5994597
+    usd: 1.9236
+    roles:
+      clarify: 1.9236
+    models:
+      claude-opus-5-5: 1.9236
+    cumulative:
+      main-session: 1.92357
+      model:claude-opus-5-5: 1.92357
+    source: claude-code
+    basis: equivalent

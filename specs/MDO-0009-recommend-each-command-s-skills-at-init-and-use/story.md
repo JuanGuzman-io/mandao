@@ -73,6 +73,8 @@ critical: true
 - **BUT it must NOT** run any installer before the person says yes, nor preselect any skill (C2)
 - **AND IT MUST** copy each accepted skill, at its pinned version, into the skills folder of every
   chosen harness, and otherwise print the exact manual step (C3)
+- **BUT it must NOT** copy a skill's executable scripts unless the person asks with `--with-scripts`;
+  by default only `SKILL.md` and its documents are installed ([spec.md#c-2](spec.md#c-2)) (C4)
 
 ### AC-2 — init --yes lists the skills and installs nothing
 critical: true

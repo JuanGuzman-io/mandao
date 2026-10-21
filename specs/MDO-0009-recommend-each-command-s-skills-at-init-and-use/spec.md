@@ -67,13 +67,15 @@ and pin in `.mandao/mandao.lock`.
 
 <a id="fr3"></a>
 ### FR-3 — A repository source is copied at its pinned commit into each harness's skills folder
-Serves: AC-1/C3, AC-3, AC-3/C1
+Serves: AC-1/C3, AC-1/C4, AC-3, AC-3/C1
 Projects: mandao
 
 A `git` source (`url`, `ref` tag, `commit`, `path`) is fetched with `git` into a temporary folder
 outside the project, checked against `commit`, and its `path` folder is copied as `<folder>/<id>/` into
-the project skills folder of each chosen harness ([D3](#d3)); then the temporary folder is removed. The
-lock pins the skill with its commit. The same applies to `mandao skills add`.
+the project skills folder of each chosen harness ([D3](#d3)); then the temporary folder is removed. By
+default only `SKILL.md` and its documents are copied; executable scripts only with `--with-scripts`
+([C-2](#c-2)). The lock pins the skill with its commit and whether its scripts were copied. The same
+applies to `mandao skills add`.
 
 #### S-3.1 — Copied for two harnesses
 - **Given** harnesses `[claude, codex]` and brainstorming accepted, with `git` on PATH
@@ -96,6 +98,23 @@ lock pins the skill with its commit. The same applies to `mandao skills add`.
 - **Then** the skill is reported pending with the manual step: repository, tag, commit, folder and the
   target folders
 - **AND IT MUST** let init finish with exit code 0 (C1)
+
+#### S-3.4 — Scripts stay out by default
+- **Given** an accepted skill whose folder holds `SKILL.md`, documents and executable scripts (as
+  brainstorming's `scripts/start-server.sh`)
+- **When** the install runs without `--with-scripts`
+- **Then** `SKILL.md` and the documents are copied, and the output names each script left out and how
+  to add it (`--with-scripts`)
+- **BUT it must NOT** copy any script: a file with the executable bit, a script extension (`.sh`,
+  `.bash`, `.zsh`, `.js`, `.mjs`, `.cjs`, `.ts`, `.py`, `.rb`, `.ps1`, `.bat`, `.cmd`) or anything under
+  a `scripts/` folder (C1)
+
+#### S-3.5 — Scripts with explicit opt-in
+- **Given** the same skill
+- **When** the install runs with `--with-scripts` (on `init` or `skills add`)
+- **Then** the whole folder is copied and the lock records that its scripts were copied
+- **AND IT MUST** warn before copying that the scripts are third-party code and that brainstorming's
+  start a local server (C1)
 
 <a id="fr4"></a>
 ### FR-4 — `init --yes` lists the skills and installs nothing
@@ -153,6 +172,7 @@ commands that lose it, what they do without it (the catalog's `fallback`) and th
 | AC-1 | C1: what, source, version, commands | FR-2 / S-2.1, S-2.1/C1 | covered |
 | AC-1 | C2: nothing before yes, nothing preselected | FR-2 / S-2.3/C1 | covered |
 | AC-1 | C3: copied into each harness's folder, or the manual step | FR-3 / S-3.1, S-3.3 | covered |
+| AC-1 | C4: scripts only with `--with-scripts` | FR-3 / S-3.4/C1, S-3.5/C1 | covered |
 | AC-2 | main | FR-4 / S-4.1 | covered |
 | AC-2 | C1: nothing installed or pinned | FR-4 / S-4.1/C1 | covered |
 | AC-3 | main | FR-1 / S-1.2; FR-3 / S-3.1 | covered |
@@ -200,7 +220,14 @@ Decided by [C-1](#c-1).
 - `installSkills` copies a `git` source instead of printing a manual note: `git clone --depth 1
   --branch <ref> --filter=blob:none --sparse <url> <tmp>`, `sparse-checkout set <path>`, `rev-parse HEAD`
   must equal `commit`, then the folder is copied. `<tmp>` is under the OS temporary folder and removed
-  in every outcome. The lock entry gains an optional `commit`.
+  in every outcome. The lock entry gains an optional `commit` and `scripts` (true when they were
+  copied).
+- What is copied ([C-2](#c-2)): `SKILL.md` and the documents of the folder. Scripts (executable bit, a
+  script extension, or under `scripts/`) are left out and listed, unless the person passes
+  `--with-scripts` on `init` or `skills add`; then a warning names them as third-party code (and
+  brainstorming's as starting a local server) before the copy. Rejected: copying everything (third-party
+  executables in the person's repository by default). Rejected: a prompt per skill for its scripts (the
+  maintainer chose an explicit flag).
 - Target folders, from the harnesses' docs ([P4](#p4)): Claude Code `.claude/skills`; Codex and
   Antigravity `.agents/skills`; OpenCode `.agents/skills`; Copilot `.github/skills`. OpenCode and
   Copilot also read `.claude/skills` and `.agents/skills`, so they add no folder when one of those is
@@ -251,9 +278,11 @@ Changed by [C-1](#c-1).
 
 - Risk tags: `infra` (init fetches third-party repositories and writes into the project),
   `public-api` (init's behavior and output, catalog and lock schemas).
-- Third-party files land in the person's repository (brainstorming brings scripts that start a local
-  server, `scripts/start-server.sh`, [P3](#p3)): only after their selection, only the pinned commit,
-  never over an existing folder. Committing the copies is the person's choice; the output says where
+- Third-party files land in the person's repository: only after their selection, only the pinned
+  commit, never over an existing folder, and without executable scripts unless the person passes
+  `--with-scripts` ([C-2](#c-2); brainstorming's `scripts/start-server.sh` starts a local server,
+  [P3](#p3)). A skill whose `SKILL.md` refers to a script left out still installs; the output says
+  which scripts were left out. Committing the copies is the person's choice; the output says where
   they are.
 - When Claude Code and Codex are both chosen, OpenCode and Copilot see two identical copies of a
   skill (`.claude/skills` and `.agents/skills`), as they already do for Mandao's own commands.
@@ -312,6 +341,17 @@ None: no module `AGENTS.md` describes init, doctor findings or skill sources.
   the two skills are left out". FR-1, FR-3 and FR-5, D1, D3 and D5, AC-1/C3, AC-3 and AC-4 change; P1
   and P2 leave the ledger; P3 and P4 are added and verified. D2 and D4 and the `specify` phase are
   kept. The spec goes back to `draft` for one new approval.
+
+<a id="c-2"></a>
+### C-2 — Are a skill's executable scripts copied with it? (2026-10-21)
+
+- **Answer:** Not by default. "Scripts de brainstorming: no se copian por defecto. Se instala solo
+  `SKILL.md` y sus documentos. Los scripts ejecutables solo con opt-in explícito (`--with-scripts`), con
+  una advertencia de que es código de terceros que levanta un servidor local."
+- **Answered by:** maintainer, before the second approval.
+- **Effect:** AC-1 gains C4; FR-3 gains S-3.4 and S-3.5; D3 says what is copied and adds `scripts` to
+  the lock entry; the brainstorming risk is narrowed; T2 covers the two scenarios. Applies to every
+  `git` source, not only brainstorming.
 
 ## Premise Ledger
 
@@ -376,9 +416,10 @@ verify: npx vitest run test/unit/command-skills.test.ts test/unit/content.test.t
 - **Done when:**
   - S-2.1 to S-2.3 hold with mocked prompts and a recording runner: the runner has no call and no
     folder is written before the multiselect resolves.
-  - S-3.1 to S-3.3 hold against a local tagged repository (`file://`): copies in both folders, lock
-    `commit`, no overwrite, a moved tag fails, a missing `git` is pending, and the temporary folder is
-    gone in every case.
+  - S-3.1 to S-3.5 hold against a local tagged repository (`file://`): copies in both folders, lock
+    `commit`, no overwrite, a moved tag fails, a missing `git` is pending, scripts left out and listed
+    by default and copied with a warning under `--with-scripts`, and the temporary folder is gone in
+    every case.
   - S-4.1 holds by running `mandao init --yes` as a process in a temporary workspace.
 
 ```yaml
@@ -387,9 +428,9 @@ kind: feat
 tier: strong
 files: [src/cli/init-skills.ts, src/cli/init.ts, src/cli/skills.ts, src/skills/install.ts, docs/cli.md, test/unit/skills.test.ts, test/integration/init-skills.test.ts]
 exemplar: src/cli/init-budget.ts
-ac: [AC-1, AC-1/C1, AC-1/C2, AC-1/C3, AC-2, AC-2/C1, AC-3, AC-3/C1]
-scenarios: [S-2.1, S-2.1/C1, S-2.2, S-2.3, S-2.3/C1, S-3.1, S-3.1/C1, S-3.2, S-3.3, S-3.3/C1, S-4.1, S-4.1/C1]
-test_levels: { S-2.1: e2e, S-2.1/C1: e2e, S-2.2: e2e, S-2.3: e2e, S-2.3/C1: e2e, S-3.1: unit, S-3.1/C1: unit, S-3.2: unit, S-3.3: unit, S-3.3/C1: e2e, S-4.1: e2e, S-4.1/C1: e2e }
+ac: [AC-1, AC-1/C1, AC-1/C2, AC-1/C3, AC-1/C4, AC-2, AC-2/C1, AC-3, AC-3/C1]
+scenarios: [S-2.1, S-2.1/C1, S-2.2, S-2.3, S-2.3/C1, S-3.1, S-3.1/C1, S-3.2, S-3.3, S-3.3/C1, S-3.4, S-3.4/C1, S-3.5, S-3.5/C1, S-4.1, S-4.1/C1]
+test_levels: { S-2.1: e2e, S-2.1/C1: e2e, S-2.2: e2e, S-2.3: e2e, S-2.3/C1: e2e, S-3.1: unit, S-3.1/C1: unit, S-3.2: unit, S-3.3: unit, S-3.3/C1: e2e, S-3.4: unit, S-3.4/C1: unit, S-3.5: unit, S-3.5/C1: unit, S-4.1: e2e, S-4.1/C1: e2e }
 evidence: tdd
 risk_tags: [infra, public-api]
 depends_on: [T1]
