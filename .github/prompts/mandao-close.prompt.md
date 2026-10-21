@@ -50,7 +50,9 @@ Then `node .mandao/bin/mandao.mjs run status ${input:spec:Spec folder or id} clo
 `node .mandao/bin/mandao.mjs run impacts ${input:spec:Spec folder or id}` lists what design.md proposed. Show each change as a diff against
 `docs/constitution/` (and product context), apply only what the user approves, and add an entry to
 `docs/constitution/CHANGELOG.md`. Close is the only mandao that writes the constitution after its
-creation.
+creation. Version 2 spec: record each approved edit outside the spec folder (constitution, command content,
+code) with `node .mandao/bin/mandao.mjs run close-summary ${input:spec:Spec folder or id} --applied <path>` (repeatable), so the close commit stages it
+and, after `mandao sync` and the diagrams, the files regenerated from it.
 
 ## 3. Sync
 
@@ -127,7 +129,7 @@ unapplied and is reported.
 `## Outcome` and `## Delivery`, keeps your prose sections as they are, and upserts the spec's one line in
 `docs/CHANGELOG.md`; never edit the record by hand), set `status: closed` in story.md, then commit everything
 close wrote on its own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} close` (the spec folder, `docs/CHANGELOG.md`, `docs/kaizen/lessons.md`
-or, for version 1, `docs/releases/<ID>/` and `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
+or, for version 1, `docs/releases/<ID>/` and `docs/kaizen/<ID>.md`, the constitution, changed module guides, the `--applied` paths and the files regenerated from them (lock, command renders, diagram sources); the result's `leftOut` names every other uncommitted file, which stays uncommitted; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.
 
 **Worktree** (`worktrees.cleanup` in `.mandao/config.yml`): after the spec's branch is merged, `ask`

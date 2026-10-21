@@ -168,6 +168,8 @@ export interface SpecCommit {
   committed: boolean;
   sha?: string;
   reason?: string;
+  /** Uncommitted files this commit did not take, so a close can name what it left out. */
+  leftOut?: string[];
 }
 
 /**
@@ -199,5 +201,5 @@ export function commitSpecDocs(input: {
   } catch (e) {
     return { committed: false, reason: String((e as { stderr?: string }).stderr || (e as Error).message).trim() };
   }
-  return { committed: true, sha: git(input.repo, ['rev-parse', '--short', 'HEAD']).trim() };
+  return { committed: true, sha: git(input.repo, ['rev-parse', '--short', 'HEAD']).trim(), leftOut: changedFiles(input.repo) };
 }

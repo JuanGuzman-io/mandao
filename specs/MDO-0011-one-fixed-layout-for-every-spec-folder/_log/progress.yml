@@ -1,10 +1,10 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T21:54:00.544Z
+updated_at: 2026-10-21T22:04:36.771Z
 current: null
 open_questions: []
-next_step: commit T5, then T6
+next_step: commit T6, then T7
 deferred_to_ci: []
 red_tests:
   - task: T1
@@ -218,4 +218,28 @@ red_tests:
           - "S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line"
           - "AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases"
           - "S-4.4: the lead written between the title and Outcome survives a first and a second --closed"
+  - task: T6
+    files:
+      - path: test/integration/close-commit.test.ts
+        sha256: f4ad18bca7e196e4f2530c0295eef160ee868165cfe34ffec1c7264abc8ec7cb
+        tests:
+          - "S-5.1: one commit holds the spec, the changelog line, the applied edit, the regenerated files and the lock"
+          - "S-5.2: an unrecorded change to src/cli/start.ts is not committed"
+          - "S-5.2/C1: the result names the file it left out"
+      - path: test/integration/mdo-0005-defects.test.ts
+        sha256: 23527528ee84ee75b287a72823578afa58bd9c2a48d9dc58b14bbfd436e9380f
+        tests:
+          - free text that names no model is not a claim; the same model in other words is not a mismatch
+          - "a record never takes its identity from the model: claims are compared, cells come from agent files"
+          - the quick-log review cell comes from the reviewer agent file, whatever the reviewer said
+          - every CLI option that records who did a step takes an agent (resolved from its file) or is a compared claim
+          - no command or persona asks the model to type a model name into a record
+          - declared kinds the diff contradicts are issues; without a kind the diff decides
+          - mandao run commit refuses a kind the diff contradicts and commits a test-only task as ✅ test
+          - x
+          - mandao run tasks reports a task without a kind
+          - FAIL without --reason is refused; with it the row says why
+          - close of a version 2 spec commits the changelog and lessons, not per-spec release or Kaizen documents
+          - close commits release docs, Kaizen, constitution and changed module guides with the spec; nothing else (version 1)
+          - specify and clarify get fixed, unambiguous subjects; an unknown step is refused
 pending_commits: []

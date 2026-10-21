@@ -11,7 +11,7 @@
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "60e1a9d2c6475fcded35599c773b14d4c71243b5acf652a8ff2b89e8ec496a38"
+      "sha256": "d2a55727ee10630b1570f2b0901adf90d86387ab984418d3c0305adcccd7bb95"
     },
     {
       "path": "core/commands/constitution.md",
@@ -54,7 +54,7 @@
       "sha256": "ca1abdb14e4641315cf3bcc3e80b482b74eb879e9dab96978f1279bfda00ab28"
     }
   ],
-  "specSha256": "e10d26704e5ef7dba7cdce6f0d2402a525dbbc68d702d2b80d3a4ebc3d81feb7",
+  "specSha256": "c8c9c507b239a40082b73288246133c739daa1ce253bc87c8284b0d68238c46c",
   "spec": {
     "schema_version": 2,
     "diagram_type": "workflow",
@@ -132,8 +132,8 @@
         "col": 2,
         "type": "backend",
         "label": "2. Constitution and…",
-        "sublabel": "mandao run impacts",
-        "width": 164
+        "sublabel": "mandao run impacts +1",
+        "width": 171
       },
       {
         "id": "s3",

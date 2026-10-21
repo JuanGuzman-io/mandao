@@ -62,6 +62,14 @@ spec: MDO-0011-one-fixed-layout-for-every-spec-folder
 | 2026-10-21 | T5 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts; `npx vitest run test/integration/close.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T5 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/content.test.ts |
 | 2026-10-21 | T5 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/content.test.ts |
+| 2026-10-21 | T6 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T6 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/close-commit.test.ts, test/integration/mdo-0005-defects.test.ts; `npx vitest run test/integration/close-commit.test.ts test/integration/mdo-0005-defects.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T6 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/close-commit.test.ts, test/integration/mdo-0005-defects.test.ts; `npx vitest run test/integration/close-commit.test.ts test/integration/mdo-0005-defects.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T6 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/close-commit.test.ts, test/integration/mdo-0005-defects.test.ts; `npx vitest run test/integration/close-commit.test.ts test/integration/mdo-0005-defects.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T6 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/close-commit.test.ts |
+| 2026-10-21 | T6 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/integration/close-commit.test.ts; FAIL: S-5.1 fixture locks docs/commands and docs/diagrams files, so the unlocked derived-path branch that commits diagram sources is never tested |
+| 2026-10-21 | T6 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/close-commit.test.ts |
+| 2026-10-21 | T6 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/close-commit.test.ts |
 
 ### Pivot Record — T4 — 2026-10-21
 

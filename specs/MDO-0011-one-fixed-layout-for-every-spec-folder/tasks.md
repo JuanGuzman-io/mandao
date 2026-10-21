@@ -185,7 +185,7 @@ parallel_safe: false
 verify: npx vitest run test/integration/close.test.ts test/unit/release.test.ts test/integration/spec-log.test.ts test/unit/content.test.ts
 ```
 
-### [ ] T6 — Close commits what it applied and what was regenerated from it
+### [x] T6 — Close commits what it applied and what was regenerated from it
 
 - **What:** `run close-summary --applied <path>` records each approved edit. `commit-spec <ID> close` stages the spec, the changelog and lessons, the constitution, the module guides, the recorded paths and their regenerated files, and returns `leftOut` ([D6](design.md#d6)).
 - **Done when:**

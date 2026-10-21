@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 import type { Command } from 'commander';
 import { LOCK_FILE, readConfig, readLock, readModels } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
@@ -132,6 +132,7 @@ interface SummaryOptions {
   detectRelease?: boolean;
   env?: string;
   source?: 'ci' | 'tracker';
+  applied?: string[];
 }
 
 /** gitflow: the one release branch that contains every commit of the spec (ADR 0023). */
@@ -153,6 +154,19 @@ function publication(record: string, at: string): CloseSummary['published'][numb
   return { target, kind: kind as 'comment', id, hash, at, ...(url ? { url } : {}) };
 }
 
+/** `--applied <path>`: a file outside the spec folder, inside the repo, that close applied with approval; kept once each. */
+function appliedPaths(spec: SpecFolder, known: string[], given: string[]): string[] {
+  const repo = repoRoot(spec.dir);
+  const added = given.map((p) => {
+    const abs = resolve(repo, p);
+    const inside = (dir: string) => abs === dir || abs.startsWith(`${dir}${sep}`);
+    if (!inside(repo)) throw new Error(`--applied ${p} is outside the repository`);
+    if (inside(spec.dir)) throw new Error(`--applied ${p} is inside the spec folder, which close commits anyway`);
+    return relative(repo, abs).split(sep).join('/');
+  });
+  return [...new Set([...known, ...added])];
+}
+
 function updatedSummary(config: ReturnType<typeof readConfig>, spec: SpecFolder, o: SummaryOptions): CloseSummary {
   let s = summaryOf(spec);
   const now = new Date().toISOString();
@@ -160,6 +174,7 @@ function updatedSummary(config: ReturnType<typeof readConfig>, spec: SpecFolder,
   if (o.release) s = { ...s, release: { branch: o.release, how: 'given' } };
   const release = o.detectRelease ? detectedRelease(config, spec) : undefined;
   if (release) s = { ...s, release };
+  if (o.applied?.length) s = { ...s, applied: appliedPaths(spec, s.applied, o.applied) };
   if (o.published) s = withPublication(s, publication(o.published, now));
   if (o.env) {
     if (!o.source) throw new Error('--env needs --source ci|tracker: an environment is recorded only as CI or the tracker reported it');
@@ -217,6 +232,11 @@ function registerSummary(run: Command, ctx: CliContext) {
     .option('--detect-release', 'gitflow: find the release branch that contains every commit of the spec')
     .option('--env <name>', 'an environment the spec reached')
     .option('--source <source>', 'who reported the environment: ci | tracker')
+    .option(
+      '--applied <path>',
+      'an approved edit outside the spec folder; the close commit stages it (repeatable)',
+      (v, all: string[] = []) => [...all, v],
+    )
     .option('--published <record>', 'after a publication: "<target>|<kind>|<id>|<hash>[|<url>]"')
     .action((ref: string, o: SummaryOptions) => {
       const config = readConfig(ctx.root());
@@ -267,10 +287,15 @@ export function registerClose(run: Command, ctx: CliContext) {
  * Paths that do not count toward a PR's size (ADR 0028, MDO-0004): the spec folders, release docs, Kaizen,
  * diagrams, and every file Mandao generates (from the lock).
  */
-function notCode(root: string, config: ReturnType<typeof readConfig>): (path: string) => boolean {
+function notCode(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder): (path: string) => boolean {
   const generated = new Set(readLock(join(root, LOCK_FILE))?.files.map((f) => f.path) ?? []);
-  const folders = [config.paths.specs, config.paths.releases, 'docs/kaizen', 'docs/diagrams'].map((d) => `${d.replace(/\/$/, '')}/`);
-  return (path) => generated.has(path) || folders.some((d) => path.startsWith(d));
+  // A version 2 close writes the changelog and lessons, not per-spec release or Kaizen documents (MDO-0011 D5).
+  const v2 = specLogInCache(spec.dir);
+  const folders = [config.paths.specs, ...(v2 ? [] : [config.paths.releases, 'docs/kaizen']), 'docs/diagrams'].map(
+    (d) => `${d.replace(/\/$/, '')}/`,
+  );
+  const files = new Set(v2 ? ['docs/CHANGELOG.md', 'docs/kaizen/lessons.md'] : []);
+  return (path) => generated.has(path) || files.has(path) || folders.some((d) => path.startsWith(d));
 }
 
 function registerPrPlan(run: Command, ctx: CliContext) {
@@ -283,7 +308,7 @@ function registerPrPlan(run: Command, ctx: CliContext) {
       if (!spec.story) throw new Error(`${spec.name} needs story.md`);
       const repo = repoRoot(spec.dir);
       const byTask = taskCommits(repo, spec.story.meta.id, config.commits.trailers);
-      const skip = notCode(ctx.root(), config);
+      const skip = notCode(ctx.root(), config, spec);
       const sizes = new Map(spec.tasks.map((t) => [t.id, commitsSize(repo, byTask.get(t.id) ?? [], skip)]));
       const limits = sizeLimits(config.size_limits).pr;
       json(prPlan({ tasks: spec.tasks, waves: planTasks(spec.tasks).waves, sizes, limits, polyrepo: config.workspace === 'polyrepo' }));

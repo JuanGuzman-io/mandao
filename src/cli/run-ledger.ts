@@ -1,6 +1,7 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
-import { readConfig } from '../engine/files.js';
+import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import type { HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
@@ -9,7 +10,8 @@ import { changedFiles, commitPending, commitSpecDocs, repoRoot } from '../script
 import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { type ExecutionRow, NOTE_FLAGS, type Progress, taskAttempt, VERDICTS } from '../spec/index.js';
+import { specLogInCache } from '../scripts/spec-log.js';
+import { type ExecutionRow, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
 import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -217,11 +219,45 @@ export const SPEC_STEPS = {
   close: (id: string) => `close ${id} with release docs and Kaizen`,
 } as const;
 
-/** What close writes besides the spec folder: release docs, Kaizen, constitution and module guides. */
-function closePaths(ctx: CliContext, config: ReturnType<typeof readConfig>, repo: string, id: string): string[] {
+/** The paths a close recorded as applied; a summary without a readable record has none. */
+function appliedOf(text: string | undefined, spec: string): string[] {
+  try {
+    // An unreadable record (no frontmatter) must not block the commit: it just records nothing applied.
+    return parseCloseSummary(text, spec).applied;
+  } catch {
+    return [];
+  }
+}
+
+/** Changed files `sync` or the diagram build regenerated: the lock's files and the lock, command pages and diagram sources. */
+function regenerated(root: string, repo: string, changed: string[]): string[] {
+  const rel = (p: string) => relative(repo, join(root, p)).replace(/\\/g, '/');
+  const locked = new Set((readLock(join(root, LOCK_FILE))?.files ?? []).map((f) => rel(f.path)));
+  const derived = (f: string) => f.startsWith(`${rel('docs/commands')}/`) || f.startsWith(`${rel('docs/diagrams')}/`);
+  return changed.filter((f) => locked.has(f) || derived(f) || f === rel(LOCK_FILE));
+}
+
+/**
+ * What close writes besides the spec folder. Version 1: release docs, Kaizen, constitution and module guides.
+ * Version 2 (MDO-0011 D6): the changelog and lessons, constitution, guides, the paths close recorded as applied, and what was regenerated.
+ */
+function closePaths(ctx: CliContext, config: ReturnType<typeof readConfig>, repo: string, spec: SpecFolder): string[] {
+  const id = spec.story?.meta.id ?? spec.name;
   const rel = (p: string) => relative(repo, join(ctx.root(), p)).replace(/\\/g, '/');
-  const guides = changedFiles(repo).filter((f) => /(^|\/)(AGENTS|CLAUDE)\.md$/.test(f));
-  return [rel(join(config.paths.releases, id)), rel(join('docs', 'kaizen', `${id}.md`)), rel(config.paths.constitution), ...guides];
+  const changed = changedFiles(repo);
+  const guides = changed.filter((f) => /(^|\/)(AGENTS|CLAUDE)\.md$/.test(f));
+  if (!specLogInCache(spec.dir)) {
+    return [rel(join(config.paths.releases, id)), rel(join('docs', 'kaizen', `${id}.md`)), rel(config.paths.constitution), ...guides];
+  }
+  const summary = join(spec.dir, 'close-summary.md');
+  const applied = appliedOf(existsSync(summary) ? readFileSync(summary, 'utf8') : undefined, spec.name);
+  const fixed = [rel('docs/CHANGELOG.md'), rel('docs/kaizen/lessons.md'), rel(config.paths.constitution)];
+  return [
+    ...fixed,
+    ...guides,
+    ...applied.map((p) => relative(repo, join(repo, p)).replace(/\\/g, '/')),
+    ...regenerated(ctx.root(), repo, changed),
+  ];
 }
 
 /** `mandao run commit-spec`: the spec documents in their own docs commit, at every step that writes them. */
@@ -245,7 +281,7 @@ function registerCommitSpec(run: Command, ctx: CliContext) {
         config,
         trailers: opts.trailer ?? [],
         protectedBranches: branchingFor(config).protected,
-        ...(step === 'close' ? { extraPaths: closePaths(ctx, config, repo, id) } : {}),
+        ...(step === 'close' ? { extraPaths: closePaths(ctx, config, repo, spec) } : {}),
       });
       json({ ...result, header });
       if (!result.committed && result.reason !== 'nothing to commit in the spec folder') process.exitCode = 1;
