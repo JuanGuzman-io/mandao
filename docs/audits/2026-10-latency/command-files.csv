@@ -1,0 +1,103 @@
+command,role,file,approx_tokens,load_semantics
+audit,command,core/commands/audit.md,247,canonical definition
+clarify,command,core/commands/clarify.md,659,canonical definition
+clarify,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+clarify,template,.mandao/templates/app/rules/consistency-check.md,603,declared dependency; conditional not eager
+clarify,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+clarify,template,.mandao/templates/app/rules/doc-requirements.md,189,declared dependency; conditional not eager
+clarify,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+close,command,core/commands/close.md,1931,canonical definition
+close,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+close,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+close,template,.mandao/templates/app/close/release-notes.md,71,declared dependency; conditional not eager
+close,template,.mandao/templates/app/close/technical.md,81,declared dependency; conditional not eager
+close,template,.mandao/templates/app/close/kaizen.md,53,declared dependency; conditional not eager
+close,template,.mandao/templates/app/rules/doc-close.md,266,declared dependency; conditional not eager
+close,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+constitution,command,core/commands/constitution.md,2070,canonical definition
+constitution,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/product.md,84,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/business-rules.md,92,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/glossary.md,60,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/critical-flows.md,64,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/architecture.md,163,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/standards.md,244,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/security.md,131,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/performance.md,71,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/ux.md,30,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/infrastructure.md,141,declared dependency; conditional not eager
+constitution,template,.mandao/templates/app/constitution/CHANGELOG.md,56,declared dependency; conditional not eager
+implement,command,core/commands/implement.md,3492,canonical definition
+implement,template,.mandao/templates/app/rules/review.md,974,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/rules/clean-code.md,227,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/rules/test-policy.md,1189,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/rules/commits.md,375,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/spec/execution.md,269,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/spec/pivot-record.md,89,declared dependency; conditional not eager
+implement,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+implement,persona,core/personas/leader.md,764,separate role context
+implement,persona,core/personas/implementer.md,625,separate role context
+implement,persona,core/personas/reviewer.md,686,separate role context
+implement,persona,core/personas/tester.md,357,separate role context
+init,command,core/commands/init.md,244,canonical definition
+perf,command,core/commands/perf.md,345,canonical definition
+quick,command,core/commands/quick.md,1275,canonical definition
+quick,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+quick,template,.mandao/templates/app/rules/quick-gate.md,347,declared dependency; conditional not eager
+quick,template,.mandao/templates/app/rules/review.md,974,declared dependency; conditional not eager
+quick,template,.mandao/templates/app/rules/commits.md,375,declared dependency; conditional not eager
+quick,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+quick,persona,core/personas/reviewer.md,686,separate role context
+resume,command,core/commands/resume.md,763,canonical definition
+resume,template,.mandao/templates/app/rules/review.md,974,declared dependency; conditional not eager
+resume,persona,core/personas/leader.md,764,separate role context
+resume,persona,core/personas/implementer.md,625,separate role context
+resume,persona,core/personas/reviewer.md,686,separate role context
+resume,persona,core/personas/tester.md,357,separate role context
+specify,command,core/commands/specify.md,2739,canonical definition
+specify,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/traceability.md,371,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/consistency-check.md,603,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/test-policy.md,1189,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/story.md,271,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/requirements.md,206,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/design.md,186,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/quickstart.md,82,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/spec.md,333,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/tasks.md,169,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/spec/data-model.md,135,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/diagram.md,627,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/hotfix.md,124,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/spec-types.md,140,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-data-model.md,267,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-requirements.md,189,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-design.md,422,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-lite.md,439,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-quickstart.md,96,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/doc-tasks.md,329,declared dependency; conditional not eager
+specify,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+story,command,core/commands/story.md,798,canonical definition
+story,template,.mandao/templates/app/rules/context.md,764,declared dependency; conditional not eager
+story,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+story,template,.mandao/templates/app/spec/story.md,271,declared dependency; conditional not eager
+story,template,.mandao/templates/app/rules/doc-story.md,156,declared dependency; conditional not eager
+story,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+tasks,command,core/commands/tasks.md,1442,canonical definition
+tasks,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/spec/tasks.md,169,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/rules/test-policy.md,1189,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/rules/traceability.md,371,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/rules/review.md,974,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/rules/doc-tasks.md,329,declared dependency; conditional not eager
+tasks,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+verify,command,core/commands/verify.md,1326,canonical definition
+verify,template,.mandao/templates/app/rules/spec-docs.md,611,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/spec/verify-report.md,119,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/test-policy.md,1189,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/traceability.md,371,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/consistency-check.md,603,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/doc-verify.md,115,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/doc-quickstart.md,96,declared dependency; conditional not eager
+verify,template,.mandao/templates/app/rules/budget.md,391,declared dependency; conditional not eager
+verify,persona,core/personas/tester.md,357,separate role context

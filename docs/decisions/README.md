@@ -48,3 +48,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0039](0039-rules-enforced-by-scripts.md) | Rules the scripts enforce, not the text | Accepted |
 | [0040](0040-approval-by-running-the-next-command.md) | Approval by running the next command, unless something is open | Accepted |
 | [0041](0041-spec-folder-layout-v2.md) | Spec folder layout version 2 | Accepted |
+| [0042](0042-phased-improvements-and-local-validation.md) | Phased improvements and local validation | Accepted |

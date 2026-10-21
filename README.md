@@ -31,7 +31,7 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 - **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't.
 - **Tests before code (TDD).** Write a failing test from the spec, make it pass, then refactor. Mandao requires recorded red evidence before implementation where TDD applies: the test demonstrates the missing behavior before the code addresses it, keeping implementation tied to the spec. [TDD in the task flow](#test-driven-development-tdd).
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
-- **Kaizen after every spec.** `close` measures the run (rework, review failures, cost, session turns), names up to three root causes with their evidence, and proposes one-line fixes to the commands or the constitution. Nothing changes until you approve it. Every lesson stays in [`docs/kaizen/`](docs/kaizen/).
+- **Kaizen after every spec.** `close` measures the run (rework, review failures, cost, session turns), names up to three root causes with their evidence, and proposes one-line fixes to the commands or the constitution. Nothing changes until you approve it. For layout v2, lessons stay in the spec's `close-summary.md`; older specs keep [`docs/kaizen/`](docs/kaizen/).
 
 ## How it works
 
@@ -88,7 +88,7 @@ See the [test policy](core/templates/shared/rules/test-policy.md#tdd-where-tests
 
 ## Quick start
 
-**Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) recommended for diagrams (without it, diagrams fall back to Mermaid) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
+**Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) required for diagrams by the accepted design (Mermaid only when explicitly configured with `diagrams.engine: mermaid`; installer and enforcement are pending [Phase 4](docs/backlog.md)) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/install-dark.svg">
@@ -250,6 +250,7 @@ CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cl
 ## Docs
 
 - [Design document](MANDAO-DESIGN.md) — the source of truth
+- [Backlog and implementation phases](docs/backlog.md) · [Latency diagnosis](docs/audits/2026-10-latency.md)
 - [CLI reference](docs/cli.md) · [Harnesses](docs/harnesses.md)
 - [Process map](docs/process-map.md) · [Commands, one page each](docs/commands/)
 - [Customizing with overrides](docs/customizing.md)
@@ -258,16 +259,28 @@ CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cl
 ## Contributing
 
 ```bash
-npm install
-npm run check   # typecheck, lint, tests
-npm link        # use this checkout as `mandao`
+npm ci
+npm run lint
+npm run typecheck
+npx --no-install vitest related --run --maxWorkers=2 path/to/changed-file.ts
+npm run build
+node dist/cli.js --help
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for commits, releases and trusted publishing.
+Use the files changed against the PR base as inputs to `vitest related`; also run any tests that read
+changed documentation or fixtures by path. Documentation-only changes may have no related tests.
+The full suite runs in PR CI; do not run `npm run check` locally because it includes the full suite.
+Use the checkout's local build for development. See [CONTRIBUTING.md](CONTRIBUTING.md) for commits, releases and trusted publishing.
 
 ## Roadmap
 
-Work types beyond apps and AI: ML, infrastructure, DevOps and security.
+The accepted improvement program covers security, measurement, smaller review context, fewer repeated
+gates and pauses, delivery, research and parallel tasks. See the [single backlog](docs/backlog.md) for
+phase status, dependencies and acceptance criteria. Each phase starts with an approved plan and ships
+in its own PR after CI passes. TDD, independent review and gates remain required.
+
+Work types beyond apps and AI (ML, infrastructure, DevOps and security) remain a separate proposed
+design in [ADR 0031](docs/decisions/0031-work-types.md).
 
 ## Acknowledgments
 

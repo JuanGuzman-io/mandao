@@ -9,9 +9,9 @@
 ## Checklist
 
 - [ ] Large changes were discussed in an issue before implementation.
-- [ ] `npm run check` passes.
-- [ ] `npm run build` and `npm run smoke` pass.
+- [ ] Local lint, typecheck, build and impacted tests pass (workers limited; selection reported).
+- [ ] Full suite, diagram checks and smoke test pass in PR CI; no full local suite was run.
 - [ ] Behavior changes have meaningful tests; documentation is updated where needed.
 - [ ] Commits follow the emoji/type/scope format and preserve applicable trailers.
 - [ ] A changeset is included if this needs a release.
-- [ ] Merge commit or rebase will be used; no squash merge.
+- [ ] Merge commit will be used for improvement phases; no squash merge.
