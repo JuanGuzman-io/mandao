@@ -1,0 +1,8 @@
+# Written by mandao start: the request the first command picks up.
+id: MDO-0011
+title: "One fixed layout for every spec folder"
+type: story
+lane: normal
+branch: feat/MDO-0011-one-fixed-layout-for-every-spec-folder
+base: main
+created_at: 2026-10-21T17:07:39.670Z

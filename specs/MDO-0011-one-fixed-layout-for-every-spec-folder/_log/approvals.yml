@@ -1,0 +1,17 @@
+# Written by mandao approve: who approved what, and when.
+approvals:
+  - step: shown
+    by: Juan D. Guzmán
+    at: 2026-10-21T18:32:14.833Z
+    sha256:
+      story.md: sha256-MFynFheFt2SeX9kUvnM5j1QvzcrAsbgcw0DslSt0n/c=
+      requirements.md: sha256-EqBRHUppBoBHuUSBreC43rantNEBgVihDb46mDZgtJ0=
+      design.md: sha256-XQA8G7AeV1DNokUGqT/AGrmZgmO2PpR6g56KhBqdDOc=
+  - step: design
+    note: approved by running /mandao-tasks
+    sha256:
+      story.md: sha256-MFynFheFt2SeX9kUvnM5j1QvzcrAsbgcw0DslSt0n/c=
+      requirements.md: sha256-EqBRHUppBoBHuUSBreC43rantNEBgVihDb46mDZgtJ0=
+      design.md: sha256-XQA8G7AeV1DNokUGqT/AGrmZgmO2PpR6g56KhBqdDOc=
+    by: Juan D. Guzmán
+    at: 2026-10-21T18:54:35.477Z
