@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: in-progress
+status: verified
 sources:
   - { ref: "_log/start.yml", kind: request, date: 2026-10-21 }
   - { ref: "maintainer conversation during MDO-0009 and MDO-0010 (scope items 6, 7, 8; split into MDO-0010/0011/0012)", kind: conversation, date: 2026-10-21 }
