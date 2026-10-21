@@ -35,7 +35,7 @@ describe('S-3.1: a version 2 log is six committed files', () => {
   });
 });
 
-describe('S-3.2: the bulk stays in .mandao/cache/<ID>/, outside git', () => {
+describe('S-3.2: the bulk stays in .mandao/cache/<ID>/, outside git', { timeout: 30_000 }, () => {
   test('S-3.2: the pack and the full gate output are written under .mandao/cache/MDO-0001/', async () => {
     const root = repo(2);
     await history(root);

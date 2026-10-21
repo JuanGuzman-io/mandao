@@ -65,6 +65,8 @@ export function repo(version: 1 | 2) {
     workspace: 'single',
     projects: [{ name: 'mandao', path: '.', gates: { typecheck: NOISY_GATE } }],
     harnesses: ['claude'],
+    // The gate must run wherever the suite runs: a busy CI runner would otherwise defer it, with no output.
+    resources: { min_free_memory_mb: 0 },
   });
   syncProject(root);
   cpSync(fixture, join(root, SPEC), { recursive: true });

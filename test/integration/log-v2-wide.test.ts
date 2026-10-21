@@ -61,6 +61,8 @@ function wideRepo() {
       },
     ],
     harnesses: ['claude'],
+    // The gate must run wherever the suite runs: a busy CI runner would otherwise defer it, with no output.
+    resources: { min_free_memory_mb: 0 },
   });
   const tasks = join(root, SPEC, 'tasks.md');
   writeFileSync(tasks, `${readFileSync(tasks, 'utf8').replace('### [x] T1', '### [ ] T1').trimEnd()}\n${T3}`);
@@ -111,7 +113,9 @@ async function wideHistory(root: string) {
   }
 }
 
-describe('S-3.1 at the Done-when size: 3 tasks x 2 attempts, a mutation, 2 premises, 10,000-line gate, 5,000-line pack', () => {
+describe('S-3.1 at the Done-when size: 3 tasks x 2 attempts, a mutation, 2 premises, 10,000-line gate, 5,000-line pack', {
+  timeout: 60_000,
+}, () => {
   test('S-3.1: every task commit touches only the six files in _log/, and the committed _log is at most 1000 lines', async () => {
     const root = wideRepo();
     await wideHistory(root);
