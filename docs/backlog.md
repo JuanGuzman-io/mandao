@@ -5,13 +5,13 @@ only when the maintainer opens it; until then it lives here, not in an agent's m
 
 | Item | Kind | Depends on | Status |
 |---|---|---|---|
-| [Launcher version](#launcher-version) | quick | — | next |
+| [Launcher version](#launcher-version) | quick | MDO-0011 closed | next, from `main` in its own worktree |
 | [MDO-0012 — Delivery and research](#mdo-0012--delivery-and-research) | spec | MDO-0011 | agreed |
 | [MDO-0013 — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | spec | MDO-0011 | agreed |
 | [Migrate MDO-0008 to MDO-0010 to layout v2](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | spec | MDO-0011 proven | agreed |
-| [Security quick before the beta](#security-quick-before-the-beta) | quick | — | scope to confirm |
-| [Rules enforced by script](#rules-enforced-by-script) | spec | — | scope to confirm |
-| [Security gates from the user's CI](#security-gates-from-the-users-ci) | spec | — | scope to confirm |
+| [Security quick before the beta](#security-quick-before-the-beta) | quick | — | agreed |
+| [Rules enforced by script](#rules-enforced-by-script) | spec | — | agreed |
+| [Security gates from the user's CI](#security-gates-from-the-users-ci) | spec | MDO-0012 (delivery) | agreed |
 
 ## Launcher version
 
@@ -93,17 +93,47 @@ real spec; until then the scripts read both layouts by the story's `schema_versi
 
 ## Security quick before the beta
 
-A quick before the beta release. Pending items already listed in
-[maintainer-checklist.md](maintainer-checklist.md#secret-scanning-and-dependency-security) and the
-[exposure audit](security/exposure-audit.md) (for example the machine paths in MDO-0007's `_log/`).
-Scope to confirm with the maintainer when it opens.
+Before the beta is published.
+
+- **Skill sources over `https:` only.** `http:` and `file:` sources are refused, with a test.
+- **The user's `GIT_SSH_COMMAND` is kept.** When BatchMode is needed, it is added without
+  overwriting the user's setting.
+- **Graphify install, checked.** When the catalog source is the whole repository with no skill path,
+  it is not copied whole into the skill folders: use its own installer, or the skill folder the
+  repository defines.
+
+Related, already listed: [maintainer-checklist.md](maintainer-checklist.md#secret-scanning-and-dependency-security)
+and the [exposure audit](security/exposure-audit.md).
 
 ## Rules enforced by script
 
-Rules the commands state as prose become checks a script enforces. Scope to confirm with the
-maintainer when it opens.
+Rules the commands state as prose become checks a script enforces.
+
+- **Loop brake.** When `run step` returns the same action for the same task N times in a row
+  (default 3) with no progress in the log, it returns HALT with the reason and the options.
+- **A new test that passes on its first run.** `run step` stops asking for red and offers `mutation`
+  evidence (existing behavior) or a review of the test.
+- **`run commit` never drops files outside the task's list.** When the diff holds undeclared files it
+  stops and asks to update the list; it never commits a state that does not build.
+- **The test gate is not `NOT_INSTALLED` when the runner exits successfully.** A "command not found"
+  in a test's output does not decide the gate's status.
+- **Deleting tests to meet a linter limit is a FAIL for the Reviewer;** the file is split instead.
+- **Close refuses an unresolved `ASSUMPTION` or `CONFLICT`.** Each one is marked resolved (with the
+  decision and the link) or moves to this backlog with an owner.
+- **`mandao approve` can revoke an approval.** The revocation is recorded with its reason; nothing is
+  deleted.
+- **Decide where `.integrity.json` lives:** in git on every task, only at close, or outside git.
 
 ## Security gates from the user's CI
 
-Security gates chosen from what the user's CI already runs. Scope to confirm with the maintainer
-when it opens.
+- **`constitution` detects scanning in the project's CI** (GitHub Actions, GitLab CI and others):
+  secret scanning and SAST. It records the result in `infrastructure.md` as
+  `security_scanning: local | ci | none`, and `doctor` checks it again.
+- **verify follows what exists:**
+  - local tools available → they run;
+  - no local tools, but the CI scans → "pending: PR CI", and delivery merges only with the CI green;
+  - neither → reported; tasks with a security tag require `mandao approve <spec> security-gaps`,
+    offering to install the tools (the command for the operating system, confirmed) or a quick that
+    adds scanning to the CI.
+- **Before merging, delivery reads the PR's real checks** and warns when none is a security check.
+- **A scan that ran nowhere is never reported as PASS.**
