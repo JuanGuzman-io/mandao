@@ -1,8 +1,6 @@
 <div align="center">
 
-<!-- Optional: add a logo at docs/assets/logo.svg and uncomment (docs/assets/logo.png exists today)
-<img src="docs/assets/logo.svg" alt="Mandao" width="120">
--->
+<img src="docs/assets/logo.webp" alt="Mandao" width="120">
 
 # Mandao
 
@@ -213,6 +211,7 @@ Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
 | `quick` | Small changes behind a gate | 🟢 stable |
 | `resume` | Continue a spec from its checkpoint, in any harness | 🟢 stable |
 | `init` | Set up Mandao in a repo from inside your agent (after `init --scope global`) | 🟢 stable |
+| `research` | Sourced research for technical decisions | ⚪ planned |
 | `perf` | Measured performance work: before and after, every time | ⚪ planned |
 | `audit` | Project health by lens: drift, security, quality… | ⚪ planned |
 
