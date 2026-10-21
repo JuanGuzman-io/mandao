@@ -176,3 +176,19 @@ costs:
       model:claude-sonnet-5-5: 0.183144
     source: claude-code
     basis: equivalent
+  - at: 2026-10-21T23:23:52.274Z
+    command: close
+    harness: claude
+    session: 24afb94f-c1c5-45fe-81dc-bb087fecff80
+    usd: 2.5173
+    roles:
+      close: 2.5173
+    models:
+      claude-opus-5-5: 2.5173
+    cumulative:
+      main-session: 3.347546
+      mandao-tester: 0.183144
+      model:claude-opus-5-5: 3.347546
+      model:claude-sonnet-5-5: 0.183144
+    source: claude-code
+    basis: equivalent
