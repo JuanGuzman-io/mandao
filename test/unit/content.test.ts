@@ -251,6 +251,14 @@ describe('core content', () => {
       expect(specify).not.toMatch(/lite[^\n]*writes? (the )?tasks|tasks inline/i);
     });
 
+    test('S-1.2: the tasks command warns on an open version 1 spec, does not convert it, and never writes tasks in spec.md', () => {
+      const tasks = rendered('tasks');
+      expect(tasks).toMatch(/version 1[^\n]*(read|as they are)/i);
+      expect(tasks).toMatch(/never writes? (the )?tasks (inside|in) `spec\.md`/i);
+      expect(tasks).toMatch(/version 1[\s\S]{0,300}warns?[\s\S]{0,120}(does not|never) convert/i);
+      expect(tasks).toMatch(/migration[^\n]*backlog/i);
+    });
+
     test('AC-1: a story rendered from the template starts at layout version 2', () => {
       const tpl = readFileSync(join(process.cwd(), 'core/templates/shared/spec/story.md'), 'utf8');
       expect(frontmatterOf(tpl).data.schema_version).toBe(2);

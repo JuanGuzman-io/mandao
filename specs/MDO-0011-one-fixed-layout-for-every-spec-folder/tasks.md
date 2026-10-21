@@ -24,7 +24,7 @@ Older specs are read as they are, and their migration is a separate spec ([C-5](
 
 ### AC-1 — The folder depends only on depth
 
-- [ ] T2 [AC-1] Every spec keeps its tasks in one place, whatever their number — `src/scripts/spec-log.ts`
+- [x] T2 [AC-1] Every spec keeps its tasks in one place, whatever their number — `src/scripts/spec-log.ts`
 
 **Checkpoint:** `npx vitest run test/integration/lite-spec.test.ts test/unit/content.test.ts test/unit/layout.test.ts` passes (T2); this confirms AC-1 before the next group.
 
@@ -87,7 +87,7 @@ verify: npx vitest run test/unit/layout.test.ts test/integration/layout.test.ts
 - **Done when:**
   - **S-1.1 holds:** a lite version 2 spec with one task has it in `tasks.md`. `checkpoint`, `run tasks` and the `approve tasks` gate read and tick it there.
   - **S-1.2 and S-1.2/C2 hold:** 4 tasks give the same file set as 3. There is no "more than 3" issue, and `## Tasks` in `spec.md` is never read for version 2.
-  - **Version 1 is unchanged:** `lite-spec.test.ts` keeps a version 1 case with inline tasks and the "more than 3" message.
+  - **Version 1 is read as it is:** `lite-spec.test.ts` keeps a version 1 case with inline tasks and the "more than 3" message. No new spec uses that format, and `/mandao-tasks` never writes tasks inside `spec.md`: run on an open version 1 spec, it warns and does not convert it, because migration goes through the backlog spec.
   - **Content:** `doc-lite.md`, `specify.md`, `tasks.md`, `implement.md` and `clarify.md` no longer say "3 tasks or fewer" or "inline", and the spec template has no `## Tasks`. It must NOT keep inline tasks for a single task.
   - **S-1.3 and S-1.3/C1 hold in the rendered specify:** `quickstart.md` only for visible behavior, `data-model.md` only for data changes. `mandao sync` and `npm run diagrams` run, and their files are committed with the task.
 
@@ -95,7 +95,7 @@ verify: npx vitest run test/unit/layout.test.ts test/integration/layout.test.ts
 project: mandao
 kind: feat
 tier: standard
-files: [src/scripts/spec-log.ts, src/spec/task-index.ts, src/cli/run-spec.ts, src/cli/approve.ts, src/scripts/checkpoint.ts, core/templates/shared/rules/doc-lite.md, core/templates/shared/spec/spec.md, core/templates/shared/spec/story.md, core/commands/specify.md, core/commands/tasks.md, core/commands/implement.md, core/commands/clarify.md, test/integration/lite-spec.test.ts, test/unit/content.test.ts]
+files: [src/scripts/spec-log.ts, src/spec/task-index.ts, src/cli/run-spec.ts, src/cli/approve.ts, src/scripts/checkpoint.ts, core/templates/shared/rules/doc-lite.md, core/templates/shared/spec/spec.md, core/templates/shared/spec/story.md, core/commands/specify.md, core/commands/tasks.md, core/commands/implement.md, core/commands/clarify.md, src/spec/layout.ts, src/spec/AGENTS.md, test/integration/lite-spec.test.ts, test/unit/content.test.ts, test/unit/layout.test.ts]
 exemplar: src/spec/task-index.ts
 ac: [AC-1, AC-1/C1, AC-1/C2]
 scenarios: [S-1.1, S-1.2, S-1.2/C2, S-1.3, S-1.3/C1]

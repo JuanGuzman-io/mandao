@@ -29,3 +29,7 @@ spec: MDO-0011-one-fixed-layout-for-every-spec-folder
 | 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/lite-spec.test.ts, test/unit/content.test.ts, test/unit/layout.test.ts; `npx vitest run test/integration/lite-spec.test.ts test/unit/content.test.ts test/unit/layout.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/content.test.ts |
 | 2026-10-21 | T2 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/content.test.ts |
+| 2026-10-21 | T2 | 2 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/integration/lite-spec.test.ts, test/unit/content.test.ts, test/unit/layout.test.ts; `npx vitest run test/integration/lite-spec.test.ts test/unit/content.test.ts test/unit/layout.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T2 | 2 | standard | claude | — | claude-opus-5-5 | PASS |  |

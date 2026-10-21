@@ -193,7 +193,7 @@ describe('lite version 2: tasks.md always (AC-1)', () => {
     expect(readSpec(dir).tasks).toEqual([]);
   });
 
-  test('S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone', async () => {
+  test('S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone (regression pin)', async () => {
     const root = repoV2(taskList(1));
     const dir = join(root, SPEC);
     const specBefore = readFileSync(join(dir, 'spec.md'), 'utf8');
@@ -202,7 +202,7 @@ describe('lite version 2: tasks.md always (AC-1)', () => {
     expect(readFileSync(join(dir, 'spec.md'), 'utf8')).toBe(specBefore);
   });
 
-  test('S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue', async () => {
+  test('S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue (regression pin)', async () => {
     const root = repoV2(taskList(4));
     git(root, 'add', '.');
     git(root, 'commit', '-qm', 'base');
@@ -210,6 +210,18 @@ describe('lite version 2: tasks.md always (AC-1)', () => {
     const r = await approveTasks(root);
     expect(JSON.stringify(r)).not.toMatch(/inline|more than 3/);
     expect(r).toMatchObject({ approved: true });
+  });
+
+  test('S-1.2/C2: approve tasks with no tasks.md refuses, and never approves tasks written inline in spec.md', async () => {
+    const inline = [1, 2, 3, 4].map((n) => task(`T${n}`, `Step ${n}`, 'AC-1', 'S-1.1')).join('');
+    const root = repoV2('', inline);
+    const dir = join(root, SPEC);
+    rmSync(join(dir, 'tasks.md'));
+    const specBefore = readFileSync(join(dir, 'spec.md'), 'utf8');
+    const r = await approveTasks(root);
+    expect(r).toMatchObject({ approved: false });
+    expect(JSON.stringify(r)).toContain('no tasks to approve');
+    expect(readFileSync(join(dir, 'spec.md'), 'utf8')).toBe(specBefore);
   });
 });
 

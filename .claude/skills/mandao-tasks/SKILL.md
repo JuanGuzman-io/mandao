@@ -20,6 +20,10 @@ Write task content in `en`; headings, ids and YAML keys stay in English.
 The tasks go in `tasks.md` at every depth (lite, standard and full), whatever their number, even a
 single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs this step in its own session.
 
+Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite keeps its tasks inside
+`spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
+open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
+
 1. **Gate.** Run `node .mandao/bin/mandao.mjs run where $spec --harness <this harness> --first "/mandao-tasks $spec"`: if `inWorktree` is false, move into the worktree before any other step.
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
    refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.

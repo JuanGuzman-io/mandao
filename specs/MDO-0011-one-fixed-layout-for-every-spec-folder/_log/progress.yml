@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T19:46:14.996Z
+updated_at: 2026-10-21T19:50:04.695Z
 current: null
 open_questions: []
 next_step: ""
@@ -41,7 +41,7 @@ red_tests:
   - task: T2
     files:
       - path: test/integration/lite-spec.test.ts
-        sha256: d1f1e74d7ff7e5581f721b0112707d467c88e34dd1cd0f58b96377b5d14ddc54
+        sha256: 77f861fced352eb6def5aa1023bb1d52985e820caa76b9ee5e569021fd7cd8f9
         tests:
           - requirements, design and inline tasks are read from spec.md; trace and tasks work the same
           - the checkpoint ticks the task inside spec.md
@@ -53,8 +53,11 @@ red_tests:
           - "S-1.2/C2: four tasks written inline in spec.md are not read as the spec tasks"
           - "S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone"
           - "S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue"
+          - "S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone (regression pin)"
+          - "S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue (regression pin)"
+          - "S-1.2/C2: approve tasks with no tasks.md refuses, and never approves tasks written inline in spec.md"
       - path: test/unit/content.test.ts
-        sha256: 80fd258704a09e053bf93b769186e8b7515609750d182e3b2c7a8bc2ef19e935
+        sha256: d9f6fdc5c70221cb129385af0fd54581bee268785006130facc950bf6e57848d
         tests:
           - ships every command in the flow, with stubs declared as such
           - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
@@ -72,6 +75,7 @@ red_tests:
           - "S-1.3: specify writes quickstart.md only for visible behavior and data-model.md only for data changes"
           - "S-1.3/C1: neither file is conditioned on the number of tasks, requirements or scenarios"
           - "AC-1: a story rendered from the template starts at layout version 2"
+          - "S-1.2: the tasks command warns on an open version 1 spec, does not convert it, and never writes tasks in spec.md"
       - path: test/unit/layout.test.ts
         sha256: 6fedde2ebf7fa11e49dd125a3e2e86afd3bae3632cea1f157b3e54d02463e6dc
         tests:

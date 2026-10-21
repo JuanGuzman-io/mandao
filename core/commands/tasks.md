@@ -32,6 +32,10 @@ Write task content in `{{language.technical}}`; headings, ids and YAML keys stay
 The tasks go in `tasks.md` at every depth (lite, standard and full), whatever their number, even a
 single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs this step in its own session.
 
+Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite keeps its tasks inside
+`spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
+open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
+
 1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
