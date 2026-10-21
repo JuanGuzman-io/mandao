@@ -1,0 +1,26 @@
+# Written by mandao approve: who approved what, and when.
+approvals:
+  - step: spec
+    by: Juan D. Guzmán
+    at: 2026-10-20T22:22:54.589Z
+    note: "trial run: approved by the maintainer's delegate"
+  - step: budget
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:08:34.647Z
+    note: "authorized by the maintainer in the session (2026-10-20): Option A, up to 16 USD in total"
+    to: 16
+  - step: budget
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:17:45.857Z
+    note: the maintainer turned budgets off by default (2026-10-20); spend is recorded and reported only
+    to: none
+  - step: close
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:33:53.160Z
+    items:
+      - "1"
+      - "2"
+      - "3"
+      - "4"
+      - "5"
+    note: "maintainer at close (2026-10-20): 1 ADR 0036 addendum accepted, 2 ADR 0038 consequence, both applied; 3 amended (sync in core/ tasks; only blocking Reviewer findings become a task or block), 4 dogfooding note, both for a follow-up; 5 already applied on main (ADR 0039)"

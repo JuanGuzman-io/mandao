@@ -32,7 +32,14 @@ instructions.
    the story after the close and pass `--tracker-bugs <n>`. Then `node .mandao/bin/mandao.mjs run kaizen-compare` for the TDD
    comparison: report both groups with their sample size; below the minimum per group write
    "insufficient data" and draw no conclusion.
-2. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
+2. **Sessions:** show `sessions` from that JSON under `## Sessions` in the Kaizen document: the pauses, the turns per task, verify, close and after
+   tasks, and the missing sessions. A missing session is never shown as zero; `'not recorded'` and
+   `'not measured'` are shown as that text.
+   Also report `sessionCut` from the `node .mandao/bin/mandao.mjs run kaizen-compare` JSON: each session-cut constant next to its
+   measured value with its sample size `n`, and each logged estimate of turns left next to the turns that
+   followed, with the mean absolute error. Below the minimum (3 specs) write "insufficient data (minimum 3)" and
+   propose nothing. Proposals are recommendations only: Mandao never changes the constants.
+3. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
    approval. Write `docs/kaizen/<ID>.md` from `.mandao/templates/app/close/kaizen.md`.
 
 ## 2. Constitution and product impacts (single writer)

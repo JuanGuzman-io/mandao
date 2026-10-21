@@ -21,6 +21,9 @@ Spec-driven development with [Mandao](https://www.npmjs.com/package/mandao): com
 | Models | `src/models/` | Role → model resolution | — |
 | Skills | `src/skills/` | Catalog installs | — |
 | Scripts | `src/scripts/` | `mandao run` helpers | — |
+| Spec domain | `src/spec/` | Loop, evidence, costs, tracing and closure | `src/spec/AGENTS.md` |
+| Commit policy | `src/commits/` | Generated commitlint rules | — |
+| Derived docs | `scripts/diagrams/` | Source-derived diagrams and command pages | — |
 | Schemas | `src/schemas/` | zod schemas and types | — |
 
 Architecture and rules: `docs/constitution/`.
@@ -30,7 +33,17 @@ Architecture and rules: `docs/constitution/`.
 | Skill | Binding | Phase | Module | Status |
 |---|---|---|---|---|
 | graphify | core | constitution, specify, implement, close | all | 0.9.92, pinned in the lock; Claude Code hooks through `mandao hook graph-guard` (roles with a shell only, ADR 0021) and git hooks installed |
-| codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`, generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |
+| codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`; Codex copy in `.agents/skills/codebase-conventions/`; generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |
 
 The catalog has no entries for this stack (TypeScript CLI with zod, commander, vitest); by decision
 (ADR 0012) the project skill covers it instead of new catalog entries.
+
+## Evidence and harnesses
+
+Active harnesses are Claude Code, GitHub Copilot and Codex (`.mandao/config.yml`). Codex skills live
+under `.agents/skills/`, with agent roles/rules in `.codex/`. A lock recommendation hash records an
+already-offered recommendation; enabled harnesses are configured in config.yml and rendered files
+are inventoried under lock.files. Never hand-edit the lock.
+
+Query the existing graph before source discovery. Refresh code through `graphify update .`; do not
+commit `graphify-out/`. Script-owned evidence is written through the CLI/writer integrity helpers.

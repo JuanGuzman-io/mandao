@@ -33,6 +33,9 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 | Schema with cross-field rules | `src/schemas/config.ts` |
 | Pure decision + IO wrapper | `src/scripts/quick-check.ts` (`analyzeDiff` / `collectDiff`) |
 | CLI command | `src/cli/models.ts` + its registration in `src/cli/index.ts` |
+| Spec domain / loop | `src/spec/loop.ts` |
+| Frontmatter reader | `src/engine/frontmatter.ts` (YAML/JSON only) |
+| Script-owned evidence | `src/scripts/spec-log.ts`, `src/writer/log-integrity.ts` |
 | Canonical command | `core/commands/quick.md` |
 | Unit test | `test/unit/models.test.ts` |
 | Integration test | `test/integration/engine.test.ts` |
@@ -52,6 +55,18 @@ The Reviewer enforces only what is written here (plus the spec, the contract and
 The CLI prints to stdout for results and stderr for errors; `run` scripts print JSON only. No secrets
 or file contents in output beyond paths.
 Commands with `--json` print exactly one JSON document on stdout; errors go to stderr.
+
+## Evidence and input parsing
+
+- Read frontmatter through `src/engine/frontmatter.ts`, never direct gray-matter imports elsewhere;
+  YAML/JSON only (`test/unit/architecture.test.ts`).
+- Persist spec evidence with the scripts and writer integrity helpers, never edit `_log/` by hand.
+  Checkpoints record review answers verbatim, security tags, red evidence and computed attempts
+  (ADR 0039).
+- Diagram specs/pages/exports are derived: run `npm run diagrams` after changing their sources and
+  `npm run diagrams:check` to validate hashes. Archify is needed to build, not to check.
+- Public evidence must omit secrets and machine-local identity; MDO-0007 sanitization is pending in
+  `docs/security/exposure-audit.md`. Existing output is not proof that sanitization is enforced.
 
 ## Dependencies
 
@@ -90,3 +105,10 @@ Approved 2026-10-20 and declared in `projects[].gates` of `.mandao/config.yml`.
 | audit | `npm audit --omit=dev` | — |
 | sast | `semgrep scan --config p/typescript --config p/javascript --error --metrics=off` | `sast` job (semgrep 1.181.0) |
 | metrics | `npx biome lint --only=…complexity and length rules` | via lint |
+| build | `npm run build` | `check` job |
+| smoke | `npm run smoke` (after build) | `check` job |
+| commit messages | `npx --no-install commitlint --from <base> --to <head>` | `commitlint` job on PRs |
+| derived diagrams | `npm run diagrams:check` | `check` job |
+
+`npm run check` runs typecheck, Biome, tests and diagram freshness. This proposal retains existing
+configured gates and thresholds; adding a `diagrams` project gate requires explicit approval.

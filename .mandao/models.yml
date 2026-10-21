@@ -19,3 +19,18 @@ harnesses:
       standard: Claude Sonnet 5.5
       strong: Claude Sonnet 5.5
     tester: Claude Sonnet 5.5
+  codex:
+    leader: gpt-6.1-sol
+    reviewer: gpt-6-sol
+    reviewer_alt: gpt-6.1-sol
+    implementer:
+      fast: gpt-6-luna
+      standard: gpt-6.1-sol
+      strong: gpt-6.1-sol
+    tester: gpt-6.1-sol
+    effort:
+      leader: high
+      reviewer: high
+      reviewer_alt: high
+      implementer: { fast: medium, standard: medium, strong: high }
+      tester: medium

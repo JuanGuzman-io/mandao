@@ -25,3 +25,13 @@ dim for secondary text.
 ## Accessibility target
 
 Every status is conveyed by a symbol or word as well as color.
+
+## Workflow and documentation
+
+- `mandao start` prints the exact worktree and next-session command; `mandao approve` records human
+  authorization from the terminal without a model session (`src/cli/start.ts`, `approve.ts`).
+- Long mechanical output stays in evidence files; scripts return concise JSON. Missing tools,
+  deferred gates, model fallback and reduced independence are stated, never presented as PASS
+  (`core/commands/implement.md`, `src/engine/doctor-models.ts`).
+- README diagrams use light/dark `<picture>` sources. `docs/process-map.md` distinguishes required,
+  automatic and optional steps. Approvals and planned commands must remain visible.

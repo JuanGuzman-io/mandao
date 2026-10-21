@@ -1,0 +1,42 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0008-measure-what-the-session-cut-rule-needs-doctor-r
+updated_at: 2026-10-21T00:13:34.271Z
+current: null
+open_questions: []
+next_step: ""
+deferred_to_ci: []
+red_tests:
+  - task: T2
+    files:
+      - path: test/unit/session-turns.test.ts
+        sha256: de055fa026f9abcc08806daf0900f1ea329ab4a4970294c8f63dfe89bbcf28c4
+  - task: T3
+    files:
+      - path: test/integration/close.test.ts
+        sha256: e1a8a617172253ae33145c12d98dcf8b99b700d4378e673d1e7ae63cf921309e
+  - task: T4
+    files:
+      - path: test/unit/kaizen-sessions.test.ts
+        sha256: e16be6ca9db0983b0a4938c99a0d5a09bd659778cfc5e1ef049dd19f546d1c9b
+  - task: T1
+    files:
+      - path: test/unit/doctor-cache.test.ts
+        sha256: 469e5ef07b96689c16882882736ecfbbd7f625d27c6351f73488480121bca4a1
+        tests:
+          - "S-1.1: nothing set gives an info with both defaults and the ADR 0036 fix"
+          - "S-1.2: the highest file wins for a key and the environment wins for a variable; nothing is touched (C1)"
+          - "S-1.3 and S-1.3/C2: an invalid value warns, is named, and the default stays in effect"
+          - "S-1.3/C2: an ignored value goes on to the next step instead of winning"
+          - "S-1.4: no cache-TTL finding without Claude Code is a wiring concern, so the unit never runs for it"
+          - "S-1.5: FORCE_PROMPT_CACHING_5M beats the key for both TTLs"
+          - "S-1.5: ENABLE_PROMPT_CACHING_1H gives main 1h while the subagent key stays 5m"
+          - "S-1.6: an agent whose frontmatter sets experimental.cacheTtl is named with its value"
+          - "S-1.6: an agent override ranks ahead of ENABLE_PROMPT_CACHING_1H (D1 step 4 before 5)"
+          - "S-1.6: an agent override is not listed when the subagent key wins (steps 1-3)"
+          - "S-1.6 and AC-1/C2: an invalid agent cacheTtl warns, names the agent, and is not an override"
+          - "S-1.6: a .claude/agents path that is a file is skipped, not thrown"
+          - "S-1.6 and security: a ---js agent front matter is never executed and is not an override"
+          - "S-1.7: an old Claude Code ignores the TTL settings, so the default is reported"
+          - "S-1.7: with no version available it says the version was not checked"
+pending_commits: []

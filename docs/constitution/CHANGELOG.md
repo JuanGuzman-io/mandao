@@ -4,6 +4,14 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-20 — approved active review after public contribution and execution updates
+
+- Reconcile supported harnesses, task execution, safe frontmatter, evidence integrity, costs and release workflows.
+- Add the approved explicit CI diagram freshness step; regenerate source hashes after the integrated MDO-0008 close-command change.
+- Expose conventions to Codex and explicitly preserve its currently resolved model choices.
+- Reconfirm feature-branch/main; keep existing gates and thresholds.
+- Approved by: maintainer in this session, for the reviewed file diffs, Codex model snapshot, CI step and existing feature-branch/main strategy. Existing document status fields are preserved.
+
 ## 2026-10-20 — MDO-0007 close (catch every way a test can climb out of its workspace)
 - standards.md § Conventions: tests never build a path with a `..` segment through `join` or
   `resolve`, nor take `dirname` of a workspace, except calls named in the guard's `ALLOWED` list;

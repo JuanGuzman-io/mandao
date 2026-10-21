@@ -63,7 +63,14 @@ A bug fix ships with the test that would have caught it.
 
 ## Before you report done
 
-Run `npm run check` (typecheck, Biome, tests). If you changed `core/`, `test/unit/content.test.ts`
+Run `npm run check` (typecheck, Biome, tests and derived-diagram freshness). If you changed `core/`, `test/unit/content.test.ts`
 already renders every command for every profile, mode and harness. If you changed generated output,
 run `npm run build && mandao sync` and `mandao doctor` on this repo. Commits follow
 `core/templates/shared/rules/commits.md` (emoji first, `Co-Authored-By` trailer when an agent wrote it).
+
+## Frontmatter, evidence and generated documentation
+
+- Parse frontmatter only through `src/engine/frontmatter.ts` (YAML/JSON), not direct gray-matter.
+- Persist spec logs through scripts and writer integrity helpers; never hand-edit `_log/` evidence.
+- Derive diagram JSON, SVG and command pages with `npm run diagrams`; validate with
+  `npm run diagrams:check`. Archify is required for regeneration, not freshness checks.

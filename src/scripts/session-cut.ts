@@ -30,7 +30,9 @@ interface Line {
   isSidechain?: boolean;
   timestamp?: string;
   message?: {
+    id?: string;
     model?: string;
+    content?: unknown;
     usage?: {
       input_tokens?: number;
       cache_read_input_tokens?: number;
@@ -40,8 +42,29 @@ interface Line {
   };
 }
 
-/** One main-session response: its model, prompt size, time and whether it wrote the 1h cache. */
-function mainResponse(raw: string): { model: string; size: number; at: number; oneHour: boolean } | undefined {
+export interface MainResponse {
+  /** `message.id`: a streamed response repeats it on several lines and counts as one turn. */
+  id: string;
+  model: string;
+  size: number;
+  at: number;
+  oneHour: boolean;
+  /** The line calls a subagent (an `Agent` tool_use, or `Task` in older transcripts). */
+  agent: boolean;
+}
+
+const AGENT_TOOLS = new Set<unknown>(['Agent', 'Task']);
+
+const isAgentCall = (block: unknown) => {
+  const b = block as { type?: unknown; name?: unknown } | null;
+  return b?.type === 'tool_use' && AGENT_TOOLS.has(b.name);
+};
+
+/**
+ * One main-session response line (not a sidechain, not `<synthetic>`, with usage): its id, model, prompt
+ * size, time, whether it wrote the 1h cache and whether it calls a subagent. No text leaves it.
+ */
+export function mainResponse(raw: string): MainResponse | undefined {
   if (!raw.includes('"usage"')) return undefined;
   let line: Line;
   try {
@@ -52,11 +75,14 @@ function mainResponse(raw: string): { model: string; size: number; at: number; o
   const u = line.message?.usage;
   const model = line.message?.model;
   if (!u || !model || model === '<synthetic>' || line.isSidechain) return undefined;
+  const content = line.message?.content;
   return {
+    id: typeof line.message?.id === 'string' ? line.message.id : '',
     model,
     size: (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0),
     at: Date.parse(line.timestamp ?? '') || 0,
     oneHour: (u.cache_creation?.ephemeral_1h_input_tokens ?? 0) > 0,
+    agent: Array.isArray(content) && content.some(isAgentCall),
   };
 }
 
@@ -112,6 +138,28 @@ export function cutMinSavings(config: Pick<Config, 'session' | 'budget'>): numbe
   if (config.session.cut_min_savings !== undefined) return config.session.cut_min_savings;
   const share = config.budget.per_spec !== undefined ? config.budget.per_spec * BUDGET_SHARE : Number.POSITIVE_INFINITY;
   return Math.min(DEFAULT_MIN_SAVINGS, share);
+}
+
+export interface CutEstimateRow {
+  at: string;
+  task: string;
+  /** The "Turns left" the rule assumed at that boundary. */
+  turnsLeft: number;
+}
+
+/** The rows of `_log/session-cuts.md`; the header, the separator and malformed rows are skipped. */
+export function parseCutEstimates(text: string): CutEstimateRow[] {
+  return text.split('\n').flatMap((line) => {
+    const cells = line
+      .trim()
+      .split('|')
+      .slice(1, -1)
+      .map((c) => c.trim());
+    const [at = '', task = '', , , turns = ''] = cells;
+    const turnsLeft = Number(turns);
+    if (cells.length < 5 || !task || Number.isNaN(Date.parse(at)) || turns === '' || !Number.isFinite(turnsLeft)) return [];
+    return [{ at, task, turnsLeft }];
+  });
 }
 
 const CUTS_HEADER =

@@ -64,7 +64,7 @@ what was charged). The two never add up as one total. Kaizen shows it and recomm
 adjustments with data (for example the first-pass approval rate per tier, the Leader's share) with the
 estimated saving; it never changes the profile or a model.
 
-## Addendum — cache duration (proposed, 2026-10-20)
+## Addendum — cache duration (accepted, 2026-10-20)
 
 **Who can configure it.** Only Claude Code: `promptCacheTtl` / `CLAUDE_CODE_PROMPT_CACHE_TTL` for the main
 conversation (interactive and `-p`) and `subagentPromptCacheTtl` / `CLAUDE_CODE_SUBAGENT_PROMPT_CACHE_TTL`
@@ -82,6 +82,6 @@ that context size; at 13% of pauses that is 0.04–0.11 USD for a session with 1
 for one with 5. So 5m is cheaper for separate sessions, and close to even for one long lite session.
 
 **Proposal.** Mandao recommends `promptCacheTtl: 5m` (the default already for API keys and credits)
-and never writes it into the user's settings; `doctor` reports the TTL in effect, and Kaizen will show
-the measured pauses per spec so the choice can be revisited with data. A team whose people pause often
+and never writes it into the user's settings; `doctor` reports the TTL in effect and its source, and
+Kaizen shows the measured pauses per spec (MDO-0008) so the choice can be revisited with data. A team whose people pause often
 for 5–60 minutes inside long sessions is the case where 1h pays off.
