@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 import type { Command } from 'commander';
+import { ADAPTERS } from '../adapters/index.js';
 import { readConfig } from '../engine/files.js';
 import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
@@ -40,8 +41,15 @@ function registerPlanning(run: Command, ctx: CliContext) {
     .option('--type <type>', 'story | bug | …', 'story')
     .option('--project <name>', "polyrepo: use this project's branching model")
     .option('--hotfix', 'hotfix lane: start from branching.hotfix.from with the hotfix prefix')
-    .action((title: string[], opts: { id?: string; type: string; project?: string; hotfix?: boolean }) =>
-      json(proposeSpec(ctx.root(), readConfig(ctx.root()), title.join(' '), opts)),
+    .option('--harness <id>', 'the active harness: adds `resume` when --first is given', 'claude')
+    .option('--first <command>', 'the mandao to run first in the worktree, e.g. "/mandao-specify <ID>"')
+    .action(
+      (title: string[], opts: { id?: string; type: string; project?: string; hotfix?: boolean; harness?: string; first?: string }) => {
+        const { harness, first, ...options } = opts;
+        const proposal = proposeSpec(ctx.root(), readConfig(ctx.root()), title.join(' '), options);
+        const active = harnessOption(harness);
+        json(first ? { ...proposal, resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : proposal);
+      },
     );
 
   run
@@ -166,12 +174,18 @@ function registerState(run: Command, ctx: CliContext) {
 
   run
     .command('where <spec>')
-    .description('Is this session inside the spec worktree, on its branch?')
-    .action((ref: string) => {
+    .description('Is this session inside the spec worktree, on its branch? `resume` opens the active harness there')
+    .option('--harness <id>', 'the harness running the session', 'claude')
+    .option('--first <command>', 'the mandao to run first in the worktree (default: /mandao-implement <spec>)')
+    .action((ref: string, opts: { harness?: string; first?: string }) => {
+      const harness = harnessOption(opts.harness);
       const { config, spec } = loadSpec(ctx, ref);
       const branch = currentBranch(process.cwd());
       const isProtected = Boolean(branch && branchingFor(config).protected.includes(branch));
-      json({ ...whereAmI(process.cwd(), expectedPlace(ctx.root(), config, spec)), protected: isProtected });
+      const expected = expectedPlace(ctx.root(), config, spec);
+      const first = opts.first ?? `/mandao-implement ${ref}`;
+      const resume = ADAPTERS[harness].session.resume(expected.worktree, first).text;
+      json({ ...whereAmI(process.cwd(), expected, resume), protected: isProtected });
     });
 }
 

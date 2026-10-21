@@ -131,7 +131,7 @@ describe('setup helpers', () => {
   test('requests and harness commands', () => {
     expect(parseRequest(['PROJ-9', 'Pay', 'by', 'card'])).toEqual({ id: 'PROJ-9', title: 'Pay by card' });
     expect(parseRequest(['pay', 'by', 'card'])).toEqual({ title: 'pay by card' });
-    expect(openCommand('codex', '/w', '/mandao-specify X').text).toBe('cd "/w" && codex "$mandao-specify X"');
+    expect(openCommand('codex', '/w', '/mandao-specify X').text).toBe('cd "/w" && codex \'$mandao-specify X\'');
     expect(openCommand('opencode', '/w', '/mandao-specify X').launch).toBeUndefined();
   });
 });

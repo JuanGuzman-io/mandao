@@ -46,3 +46,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted |
 | [0038](0038-session-cut-at-task-boundaries.md) | Cut the session at a task boundary when a new one is cheaper | Accepted |
 | [0039](0039-rules-enforced-by-scripts.md) | Rules the scripts enforce, not the text | Accepted |
+| [0040](0040-approval-by-running-the-next-command.md) | Approval by running the next command, unless something is open | Accepted |

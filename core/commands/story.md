@@ -15,7 +15,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
 capabilities: [read, search, edit, shell, mcp]
 templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md]
-scripts: [spec-new, trace]
+scripts: [next, spec-new, trace]
 approval: required
 ---
 
@@ -65,4 +65,4 @@ From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}` a
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
-to post the approved AC back as a comment (only after confirmation). Next: {{command:specify}}.
+to post the approved AC back as a comment (only after confirmation). Next: `{{script:next}} <ID>` names the command that follows from the spec's state; give it.

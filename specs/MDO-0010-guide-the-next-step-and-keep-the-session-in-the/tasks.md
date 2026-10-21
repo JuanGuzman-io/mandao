@@ -6,23 +6,25 @@ status: approved
 
 # Tasks — Guide the next step and keep the session in the spec worktree
 
-Four tasks, in order:
+Five tasks, in order:
 - T1 builds the state decision behind `mandao run next` and `approve`.
 - T2 adds the harness session table and the in-place cut advice.
 - T3 changes the commands' content to use both and to enter the worktree.
 - T4 fixes the cost baseline. It touches only the cost code, so it can run alongside the others.
+- T5, added by the maintainer after the T1 and T2 reviews, tightens the next-step rules: real markers only, failed verify, closed specs, and the written resolution rule.
 
 ## Overview
 
 ### AC-1, AC-5 — The next step fits the spec's state; Running the next command approves the spec, unless something is open
 
 - [x] T1 [AC-1, AC-5] Mandao names the next command from the spec's state — `src/spec/next.ts`
+- [ ] T5 [AC-1, AC-5] The next step reads only real markers and knows failed and closed specs — `src/spec/next.ts`
 
-**Checkpoint:** `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts` passes (T1); this confirms AC-1, AC-5 before the next group.
+**Checkpoint:** `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts` passes (T1, T5); this confirms AC-1, AC-5 before the next group.
 
 ### AC-3 — Starting fresh happens in place
 
-- [ ] T2 [AC-3] Each harness's session facts drive the cut advice — `src/adapters/types.ts`
+- [x] T2 [AC-3] Each harness's session facts drive the cut advice — `src/adapters/types.ts`
 
 **Checkpoint:** `npx vitest run test/unit/session-advice.test.ts test/integration/leader-scripts.test.ts test/integration/start.test.ts test/integration/approve.test.ts` passes (T2); this confirms AC-3 before the next group.
 
@@ -94,7 +96,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/session-advice.test.ts test/integration/leader-scripts.test.ts test/integration/start.test.ts test/integration/approve.test.ts
 ```
 
-### [ ] T3 — The commands enter the worktree and end with the state's next step
+### [x] T3 — The commands enter the worktree and end with the state's next step
 
 - **What:** the command content ([D3](spec.md#d3), [D4](spec.md#d4), [D5](spec.md#d5)):
   - every `Next:` line uses `{{script:next}}`;
@@ -102,21 +104,23 @@ verify: npx vitest run test/unit/session-advice.test.ts test/integration/leader-
   - the cut advice text follows D4;
   - quick records its cost before `quick-log` and the commit;
   - `implement.md` §0 and `tasks.md` call `approve --by-running` on a draft spec and relay its one question ([D6](spec.md#d6)), replacing "running the next command is not one";
-  - specify, tasks and clarify end with `run next --shown`.
+  - specify, tasks and clarify end with `run next --shown`;
+  - every `approve --by-running` call in the command texts passes `--harness <this harness>`, so Codex or Copilot are never told to type `/clear` (T2 review, OPEN on the no-signal default);
+  - `run where` returns the active harness's resume command, built from its adapter's `session.resume`, and the texts print that field instead of a copy per harness ([D2](spec.md#d2)); only the `harness=claude` `EnterWorktree` step stays a conditional. The Codex resume command single-quotes the skill so a shell does not expand `$mandao-…` (added by the maintainer after the T3 review).
 
   ADR 0037 is amended, ADR 0038 gets an addendum, the new ADR 0040 records the approval rule, and `MANDAO-DESIGN.md` §5 is updated. `mandao sync` and `npm run diagrams` run after the content change.
 - **Done when:**
   - S-2.1 and S-2.2 hold end to end: `mandao sync` run as a process in a temporary workspace with all five harnesses writes the `EnterWorktree` step only into the Claude Code files, and the resume command into the others. S-2.2/C1 holds per render.
   - S-2.3 and S-2.3/C1 hold: the `claude` render prints the resume command and stops when `EnterWorktree` is refused.
   - S-3.3 and S-3.3/C1 hold: implement, verify and close re-enter before any other step.
-  - S-4.3 holds: in quick, the cost record comes before `quick-log` and the commit, and the commit lists `specs/quick/_log/costs.yml`. The rendered implement and tasks commands, for every harness, call `approve --by-running` on a draft spec, and no longer say that running the command is not an approval.
+  - S-4.3 holds: in quick, the cost record comes before `quick-log` and the commit, and the commit lists `specs/quick/_log/costs.yml`. The rendered implement and tasks commands, for every harness, call `approve --by-running --harness <this harness>` on a draft spec, and no longer say that running the command is not an approval.
   - P1: a test runs `mandao hook graph-guard` with a worktree as its working directory and shows it reads that worktree.
 
 ```yaml
 project: mandao
 kind: feat
 tier: standard
-files: [core/commands/specify.md, core/commands/quick.md, core/commands/implement.md, core/commands/verify.md, core/commands/close.md, core/commands/story.md, core/commands/clarify.md, core/commands/tasks.md, core/commands/constitution.md, docs/decisions/0037-mandao-start-and-worktree-setup.md, docs/decisions/0038-session-cut-at-task-boundaries.md, docs/decisions/0040-approval-by-running-the-next-command.md, MANDAO-DESIGN.md, docs/command-format.md, test/unit/content.test.ts, test/integration/hook.test.ts, test/integration/worktree-entry.test.ts]
+files: [core/commands/specify.md, core/commands/quick.md, core/commands/implement.md, core/commands/verify.md, core/commands/close.md, core/commands/story.md, core/commands/clarify.md, core/commands/tasks.md, core/commands/constitution.md, docs/decisions/0037-mandao-start-and-worktree-setup.md, docs/decisions/0038-session-cut-at-task-boundaries.md, docs/decisions/0040-approval-by-running-the-next-command.md, MANDAO-DESIGN.md, docs/command-format.md, src/scripts/spec.ts, src/cli/run-spec.ts, src/adapters/codex.ts, docs/cli.md, test/unit/content.test.ts, test/unit/session-advice.test.ts, test/integration/hook.test.ts, test/integration/worktree-entry.test.ts, test/integration/where.test.ts]
 exemplar: core/commands/implement.md
 ac: [AC-2, AC-2/C1, AC-2/C2, AC-3/C1, AC-4]
 scenarios: [S-2.1, S-2.2, S-2.2/C1, S-2.3, S-2.3/C1, S-3.3, S-3.3/C1, S-4.3]
@@ -150,4 +154,34 @@ risk_tags: []
 depends_on: []
 parallel_safe: true
 verify: npx vitest run test/integration/costs.test.ts test/unit/session-turns.test.ts
+```
+
+### [ ] T5 — The next step reads only real markers and knows failed and closed specs
+
+- **What:** the next-step rules ([D1](spec.md#d1), [D6](spec.md#d6)), added by the maintainer after the T1 and T2 reviews:
+  - markers (`[NEEDS CLARIFICATION]`, `OPEN`, `CONFLICT`) inside inline code spans or fenced code blocks are not open items; only real markers count (otherwise MDO-0010 blocks itself);
+  - a spec whose verify failed recommends the rework (`/mandao-implement`), not `/mandao-verify` again (FR-1 "the verify verdict");
+  - a closed spec recommends its delivery (push, PR, merge), derived from git, or nothing once delivered; never `/mandao-story` or `/mandao-clarify`, whatever markers remain. It only names the step: performing the delivery stays in MDO-0012;
+  - when a Consistency Check row or a `CONFLICT` counts as resolved is written in `core/templates/shared/rules/consistency-check.md`, and the code follows that text.
+- **Done when:**
+  - On synthetic spec folders, a `[NEEDS CLARIFICATION]`, `OPEN` or `CONFLICT` in backticks or a code block is not an open item, and a real one still is.
+  - `run next` on this spec (MDO-0010) does not recommend `/mandao-clarify` for a marker written in prose.
+  - A spec with a failed verify recommends `/mandao-implement`.
+  - A closed spec recommends its delivery, or nothing when its branch is merged, and never `/mandao-story` or `/mandao-clarify`.
+  - `consistency-check.md` states the row shape and when a row or a `CONFLICT` is resolved, and a test pins the code to the statuses it names.
+
+```yaml
+project: mandao
+kind: feat
+tier: standard
+files: [src/spec/next.ts, src/spec/markdown.ts, src/cli/approve.ts, src/spec/AGENTS.md, core/templates/shared/rules/consistency-check.md, test/unit/next.test.ts, test/integration/approve.test.ts]
+exemplar: src/spec/next.ts
+ac: [AC-1, AC-1/C1, AC-5, AC-5/C1]
+scenarios: []
+test_levels: {}
+evidence: tdd
+risk_tags: [public-api]
+depends_on: [T1]
+parallel_safe: false
+verify: npx vitest run test/unit/next.test.ts test/integration/approve.test.ts
 ```

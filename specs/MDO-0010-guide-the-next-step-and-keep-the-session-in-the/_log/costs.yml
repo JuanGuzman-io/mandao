@@ -26,3 +26,29 @@ costs:
       model:claude-sonnet-5-5: 2.523423
     source: claude-code
     basis: equivalent
+  - at: 2026-10-21T14:32:16.986Z
+    command: implement
+    harness: claude
+    session: ac022ffb-dc68-486e-8e04-568eeb05ffd8
+    usd: 6.8453
+    roles:
+      leader: 3.3305
+      mandao-tester: 0.8058
+      mandao-reviewer: 1.8486
+      mandao-implementer-fast: 0.0074
+      mandao-implementer-standard: 0.853
+    models:
+      claude-opus-5-5: 5.1791
+      claude-sonnet-5-5: 1.6588
+      claude-haiku-5-5: 0.0074
+    cumulative:
+      main-session: 3.330504
+      mandao-tester: 0.80584
+      mandao-reviewer: 1.848616
+      mandao-implementer-fast: 0.007409
+      mandao-implementer-standard: 0.852969
+      model:claude-opus-5-5: 5.17912
+      model:claude-sonnet-5-5: 1.658809
+      model:claude-haiku-5-5: 0.007409
+    source: claude-code
+    basis: equivalent

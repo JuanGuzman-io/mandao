@@ -15,7 +15,8 @@ You verify that what was built is what the spec asked for, with evidence. Write 
 
 ## 1. Plan
 
-1. `node .mandao/bin/mandao.mjs run where <spec>` — work in the spec's worktree.
+1. `node .mandao/bin/mandao.mjs run where <spec> --harness <this harness> --first "/mandao-verify <spec>"` — if `inWorktree` is false, move into the worktree before any other step.
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
 2. `node .mandao/bin/mandao.mjs run verify-plan <spec>` gives the suites per project (unit over the files the spec's
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
@@ -57,4 +58,4 @@ report.
 - Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec <spec> verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: $mandao-close.
+Next: `node .mandao/bin/mandao.mjs run next <spec>` names the command that follows from the spec's state; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.

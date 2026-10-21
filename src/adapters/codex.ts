@@ -73,7 +73,8 @@ export const codexAdapter: Adapter = {
     newConversation: '/new',
     resume: (worktree, first) => {
       const skill = first.replace(/^\//, '$');
-      return { text: `cd ${JSON.stringify(worktree)} && codex ${JSON.stringify(skill)}`, launch: ['codex', skill] };
+      // Single quotes: inside double quotes a shell would expand `$mandao-…` to nothing.
+      return { text: `cd ${JSON.stringify(worktree)} && codex '${skill.replace(/'/g, `'\\''`)}'`, launch: ['codex', skill] };
     },
   },
   verified: {

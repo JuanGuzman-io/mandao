@@ -245,11 +245,13 @@ export interface WhereReport {
   cwd: string;
   branch?: string;
   expected: { branch: string; worktree: string };
+  /** The active harness's command that opens a session in `expected.worktree` (its adapter's `session.resume`, D2). */
+  resume?: string;
   message: string;
 }
 
 /** Is this session inside the spec's worktree, on its branch? `implement` warns when it is not. */
-export function whereAmI(cwd: string, expected: { branch: string; worktree: string }): WhereReport {
+export function whereAmI(cwd: string, expected: { branch: string; worktree: string }, resume?: string): WhereReport {
   let top: string | undefined;
   let branch: string | undefined;
   try {
@@ -268,6 +270,7 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
     cwd,
     ...(branch ? { branch } : {}),
     expected,
+    ...(resume ? { resume } : {}),
     message: inWorktree ? 'in the spec worktree' : `not in the spec worktree: open ${expected.worktree} (branch ${expected.branch})`,
   };
 }

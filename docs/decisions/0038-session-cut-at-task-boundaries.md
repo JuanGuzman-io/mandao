@@ -49,3 +49,13 @@ reads cost more than starting over would have.
   the rule on a spec with four or more tasks.
 - OPEN: whether a smaller context also improves the quality of later tasks. MDO-0007 had no FAILs either
   way, so this needs more specs.
+
+## Addendum (MDO-0010): the in-place action first
+
+The advice names the harness's new-conversation action first (`/clear` in Claude Code, `/new` in Codex and
+OpenCode, a new chat in Copilot and Antigravity), because it keeps the window and the worktree. When a
+fresh conversation would not be inside the worktree, the advice gives the step back into it first
+(`EnterWorktree` in Claude Code, the `resume` field of `run where` in the others). The `run where` check of the next
+command re-enters the worktree anyway, so the advice is safe whether or not the action keeps the working
+directory. The advice is no longer Claude Code only: each harness's session facts drive it, and the cut
+estimate still reads the transcript only where one exists.

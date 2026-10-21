@@ -35,6 +35,7 @@ Yes: it stops for your approval.
 
 ## Scripts (no tokens)
 
+- `mandao run next`
 - `mandao run spec-new`
 - `mandao run trace`
 

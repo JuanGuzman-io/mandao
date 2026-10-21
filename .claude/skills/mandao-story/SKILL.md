@@ -55,4 +55,4 @@ From `.mandao/templates/app/spec/story.md`, following `.mandao/templates/app/rul
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
-to post the approved AC back as a comment (only after confirmation). Next: /mandao-specify.
+to post the approved AC back as a comment (only after confirmation). Next: `node .mandao/bin/mandao.mjs run next <ID>` names the command that follows from the spec's state; give it.

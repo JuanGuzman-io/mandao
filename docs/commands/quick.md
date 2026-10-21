@@ -38,6 +38,7 @@ No.
 
 ## Scripts (no tokens)
 
+- `mandao run cost`
 - `mandao run quick-check`
 - `mandao run spec-new`
 - `mandao run quick-log`

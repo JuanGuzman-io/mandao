@@ -19,6 +19,17 @@
 | `mandao run cost <spec>` | Spend per command and role, with its basis (billed or subscription equivalent); see [Cost](#cost) |
 | `mandao run …` | Helper scripts the commands call, with compact JSON on stdout (`MANDAO_JSON=pretty` for people). `mandao run --help` lists them all: planning (`spec-new`, `trace`, `tasks`, `brief`), the Leader loop (`step`, `checkpoint`, `gates`, `review-pack`, `review`, `red`, `mutation`, `commit`, `implement-summary`), verify and close (`verify-plan`, `kaizen`, `impacts`, `publish-plan`, `pr-plan`), and tests under the resource budget (`impact`, `tests`, `build`, `resources`) |
 
+## Entering the spec worktree
+
+`mandao run where <spec> [--harness <id>] [--first <command>]` prints `{ inWorktree, cwd, branch?, expected:
+{ branch, worktree }, resume, protected, message }`. `resume` is the active harness's command that opens a
+session in `expected.worktree` with the first mandao (`--first`, default `/mandao-implement <spec>`), built
+from the harness adapter's `session.resume`; an unknown `--harness` is an error and the default is `claude`,
+the same rule as the other `run` commands. `mandao run spec-new ... --harness <id> --first <command>` adds the
+same `resume` field for the proposed worktree. The commands print that field when `EnterWorktree` is not
+available (any other harness) or is refused (Claude Code), so no command text copies a resume command. The
+Codex form single-quotes the skill (`codex '$mandao-implement <spec>'`) so a shell does not expand it.
+
 ## Skills at init
 
 The commands use a few catalog skills (graphify, brainstorming, product-manager-toolkit,

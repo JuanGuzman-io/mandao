@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md]
-scripts: [where, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, commit, pr-plan, mutation, implement-summary]
+scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, commit, pr-plan, mutation, implement-summary]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -37,15 +37,23 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 
 ## 0. Before the first task
 
-1. `{{script:where}} {{arg:spec}}` — if this session is not in the spec's worktree, stop and tell the user
-   the path to open. Mandao never creates branches here.
+1. `{{script:where}} {{arg:spec}} --harness <this harness>` — if `inWorktree` is false, move into the worktree before any other step.
+<!-- mandao:if harness=claude -->
+   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
+   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout. Mandao never creates branches here.
+<!-- mandao:endif -->
+<!-- mandao:if !harness=claude -->
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop. Mandao never creates branches here.
+<!-- mandao:endif -->
 2. `{{script:models}} --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
 3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
    `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
    spec to `verified`.
-   An approval is the person's explicit word for that item, or their own `mandao approve`; running the
-   next command is not one.
+   When the spec is still `draft`, run `{{mandao}} approve --by-running /mandao-implement --harness <this harness> {{arg:spec}} <step>`
+   (`<step>` is `spec` for a lite draft and `tasks` for draft tasks; add `--words "<what the person wrote>"` when they wrote something next to the command): on `go` it has
+   approved and recorded it, so go on; on `ask`, relay its one question and wait for the answer. Never
+   approve by any other route than the person's explicit word or this call.
 4. Read `_log/progress.yml` (older specs keep it in the spec root): if a task is in progress, continue it as `/mandao-resume` would.
 
 ## 1. For each task
@@ -173,5 +181,7 @@ block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: {{command:verify}}. When the summary has `session.cut: true`, give its `command`: verify starts in a
-new session (ADR 0038).
+Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state (and the others that
+can); give it. When the summary has `session.cut: true`, give the harness's new-conversation action first
+(its `command`): the next command starts in a fresh conversation (ADR 0038). If that conversation would not
+be inside the worktree, give first the step back into it.

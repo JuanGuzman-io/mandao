@@ -25,7 +25,7 @@ templates:
   - rules/doc-verify.md
   - rules/doc-quickstart.md
   - rules/budget.md
-scripts: [where, verify-plan, tests, build, status, trace, commit-spec]
+scripts: [where, next, verify-plan, tests, build, status, trace, commit-spec]
 ---
 
 # /mandao-verify
@@ -39,7 +39,14 @@ You verify that what was built is what the spec asked for, with evidence. Write 
 
 ## 1. Plan
 
-1. `{{script:where}} {{arg:spec}}` — work in the spec's worktree.
+1. `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-verify {{arg:spec}}"` — if `inWorktree` is false, move into the worktree before any other step.
+<!-- mandao:if harness=claude -->
+   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
+   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+<!-- mandao:endif -->
+<!-- mandao:if !harness=claude -->
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+<!-- mandao:endif -->
 2. `{{script:verify-plan}} {{arg:spec}}` gives the suites per project (unit over the files the spec's
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
@@ -84,4 +91,4 @@ report.
 - Either way, commit the report on its own: `{{script:commit-spec}} {{arg:spec}} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: {{command:close}}.
+Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.

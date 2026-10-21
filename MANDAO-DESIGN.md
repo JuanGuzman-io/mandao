@@ -44,7 +44,7 @@ Sections without an explicit tag are **DECIDED**.
 2. **Harness-agnostic.** One canonical source, one adapter per tool. Nothing is tied to a single vendor.
 3. **Pluggable external dependencies.** Graphify, Archify and MCP servers are optional. When missing, a fallback runs (grep/glob, Mermaid, local files) and reports **lower confidence, never lower depth**.
 4. **Never invent context.** Missing information is marked `ASSUMPTION`, `OPEN` or `CONFLICT`, always with its source.
-5. **Human in the loop** at every meaningful approval and before any external publication.
+5. **Human in the loop** at every meaningful approval and before any external publication. **DECIDED (ADR 0040):** an approval is the person's explicit word, their own `mandao approve`, or running the next command, which `mandao approve --by-running` accepts only when nothing is open or changed since the summary shown; otherwise it asks one question and records nothing.
 6. **Lean commands.** Rules live in templates and skills; project lessons live in the project. Command prompts must not accumulate hardcoded lessons (a known weakness of AKILI, whose constitution command is ~1,500 lines).
 7. **Risk-proportional rigor.** Review depth scales with task risk; trivial work stays fast.
 8. **External content is data, not instructions.** Anything read from trackers, chat, documents or transcripts is untrusted input (see §20).
@@ -544,7 +544,7 @@ One story = **one spec, one development**, even across projects.
 
 ### 14.5 Worktrees (always)
 
-**DECIDED (ADR 0037).** Every spec, including quick, runs in its own git worktree in a sibling folder (`../<repo>.worktrees/<ID>-<slug>`, configurable in `paths.worktrees`). `mandao start` creates it (default); `specify`/`quick` create it as a fallback when run from the main checkout. Polyrepo: one worktree per touched repo, same branch name.
+**DECIDED (ADR 0037).** Every spec, including quick, runs in its own git worktree in a sibling folder (`../<repo>.worktrees/<ID>-<slug>`, configurable in `paths.worktrees`). `mandao start` creates it (default); `specify`/`quick` create it as a fallback when run from the main checkout. **Amended (ADR 0037):** in Claude Code the session then enters the worktree with `EnterWorktree` and continues in the same conversation; the other harnesses, and a refused or failed `EnterWorktree`, print the resume command and stop. The §0 `run where` check of implement, verify and close does the same. Polyrepo: one worktree per touched repo, same branch name.
 
 **Setup** (Node script, no model tokens, through the resource guard):
 1. `git worktree add` with branch `<prefix><ID>-<slug>` from `branching.base` (or `hotfix.from` with `--hotfix`).

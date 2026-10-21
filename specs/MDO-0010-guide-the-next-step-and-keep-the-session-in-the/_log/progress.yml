@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
-updated_at: 2026-10-21T14:31:58.684Z
+updated_at: 2026-10-21T15:15:09.839Z
 current: null
 open_questions: []
 next_step: ""
@@ -71,4 +71,50 @@ red_tests:
           - "FR-3/D4: step that stops to suggest a cut carries session.advice for the harness (/clear, then the next command)"
           - "one active-harness rule: approve --harness bogus is rejected like run --harness bogus, and approves nothing"
           - "one active-harness rule: with no --harness and no session id the default is the run default (claude), not config.harnesses[0]"
+  - task: T3
+    files:
+      - path: test/integration/hook.test.ts
+        sha256: f3b0c74fe3d3e2db2640f9d27d56fac01893879e56719fa7af86cf2cc878e7bd
+        tests:
+          - with a worktree as cwd, a read-only role defined only there skips the guard
+          - with the main checkout as cwd the same role is unknown and keeps the guard
+          - a shell role in the worktree keeps the guard
+      - path: test/unit/content.test.ts
+        sha256: eeb81f32836c9080b9c2b794afce9a14c9759e4dce47a85dd5fb676266c8c326
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s keeps a printable resume command in specify, quick and implement"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume command (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+      - path: test/integration/worktree-entry.test.ts
+        sha256: 9018e624a0e1ab59e58232e9d74fb4592337d1c0495d5c6383ae5bb8a941ccf0
+        tests:
+          - "mandao-%s: EnterWorktree appears in the claude file and in no other harness file"
+          - "mandao-%s: every non-claude file prints a resume command"
+          - "mandao-%s: every non-claude file prints the resume field and copies no command"
+          - "codex and antigravity share .agents/skills: one file per command, owned by codex, neutral to both readers"
+      - path: test/integration/where.test.ts
+        sha256: 7abda40d1d98befcd0146567f0ae51a968c7d22534c604086649db0665ffdfe5
+        tests:
+          - "%s: resume is the active adapter session.resume for expected.worktree and the implement command"
+          - the first command can be named, and the harness defaults to claude
+          - an unknown harness is an error
+          - "%s: spec-new returns the resume command for its worktree and the given first command"
+      - path: test/unit/session-advice.test.ts
+        sha256: a92b10e9656f7f11c66038274140254198ffa2aea8f36c21dc3ed3cef59ce23f
+        tests:
+          - "S-3.1: Claude Code reads /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.2: %s names %s, then the next command, with its open command as the fallback"
+          - 'S-3.2: Copilot names "New chat" with its shortcuts'
+          - "S-3.2: Antigravity names its shortcuts"
+          - "S-3.2/C2: a harness with no in-place action gets the open-session command and no action"
 pending_commits: []

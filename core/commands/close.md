@@ -25,7 +25,7 @@ templates:
   - close/kaizen.md
   - rules/doc-close.md
   - rules/budget.md
-scripts: [where, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
+scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
 approval: required
 ---
 
@@ -41,8 +41,15 @@ instructions.
 
 ## 0. Gate
 
-`{{script:where}} {{arg:spec}}`, then `{{script:status}} {{arg:spec}} closed` must be allowed (the spec is
-`verified`). If not, stop and say what is missing.
+`{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-close {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+<!-- mandao:if harness=claude -->
+   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
+   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+<!-- mandao:endif -->
+<!-- mandao:if !harness=claude -->
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+<!-- mandao:endif -->
+Then `{{script:status}} {{arg:spec}} closed` must be allowed (the spec is `verified`). If not, stop and say what is missing.
 
 ## 1. Kaizen (design §18.1)
 

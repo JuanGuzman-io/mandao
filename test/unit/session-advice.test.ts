@@ -57,7 +57,7 @@ describe('session advice: the active harness own new-conversation action (FR-3)'
 describe('D2: resume is part of each adapter session facts', () => {
   const expected: Record<string, string> = {
     claude: `cd "/work/wt" && claude "/mandao-implement MDO-0001"`,
-    codex: `cd "/work/wt" && codex "$mandao-implement MDO-0001"`,
+    codex: `cd "/work/wt" && codex '$mandao-implement MDO-0001'`,
     copilot: `code "/work/wt"   # then run /mandao-implement MDO-0001 in Copilot Chat`,
     opencode: `cd "/work/wt"   # open opencode there and run /mandao-implement MDO-0001`,
     antigravity: `cd "/work/wt"   # open antigravity there and run /mandao-implement MDO-0001`,

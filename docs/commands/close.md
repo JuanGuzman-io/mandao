@@ -43,6 +43,7 @@ Yes: it stops for your approval.
 ## Scripts (no tokens)
 
 - `mandao run where`
+- `mandao run next`
 - `mandao run status`
 - `mandao run branching`
 - `mandao run kaizen`
