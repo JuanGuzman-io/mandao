@@ -50,7 +50,7 @@ status: draft
 `;
 
 /** A gate that fails with 10,000 lines: odd lines name the task's file, even lines another file. */
-export const NOISY_GATE = `node -e "for(let i=1;i<=10000;i++)console.log((i%2?'src/cli/skills.ts(':'src/other/noise.ts(')+i+'): error TS'+i);process.exit(1)"`;
+export const NOISY_GATE = `node -e "for(let i=1;i<=10000;i++)console.log((i%2?'src/cli/skills.ts(':'src/other/noise.ts(')+i+'): error TS'+i);process.exitCode=1"`;
 export const OTHER_LAST = 'src/other/noise.ts(10000): error TS10000';
 export const REVIEW_FAIL = 'VERDICT: FAIL\n\n## Blocking findings\n\n- B1: `skills ls` is not registered as an alias.\n';
 export const REVIEW_PASS = 'VERDICT: PASS\n\nThe alias is registered.\n';
