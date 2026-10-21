@@ -70,3 +70,17 @@ costs:
       model:claude-sonnet-5-5: 0.136773
     source: claude-code
     basis: equivalent
+  - at: 2026-10-21T19:10:43.934Z
+    command: implement
+    harness: claude
+    session: 8871a3c9-9b15-45a1-bfea-e5f64dcc65aa
+    usd: 0.6544
+    roles:
+      leader: 0.6544
+    models:
+      claude-opus-5-5: 0.6544
+    cumulative:
+      main-session: 0.654445
+      model:claude-opus-5-5: 0.654445
+    source: claude-code
+    basis: equivalent
