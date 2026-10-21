@@ -14,3 +14,13 @@ approvals:
     at: 2026-10-21T00:17:45.857Z
     note: the maintainer turned budgets off by default (2026-10-20); spend is recorded and reported only
     to: none
+  - step: close
+    by: Juan D. Guzmán
+    at: 2026-10-21T00:33:53.160Z
+    items:
+      - "1"
+      - "2"
+      - "3"
+      - "4"
+      - "5"
+    note: "maintainer at close (2026-10-20): 1 ADR 0036 addendum accepted, 2 ADR 0038 consequence, both applied; 3 amended (sync in core/ tasks; only blocking Reviewer findings become a task or block), 4 dogfooding note, both for a follow-up; 5 already applied on main (ADR 0039)"
