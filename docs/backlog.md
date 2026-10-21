@@ -8,6 +8,7 @@ only when the maintainer opens it; until then it lives here, not in an agent's m
 | [Launcher version](#launcher-version) | quick | MDO-0011 closed | next, from `main` in its own worktree |
 | [MDO-0012 — Delivery and research](#mdo-0012--delivery-and-research) | spec | MDO-0011 | agreed |
 | [MDO-0013 — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | spec | MDO-0011 | agreed |
+| [MDO-0014 — Parallel tasks](#mdo-0014--parallel-tasks) | spec | — | agreed |
 | [Migrate MDO-0008 to MDO-0010 to layout v2](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | spec | MDO-0011 proven | agreed |
 | [Security quick before the beta](#security-quick-before-the-beta) | quick | — | agreed |
 | [Rules enforced by script](#rules-enforced-by-script) | spec | — | agreed |
@@ -85,6 +86,27 @@ Big specs split the execution, not the spec.
    - With a tracker, deliveries (or tasks) can be pushed as sub-tasks of the story.
 3. **When tasks proposes deliveries:** more than N tasks (configurable), or a PR foreseen above the
    threshold. Always grouped by AC, never by technical layer.
+
+## MDO-0014 — Parallel tasks
+
+Several subagents run tasks at the same time.
+
+1. **Eligibility, decided by a script:** two tasks run in parallel only when they are in the same wave,
+   do not depend on each other, both have `parallel_safe: true`, and their `files` lists do not
+   overlap. Overlapping tasks run in sequence even when they declare `parallel_safe`.
+2. **Isolation:** each parallel task works in its own sub-worktree (a branch from the spec's branch)
+   with its own setup, and is integrated into the spec's branch once its review passes. The spec
+   measures the setup cost per sub-worktree (dependencies) and proposes how to reduce it without
+   linking `node_modules`.
+3. **Queued commits:** one per task, in the order the tasks reach PASS, with their trailers. A conflict
+   on integration sends the task back to rework; it is never resolved silently.
+4. **Configurable limit:** `resources.max_parallel_tasks` (default 2). The resource guard and the
+   queue for heavy runs still apply. The Testers writing the red tests of parallel tasks can run in
+   parallel too.
+5. **Visibility:** `status` and `resume` show which tasks run in parallel and the phase of each. A
+   session cut waits for the running tasks to finish.
+6. **Measurement:** Kaizen compares total time and cost with and without parallelism. The goal is
+   less time, not less cost; a cost increase is reported.
 
 ## Migrate MDO-0008 to MDO-0010 to layout v2
 
