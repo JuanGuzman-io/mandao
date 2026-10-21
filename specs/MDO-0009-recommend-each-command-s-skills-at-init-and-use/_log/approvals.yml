@@ -4,3 +4,7 @@ approvals:
     by: Juan D. Guzmán
     at: 2026-10-21T03:33:59.001Z
     note: approved by running /mandao-implement right after the three decisions (doctor warn vs info, the four bootstrap skills, specify phase) were presented
+  - step: spec
+    by: Juan D. Guzmán
+    at: 2026-10-21T03:54:15.217Z
+    note: explicit approval in the implement session ("Apruebo"), replacing the earlier inferred one

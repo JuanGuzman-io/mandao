@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: draft
+status: approved
 sources:
   - { ref: "_log/start.yml", kind: request, date: 2026-10-21 }
   - { ref: "maintainer conversation (context agreed for /mandao-specify)", kind: conversation, date: 2026-10-21 }

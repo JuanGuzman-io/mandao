@@ -3,7 +3,7 @@ schema_version: 1
 spec: MDO-0009-recommend-each-command-s-skills-at-init-and-use
 depth: lite
 projects: [mandao]
-status: draft
+status: approved
 ---
 
 # Spec — Recommend each command's skills at init and use them in story and specify
