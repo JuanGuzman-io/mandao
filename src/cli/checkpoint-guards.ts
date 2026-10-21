@@ -6,7 +6,7 @@ import { testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
-import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt, untaggedSecurityMentions } from '../spec/index.js';
+import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt, UNTAGGED_NOTE, untaggedSecurityMentions } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { acceptLogs, logDiscrepancies } from '../writer/log-integrity.js';
 
@@ -55,7 +55,7 @@ export function checkReview(
   const file = join(logPath(spec.dir, 'reviews'), `${o.task}-${taskAttempt(spec.execution, o.task)}-review.md`);
   writeText(file, text);
   const untagged = untaggedSecurityMentions(text);
-  return untagged.length ? `untagged security mention: ${untagged.join(' | ')}` : undefined;
+  return untagged.length ? `${UNTAGGED_NOTE}: ${untagged.join(' | ')}` : undefined;
 }
 
 /**

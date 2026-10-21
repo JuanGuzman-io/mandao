@@ -100,9 +100,10 @@ interface ApproveOptions {
   note?: string;
 }
 
-function budgetTo(to: string | undefined): number {
+function budgetTo(to: string | undefined): number | 'none' {
+  if (to === 'none') return 'none';
   const n = Number(to);
-  if (!(n > 0)) throw new Error('budget needs --to <USD>: the total this spec may spend');
+  if (!(n > 0)) throw new Error('budget needs --to <USD> (the total this spec may spend) or --to none (no cap)');
   return n;
 }
 
@@ -142,7 +143,7 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .command('approve <spec> <step>')
     .description(`Approve a step without a model session (${APPROVAL_STEPS.join(' | ')}): status, who and when, and the spec commit`)
     .option('--items <ids...>', 'close: the proposals approved (impact and standardization ids), or "all"')
-    .option('--to <usd>', 'budget: the total this spec may spend, past budget.per_spec')
+    .option('--to <usd|none>', 'budget: the total this spec may spend, or none to remove its cap')
     .option('--by <name>', 'who approves (default: git user.name)')
     .option('--note <text>', 'a note kept with the approval')
     .action((ref: string, step: string, o: ApproveOptions) => {

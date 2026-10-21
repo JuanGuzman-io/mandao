@@ -22,3 +22,16 @@ export function securityBlockers(review: string): string[] {
 export function untaggedSecurityMentions(review: string): string[] {
   return lines(review).filter((l) => !ANY_TAG.test(l) && SEVERE.test(l) && SECURITY.test(l));
 }
+
+export const UNTAGGED_NOTE = 'untagged security mention';
+
+/**
+ * Untagged security mentions recorded in the execution rows, per task: they never block, so
+ * `implement-summary` and verify list them for a person to read.
+ */
+export function securityMentions(rows: { task: string; attempt: number; notes: string }[]) {
+  return rows.flatMap((r) => {
+    const text = new RegExp(`${UNTAGGED_NOTE}: (.*?)(?:; (?:log edited|red test changed|identity mismatch)|$)`).exec(r.notes)?.[1];
+    return text ? [{ task: r.task, attempt: r.attempt, mentions: text.split(' | ') }] : [];
+  });
+}
