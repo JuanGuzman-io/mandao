@@ -21,7 +21,10 @@ Each rule is checked by the script that records the step, which refuses the step
    - `mandao run checkpoint --verdict PASS|FAIL --reviewer …` needs the Reviewer's whole answer
      (`--review <file|->`). The script checks that its `VERDICT` line matches, refuses a PASS that
      carries `[security/high]` or `[security/critical]`, and keeps the answer in `_log/reviews/`.
-   - An untagged line that names a high or critical severity and a security concern counts too.
+   - Only the tag blocks. An untagged line that names a high or critical severity and a security concern
+     goes into the row's notes (`untagged security mention`). A word match blocked a correct PASS twice
+     in the MDO-0008 T1 rework, because the answer mentioned the fixed finding, and pushed the Reviewer
+     to reword instead of report.
    - `mandao run review --via` records such a PASS as a FAIL.
 2. **Budget.**
    - Past 100% of the spec's cap, `mandao run step` returns `await-budget` with no brief.
