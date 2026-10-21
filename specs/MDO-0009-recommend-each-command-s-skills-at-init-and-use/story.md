@@ -7,7 +7,7 @@ url:
 parent:
 projects: [mandao]
 lane: normal
-status: approved
+status: draft
 sources:
   - { ref: "_log/start.yml", kind: request, date: 2026-10-21 }
   - { ref: "maintainer conversation (context agreed for /mandao-specify)", kind: conversation, date: 2026-10-21 }
@@ -43,8 +43,9 @@ there, and still work when it is not. Missing skills stop being silent.
 
 ## Scope
 
-- `init` lists the skills that the chosen harnesses' commands use: what each does, its source and its
-  pinned version, and installs only the ones the person accepts.
+- `init` lists the skills that the commands use, the same for every harness: what each does, its
+  source and its pinned version, and installs only the ones the person accepts, into each chosen
+  harness ([spec.md#c-1](spec.md#c-1)).
 - `init --yes` lists them and how to install them later; it installs nothing.
 - `/mandao-story` and `/mandao-specify` say when to use brainstorming (a story starting from nothing)
   and product-manager-toolkit (existing code and product context), and what to do when the skill is
@@ -55,7 +56,7 @@ there, and still work when it is not. Missing skills stop being silent.
 
 - New catalog entries or new skills.
 - An `init` flag that installs skills without a prompt (`mandao skills add` covers it after init).
-- Equivalents of Claude Code plugins for Codex, OpenCode, Copilot or Antigravity.
+- Installing the whole plugin a skill comes from (only the skill's own folder is copied).
 - Changing constitution step 6 (project and stack skills).
 
 ## Acceptance criteria
@@ -70,8 +71,8 @@ critical: true
 - **AND IT MUST** show, for each skill, what it does, its source, its pinned version and the commands
   that use it (C1)
 - **BUT it must NOT** run any installer before the person says yes, nor preselect any skill (C2)
-- **AND IT MUST** install a Claude Code plugin from the terminal when the `claude` CLI can do it, and
-  otherwise print the exact command to run in Claude Code (C3)
+- **AND IT MUST** copy each accepted skill, at its pinned version, into the skills folder of every
+  chosen harness, and otherwise print the exact manual step (C3)
 
 ### AC-2 — init --yes lists the skills and installs nothing
 critical: true
@@ -81,24 +82,24 @@ critical: true
 - **THEN** init prints the commands' skills and the command that installs them later
 - **BUT it must NOT** install or pin any skill (C1)
 
-### AC-3 — skills only for the harnesses that can use them
+### AC-3 — the same skills for every harness
 critical: false
 
-- **GIVEN** the person chose only harnesses without Claude Code plugins (Codex, OpenCode, Copilot,
+- **GIVEN** the person chose only harnesses other than Claude Code (Codex, OpenCode, Copilot,
   Antigravity)
 - **WHEN** init offers skills
-- **THEN** it does not offer Claude Code plugins, and init finishes normally
-- **BUT it must NOT** fail or block because a plugin cannot be installed (C1)
+- **THEN** it offers the same skills as for Claude Code, and installs the accepted ones where those
+  harnesses read them ([spec.md#c-1](spec.md#c-1))
+- **BUT it must NOT** fail or block because a skill cannot be installed (C1)
 
 ### AC-4 — story and specify say when to use each skill, and work without it
 critical: false
 
-- **GIVEN** a workspace generated for Claude Code
+- **GIVEN** a workspace generated for any harness
 - **WHEN** the person runs `/mandao-story` or `/mandao-specify`
 - **THEN** the command says to use brainstorming when the story starts from nothing and
   product-manager-toolkit when there is code and product context
 - **AND IT MUST** say what to do when the skill is missing, and keep going without it (C1)
-- **BUT it must NOT** name a Claude Code plugin in the commands generated for other harnesses (C2)
 
 ### AC-5 — doctor names the command that loses a missing skill
 critical: true
@@ -113,8 +114,8 @@ critical: true
 
 - The catalog entries for brainstorming and product-manager-toolkit (`core/catalog/skills.yml`),
   verified 2026-10-20.
-- Whether the `claude` CLI can install plugins from a terminal: a premise verified in the spec
-  ([spec.md#p1](spec.md#p1)).
+- The pinned repository of each skill and the skills folder each harness reads: premises verified in
+  the spec ([spec.md#p3](spec.md#p3), [spec.md#p4](spec.md#p4)).
 
 ## UX references
 
@@ -123,7 +124,9 @@ critical: true
 
 ## Data involved
 
-- `.mandao/mandao.lock`, `skills:` list: the skills pinned after install. No new data.
+- `.mandao/mandao.lock`, `skills:` list: the skills pinned after install, now with the exact version
+  (commit) of each copied skill.
+- The copied skill folders in the project, one per chosen harness's skills folder.
 
 <a id="assumptions"></a>
 ## Assumptions and open questions

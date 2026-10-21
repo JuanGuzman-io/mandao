@@ -1,0 +1,30 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0009-recommend-each-command-s-skills-at-init-and-use
+updated_at: 2026-10-21T03:36:09.784Z
+current:
+  task: T1
+  phase: awaiting-review
+  harness: claude
+  model: claude-opus-5-5
+open_questions: []
+next_step: review T1
+deferred_to_ci: []
+red_tests:
+  - task: T1
+    files:
+      - path: test/unit/command-skills.test.ts
+        sha256: 2bc78a2a47cd00c98641bac3a931d5563539741591bec07cde5ae4e701ec6a4e
+        tests:
+          - "S-1.1: [claude] gives graphify, software-architect, product-manager-toolkit and brainstorming with their commands"
+          - "S-1.1/C1: [claude] never includes mandao-skills (bundled) or a stack, profile or conditional skill"
+          - "S-1.2: [codex, opencode] drops the Claude Code plugins and keeps graphify and software-architect"
+      - path: test/unit/content.test.ts
+        sha256: ac659bf5eb717536ded7101542f26acf4aeb3d5b9d8ffb6d0fc824d4a7b83692
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: claude renders brainstorming for a story from nothing and product-manager-toolkit with code and context"
+          - "S-5.1/C1: claude says the command follows its own steps and notes which skill was missing"
+          - "S-5.2 and S-5.2/C1: other harnesses render without naming brainstorming or product-manager-toolkit"
+          - the catalog is valid
+pending_commits: []

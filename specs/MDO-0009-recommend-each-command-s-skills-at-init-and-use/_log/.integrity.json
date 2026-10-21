@@ -2,6 +2,13 @@
   "_log/approvals.yml": "sha256-0mJoK+2xr6PLHa/yFmaSuQW7ur/tl/aaURvnD9C11iE=",
   "_log/baseline.md": "sha256-bKBrkJqzYerT+222smbwFY94nuJsFwulpS4FRSEXhOA=",
   "_log/costs.yml": "sha256-3J+ZQYG4koIk5BFC0Cs1N9XeHHG3EBhDgXnKxqSWAIk=",
+  "_log/execution.md": "sha256-YM2oQ3EGFl0AbklB7DZ5Qyymiyy9cxZoUfYRBs6xPDo=",
+  "_log/gates/T1-1.md": "sha256-shSDdcNIhQyLmJHq4pNkff0sADQAOio/ZyoYFcDGLYE=",
   "_log/premises/P1.md": "sha256-8i7j9ch6ANOn7R3fkJ4vYUb5EENh3BK8gmy51yjn6Rs=",
+  "_log/premises/P3.md": "sha256-3E1lt0kSViWouFt6mBJnVfujw7AzwLR2taUf9j2iU4w=",
+  "_log/premises/P4.md": "sha256-h2WMMzxe2L0MB4lW9JIsuWrGyYtm+OjC89Jm5GrNo68=",
+  "_log/progress.yml": "sha256-OuJ8VXuUVB1k02v9QlwW7KRO6LZFquCyqnOORnLEzXw=",
+  "_log/reviews/T1-1-pack.md": "sha256-hhi+Vc8hTVcF2R/DUJEtRiXTON2RhuZ8J80QfPkYC74=",
+  "_log/session-cuts.md": "sha256-1ksyfxvlJeFsaAJ5TYU0gZePNOiLoaPQclajzGBDnhU=",
   "_log/start.yml": "sha256-e3iLwbkUlgTuzGseI0imescVCApbJiXsxA9W4pTL+rQ="
 }
