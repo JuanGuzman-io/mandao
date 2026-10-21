@@ -17,7 +17,7 @@ outputs:
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md", description: polyrepo slices }
 capabilities: [read, search, edit, shell]
 templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md]
-scripts: [where, trace, tasks, commit-spec]
+scripts: [where, next, trace, tasks, commit-spec]
 approval: required
 ---
 
@@ -32,7 +32,15 @@ Write task content in `{{language.technical}}`; headings, ids and YAML keys stay
 At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
 nothing to do here. Otherwise:
 
-1. **Gate.** Run `{{script:where}} {{arg:spec}}`; work in the spec's worktree. Run
+1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+<!-- mandao:if harness=claude -->
+   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
+   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+<!-- mandao:endif -->
+<!-- mandao:if !harness=claude -->
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+<!-- mandao:endif -->
+   Run
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend {{command:clarify}}.
 2. **Write `## Details`** in `tasks.md` from `{{template:spec/tasks.md}}`, following
@@ -48,6 +56,9 @@ nothing to do here. Otherwise:
      `{{template:rules/test-policy.md}}` requires; concrete test names are chosen by whoever writes them;
    - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
    - `verify`, `depends_on`, `parallel_safe`.
+   A task's **Done when** lists every entry point, list item and clause of the FRs it serves, and states
+   each rejected option of its decisions as a must-not. A task added after specify declares scenarios
+   through {{command:clarify}}, never `scenarios: []`.
    The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
    not list it.
 3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a
@@ -65,7 +76,9 @@ nothing to do here. Otherwise:
 <!-- mandao:endif -->
 7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues and no cycles;
    `{{script:trace}} {{arg:spec}}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
-8. **Approve:** show the overview and the first eligible task. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. On approval in the session set `status: approved` and
+8. **Approve:** show the overview and the first eligible task, then record what was shown with
+   `{{script:next}} {{arg:spec}} --shown`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs
+   `{{mandao}} approve --by-running /mandao-implement --harness <this harness> {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: {{command:implement}}, in a new session (`newSession` from `mandao approve`, ADR 0038).
+   available yet. Next: `{{script:next}} {{arg:spec}}` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.

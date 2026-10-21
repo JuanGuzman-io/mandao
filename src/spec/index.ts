@@ -10,6 +10,7 @@ export * from './kaizen-costs.js';
 export * from './kaizen-sessions.js';
 export * from './loop.js';
 export * from './markdown.js';
+export * from './next.js';
 export * from './plan.js';
 export * from './pr-plan.js';
 export * from './premises.js';

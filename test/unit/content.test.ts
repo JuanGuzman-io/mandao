@@ -96,6 +96,115 @@ describe('core content', () => {
     );
   });
 
+  /** MDO-0010 T3: the worktree entry and the next step, per harness. */
+  describe('worktree entry and next step in the rendered commands', () => {
+    const HARNESSES = ['claude', 'codex', 'opencode', 'copilot', 'antigravity'] as const;
+    const render = (h: string, ids: string[]) => {
+      const config = configSchema.parse({
+        schema_version: 1,
+        workspace: 'single',
+        projects: [{ name: 'a', path: '.', profile: 'app' }],
+        harnesses: [h],
+      });
+      const { files } = buildOutputs(config, {}, layers, '0.0.0', 'project');
+      return ids.map((id) => {
+        const f = files.find((x) => new RegExp(`mandao-${id}(/SKILL\\.md|\\.md|\\.prompt\\.md)$`).test(x.path));
+        expect(f, `${h}: mandao-${id}`).toBeDefined();
+        return { id, path: f!.path, content: f!.content };
+      });
+    };
+    /** The §0 check: the text from the first `run where` on. */
+    const whereStep = (content: string) => {
+      const at = content.search(/run where/);
+      expect(at, 'a run where step').toBeGreaterThanOrEqual(0);
+      return content.slice(at, at + 700);
+    };
+
+    /** A resume command copied into a text, whatever the harness. */
+    const COPIED = /(claude|codex) ["']\/?\$?mandao-|then run \/mandao-|open (opencode|antigravity) there/;
+    const RESUME_COMMANDS = ['specify', 'quick', 'implement', 'verify', 'close', 'tasks'];
+
+    test.each(HARNESSES)('S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text', (h) => {
+      for (const f of render(h, RESUME_COMMANDS)) {
+        expect(f.content, f.path).toMatch(/`resume`/);
+        expect(f.content, f.path).not.toMatch(COPIED);
+        expect(f.content, f.path).not.toMatch(/claude --resume/);
+      }
+    });
+
+    test.each(HARNESSES)('S-2.2/C1: %s passes its own harness to run where and to spec-new', (h) => {
+      for (const f of render(h, ['implement', 'verify', 'close', 'tasks'])) {
+        expect(f.content.slice(f.content.search(/run where/)), f.path).toMatch(/^run where [^\n]*--harness <this harness>/);
+      }
+      for (const f of render(h, ['specify', 'quick'])) {
+        const at = f.content.search(/run spec-new/);
+        expect(f.content.slice(at, at + 500), f.path).toMatch(/--harness <this harness>[\s\S]*--first "\/mandao-(specify|quick) /);
+      }
+    });
+
+    test.each(HARNESSES.filter((h) => h !== 'claude'))('S-2.2: %s mentions no EnterWorktree and prints the resume field', (h) => {
+      for (const f of render(h, RESUME_COMMANDS)) expect(f.content, f.path).not.toMatch(/EnterWorktree/);
+    });
+
+    test('S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session', () => {
+      for (const f of render('claude', ['specify', 'quick', 'implement'])) {
+        expect(f.content, f.path).toMatch(/EnterWorktree[^.]*path/i);
+        expect(f.content, f.path).toMatch(/without (asking for )?a new session/i);
+      }
+    });
+
+    test('S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout', () => {
+      for (const f of render('claude', ['specify', 'quick'])) {
+        expect(f.content, f.path).toMatch(/EnterWorktree[\s\S]{0,200}(refused|fails)[\s\S]{0,200}`resume`[\s\S]{0,120}stop/i);
+        expect(f.content, f.path).toMatch(/not (go on|continue|keep) working in the main checkout/i);
+      }
+    });
+
+    test.each(['implement', 'verify', 'close'])(
+      'S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step',
+      (id) => {
+        const [claude] = render('claude', [id]);
+        expect(whereStep(claude!.content)).toMatch(/EnterWorktree/);
+        expect(whereStep(claude!.content)).toMatch(/`resume`/);
+        for (const h of HARNESSES.filter((x) => x !== 'claude')) {
+          const [f] = render(h, [id]);
+          expect(whereStep(f!.content), f!.path).toMatch(/`resume`/);
+          expect(whereStep(f!.content), f!.path).not.toMatch(/EnterWorktree/);
+        }
+      },
+    );
+
+    test('S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file', () => {
+      const [f] = render('claude', ['quick']);
+      const body = f!.content.slice(f!.content.indexOf('## 6.'));
+      const cost = body.search(/run cost/);
+      const log = body.search(/run quick-log/);
+      const commit = body.search(/Commit following/);
+      expect(cost, 'a cost record in §6').toBeGreaterThanOrEqual(0);
+      expect(cost).toBeLessThan(log);
+      expect(log).toBeLessThan(commit);
+      expect(body.slice(commit)).toMatch(/specs\/quick\/_log\/costs\.yml/);
+    });
+
+    test.each(HARNESSES)(
+      'S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval',
+      (h) => {
+        for (const f of render(h, ['implement', 'tasks'])) {
+          expect(f.content, f.path).toMatch(/approve --by-running/);
+          for (const m of f.content.matchAll(/approve --by-running/g)) {
+            const call = f.content.slice(m.index, m.index! + 200);
+            expect(call, f.path).toMatch(new RegExp(`--harness (<this harness>|${h})`));
+            expect(call, f.path).toMatch(/approve --by-running \/mandao-implement\b/);
+          }
+          // the step is named, as FR-5 does: `spec` for a lite draft, `tasks` for draft tasks
+          if (f.path.includes('implement')) expect(f.content, f.path).toMatch(/`spec` for a lite draft[\s\S]{0,60}`tasks` for draft tasks/);
+          else expect(f.content, f.path).toMatch(/approve --by-running \/mandao-implement [^\n]* tasks\b/);
+          expect(f.content, f.path).not.toMatch(/running\s+the\s+next command is not one/);
+        }
+      },
+    );
+  });
+
   test('the catalog is valid', () => {
     expect(() => readCatalog()).not.toThrow();
   });

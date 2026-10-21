@@ -44,7 +44,7 @@ harness:                    # optional, per-adapter frontmatter passthrough
 | `id` | yes | Kebab-case. Must match the file name. |
 | `title`, `description` | yes | `description` is shown in every harness command picker. |
 | `status` | yes | A `stub` declares its contract but is not implemented yet. |
-| `flow` | no | Used by `resume` and by `AGENTS.md` to recommend the next mandao. |
+| `flow` | no | Used by the diagrams and the `AGENTS.md` flow summary. The next command comes from the spec's state (`mandao run next`). |
 | `profiles` | no | Defaults to every profile. |
 | `arguments` | no | Order matters: it is the order of positional arguments. |
 | `inputs`, `outputs` | yes | May be empty lists. Paths may use `{{paths.*}}`. |
@@ -90,7 +90,7 @@ Only rendered when at least one project uses the `ai` profile.
 Supported conditions:
 
 - `profile=<app|ai|data>`: true when any project in the workspace uses that profile.
-- `harness=<id>`: true when rendering for that harness.
+- `harness=<id>`: true when rendering for that harness. The `.agents/skills` files are shared by Codex and Antigravity and are rendered once, with Codex as the harness when both are active: keep them neutral, and read per-harness facts from a script output (e.g. the `resume` field of `mandao run where`).
 - `multiProject`: true when the workspace declares more than one project.
 - `mode=<single|monorepo|polyrepo>`: the workspace mode.
 - Prefix any condition with `!` to negate it.

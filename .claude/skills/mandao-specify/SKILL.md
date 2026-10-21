@@ -44,14 +44,15 @@ in the output which skill was missing.
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
 The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
-`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type>` (add `--hotfix` when the request says `--hotfix`)
+`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type> --harness <this harness> --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
 and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
 from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
 a missing base) before asking. This is the fallback when the session started in the main checkout
-(`mandao start` does it as a script, with the full setup of §14.5): after creating the worktree, tell the
-user to continue there, `cd <worktree> && claude --resume <this session>` (or the harness's equivalent),
-because later commands refuse to work outside it. **A story written before the worktree existed** (by /mandao-story,
+(`mandao start` does it as a script, with the full setup of §14.5): after creating the worktree, move into it before any other step, because later commands refuse to work outside it:
+call `EnterWorktree` with the worktree path and continue in this conversation, without asking for a new session.
+If `EnterWorktree` is refused or fails, print the `resume` field of the `spec-new` output and stop: do not go on working in the main checkout.
+Then go on. **A story written before the worktree existed** (by /mandao-story,
 untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
 the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
@@ -136,4 +137,5 @@ and `.mandao/templates/app/rules/consistency-check.md` for the semantic part, ov
   may approve from the terminal instead (`mandao approve $ref design`): the status,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `node .mandao/bin/mandao.mjs run commit-spec $ref specify`.
-- Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags, the next mandao.
+- Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
+  `node .mandao/bin/mandao.mjs run next <ID> --shown` (it records what was shown) and give the command it names as the next mandao.

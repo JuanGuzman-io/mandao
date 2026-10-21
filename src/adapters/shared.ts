@@ -5,6 +5,11 @@ import type { ResolvedCommand, ResolvedPersona } from '../resolver/resolve.js';
 import { type Capability, type Effort, type HarnessId, TIERS } from '../schemas/index.js';
 import type { AdapterInput } from './types.js';
 
+/** The resume text of a harness that is opened by hand from the worktree. */
+export const openByHand = (harness: string, worktree: string, first: string) => ({
+  text: `cd ${JSON.stringify(worktree)}   # open ${harness} there and run ${first}`,
+});
+
 export const commandName = (id: string) => `mandao-${id}`;
 
 export const generatedNotice = (version: string, from: string) =>

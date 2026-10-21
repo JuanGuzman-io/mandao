@@ -17,7 +17,7 @@ import {
   type Task,
 } from '../spec/index.js';
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
-import { docPath, logPath } from './spec-log.js';
+import { docPath, LITE_DOC, logPath } from './spec-log.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -26,6 +26,8 @@ export interface SpecFolder {
   story?: Story;
   requirements?: Requirements;
   tasks: Task[];
+  /** `spec.md` exists: a lite spec keeps requirements, design and tasks in it. */
+  lite: boolean;
   execution: ExecutionRow[];
   progress?: Progress;
   issues: string[];
@@ -47,7 +49,7 @@ const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') 
 
 export function readSpec(dir: string): SpecFolder {
   const issues: string[] = [];
-  const out: SpecFolder = { dir, name: basename(dir), tasks: [], execution: [], issues };
+  const out: SpecFolder = { dir, name: basename(dir), tasks: [], lite: existsSync(join(dir, LITE_DOC)), execution: [], issues };
   const story = readIf(join(dir, 'story.md'));
   if (story) {
     const r = parseStory(story);
@@ -243,11 +245,13 @@ export interface WhereReport {
   cwd: string;
   branch?: string;
   expected: { branch: string; worktree: string };
+  /** The active harness's command that opens a session in `expected.worktree` (its adapter's `session.resume`, D2). */
+  resume?: string;
   message: string;
 }
 
 /** Is this session inside the spec's worktree, on its branch? `implement` warns when it is not. */
-export function whereAmI(cwd: string, expected: { branch: string; worktree: string }): WhereReport {
+export function whereAmI(cwd: string, expected: { branch: string; worktree: string }, resume?: string): WhereReport {
   let top: string | undefined;
   let branch: string | undefined;
   try {
@@ -266,6 +270,7 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
     cwd,
     ...(branch ? { branch } : {}),
     expected,
+    ...(resume ? { resume } : {}),
     message: inWorktree ? 'in the spec worktree' : `not in the spec worktree: open ${expected.worktree} (branch ${expected.branch})`,
   };
 }

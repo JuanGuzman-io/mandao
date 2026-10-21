@@ -31,6 +31,14 @@ export interface AdapterOutput {
   warnings: string[];
 }
 
+/** Per-harness session facts; `newConversation` is the in-place action, absent when there is none; `resume` opens it in a worktree. */
+export interface HarnessSession {
+  enterWorktree: boolean;
+  newConversation?: string;
+  /** Pure: the exact command that opens the harness in the worktree with the first mandao; `launch` when `--open` can run it. */
+  resume(worktree: string, first: string): { text: string; launch?: string[] };
+}
+
 /** A pure function from resolved canonical content to harness files. No I/O. */
 export interface Adapter {
   id: HarnessId;
@@ -41,5 +49,7 @@ export interface Adapter {
   experimental?: string;
   /** How far it was tested live, when that limits how it is used: `doctor` shows it. */
   testedNote?: string;
+  /** What the harness offers for a session: entering a worktree in place and its new-conversation action (spec D2). */
+  session: HarnessSession;
   render(input: AdapterInput): AdapterOutput;
 }

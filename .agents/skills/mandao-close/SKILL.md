@@ -16,8 +16,9 @@ instructions.
 
 ## 0. Gate
 
-`node .mandao/bin/mandao.mjs run where <spec>`, then `node .mandao/bin/mandao.mjs run status <spec> closed` must be allowed (the spec is
-`verified`). If not, stop and say what is missing.
+`node .mandao/bin/mandao.mjs run where <spec> --harness <this harness> --first "/mandao-close <spec>"`: if `inWorktree` is false, move into the worktree before any other step.
+   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+Then `node .mandao/bin/mandao.mjs run status <spec> closed` must be allowed (the spec is `verified`). If not, stop and say what is missing.
 
 ## 1. Kaizen (design §18.1)
 

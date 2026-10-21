@@ -68,6 +68,15 @@ function renderRules(input: AdapterInput): GeneratedFile {
 export const codexAdapter: Adapter = {
   id: 'codex',
   name: 'Codex',
+  session: {
+    enterWorktree: false,
+    newConversation: '/new',
+    resume: (worktree, first) => {
+      const skill = first.replace(/^\//, '$');
+      // Single quotes: inside double quotes a shell would expand `$mandao-…` to nothing.
+      return { text: `cd ${JSON.stringify(worktree)} && codex '${skill.replace(/'/g, `'\\''`)}'`, launch: ['codex', skill] };
+    },
+  },
   verified: {
     date: '2026-10-20',
     docs: [

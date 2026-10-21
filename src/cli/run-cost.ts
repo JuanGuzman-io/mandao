@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
@@ -65,6 +65,17 @@ function costsDir(ctx: CliContext, ref: string): string {
   return ref === 'quick' ? join(ctx.root(), config.paths.specs, 'quick') : findSpec(ctx.root(), config, ref);
 }
 
+/** Every costs.yml under the specs folder (quick included): a session's baseline is whatever any of them recorded. */
+function allEntries(ctx: CliContext): CostEntry[] {
+  const specs = join(ctx.root(), readConfig(ctx.root()).paths.specs);
+  if (!existsSync(specs)) return [];
+  return readdirSync(specs)
+    .map((d) => logPath(join(specs, d), 'costs.yml'))
+    .filter((f) => existsSync(f))
+    .flatMap((f) => parseCosts(readFileSync(f, 'utf8')))
+    .sort((a, b) => a.at.localeCompare(b.at));
+}
+
 const MODEL_KEY = 'model:';
 const MAIN = 'main-session';
 
@@ -122,7 +133,7 @@ export function registerCost(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const file = logPath(costsDir(ctx, ref), 'costs.yml');
       const entries = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-      const recorded = o.record ? newEntry(entries, o) : undefined;
+      const recorded = o.record ? newEntry(allEntries(ctx), o) : undefined;
       if (recorded) writeText(file, renderCosts([...entries, recorded]));
       const all = recorded ? [...entries, recorded] : entries;
       json({

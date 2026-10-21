@@ -22,7 +22,7 @@ templates:
   - rules/review.md
   - rules/commits.md
   - rules/budget.md
-scripts: [quick-check, spec-new, quick-log]
+scripts: [cost, quick-check, spec-new, quick-log]
 approval: none
 ---
 
@@ -47,11 +47,17 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 If the session already runs in a worktree made by `mandao start --quick` (its request is in
 `{{paths.specs}}/quick/_log/start-<name>.yml`), skip this step. Otherwise, as a fallback, with **one**
 confirmation, create the branch and worktree from
-`{{script:spec-new}} "<name>" --id quick --type <story|bug>` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
+`{{script:spec-new}} "<name>" --id quick --type <story|bug> --harness <this harness> --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
 the branching model's `base`; show its `issues` first) and install the project's dependencies inside
-the worktree (no symlinks). Then tell the user to continue there, `cd <worktree> && claude --resume
-<this session>` (or the harness's equivalent), and stop until the session runs in the worktree. Skip this
-step when the session already runs on a quick branch.
+the worktree (no symlinks). Then move into the worktree before any other step:
+<!-- mandao:if harness=claude -->
+call `EnterWorktree` with the worktree path and continue in this conversation, without asking for a new session.
+If `EnterWorktree` is refused or fails, print the `resume` field of the `spec-new` output and stop: do not go on working in the main checkout.
+<!-- mandao:endif -->
+<!-- mandao:if !harness=claude -->
+print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
+<!-- mandao:endif -->
+Skip this step when the session already runs on a quick branch.
 
 ## 3. Change
 
@@ -80,13 +86,15 @@ Run `{{script:quick-check}}` and read its JSON.
 
 ## 6. Record and commit
 
-1. Record the row with `{{script:quick-log}} <name> --gates "<gate results>" --verdict <PASS|FAIL>
+1. Record the cost first: `{{script:cost}} quick --record --command quick --harness <this harness>` (it holds only what was spent
+   from the quick's start), so that it is committed with the quick.
+2. Record the row with `{{script:quick-log}} <name> --gates "<gate results>" --verdict <PASS|FAIL>
    --reviewer <agent you invoked> --harness <this harness>` (`self` when the review ran in your own
    context; add `--reduced-independence` when the reviewer ran on your model). The script measures files
    and lines from the diff, reads the reviewer's model from its agent file and puts every review note in
    the Review column: never type a model name or a review note into the log. Pass what the reviewer said about itself, verbatim,
    as `--claimed-reviewer`; it is only compared.
-2. Commit following `{{template:rules/commits.md}}`, with the trailer `Mandao-Quick: <name>` and,
+3. Commit following `{{template:rules/commits.md}}`, with the trailer `Mandao-Quick: <name>` and,
    when a spec id is active, `Refs: <ID>`. Example:
 
    ```
@@ -94,4 +102,6 @@ Run `{{script:quick-check}}` and read its JSON.
 
    Mandao-Quick: checkout-label
    ```
-3. Report: what changed, gates run, review result, commit hash.
+
+   The commit lists the code files, `specs/quick/quick-log.md` and `{{paths.specs}}/quick/_log/costs.yml`.
+4. Report: what changed, gates run, review result, commit hash.

@@ -1,0 +1,208 @@
+# Written by mandao run checkpoint after every Leader step (ADR 0018).
+schema_version: 1
+spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
+updated_at: 2026-10-21T15:31:30.029Z
+current: null
+open_questions: []
+next_step: ""
+deferred_to_ci: []
+red_tests:
+  - task: T1
+    files:
+      - path: test/unit/next.test.ts
+        sha256: 4303162bcfdb29b62929df0115a20993355fd1c792bfea5359b28316f59c9550
+        tests:
+          - "S-1.1: an open [NEEDS CLARIFICATION] leads to clarify, gives the item, offers neither tasks nor implement"
+          - "S-1.2: an approved lite spec leads to implement; an approved standard spec with nothing open leads to tasks"
+          - "S-1.3: a critical OPEN, or a draft spec, never recommends nor offers implement"
+          - "S-1.4: a spec.md that differs from the recorded hash recommends approving again and names spec.md"
+          - "S-1.4/C1: an approval without a recorded hash makes no claim about changes"
+          - "S-1.5: tasks left -> implement; pending commits -> run commit; every task done -> verify; verified -> close"
+          - "AC-1/C1: an unresolved critical row never recommends nor offers implement, and leads to clarify"
+          - "AC-1/C1: a resolved critical row does not block implement"
+          - "S-5.2: an unresolved CONFLICT table row leads to clarify"
+          - "S-5.2: the inline non-bullet CONFLICT(a: ..., b: ..., decides: ...) form leads to clarify"
+          - "S-1.4: a later shown row with the new hash does not replace the approval hash"
+          - "FR-1: a spec folder with spec.md and no depth line is lite: no /mandao-tasks"
+      - path: test/integration/approve.test.ts
+        sha256: 72d412895bf026a6d0f5c3ea8f071af4d45b6e814b2e580664a7854a22131d36
+        tests:
+          - "design: statuses approved, who and when recorded, the specify commit made with its fixed subject"
+          - a lite spec is approved under its own subject (MDO-0007)
+          - "a critical OPEN blocks the approval: nothing changes"
+          - close records the approved items for the close session to apply, and changes no status
+          - an unknown step is refused
+          - changes only the status value and keeps its comment
+          - "S-1.3/C1: approve lists no implement among its options for a draft spec"
+          - "S-1.3/C1: run next lists no implement for a spec with a critical OPEN"
+          - "S-1.4: after approve records a hash, a changed spec.md recommends approving again and names spec.md"
+          - "S-1.6 and S-1.6/C1: plain run next writes nothing: the spec folder is byte-identical, still draft, no approval"
+          - "S-5.1: nothing open and the summary shown: approves, records the command, date and person, says go"
+          - "S-5.3 and S-5.3/C2: spec.md changed after --shown returns ask naming spec.md and records nothing"
+          - "S-5.4 and S-5.4/C3: a critical OPEN is refused, whatever the answer (%j)"
+          - "S-5.5: the words written next to the command are recorded verbatim, with the command, date and person"
+          - "S-5.2: a resolved critical Consistency Check row does not ask"
+          - "S-5.4/C3: on the tasks step a critical OPEN in requirements.md is refused and nothing is recorded"
+  - task: T2
+    files:
+      - path: test/unit/session-advice.test.ts
+        sha256: c7f39b56adf6e7a97fa89fbe80405b2ac8c5ad9fac2d0d4c3f48de36adc72155
+        tests:
+          - "S-3.1: Claude Code reads /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.2: %s names %s, then the next command, with its open command as the fallback"
+          - 'S-3.2: Copilot names "New chat" with its shortcuts'
+          - "S-3.2: Antigravity names its shortcuts"
+          - "S-3.2/C2: a harness with no in-place action gets the open-session command and no action"
+      - path: test/integration/leader-scripts.test.ts
+        sha256: 9df0e42bd8829e6589e7144aac0e226a53aa3b1e378289f94ebaf1777143ec84
+        tests:
+          - script output is compact JSON unless MANDAO_JSON=pretty
+          - "gates: pass/fail per gate and the failure excerpt; a missing tool is NOT_INSTALLED; the full output stays in the log"
+          - "step: the checkpoint, the next action and the brief in one call; the brief only when delegating"
+          - "review-pack: brief, gate table and diff in one file for the Reviewer, without the full gate output"
+          - "implement-summary: verdicts, FAIL reasons and identities from the log"
+          - "MDO-0007: rows without --tier take the task tier, and advisories in row notes are counted"
+          - "MDO-0007: run tests refuses the full suite without --full, and --full without --reason"
+          - step at a task boundary in Claude Code says whether to cut the session (ADR 0038)
+          - "S-3.1: approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.1: the active harness (--harness), not config.harnesses[0], picks the action"
+          - "S-3.1: implement-summary in Claude Code carries the same advice with the verify command"
+          - "MDO-0007: the scan-markers gate fails a changed test that lists folders without saying what it scans"
+          - "FR-3/D4: step that stops to suggest a cut carries session.advice for the harness (/clear, then the next command)"
+          - "one active-harness rule: approve --harness bogus is rejected like run --harness bogus, and approves nothing"
+          - "one active-harness rule: with no --harness and no session id the default is the run default (claude), not config.harnesses[0]"
+  - task: T3
+    files:
+      - path: test/integration/hook.test.ts
+        sha256: f3b0c74fe3d3e2db2640f9d27d56fac01893879e56719fa7af86cf2cc878e7bd
+        tests:
+          - with a worktree as cwd, a read-only role defined only there skips the guard
+          - with the main checkout as cwd the same role is unknown and keeps the guard
+          - a shell role in the worktree keeps the guard
+      - path: test/unit/content.test.ts
+        sha256: eeb81f32836c9080b9c2b794afce9a14c9759e4dce47a85dd5fb676266c8c326
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s keeps a printable resume command in specify, quick and implement"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume command (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+      - path: test/integration/worktree-entry.test.ts
+        sha256: 9018e624a0e1ab59e58232e9d74fb4592337d1c0495d5c6383ae5bb8a941ccf0
+        tests:
+          - "mandao-%s: EnterWorktree appears in the claude file and in no other harness file"
+          - "mandao-%s: every non-claude file prints a resume command"
+          - "mandao-%s: every non-claude file prints the resume field and copies no command"
+          - "codex and antigravity share .agents/skills: one file per command, owned by codex, neutral to both readers"
+      - path: test/integration/where.test.ts
+        sha256: 7abda40d1d98befcd0146567f0ae51a968c7d22534c604086649db0665ffdfe5
+        tests:
+          - "%s: resume is the active adapter session.resume for expected.worktree and the implement command"
+          - the first command can be named, and the harness defaults to claude
+          - an unknown harness is an error
+          - "%s: spec-new returns the resume command for its worktree and the given first command"
+      - path: test/unit/session-advice.test.ts
+        sha256: a92b10e9656f7f11c66038274140254198ffa2aea8f36c21dc3ed3cef59ce23f
+        tests:
+          - "S-3.1: Claude Code reads /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.2: %s names %s, then the next command, with its open command as the fallback"
+          - 'S-3.2: Copilot names "New chat" with its shortcuts'
+          - "S-3.2: Antigravity names its shortcuts"
+          - "S-3.2/C2: a harness with no in-place action gets the open-session command and no action"
+  - task: T4
+    files:
+      - path: test/integration/costs.test.ts
+        sha256: 2a463d8ce7531c8b959a663cf625a047a26daf6743c04906ee7056dbe340d3da
+        tests:
+          - "one response priced like the provider bills it: input, 5m and 1h writes, reads, output"
+          - a session splits by role (main session, each subagent type) and keeps the last line of a streamed response
+          - records what the session spent since its last record, per role, and warns at 80% of the budget
+          - a subscription is an equivalent at list prices, an API key or a cloud provider is billed
+          - billed money and subscription equivalents are never added up as one basis
+          - other harnesses record by hand; quick changes have their own log
+          - "S-4.1: a quick records only what was spent after another spec recorded in the same session"
+          - "S-4.1/C1: the quick does not count what the other spec record already holds"
+          - "S-4.2: with no earlier record anywhere the quick records the whole session"
+          - the budget status follows 80% and 100%
+          - recommends with data and an estimated saving, never below the sample minimum
+      - path: test/unit/session-turns.test.ts
+        sha256: de055fa026f9abcc08806daf0900f1ea329ab4a4970294c8f63dfe89bbcf28c4
+        tests:
+          - "three pauses: median 7 minutes, one at most 5, one between 5 and 60, one over 60"
+          - "S-2.1/C1: the first prompt, tool results and meta lines are left out"
+          - each task, verify and close get the responses of their windows; after tasks is tail + verify + close
+          - "S-2.2/C1: a response written on several lines is one turn"
+          - a task committed outside every implement window is listed as unmeasured
+          - "S-2.3/C1: a session without a transcript is listed as missing, with no counts, and close is not recorded"
+          - "S-2.3: the measured session still counts while the missing one is named"
+          - a commit in a measured session's window is not claimed by a missing session's open-ended window
+          - "S-2.4/C2: sidechain lines and the subagents folder add no main-session turn"
+          - the prompt size of the first subagent call minus that of the first response
+          - a session that starts with verify has a reload too
+          - a session whose first record is another command has no reload, and never a zero
+          - no subagent call, or no transcript, gives no reload
+          - a row shows its estimate and the main turns after its time up to the close record
+          - the header is not a row, and each row gets its own actual
+          - without a close record the actual is not known, never zero
+          - no session-cuts.md gives no estimates
+  - task: T5
+    files:
+      - path: test/unit/next.test.ts
+        sha256: 6eb752870b085c7c1dddc4254d1d41d6677b9fda83d7d412db2d35f7eface2ea
+        tests:
+          - "S-1.1: an open [NEEDS CLARIFICATION] leads to clarify, gives the item, offers neither tasks nor implement"
+          - "S-1.2: an approved lite spec leads to implement; an approved standard spec with nothing open leads to tasks"
+          - "S-1.3: a critical OPEN, or a draft spec, never recommends nor offers implement"
+          - "S-1.4: a spec.md that differs from the recorded hash recommends approving again and names spec.md"
+          - "S-1.4/C1: an approval without a recorded hash makes no claim about changes"
+          - "S-1.5: tasks left -> implement; pending commits -> run commit; every task done -> verify; verified -> close"
+          - "AC-1/C1: an unresolved critical row never recommends nor offers implement, and leads to clarify"
+          - "AC-1/C1: a resolved critical row does not block implement"
+          - "S-5.2: an unresolved CONFLICT table row leads to clarify"
+          - "S-5.2: the inline non-bullet CONFLICT(a: ..., b: ..., decides: ...) form leads to clarify"
+          - "S-1.4: a later shown row with the new hash does not replace the approval hash"
+          - "FR-1: a spec folder with spec.md and no depth line is lite: no /mandao-tasks"
+          - ${name} in an inline code span or a fenced block is ignored, in prose it still counts
+          - a pending decision in a code span or block is ignored too
+          - "MDO-0010 itself: a marker named in backticks in prose does not recommend clarify"
+          - a spec whose verify was blocked recommends the rework, even with every task done
+          - a closed spec not pushed recommends the push, never story or clarify, whatever markers remain
+          - a closed spec pushed and not merged recommends the PR and merge
+          - a closed spec whose branch is merged recommends nothing
+          - a closed spec without a delivery fact still never recommends story or clarify
+          - the rule states the row shape and the statuses it names
+          - "a row with each status the rule names is read as it says: open blocks, resolved does not"
+          - leading formatting is not a resolution, and the rule says a status must start with resolved
+          - a backticked Type still counts, and the rule scopes the backtick exemption to prose
+      - path: test/integration/approve.test.ts
+        sha256: 429976212be0af60db295d375f1f5e75af198000f4a1965e39edb52b3b6b50ac
+        tests:
+          - "design: statuses approved, who and when recorded, the specify commit made with its fixed subject"
+          - a lite spec is approved under its own subject (MDO-0007)
+          - "a critical OPEN blocks the approval: nothing changes"
+          - close records the approved items for the close session to apply, and changes no status
+          - an unknown step is refused
+          - changes only the status value and keeps its comment
+          - "S-1.3/C1: approve lists no implement among its options for a draft spec"
+          - "S-1.3/C1: run next lists no implement for a spec with a critical OPEN"
+          - "S-1.4: after approve records a hash, a changed spec.md recommends approving again and names spec.md"
+          - "S-1.6 and S-1.6/C1: plain run next writes nothing: the spec folder is byte-identical, still draft, no approval"
+          - "S-5.1: nothing open and the summary shown: approves, records the command, date and person, says go"
+          - "S-5.3 and S-5.3/C2: spec.md changed after --shown returns ask naming spec.md and records nothing"
+          - "S-5.4 and S-5.4/C3: a critical OPEN is refused, whatever the answer (%j)"
+          - "S-5.5: the words written next to the command are recorded verbatim, with the command, date and person"
+          - "S-5.2: a resolved critical Consistency Check row does not ask"
+          - "S-5.4/C3: on the tasks step a critical OPEN in requirements.md is refused and nothing is recorded"
+          - a verify-report.md with verdict blocked recommends implement, not verify
+          - "closed, branch only local: names the push; pushed: names the PR and merge; merged: nothing"
+          - the delivery is read from the spec branch, not from the checked-out one
+          - run next on a closed spec writes nothing
+pending_commits: []
