@@ -25,42 +25,38 @@ skills:
     vetted: true
     binding: core
     phases: [constitution, story, specify, implement, close]
+    fallback: The commands map the repository with their own reads and searches, without the graph.
   software-architect:
     description: TRD, NFRs as testable scenarios, architecture styles, patterns and ADRs.
     # Upstream has no per-skill installer (`npx akili-specs install` installs the whole AKILI kit).
-    source: { type: git, url: https://github.com/JuankCadavid/akili-specs, ref: v2.34.1, path: .claude/skills/software-architect }
+    source: { type: git, url: https://github.com/JuankCadavid/akili-specs, ref: v2.34.1, path: .claude/skills/software-architect, commit: b04e03f555ec26b0221b0675a3225a9d0da3200d }
     version: 2.34.1
     author: Juan Carlos Cadavid
     license: MIT
     vetted: true
     binding: core
     phases: [constitution, specify]
+    fallback: The commands write the TRD, NFRs and ADRs from their own templates, without the skill's patterns.
   product-manager-toolkit:
     description: Derive the product layer from code; capability maps, PRDs and prioritization.
-    # Installs the whole product-skills plugin.
-    source:
-      type: plugin
-      repo: https://github.com/alirezarezvani/claude-skills
-      install: ["/plugin marketplace add alirezarezvani/claude-skills", "/plugin install product-skills@claude-code-skills"]
+    source: { type: git, url: https://github.com/alirezarezvani/claude-skills, ref: v2.12.0, path: product-team/skills/product-manager-toolkit, commit: 437f321c8cadf9f68ba0d8440ef02dc21ebb3d72 }
     version: 2.12.0
     author: Alireza Rezvani
     license: MIT
     vetted: true
     binding: core
-    phases: [constitution, story]
+    phases: [constitution, story, specify]
+    fallback: The commands derive the product layer from the code and the tracker with their own steps.
   brainstorming:
     description: Elicit intent and requirements when there is no code yet (constitution new mode).
-    # Part of the superpowers plugin.
-    source:
-      type: plugin
-      repo: https://github.com/obra/superpowers
-      install: ["/plugin install superpowers@claude-plugins-official"]
+    source: { type: git, url: https://github.com/obra/superpowers, ref: v7.0.0, path: skills/brainstorming, commit: bb92a77741419a4ab5f06e711a283343f1ada0c3 }
     version: 7.0.0
     author: Jesse Vincent
     license: MIT
     vetted: true
     binding: core
-    phases: [constitution, story]
+    phases: [constitution, story, specify]
+    fallback: The commands elicit intent with their own questions, one at a time, and continue with their own steps.
   mandao-skills:
     description: Mandao's own skill that resolves which project skills to bring after the constitution. Planned for the next iteration.
     source: { type: bundled, path: skills/mandao-skills }

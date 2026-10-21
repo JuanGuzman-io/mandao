@@ -158,8 +158,9 @@ skills:
     license: MIT
     vetted: true                                 # false → proposed as unvetted
     binding: stack                               # core | profile | stack | conditional
-    phases: [specify, implement]
+    phases: [specify, implement]               # the commands that use the skill
     profiles: [app]
+    fallback: What the commands do without the skill.   # optional
 technologies:
   flutter:
     match: { files: [pubspec.yaml] }
@@ -177,4 +178,7 @@ packs:
 Source types: `skills` (`npx skills add <ref>`), `npm`, `command` (a documented shell installer,
 e.g. `uv tool install …`), `plugin` (an agent-side install such as `/plugin install …`, printed for the
 user), `git` (copied by hand) and `bundled`. Any source may declare `verify`, a command that proves the
-install. Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.
+install. A `git` source requires `commit` (40 hex), the commit the `ref` must resolve to; the lock skill entry
+records it (optional `commit`). `fallback` says what the commands do without the skill.
+`commandSkills(catalog)` in `src/skills/command-skills.ts` lists the `bootstrap` skills that are `binding: core`
+and not `bundled`, with their commands (`phases`), for every harness. Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.

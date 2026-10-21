@@ -373,7 +373,7 @@ the target of the Copilot adapter.
 ## Tasks
 
 <a id="t1"></a>
-### [ ] T1 — The catalog says which command uses which skill and where it comes from; story and specify say when to use them
+### [x] T1 — The catalog says which command uses which skill and where it comes from; story and specify say when to use them
 
 - **What:** `commandSkills`, `fallback` and the `specify` phase of [D1](#d1); the `git` sources with
   `commit` and the lock's `commit` of [D3](#d3) (schemas and catalog only, no copying yet); the

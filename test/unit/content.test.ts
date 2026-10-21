@@ -55,6 +55,47 @@ describe('core content', () => {
     expect(resolution.personas.map((p) => p.meta.id)).toEqual(['implementer', 'leader', 'reviewer', 'tester']);
   });
 
+  describe('skill guidance in /mandao-story and /mandao-specify', () => {
+    const render = (harnesses: string[]) => {
+      const config = configSchema.parse({
+        schema_version: 1,
+        workspace: 'single',
+        projects: [{ name: 'a', path: '.', profile: 'app' }],
+        harnesses,
+      });
+      const { files } = buildOutputs(config, {}, layers, '0.0.0', 'project');
+      // The command's own rendered markdown only; not auxiliary files such as codex's agents/openai.yaml.
+      return files.filter((f) => /mandao-(story|specify).*\.md$/.test(f.path));
+    };
+
+    const HARNESSES = ['claude', 'codex', 'opencode', 'copilot', 'antigravity'];
+    const LEFTOVER = /\{\{|mandao:if|mandao:endif/;
+
+    test.each(HARNESSES)('S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off', (h) => {
+      const files = render([h]);
+      expect(files.length).toBeGreaterThanOrEqual(2);
+      for (const f of files) {
+        expect(f.content, f.path).toMatch(/Use `?brainstorming`? when the story starts from nothing \(no code and no\s+tracker context\)/);
+        expect(f.content, f.path).toMatch(/`?product-manager-toolkit`? when there is code and product context/);
+        expect(f.content, f.path).not.toMatch(/Skills \(Claude Code\)/);
+        expect(f.content, f.path).toMatch(/steps continue after `?brainstorming`?[^.]*`?superpowers:writing-plans`?/i);
+        expect(f.content, f.path).not.toMatch(LEFTOVER);
+      }
+    });
+
+    test.each(HARNESSES)(
+      'S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill',
+      (h) => {
+        for (const f of render([h])) {
+          expect(f.content, f.path).toMatch(
+            /when a skill is missing,?\s+follow[^.]*own\s+steps[^.]*note[^.]*which\s+skill\s+was\s+missing/i,
+          );
+          expect(f.content, f.path).not.toMatch(LEFTOVER);
+        }
+      },
+    );
+  });
+
   test('the catalog is valid', () => {
     expect(() => readCatalog()).not.toThrow();
   });

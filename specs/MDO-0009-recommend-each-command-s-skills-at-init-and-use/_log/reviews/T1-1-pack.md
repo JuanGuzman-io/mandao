@@ -15,6 +15,7 @@ Review exactly this task. The Leader already ran the gates and the impacted test
     "files": [
       "core/catalog/skills.yml",
       "src/schemas/catalog.ts",
+      "src/schemas/lock.ts",
       "src/skills/command-skills.ts",
       "core/commands/story.md",
       "core/commands/specify.md",
@@ -27,26 +28,21 @@ Review exactly this task. The Leader already ran the gates and the impacted test
       "AC-1",
       "AC-3",
       "AC-4",
-      "AC-4/C1",
-      "AC-4/C2"
+      "AC-4/C1"
     ],
     "scenarios": [
       "S-1.1",
       "S-1.1/C1",
       "S-1.2",
       "S-5.1",
-      "S-5.1/C1",
-      "S-5.2",
-      "S-5.2/C1"
+      "S-5.1/C1"
     ],
     "test_levels": {
       "S-1.1": "unit",
       "S-1.1/C1": "unit",
       "S-1.2": "unit",
       "S-5.1": "unit",
-      "S-5.1/C1": "unit",
-      "S-5.2": "unit",
-      "S-5.2/C1": "unit"
+      "S-5.1/C1": "unit"
     },
     "evidence": "tdd",
     "risk_tags": [
@@ -61,45 +57,39 @@ Review exactly this task. The Leader already ran the gates and the impacted test
         "S-1.1/C1",
         "S-1.2",
         "S-5.1",
-        "S-5.1/C1",
-        "S-5.2",
-        "S-5.2/C1"
+        "S-5.1/C1"
       ],
       "e2e": []
     },
     "dod": [],
     "characterization": false,
     "id": "T1",
-    "title": "The catalog says which command uses which skill, and story and specify say when to use them",
+    "title": "The catalog says which command uses which skill and where it comes from; story and specify say when to use them",
     "done": false,
-    "line": 295
+    "line": 376
   },
   "acceptance": [
     {
       "ref": "AC-1",
-      "text": "**GIVEN** a workspace without `.mandao/config.yml`, and harnesses chosen in `init` · **WHEN** the person runs `mandao init` interactively · **THEN** init lists each skill the chosen harnesses' commands use, and installs and pins only the ones the person accepts · **AND IT MUST** show, for each skill, what it does, its source, its pinned version and the commands that use it · **BUT it must NOT** run any installer before the person says yes, nor preselect any skill · **AND IT MUST** install a Claude Code plugin from the terminal when the `claude` CLI can do it, and otherwise print the exact command to run in Claude Code"
+      "text": "**GIVEN** a workspace without `.mandao/config.yml`, and harnesses chosen in `init` · **WHEN** the person runs `mandao init` interactively · **THEN** init lists each skill the chosen harnesses' commands use, and installs and pins only the ones the person accepts · **AND IT MUST** show, for each skill, what it does, its source, its pinned version and the commands that use it · **BUT it must NOT** run any installer before the person says yes, nor preselect any skill · **AND IT MUST** copy each accepted skill, at its pinned version, into the skills folder of every chosen harness, and otherwise print the exact manual step · **BUT it must NOT** copy a skill's executable scripts unless the person asks with `--with-scripts`; by default only `SKILL.md` and its documents are installed ([spec.md#c-2](spec.md#c-2))"
     },
     {
       "ref": "AC-3",
-      "text": "**GIVEN** the person chose only harnesses without Claude Code plugins (Codex, OpenCode, Copilot, Antigravity) · **WHEN** init offers skills · **THEN** it does not offer Claude Code plugins, and init finishes normally · **BUT it must NOT** fail or block because a plugin cannot be installed"
+      "text": "**GIVEN** the person chose only harnesses other than Claude Code (Codex, OpenCode, Copilot, Antigravity) · **WHEN** init offers skills · **THEN** it offers the same skills as for Claude Code, and installs the accepted ones where those harnesses read them ([spec.md#c-1](spec.md#c-1)) · **BUT it must NOT** fail or block because a skill cannot be installed"
     },
     {
       "ref": "AC-4",
-      "text": "**GIVEN** a workspace generated for Claude Code · **WHEN** the person runs `/mandao-story` or `/mandao-specify` · **THEN** the command says to use brainstorming when the story starts from nothing and product-manager-toolkit when there is code and product context · **AND IT MUST** say what to do when the skill is missing, and keep going without it · **BUT it must NOT** name a Claude Code plugin in the commands generated for other harnesses"
+      "text": "**GIVEN** a workspace generated for any harness · **WHEN** the person runs `/mandao-story` or `/mandao-specify` · **THEN** the command says to use brainstorming when the story starts from nothing and product-manager-toolkit when there is code and product context · **AND IT MUST** say what to do when the skill is missing, and keep going without it"
     },
     {
       "ref": "AC-4/C1",
       "text": "**AND IT MUST** say what to do when the skill is missing, and keep going without it"
-    },
-    {
-      "ref": "AC-4/C2",
-      "text": "**BUT it must NOT** name a Claude Code plugin in the commands generated for other harnesses"
     }
   ],
   "scenarios": [
     {
       "ref": "S-1.1",
-      "text": "**Given** the harnesses `[claude]` · **When** the commands' skills are computed · **Then** they are graphify, software-architect, product-manager-toolkit and brainstorming, each with the commands that use it (brainstorming and product-manager-toolkit: constitution, story, specify) · **BUT it must NOT** include mandao-skills (bundled) or any stack, profile or conditional skill"
+      "text": "**Given** the catalog of this branch · **When** the commands' skills are computed · **Then** they are graphify, software-architect, product-manager-toolkit and brainstorming, each with the commands that use it (brainstorming and product-manager-toolkit: constitution, story, specify) · **BUT it must NOT** include mandao-skills (bundled) or any stack, profile or conditional skill"
     },
     {
       "ref": "S-1.1/C1",
@@ -107,23 +97,15 @@ Review exactly this task. The Leader already ran the gates and the impacted test
     },
     {
       "ref": "S-1.2",
-      "text": "**Given** the harnesses `[codex, opencode]` · **When** the commands' skills are computed · **Then** product-manager-toolkit and brainstorming are not in the result; graphify and software-architect are"
+      "text": "**Given** the harnesses `[codex, opencode, copilot, antigravity]` · **When** init computes the skills to offer · **Then** it offers the same four skills as S-1.1"
     },
     {
       "ref": "S-5.1",
-      "text": "**Given** a workspace with the `claude` harness · **When** `/mandao-story` and `/mandao-specify` are rendered · **Then** each says to use brainstorming when the story starts from nothing (no code and no tracker context) and product-manager-toolkit when there is code and product context · **AND IT MUST** say that, when the skill is missing, the command follows its own steps and notes in its output which skill was missing"
+      "text": "**Given** a workspace with `claude`, `codex`, `opencode`, `copilot` and `antigravity` · **When** `/mandao-story` and `/mandao-specify` are rendered · **Then** each render says to use brainstorming when the story starts from nothing (no code and no tracker context) and product-manager-toolkit when there is code and product context, and that the command's own steps continue after brainstorming instead of another skill's plan ([P3](#p3)) · **AND IT MUST** say that, when the skill is missing, the command follows its own steps and notes in its output which skill was missing"
     },
     {
       "ref": "S-5.1/C1",
       "text": "**AND IT MUST** say that, when the skill is missing, the command follows its own steps and notes in its output which skill was missing"
-    },
-    {
-      "ref": "S-5.2",
-      "text": "**Given** a workspace with `codex`, `opencode`, `copilot` and `antigravity` · **When** `/mandao-story` and `/mandao-specify` are rendered · **Then** the commands render and validate as today · **BUT it must NOT** contain `brainstorming` or `product-manager-toolkit`"
-    },
-    {
-      "ref": "S-5.2/C1",
-      "text": "**BUT it must NOT** contain `brainstorming` or `product-manager-toolkit`"
     }
   ],
   "project": {
@@ -143,7 +125,7 @@ Review exactly this task. The Leader already ran the gates and the impacted test
   },
   "skillMap": [
     "| graphify | core | constitution, specify, implement, close | all | 0.9.92, pinned in the lock; Claude Code hooks through `mandao hook graph-guard` (roles with a shell only, ADR 0021) and git hooks installed |",
-    "| codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`, generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |"
+    "| codebase-conventions | stack | specify, implement, verify | `src/`, `test/`, `core/` | project skill in `.claude/skills/codebase-conventions/`; Codex copy in `.agents/skills/codebase-conventions/`; generated with skill-creator from `docs/constitution/standards.md` and `architecture.md` |"
   ],
   "lenses": [
     "security"
@@ -228,6 +210,7 @@ Review exactly this task. The Leader already ran the gates and the impacted test
     "files": [
       "core/catalog/skills.yml",
       "src/schemas/catalog.ts",
+      "src/schemas/lock.ts",
       "src/skills/command-skills.ts",
       "core/commands/story.md",
       "core/commands/specify.md",
@@ -288,21 +271,28 @@ Review exactly this task. The Leader already ran the gates and the impacted test
     "command": "npx vitest related {files} --run --maxWorkers={workers}",
     "confidence": "high",
     "notes": [],
-    "commandForBudget": "npx vitest related core/catalog/skills.yml src/schemas/catalog.ts src/skills/command-skills.ts core/commands/story.md core/commands/specify.md docs/schemas.md test/unit/command-skills.test.ts test/unit/content.test.ts test/adapters/adapters.test.ts test/integration/approve.test.ts test/integration/branching.test.ts test/integration/characterization.test.ts test/integration/cli.test.ts test/integration/close.test.ts test/integration/costs.test.ts test/integration/doctor-cli.test.ts test/integration/enforced-rules.test.ts test/integration/engine.test.ts test/integration/leader-scripts.test.ts test/integration/ledger.test.ts test/integration/lite-spec.test.ts test/integration/mdo-0004-defects.test.ts test/integration/mdo-0005-defects.test.ts test/integration/mdo-0006-defects.test.ts test/integration/premise.test.ts test/integration/review.test.ts test/integration/run-queue.test.ts test/integration/scripts.test.ts test/integration/shadow.test.ts test/integration/spec-log.test.ts test/integration/start.test.ts test/integration/tdd.test.ts test/unit/commitlint.test.ts test/unit/diagram.test.ts test/unit/doctor-codex.test.ts test/unit/doctor-report.test.ts test/unit/frontmatter.test.ts test/unit/impact.test.ts test/unit/kaizen.test.ts test/unit/launcher.test.ts test/unit/model-profiles.test.ts test/unit/models.test.ts test/unit/pr-plan.test.ts test/unit/providers.test.ts test/unit/release.test.ts test/unit/render.test.ts test/unit/resolver.test.ts test/unit/schemas.test.ts test/unit/scripts.test.ts test/unit/session-cut.test.ts test/unit/skills-list.test.ts test/unit/skills.test.ts test/unit/spec.test.ts test/unit/task-index.test.ts test/unit/tools.test.ts test/unit/verify.test.ts test/unit/workspace.test.ts test/unit/writer.test.ts --run --maxWorkers=1"
+    "commandForBudget": "npx vitest related core/catalog/skills.yml src/schemas/catalog.ts src/schemas/lock.ts src/skills/command-skills.ts core/commands/story.md core/commands/specify.md docs/schemas.md test/unit/command-skills.test.ts test/unit/content.test.ts test/adapters/adapters.test.ts test/integration/approve.test.ts test/integration/branching.test.ts test/integration/characterization.test.ts test/integration/cli.test.ts test/integration/close.test.ts test/integration/costs.test.ts test/integration/doctor-cli.test.ts test/integration/enforced-rules.test.ts test/integration/engine.test.ts test/integration/leader-scripts.test.ts test/integration/ledger.test.ts test/integration/lite-spec.test.ts test/integration/mdo-0004-defects.test.ts test/integration/mdo-0005-defects.test.ts test/integration/mdo-0006-defects.test.ts test/integration/premise.test.ts test/integration/review.test.ts test/integration/run-queue.test.ts test/integration/scripts.test.ts test/integration/shadow.test.ts test/integration/spec-log.test.ts test/integration/start.test.ts test/integration/tdd.test.ts test/unit/commitlint.test.ts test/unit/diagram.test.ts test/unit/doctor-codex.test.ts test/unit/doctor-report.test.ts test/unit/frontmatter.test.ts test/unit/impact.test.ts test/unit/kaizen.test.ts test/unit/launcher.test.ts test/unit/model-profiles.test.ts test/unit/models.test.ts test/unit/pr-plan.test.ts test/unit/providers.test.ts test/unit/release.test.ts test/unit/render.test.ts test/unit/resolver.test.ts test/unit/schemas.test.ts test/unit/scripts.test.ts test/unit/session-cut.test.ts test/unit/skills-list.test.ts test/unit/skills.test.ts test/unit/spec.test.ts test/unit/task-index.test.ts test/unit/tools.test.ts test/unit/verify.test.ts test/unit/workspace.test.ts test/unit/writer.test.ts --run --maxWorkers=1"
   },
   "graph": {
     "source": "graphify",
     "dependents": [
       "src/cli/skills.ts",
       "src/engine/catalog.ts",
+      "src/engine/doctor-harness.ts",
+      "src/engine/files.ts",
+      "src/engine/sync.ts",
       "src/engine/tools.ts",
       "src/schemas/index.ts",
       "src/scripts/fingerprint.ts",
       "src/skills/install.ts",
+      "src/writer/apply.ts",
+      "src/writer/plan.ts",
       "test/unit/schemas.test.ts",
       "test/unit/scripts.test.ts",
+      "test/unit/skills-list.test.ts",
       "test/unit/skills.test.ts",
-      "test/unit/tools.test.ts"
+      "test/unit/tools.test.ts",
+      "test/unit/writer.test.ts"
     ]
   },
   "redTests": {

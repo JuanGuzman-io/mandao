@@ -27,6 +27,11 @@ export const lockSchema = z.object({
         author: z.string(),
         license: z.string(),
         vetted: z.boolean(),
+        /** Pinned commit of a `git` source (40 hex). */
+        commit: z
+          .string()
+          .regex(/^[0-9a-f]{40}$/)
+          .optional(),
       }),
     )
     .default([]),
