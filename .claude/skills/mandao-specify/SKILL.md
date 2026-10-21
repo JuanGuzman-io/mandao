@@ -1,6 +1,6 @@
 ---
 name: mandao-specify
-description: Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story, spec and tasks in one session.
+description: Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session.
 argument-hint: "[ref] [depth] [hotfix]"
 arguments:
   - ref
@@ -115,7 +115,7 @@ refactors or internal infrastructure.
 
 ## 5c. data-model.md (only when data changes)
 
-When the spec adds or changes entities, fields, relationships or states, write `data-model.md` from
+When the spec adds or changes entities, fields, relationships or states (never by how many tasks, requirements or scenarios there are), write `data-model.md` from
 `.mandao/templates/app/spec/data-model.md` following `.mandao/templates/app/rules/doc-data-model.md`.
 
 ## 6. Consistency Check

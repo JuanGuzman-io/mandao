@@ -18,7 +18,7 @@ Older specs are read as they are, and their migration is a separate spec ([C-5](
 
 ### AC-2 — A check enforces the layout
 
-- [ ] T1 [AC-2] Mandao checks every spec folder against one layout per depth — `src/spec/layout.ts`
+- [x] T1 [AC-2] Mandao checks every spec folder against one layout per depth — `src/spec/layout.ts`
 
 **Checkpoint:** `npx vitest run test/unit/layout.test.ts test/integration/layout.test.ts` passes (T1); this confirms AC-2 before the next group.
 
@@ -81,7 +81,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/layout.test.ts test/integration/layout.test.ts
 ```
 
-### [ ] T2 — Every spec keeps its tasks in one place, whatever their number
+### [x] T2 — Every spec keeps its tasks in one place, whatever their number
 
 - **What:** for version 2, `docPath('tasks')` no longer falls back to `spec.md`, and the inline-count rule applies only to version 1 ([D2](design.md#d2)). The content is updated to match, and new stories start at `schema_version: 2`.
 - **Done when:**

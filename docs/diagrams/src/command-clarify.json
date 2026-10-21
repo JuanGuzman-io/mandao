@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "8a4d5c66015aa7634429b078ade152fd9b35ff302e478905ec3353d6443d9006"
+      "sha256": "d5edb0f0ffe32ed74ddf17437de734b3d833f2b470d5946baaee07cb46d010d7"
     },
     {
       "path": "core/commands/init.md",
@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "2ed8d155a38c99652a53644040d548e5f61b11f6d0618dafc7970cb6877ff956"
+      "sha256": "326bc259f8985b4545fef103e77fcb5f822569af5aa1ad57f8a673071f0713c8"
     },
     {
       "path": "core/commands/story.md",
@@ -47,7 +47,7 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "c6b2345f5206822347cb8e230813f82a49974c4cfe52ca7923f6f65ab0c5fc12"
+      "sha256": "6fd199dca7962acca1b621070301025edbdff652d81f884506fbd83545d66a3d"
     },
     {
       "path": "core/commands/verify.md",

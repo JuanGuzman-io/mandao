@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { readLayout } from '../../src/scripts/spec.js';
 import { acStatus, parseRequirements, parseStory, parseTasks, trace } from '../../src/spec/index.js';
-import { anatomyTables, layoutFindings, layoutManifest } from '../../src/spec/layout.js';
+import { anatomyTables, layoutFindings, layoutManifest, tasksHaveOwnFile } from '../../src/spec/layout.js';
 import { makeTree } from '../helpers.js';
 
 /**
@@ -149,5 +149,13 @@ describe('docs/spec-anatomy.md is built from the manifest (S-8.1)', () => {
 
   test('S-8.1: the README links the page', () => {
     expect(readFileSync(join(root, 'README.md'), 'utf8')).toContain('docs/spec-anatomy.md');
+  });
+});
+
+describe('tasksHaveOwnFile: the layout version decides where tasks live (MDO-0011 AC-1)', () => {
+  test('version 2 always has tasks.md, version 1 does not; any other value is no known layout', () => {
+    expect(tasksHaveOwnFile(2)).toBe(true);
+    expect(tasksHaveOwnFile(1)).toBe(false);
+    for (const v of [3, 2.5, '2', undefined, null]) expect(tasksHaveOwnFile(v), String(v)).toBe(false);
   });
 });

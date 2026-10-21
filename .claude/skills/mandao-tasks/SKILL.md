@@ -17,8 +17,8 @@ Spec: $spec
 
 Write task content in `en`; headings, ids and YAML keys stay in English.
 
-At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
-nothing to do here. Otherwise:
+The tasks go in `tasks.md` at every depth (lite, standard and full), whatever their number, even a
+single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs this step in its own session.
 
 1. **Gate.** Run `node .mandao/bin/mandao.mjs run where $spec --harness <this harness> --first "/mandao-tasks $spec"`: if `inWorktree` is false, move into the worktree before any other step.
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is

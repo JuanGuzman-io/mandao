@@ -65,6 +65,12 @@ const V1_LEGACY = [
   'release-notes.md',
 ];
 
+/** True when a story's `schema_version` names a layout whose tasks always live in `tasks.md`, whatever their number. */
+export function tasksHaveOwnFile(schemaVersion: unknown): boolean {
+  const version = LAYOUT_VERSIONS.find((v) => v === schemaVersion);
+  return version !== undefined && layoutManifest(version, 'lite').required.planned.includes('tasks.md');
+}
+
 const docs = (depth: Depth) => (depth === 'lite' ? ['spec.md'] : ['requirements.md', 'design.md']);
 
 /** The one manifest behind the folder check, the close gate and `docs/spec-anatomy.md` (design D1). */

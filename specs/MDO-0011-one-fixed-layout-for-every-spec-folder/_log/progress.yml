@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T19:32:57.768Z
+updated_at: 2026-10-21T19:46:14.996Z
 current: null
 open_questions: []
 next_step: ""
@@ -38,4 +38,58 @@ red_tests:
           - "S-2.2: status closed is not allowed and the problem names the layout findings"
           - "S-2.3: MDO-0001, version 1 with execution.md and progress.yml at its root, is ok"
           - "S-2.3 and D1: MDO-0001 reports depth lite (its documents say depth: lite), not standard"
+  - task: T2
+    files:
+      - path: test/integration/lite-spec.test.ts
+        sha256: d1f1e74d7ff7e5581f721b0112707d467c88e34dd1cd0f58b96377b5d14ddc54
+        tests:
+          - requirements, design and inline tasks are read from spec.md; trace and tasks work the same
+          - the checkpoint ticks the task inside spec.md
+          - more than 3 inline tasks go to tasks.md; the task rules apply inline too
+          - "S-1.1: one task is in tasks.md, and spec.md has no ## Tasks"
+          - "S-1.2: 3 and 4 tasks give the same file set, and tasks are never read from spec.md"
+          - 'S-1.2/C2: with 4 tasks the check never says "more than 3 go to tasks.md"'
+          - "S-1.1: before the tasks step, the tasks path is tasks.md, not spec.md"
+          - "S-1.2/C2: four tasks written inline in spec.md are not read as the spec tasks"
+          - "S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone"
+          - "S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue"
+      - path: test/unit/content.test.ts
+        sha256: 80fd258704a09e053bf93b769186e8b7515609750d182e3b2c7a8bc2ef19e935
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-1.2: no command or lite rule decides where tasks go by how many there are"
+          - "S-1.2/C2: the spec template has no ## Tasks, and the tasks step writes tasks.md at every depth"
+          - "S-1.3: specify writes quickstart.md only for visible behavior and data-model.md only for data changes"
+          - "S-1.3/C1: neither file is conditioned on the number of tasks, requirements or scenarios"
+          - "AC-1: a story rendered from the template starts at layout version 2"
+      - path: test/unit/layout.test.ts
+        sha256: 6fedde2ebf7fa11e49dd125a3e2e86afd3bae3632cea1f157b3e54d02463e6dc
+        tests:
+          - "S-2.3/C1: version 1 manifest lists the files version 1 allowed, including root execution.md and progress.yml"
+          - "S-2.3/C1: version 1 lite with requirements.md + design.md (depth: lite) is lite and ok (D1)"
+          - "D1: with no depth: in any document, lite is the fallback only when spec.md exists"
+          - "S-2.3/C1: the version is the story schema_version, never inferred from the files present"
+          - "S-2.3/C1: a schema_version other than 1 or 2 is an error"
+          - "S-2.1: a version 2 standard input names the missing design.md and the stray notes.md"
+          - "S-2.3/C1: the real MDO-0001 folder, version 1 lite, is ok"
+          - "S-2.3/C1: the same files with the story at schema_version 2 do not pass"
+          - a schema_version of 3 is an error
+          - "a separate layout: key does not change the version"
+          - "parseStory sets removed for status: removed and only for it"
+          - trace gives no GAP for a removed AC
+          - acStatus leaves a removed AC out
+          - "S-8.1: the page contains the tables rendered from the manifest, exactly"
+          - "S-8.1: every file the manifest lists per depth is in the rendered tables"
+          - "S-8.1: the README links the page"
+          - version 2 always has tasks.md, version 1 does not; any other value is no known layout
 pending_commits: []

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
-import { readSpec } from '../../src/scripts/spec.js';
+import { readLayout, readSpec } from '../../src/scripts/spec.js';
 import { docPath } from '../../src/scripts/spec-log.js';
 import { makeTree, pkg } from '../helpers.js';
 
@@ -137,3 +137,83 @@ describe('lite: story.md + spec.md', () => {
     expect(issues).toContain('T4: the title names a file; say the result instead');
   });
 });
+
+/** A lite version 2 spec: story.md says version 2, spec.md has no `## Tasks` unless `stale` is given, the tasks live in tasks.md. */
+function repoV2(tasks: string, stale = '') {
+  const root = repo(task('T9', 'Stale inline task', 'AC-1', 'S-1.1'));
+  const dir = join(root, SPEC);
+  const story = readFileSync(join(dir, 'story.md'), 'utf8').replace(/schema_version: 1/, 'schema_version: 2');
+  writeFileSync(join(dir, 'story.md'), story);
+  const spec = readFileSync(join(dir, 'spec.md'), 'utf8').split('## Tasks')[0]!;
+  writeFileSync(join(dir, 'spec.md'), stale ? `${spec}## Tasks\n\n${stale}` : spec);
+  writeFileSync(join(dir, 'tasks.md'), `# Tasks\n\n## Details\n\n${tasks}`);
+  return root;
+}
+
+describe('lite version 2: tasks.md always (AC-1)', () => {
+  const taskList = (n: number) => Array.from({ length: n }, (_, i) => task(`T${i + 1}`, `Step ${i + 1}`, 'AC-1', 'S-1.1')).join('');
+
+  test('S-1.1: one task is in tasks.md, and spec.md has no ## Tasks', async () => {
+    const root = repoV2(taskList(1));
+    const dir = join(root, SPEC);
+    expect(readFileSync(join(dir, 'spec.md'), 'utf8')).not.toContain('## Tasks');
+    expect(docPath(dir, 'tasks')).toBe(join(dir, 'tasks.md'));
+    expect(readSpec(dir).tasks.map((t) => t.id)).toEqual(['T1']);
+    expect((await run(root, 'tasks', 'MDO-0001')).waves).toEqual([['T1']]);
+  });
+
+  test('S-1.2: 3 and 4 tasks give the same file set, and tasks are never read from spec.md', () => {
+    const stale = task('T9', 'Stale inline task', 'AC-1', 'S-1.1');
+    const three = repoV2(taskList(3), stale);
+    const four = repoV2(taskList(4), stale);
+    const a = readLayout(join(three, SPEC));
+    const b = readLayout(join(four, SPEC));
+    expect({ missing: b.missing, unexpected: b.unexpected }).toEqual({ missing: a.missing, unexpected: a.unexpected });
+    expect(readSpec(join(four, SPEC)).tasks.map((t) => t.id)).toEqual(['T1', 'T2', 'T3', 'T4']);
+  });
+
+  test('S-1.2/C2: with 4 tasks the check never says "more than 3 go to tasks.md"', async () => {
+    const root = repoV2(taskList(4));
+    const issues: string[] = (await run(root, 'tasks', 'MDO-0001')).issues;
+    expect(issues.filter((i) => /more than 3|inline/.test(i))).toEqual([]);
+  });
+
+  test('S-1.1: before the tasks step, the tasks path is tasks.md, not spec.md', () => {
+    const root = repoV2('');
+    const dir = join(root, SPEC);
+    rmSync(join(dir, 'tasks.md'));
+    expect(docPath(dir, 'tasks')).toBe(join(dir, 'tasks.md'));
+  });
+
+  test('S-1.2/C2: four tasks written inline in spec.md are not read as the spec tasks', () => {
+    const inline = [1, 2, 3, 4].map((n) => task(`T${n}`, `Step ${n}`, 'AC-1', 'S-1.1')).join('');
+    const root = repoV2('', inline);
+    const dir = join(root, SPEC);
+    rmSync(join(dir, 'tasks.md'));
+    expect(readSpec(dir).tasks).toEqual([]);
+  });
+
+  test('S-1.1: the checkpoint ticks the task in tasks.md and leaves spec.md alone', async () => {
+    const root = repoV2(taskList(1));
+    const dir = join(root, SPEC);
+    const specBefore = readFileSync(join(dir, 'spec.md'), 'utf8');
+    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T1', '--done', 'T1', '--clear');
+    expect(readFileSync(join(dir, 'tasks.md'), 'utf8')).toContain('### [x] T1 — Step 1');
+    expect(readFileSync(join(dir, 'spec.md'), 'utf8')).toBe(specBefore);
+  });
+
+  test('S-1.1: approve tasks on the same fixture approves tasks.md with no inline issue', async () => {
+    const root = repoV2(taskList(4));
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'base');
+    await run(root, 'tasks', 'MDO-0001', '--index', '--write');
+    const r = await approveTasks(root);
+    expect(JSON.stringify(r)).not.toMatch(/inline|more than 3/);
+    expect(r).toMatchObject({ approved: true });
+  });
+});
+
+const approveTasks = async (root: string) => {
+  await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'tasks']);
+  return JSON.parse(out.at(-1)!);
+};

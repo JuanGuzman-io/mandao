@@ -1,5 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { tasksHaveOwnFile } from '../spec/layout.js';
+import { frontmatterOf } from '../spec/markdown.js';
 
 /**
  * Machine files of a spec live in `_log/` (the readability pass): people read the documents in the spec
@@ -38,15 +40,25 @@ const ROOT_MARKERS = ['execution.md', 'progress.yml'];
 export const hasExecutionLog = (specDir: string) =>
   existsSync(join(specDir, LOG_DIR, 'execution.md')) || existsSync(join(specDir, 'execution.md'));
 
-/** The documents of a spec, by role. A lite spec keeps requirements, design and (up to 3) tasks in `spec.md`. */
+/** The documents of a spec, by role. A lite spec keeps requirements, design and (version 1: up to 3) tasks in `spec.md`. */
 export type SpecDoc = 'requirements' | 'design' | 'tasks';
 
 export const LITE_DOC = 'spec.md';
 
-/** The file holding a role: its own document when present, else `spec.md` when present, else its own name. */
+/** True when the story's layout version keeps the tasks in `tasks.md` (the rule lives in `src/spec/layout.ts`). */
+function tasksAlwaysOwnFile(specDir: string): boolean {
+  const story = join(specDir, 'story.md');
+  return existsSync(story) && tasksHaveOwnFile(frontmatterOf(readFileSync(story, 'utf8')).data.schema_version);
+}
+
+/**
+ * The file holding a role: its own document when present, else `spec.md` when present, else its own name.
+ * In a version 2 spec the tasks never fall back to `spec.md`.
+ */
 export function docPath(specDir: string, doc: SpecDoc): string {
   const own = join(specDir, `${doc}.md`);
   if (existsSync(own)) return own;
+  if (doc === 'tasks' && tasksAlwaysOwnFile(specDir)) return own;
   const lite = join(specDir, LITE_DOC);
   return existsSync(lite) ? lite : own;
 }

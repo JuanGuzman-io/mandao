@@ -29,8 +29,8 @@ Spec: {{arg:spec}}
 
 Write task content in `{{language.technical}}`; headings, ids and YAML keys stay in English.
 
-At lite depth with 3 tasks or fewer, `/mandao-specify` already wrote them inline in `spec.md`: there is
-nothing to do here. Otherwise:
+The tasks go in `tasks.md` at every depth (lite, standard and full), whatever their number, even a
+single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs this step in its own session.
 
 1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
