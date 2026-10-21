@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { readRecommendations } from '../../src/models/load.js';
-import { claudeSessionCost, usageCost } from '../../src/scripts/session-cost.js';
+import { claudeCostBasis, claudeSessionCost, usageCost } from '../../src/scripts/session-cost.js';
 import { costKaizen, type ExecutionRow, summarizeCosts, type Task } from '../../src/spec/index.js';
 import { makeTree } from '../helpers.js';
 
@@ -63,6 +63,7 @@ describe('mandao run cost', () => {
     root = realpathSync(makeTree({ 'specs/MDO-0001-x/story.md': '---\nschema_version: 1\nid: MDO-0001\n---\n# X\n' }));
     home = realpathSync(makeTree({}));
     vi.stubEnv('CLAUDE_CONFIG_DIR', home);
+    vi.stubEnv('MANDAO_COST_BASIS', 'equivalent');
     writeYaml(join(root, '.mandao/config.yml'), {
       schema_version: 1,
       workspace: 'single',
@@ -101,6 +102,28 @@ describe('mandao run cost', () => {
     });
     expect(readdirSync(join(root, 'specs/MDO-0001-x/_log'))).toContain('costs.yml');
     expect(readFileSync(join(root, 'specs/MDO-0001-x/_log/costs.yml'), 'utf8')).toContain('source: claude-code');
+    expect(second.basis).toBe('equivalent');
+  });
+
+  test('a subscription is an equivalent at list prices, an API key or a cloud provider is billed', () => {
+    vi.stubEnv('MANDAO_COST_BASIS', '');
+    const status = (s: object) => () => JSON.stringify(s);
+    expect(claudeCostBasis(status({ loggedIn: true, authMethod: 'claude.ai', apiProvider: 'firstParty' }))).toBe('equivalent');
+    expect(claudeCostBasis(status({ loggedIn: true, authMethod: 'api_key', apiProvider: 'firstParty' }))).toBe('billed');
+    expect(claudeCostBasis(status({ loggedIn: true, authMethod: 'none', apiProvider: 'bedrock' }))).toBe('billed');
+    expect(claudeCostBasis(status({ loggedIn: false }))).toBe('unknown');
+    expect(
+      claudeCostBasis(() => {
+        throw new Error('claude: not found');
+      }),
+    ).toBe('unknown');
+  });
+
+  test('billed money and subscription equivalents are never added up as one basis', async () => {
+    await cost('MDO-0001', '--record', '--command', 'specify', '--harness', 'codex', '--usd', '0.4', '--basis', 'billed');
+    session(home, 's1');
+    expect(await cost('MDO-0001', '--record', '--command', 'implement', '--session', 's1')).toMatchObject({ basis: 'mixed' });
+    await expect(cost('MDO-0001', '--record', '--command', 'x', '--usd', '1', '--basis', 'free')).rejects.toThrow(/--basis must be/);
   });
 
   test('other harnesses record by hand; quick changes have their own log', async () => {
@@ -109,6 +132,7 @@ describe('mandao run cost', () => {
       byRole: { quick: 0.3 },
     });
     expect(readFileSync(join(root, 'specs/quick/_log/costs.yml'), 'utf8')).toContain('source: manual');
+    expect(await cost('quick')).toMatchObject({ basis: 'unknown' });
   });
 });
 

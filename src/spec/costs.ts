@@ -14,6 +14,11 @@ export const costEntrySchema = z.object({
   /** The session's running total at this record, per role: the next delta starts from here. */
   cumulative: z.record(z.string(), z.number()).optional(),
   source: z.enum(['claude-code', 'manual']),
+  /**
+   * `billed`: API key or cloud provider, charged at these prices. `equivalent`: a Claude subscription, the
+   * same tokens at API list prices, not what was charged. `unknown`: the account type could not be read.
+   */
+  basis: z.enum(['billed', 'equivalent', 'unknown']).optional(),
 });
 export type CostEntry = z.infer<typeof costEntrySchema>;
 

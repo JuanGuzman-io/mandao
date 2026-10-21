@@ -1,6 +1,6 @@
-import matter from 'gray-matter';
-import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
+import { stringify as stringifyYaml } from 'yaml';
 import { z } from 'zod';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 
 /**
  * `close-summary.md`: what close did, in its frontmatter, so re-running close updates instead of
@@ -32,8 +32,8 @@ export type CloseSummary = z.infer<typeof closeSummarySchema>;
 
 export function parseCloseSummary(text: string | undefined, spec: string): CloseSummary {
   if (!text) return closeSummarySchema.parse({ schema_version: 1, spec });
-  // YAML 1.2 (`yaml`), not gray-matter's default: ISO timestamps stay strings instead of becoming Dates.
-  return closeSummarySchema.parse(matter(text, { engines: { yaml: (s: string) => parseYaml(s) as object } }).data);
+  // YAML 1.2 through parseFrontmatter: ISO timestamps stay strings instead of becoming Dates.
+  return closeSummarySchema.parse(parseFrontmatter(text).data);
 }
 
 /** Frontmatter plus a readable body regenerated from it. */

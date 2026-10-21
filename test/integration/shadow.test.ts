@@ -60,3 +60,22 @@ describe('init [dir]', () => {
     expect(existsSync(join(parent, '.mandao'))).toBe(false);
   });
 });
+
+describe('init and the budget (ADR 0036)', () => {
+  const config = (root: string) => readFileSync(join(root, '.mandao/config.yml'), 'utf8');
+  const fresh = () => realpathSync(makeTree({ 'package.json': pkg('shop') }));
+  test('no budget unless a person gives one: --yes leaves it out, --budget sets it, a bad value fails', async () => {
+    const plain = fresh();
+    await run(plain, 'init', '--yes', '--harness', 'claude');
+    expect(config(plain)).not.toMatch(/budget/);
+    const capped = fresh();
+    await run(capped, 'init', '--yes', '--harness', 'claude', '--budget', '12.5');
+    expect(config(capped)).toMatch(/per_spec: 12\.5/);
+    const none = fresh();
+    await run(none, 'init', '--yes', '--harness', 'claude', '--budget', 'none');
+    expect(config(none)).not.toMatch(/budget/);
+    await expect(run(fresh(), 'init', '--yes', '--harness', 'claude', '--budget', '-3')).rejects.toThrow(
+      /--budget must be a positive number/,
+    );
+  });
+});

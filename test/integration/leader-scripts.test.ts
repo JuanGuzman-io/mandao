@@ -6,7 +6,7 @@ import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { logPath } from '../../src/scripts/spec-log.js';
-import { makeTree, pkg } from '../helpers.js';
+import { makeTree, pkg, reviewFile } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -153,6 +153,8 @@ describe('Leader scripts', () => {
       'mandao-reviewer',
       '--reason',
       'the hint is missing',
+      '--review',
+      reviewFile('FAIL', '- [core/high] src/cli/skills.ts:1 the hint is missing'),
     );
     const s = await run(root, 'implement-summary', 'MDO-0001');
     const t2 = s.tasks.find((t: { id: string }) => t.id === 'T2');
@@ -163,7 +165,20 @@ describe('Leader scripts', () => {
     const root = repo();
     const reviewer = ['--harness', 'claude', '--reviewer', 'mandao-reviewer'];
     await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'REPORTED');
-    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', ...reviewer, '--verdict', 'PASS', '--notes', 'Advisories: (1) a. (2) b.');
+    await run(
+      root,
+      'checkpoint',
+      'MDO-0001',
+      '--task',
+      'T2',
+      ...reviewer,
+      '--verdict',
+      'PASS',
+      '--review',
+      reviewFile('PASS'),
+      '--notes',
+      'Advisories: (1) a. (2) b.',
+    );
     const log = readFileSync(logPath(join(root, SPEC), 'execution.md'), 'utf8');
     const rows = log.split('\n').filter((l) => l.startsWith('| ') && l.includes('| T2 |'));
     expect(rows.slice(-2).map((l) => l.split('|')[4]!.trim())).toEqual(['standard', 'standard']);

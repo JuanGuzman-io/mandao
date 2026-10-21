@@ -3,10 +3,10 @@ import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations } from '../models/load.js';
-import { claudeSessionCost, findClaudeTranscript } from '../scripts/session-cost.js';
+import { claudeCostBasis, claudeSessionCost, findClaudeTranscript } from '../scripts/session-cost.js';
 import { findSpec } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
-import { type CostEntry, parseCosts, renderCosts, sessionDelta, summarizeCosts } from '../spec/index.js';
+import { type CostEntry, parseApprovals, parseCosts, renderCosts, sessionDelta, specBudget, summarizeCosts } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -18,7 +18,43 @@ interface CostOptions {
   session?: string;
   role?: string;
   usd?: string;
+  basis?: string;
 }
+
+const BASES = ['billed', 'equivalent', 'unknown'] as const;
+
+function manualBasis(basis: string | undefined): CostEntry['basis'] {
+  if (!basis) return 'unknown';
+  if (!(BASES as readonly string[]).includes(basis)) throw new Error(`--basis must be one of ${BASES.join(', ')}`);
+  return basis as CostEntry['basis'];
+}
+
+/** One basis for the spec's total, or `mixed`: billed money and subscription equivalents never add up as one. */
+function specBasis(entries: CostEntry[]): string {
+  const seen = [...new Set(entries.map((e) => e.basis ?? 'unknown'))];
+  return seen.length === 1 ? seen[0]! : seen.length ? 'mixed' : 'unknown';
+}
+
+/** `--record`: the session's spend since its last record (Claude Code) or the amount given by hand. */
+function newEntry(entries: CostEntry[], o: CostOptions): CostEntry {
+  if (!o.command) throw new Error('--record needs --command <mandao>');
+  if (!o.usd) return claudeEntry(entries, { ...o, command: o.command });
+  return {
+    at: new Date().toISOString(),
+    command: o.command,
+    harness: o.harness,
+    usd: Number(o.usd),
+    roles: { [o.role ?? mainRole(o.command)]: Number(o.usd) },
+    models: {},
+    source: 'manual',
+    basis: manualBasis(o.basis),
+  };
+}
+
+const approvalsOf = (dir: string) => {
+  const file = logPath(dir, 'approvals.yml');
+  return parseApprovals(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
+};
 
 /** The main session's role: the Leader in implement, the command itself elsewhere. */
 const mainRole = (command: string) => (command === 'implement' ? 'leader' : command);
@@ -62,6 +98,7 @@ function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string })
     models: pick(true),
     cumulative: now,
     source: 'claude-code',
+    basis: claudeCostBasis(),
   };
 }
 
@@ -80,30 +117,21 @@ export function registerCost(run: Command, ctx: CliContext) {
     .option('--session <id>', 'Claude Code session id (default: $CLAUDE_CODE_SESSION_ID)')
     .option('--role <role>', 'role of the main session (default: leader for implement, else the command)')
     .option('--usd <amount>', 'record this amount by hand (harnesses without a readable transcript)')
+    .option('--basis <basis>', 'with --usd: billed (charged) | equivalent (subscription at list prices) | unknown', 'unknown')
     .action((ref: string, o: CostOptions) => {
       const config = readConfig(ctx.root());
       const file = logPath(costsDir(ctx, ref), 'costs.yml');
       const entries = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-      let recorded: CostEntry | undefined;
-      if (o.record) {
-        if (!o.command) throw new Error('--record needs --command <mandao>');
-        recorded = o.usd
-          ? {
-              at: new Date().toISOString(),
-              command: o.command,
-              harness: o.harness,
-              usd: Number(o.usd),
-              roles: { [o.role ?? mainRole(o.command)]: Number(o.usd) },
-              models: {},
-              source: 'manual',
-            }
-          : claudeEntry(entries, { ...o, command: o.command });
-        writeText(file, renderCosts([...entries, recorded]));
-      }
+      const recorded = o.record ? newEntry(entries, o) : undefined;
+      if (recorded) writeText(file, renderCosts([...entries, recorded]));
       const all = recorded ? [...entries, recorded] : entries;
       json({
         ...(recorded ? { recorded: { command: recorded.command, usd: recorded.usd, roles: recorded.roles } } : {}),
-        ...summarizeCosts(all, config.budget.per_spec),
+        ...summarizeCosts(
+          all,
+          ref === 'quick' ? config.budget.per_spec : specBudget(approvalsOf(costsDir(ctx, ref)), config.budget.per_spec),
+        ),
+        basis: specBasis(all),
       });
     });
 }

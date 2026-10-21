@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 import type { Choice, ResolvedModels } from '../models/resolve.js';
 import type { HarnessId } from '../schemas/index.js';
 import type { CrossReviewer } from '../spec/index.js';
@@ -66,7 +66,7 @@ export function reviewerInstructions(root: string, harness: ReviewProcess): stri
   const file = join(root, REVIEWER_FILES[harness]);
   if (!existsSync(file)) throw new Error(`${file} does not exist: add the harness first (\`mandao harness add ${harness}\`)`);
   const text = readFileSync(file, 'utf8');
-  if (harness !== 'codex') return matter(text).content.trim();
+  if (harness !== 'codex') return parseFrontmatter(text).content.trim();
   const body = text.match(/developer_instructions\s*=\s*'''\n?([\s\S]*?)'''/)?.[1];
   if (!body) throw new Error(`${file} has no developer_instructions`);
   return body.trim();
@@ -103,7 +103,7 @@ export function reviewPrompt(instructions: string, brief: unknown, diff: string,
     '```diff',
     diff,
     '```',
-    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then blocking findings (file:line, evidence), then advisories.',
+    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then blocking findings, then advisories, each line starting with `[<lens>/<severity>]` (lens: core, security, performance, data, accessibility, ai; severity: low, medium, high, critical) and giving file:line and evidence. A security finding of high or critical severity means FAIL.',
   ].join('\n\n');
 }
 

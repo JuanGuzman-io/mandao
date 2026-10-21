@@ -28,3 +28,8 @@ export function removeTrees(): void {
 }
 
 export const pkg = (name: string, deps: Record<string, string> = {}) => JSON.stringify({ name, dependencies: deps });
+
+/** A Reviewer's whole answer in a file, for `checkpoint --review` (MDO-0008). */
+export function reviewFile(verdict: 'PASS' | 'FAIL', findings = ''): string {
+  return join(makeTree({ 'review.md': `VERDICT: ${verdict}\n${findings}` }), 'review.md');
+}

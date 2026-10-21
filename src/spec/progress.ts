@@ -28,7 +28,13 @@ export const progressSchema = z.object({
    */
   /** Tests recorded red per task, with their hashes then: a later change is flagged (ADR 0022). */
   red_tests: z
-    .array(z.object({ task: z.string().regex(/^T\d+$/), files: z.array(z.object({ path: z.string(), sha256: z.string() })) }))
+    .array(
+      z.object({
+        task: z.string().regex(/^T\d+$/),
+        /** `tests`: the test names in the file when it ran red; a name added later has no red run (MDO-0008). */
+        files: z.array(z.object({ path: z.string(), sha256: z.string(), tests: z.array(z.string()).optional() })),
+      }),
+    )
     .default([]),
   pending_commits: z
     .array(z.object({ task: z.string().regex(/^T\d+$/), subject: z.string().min(1), files: z.array(z.string()).default([]) }))

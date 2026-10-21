@@ -12,6 +12,7 @@ import { sizeLimits } from '../scripts/quick-check.js';
 import { measureSessions } from '../scripts/session-turns.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { docPath, hasExecutionLog, logPath } from '../scripts/spec-log.js';
+import { specSpend } from '../scripts/spend.js';
 import {
   acStatus,
   type BugsAfterMerge,
@@ -28,7 +29,6 @@ import {
   renderCloseSummary,
   sessionCutKaizen,
   specMetrics,
-  summarizeCosts,
   verifyResults,
   withEnvironment,
   withPublication,
@@ -99,7 +99,7 @@ function registerKaizen(run: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       json({
         ...metricsOf(config, spec, o.trackerBugs === undefined ? undefined : Number(o.trackerBugs)),
-        costs: summarizeCosts(specCosts(spec.dir), config.budget.per_spec),
+        costs: specSpend(spec.dir, config.budget.per_spec),
         sessions: sessionsOf(config, spec),
       });
     });

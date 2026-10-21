@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import matter from 'gray-matter';
 import { MODELS_FILE, readConfig, readModels } from '../engine/files.js';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 import { mergeChoices, profileChoices, userOverrides } from '../models/defaults.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { independence, type ModelLayer, missingRoles, type ResolvedModels, strongEqualsStandard, usedModels } from '../models/resolve.js';
@@ -46,7 +46,7 @@ export function specLayers(specDir: string | undefined): Partial<Record<HarnessI
   if (!specDir) return {};
   const file = join(specDir, 'story.md');
   if (!existsSync(file)) throw new Error(`No story.md in ${specDir}`);
-  const models = (matter(readFileSync(file, 'utf8')).data.models ?? {}) as Partial<Record<HarnessId, RoleModels>>;
+  const models = (parseFrontmatter(readFileSync(file, 'utf8')).data.models ?? {}) as Partial<Record<HarnessId, RoleModels>>;
   return Object.fromEntries(Object.entries(models).map(([h, m]) => [h, { source: 'spec', models: m }]));
 }
 

@@ -1,7 +1,7 @@
 # Written by mandao. Do not edit by hand.
 schema_version: 1
 mandao: 0.1.0
-config_hash: sha256-ztiS0OhtpUlE5VwZ9MT2uqVdErJWB3aFKbXGBirepH8=
+config_hash: sha256-sct7JTVpd9cCU6ZPzeCdaZrv1giGstMxBh2goW0lm3c=
 layers:
   - kind: core
     id: core
@@ -78,7 +78,7 @@ files:
     harness: codex
     from: command:implement
     ownership: owned
-    hash: sha256-O8HGY1qUKYxyiV7hauI4ubjjzvdcRMf1hQJJryxxHfg=
+    hash: sha256-rrFrPjht6wcppQoKm0+WdHf6+Bc/NKDtzxprIIr7V54=
     scope: project
   - path: .agents/skills/mandao-init/agents/openai.yaml
     harness: codex
@@ -198,13 +198,13 @@ files:
     harness: claude
     from: persona:leader
     ownership: owned
-    hash: sha256-H3DEBiDkeIPsDLMaivS//5bG2+Iix/lmOGDJwCr0vJw=
+    hash: sha256-27LLSR+IbPVGb+3Yw17FtBkeFXWdnadxIAQphukQZJk=
     scope: project
   - path: .claude/agents/mandao-reviewer.md
     harness: claude
     from: persona:reviewer
     ownership: owned
-    hash: sha256-sKAyVZKrVLyk0rIuH47mS6YQtlbXcoPQtU2BaxLK6YA=
+    hash: sha256-Xejp0NDa5r9B0zEdkLbc8O4+Gk9zXY/YjnpHMwberH4=
     scope: project
   - path: .claude/agents/mandao-tester.md
     harness: claude
@@ -240,7 +240,7 @@ files:
     harness: claude
     from: command:implement
     ownership: owned
-    hash: sha256-J8x3LreTeVQnneVIiKv3Vbm6FjML5GgBHhoRI2qLnrc=
+    hash: sha256-PhD4R2nJANDcCtJyN/f5StywriVY+vKhbLQ7qXITld4=
     scope: project
   - path: .claude/skills/mandao-init/SKILL.md
     harness: claude
@@ -312,19 +312,19 @@ files:
     harness: codex
     from: persona:leader
     ownership: owned
-    hash: sha256-/xzUWuOJzwb+PBUINhS8rXhGx/vZNCAW8JiRg5UVYKE=
+    hash: sha256-wmgz0gup0/DOgcwVk/2bH9FDVU9qvoXyaq4rDrj5gr0=
     scope: project
   - path: .codex/agents/mandao-reviewer-alt.toml
     harness: codex
     from: persona:reviewer:alt
     ownership: owned
-    hash: sha256-Gy+0EVFPpWy78VY+pw7QObHi9ETA0iD3T+GES+97nSI=
+    hash: sha256-Yzp5hmZQewrmtL/wvuyinJFdAxxmaq+l4M5NtwllA9I=
     scope: project
   - path: .codex/agents/mandao-reviewer.toml
     harness: codex
     from: persona:reviewer
     ownership: owned
-    hash: sha256-zBDoJnpklt/fZqxCroDbCtoQ+Li/7T1M53cRfgV0mf8=
+    hash: sha256-X8qHQbU4DqffdblAWDG5BQBrgM/8wafyOjt7FLvYUak=
     scope: project
   - path: .codex/agents/mandao-tester.toml
     harness: codex
@@ -360,19 +360,19 @@ files:
     harness: copilot
     from: persona:leader
     ownership: owned
-    hash: sha256-Vy/up7H306LhA+qqIrJUBDl4KPzyOgMAIaQJV93DV/U=
+    hash: sha256-GoxdwUDAsYNJd0OiphQDFyn11Jld7bs8ZpslNaA0oWc=
     scope: project
   - path: .github/agents/mandao-reviewer-alt.agent.md
     harness: copilot
     from: persona:reviewer:alt
     ownership: owned
-    hash: sha256-CDdgnN3p70ghN9Dy1NE0xsrufk/u9CNY7zEI2RZQvYI=
+    hash: sha256-anYcDF+VVW9BNvMRP8Fi61o8pOwbXZ41fbZ1a3uAo2g=
     scope: project
   - path: .github/agents/mandao-reviewer.agent.md
     harness: copilot
     from: persona:reviewer
     ownership: owned
-    hash: sha256-7DJKp5aHOhIKHr354WUcqsS/wtBE1WuLlvtzN3lN2EA=
+    hash: sha256-DCTf/MCRbooQlAs/Dk2luY1IQmkR+h3PEyUH0Iqw39g=
     scope: project
   - path: .github/agents/mandao-tester.agent.md
     harness: copilot
@@ -408,7 +408,7 @@ files:
     harness: copilot
     from: command:implement
     ownership: owned
-    hash: sha256-OjeIfucGMzYN1FkywCZMhz7iIYopi1m4LoYmyfPhaWE=
+    hash: sha256-MXx9mgnnRlC/1dwJ5uDA1oOjiipDndEtlYuYKs5N5AM=
     scope: project
   - path: .github/prompts/mandao-init.prompt.md
     harness: copilot
@@ -576,7 +576,7 @@ files:
     harness: mandao
     from: template:shared/rules/budget.md
     ownership: owned
-    hash: sha256-DIlyo8WEkwTzQqgsRm9QptrXlfrkx7A30xH0A5YErqQ=
+    hash: sha256-lSm6KhGAnWskey9XY0YKvKMiVRcDKaCI+3PEI6SZ0Ow=
     scope: project
   - path: .mandao/templates/app/rules/clean-code.md
     harness: mandao
@@ -678,7 +678,7 @@ files:
     harness: mandao
     from: template:shared/rules/review.md
     ownership: owned
-    hash: sha256-SzfeRP2NVVKy8LGIGHDA0x0W3eVA5fn8o8J6hslVsUo=
+    hash: sha256-UMRPWoBRUe0E0o0xTYQEVbkD94oPwHR+GAcZWG7aT4U=
     scope: project
   - path: .mandao/templates/app/rules/spec-docs.md
     harness: mandao

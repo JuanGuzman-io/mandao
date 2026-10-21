@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../engine/frontmatter.js';
 
 /** Diagram types by kind of change (design §18.3). */
 export const DIAGRAM_TYPES = ['sequence', 'data-flow', 'architecture', 'workflow', 'lifecycle', 'before-after'] as const;
@@ -49,7 +49,7 @@ export interface DiagramState {
  * (ADR 0022) and, when given, the current `subgraphHash` of its graph (ADR 0027).
  */
 export function diagramState(designMd: string, currentGraphHash?: string): DiagramState {
-  const meta = matter(designMd).data as { depth?: string; projects?: string[] };
+  const meta = parseFrontmatter(designMd).data as { depth?: string; projects?: string[] };
   const required = meta.depth === 'lite' ? 'optional' : (meta.projects?.length ?? 0) > 1 ? 'yes' : 'if-new-flow';
   const stamp = readStamp(designMd);
   const designChanged = Boolean(stamp && stamp.source !== designSourceHash(designMd));

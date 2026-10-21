@@ -61,8 +61,36 @@ command would, sets the status, records who approved and when in `_log/approvals
 spec commit. No model runs, so it costs no tokens. For `close` it records which proposals you approved;
 `/mandao-close` applies them.
 
-After approving, continue with the next command **in the same session**: its context is already loaded
-and the provider's prompt cache is warm, so the next step costs less than a new session.
+After approving the spec or the tasks, start `/mandao-implement` in a **new session**: `approve` prints
+the command (`newSession`). Staying in the specify session would re-read its whole context on every
+implement turn (ADR 0038).
+
+### Cost
+
+Each command records what its session spent in the spec's `_log/costs.yml`; `mandao run cost <spec>`
+shows the total per command and role.
+
+- **How it is measured (Claude Code).**
+  - Mandao reads the session's transcript, `~/.claude/projects/<folder>/<session>.jsonl`, or under
+    `$CLAUDE_CONFIG_DIR`, plus its `subagents/*.jsonl`.
+  - For each response it takes the last line per message id. The fields are `input_tokens`,
+    `cache_creation.ephemeral_5m_input_tokens` / `ephemeral_1h_input_tokens`, `cache_read_input_tokens`
+    and `output_tokens`.
+  - It prices them with the list prices in `core/models/recommendations.yml` (source and review date
+    are in the file).
+  - Checked against the cost Claude Code itself reports on 29 sessions: a difference of 0.11% overall,
+    and at most 0.44% in one session. Claude Code makes some helper requests that it does not write to
+    the transcript, so Mandao counts slightly less.
+  - Other harnesses record by hand with `--usd`.
+- **Billed or equivalent.**
+  - With an API key or a cloud provider, the figure is money billed at those prices (`basis: billed`).
+  - With a Claude subscription, it is what the same tokens would cost at API prices, not what you pay
+    (`basis: equivalent`). The subscription has its own limits, and usage beyond the plan is charged
+    as credits Mandao cannot see.
+  - The basis is read from `claude auth status`; billed and equivalent amounts are never added up as one.
+- **Budget.** `budget.per_spec` is optional and only you set it: `init` asks, with no suggested number.
+  Without it there is no cap; spend is recorded and reported. With it, Mandao warns at 80% and asks at
+  100%.
 
 ## Harnesses
 
@@ -93,7 +121,7 @@ Supported versions per harness are checked by `mandao doctor` (ADR 0025).
 | `mandao start "<description\|ID>"` | Create the spec's branch and worktree and set it up (env files, dependencies, setup hooks, graph, baseline); print or `--open` the harness there |
 | `mandao worktree list \| clean` | Spec worktrees; remove the merged ones that hold no work |
 | `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session |
-| `mandao run cost <spec>` | Spend per command and role against `budget.per_spec`; commands record their own spend (Claude Code reads its session record at official prices) |
+| `mandao run cost <spec>` | Spend per command and role against `budget.per_spec`, with its basis (billed or subscription equivalent); commands record their own spend (see [Cost](#cost)) |
 | `mandao run …` | Helper scripts the commands call, compact JSON on stdout: `spec-new`, `trace`, `tasks`, `brief`, `loop`, `commit-msg`, `status`, `where`, `checkpoint`, `impact`, `resources`, `tests`, `models`, `quick-check`, `fingerprint` |
 
 ## Customizing

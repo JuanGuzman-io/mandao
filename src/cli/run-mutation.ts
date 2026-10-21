@@ -9,6 +9,7 @@ import { applyPatch, checkPatch, mutationIssues, patchFiles, treeState } from '.
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
+import { taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -19,7 +20,6 @@ interface MutationOptions {
   patch: string;
   self?: boolean;
   harness: string;
-  attempt: string;
   force?: boolean;
 }
 
@@ -58,7 +58,6 @@ export function registerMutation(run: Command, ctx: CliContext) {
     .requiredOption('--patch <file>', 'unified diff of the mutation (applied, then reverted)')
     .option('--self', 'the Leader wrote the tests in its own context (no subagent): reduced independence')
     .option('--harness <id>', 'harness running the Leader', 'claude')
-    .option('--attempt <n>', 'attempt for the execution row', '1')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
     .action(async (ref: string, id: string, tests: string[], o: MutationOptions) => {
       const root = ctx.root();
@@ -107,7 +106,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
       appendExecutionRow(spec.dir, spec.name, {
         date: new Date().toISOString().slice(0, 10),
         task: id,
-        attempt: Number(o.attempt),
+        attempt: taskAttempt(spec.execution, id),
         tier: task.tier,
         harness: writer.harness,
         implementer: identityCell(writer),
