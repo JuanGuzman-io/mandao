@@ -27,7 +27,7 @@ scope, product behavior, security or irreversible actions.
 
 | Phase / item | Historical reference | Depends on | Status |
 |---|---|---|---|
-| [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | in progress; plan approved |
+| [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
 | [1 — Security before beta](#security-quick-before-the-beta) | former security quick | phase 0 | agreed, pending phase plan approval |
 | [2 — Measurement](#phase-2--measurement) | latency audit | phase 0 | agreed, pending phase plan approval |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | agreed, pending phase plan approval |
@@ -42,22 +42,26 @@ scope, product behavior, security or irreversible actions.
 
 ## Phase 0 — Documentation and backlog
 
-- [ ] Compare every section of `MANDAO-DESIGN.md` against ADRs and current implementation; list
+- [x] Compare every section of `MANDAO-DESIGN.md` against ADRs and current implementation; list
   decided/implemented but undocumented behavior and documented but obsolete behavior, with evidence.
-- [ ] Correct §13 using MDO-0011: depth-based fixed files, content-dependent conditional files,
+- [x] Correct §13 using MDO-0011: depth-based fixed files, content-dependent conditional files,
   manifest, six `_log/` files including `state.yml`, local `.mandao/cache/<ID>/`, and `logs.level`;
   link `docs/spec-anatomy.md`.
-- [ ] Correct §18: Outcome, For the PO, For developers, Kaizen and Delivery in `close-summary.md`,
+- [x] Correct §18: Outcome, For the PO, For developers, Kaizen and Delivery in `close-summary.md`,
   one line per spec in `docs/CHANGELOG.md`; `docs/releases/` and `docs/kaizen/<ID>.md` are v1 only.
-- [ ] Correct principle 3 and §18.3: Archify is required; Mermaid only through explicit
+- [x] Correct principle 3 and §18.3: Archify is required; Mermaid only through explicit
   `diagrams.engine: mermaid`, never an automatic fallback.
-- [ ] Document ADR 0040 approval/autonomy and reversible technical decisions; list `research` as
+- [x] Document ADR 0040 approval/autonomy and reversible technical decisions; list `research` as
   planned in §10; replace §24 MVP with current status and a link to this roadmap.
-- [ ] Mark DECIDED / PROPOSED / OPEN accurately, preserving decisions and escalating ambiguity.
-- [ ] Reconcile this single backlog with every requirement of phases 0–10 and their dependencies;
+- [x] Mark DECIDED / PROPOSED / OPEN accurately, preserving decisions and escalating ambiguity.
+- [x] Reconcile this single backlog with every requirement of phases 0–10 and their dependencies;
   preserve detailed historical acceptance criteria and keep migration outside the program.
-- [ ] Publish the existing latency diagnosis under `docs/audits/2026-10-latency.md` with portable
+- [x] Publish the existing latency diagnosis under `docs/audits/2026-10-latency.md` with portable
   links, and record design reconciliation in `docs/audits/2026-10-design-reconciliation.md`.
+
+Evidence: [design reconciliation](audits/2026-10-design-reconciliation.md) and
+[ADR 0042](decisions/0042-phased-improvements-and-local-validation.md). No product behavior or
+latency improvement is claimed by this documentation phase.
 
 ## Phase 2 — Measurement
 

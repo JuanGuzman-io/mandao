@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.10 · **Last updated:** 2026-10-20
+> **Status:** living document · **Version:** 0.11 · **Last updated:** 2026-10-21
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -14,7 +14,11 @@ Every rule carries one of three status tags:
 | **PROPOSED** | A direction was suggested but not confirmed. Do not implement without confirmation. |
 | **OPEN** | Not discussed yet. Raise it before building anything that depends on it. |
 
-Sections without an explicit tag are **DECIDED**.
+Sections without an explicit tag are **DECIDED**. A decision is not a claim of implementation:
+**implemented** names behavior present in the current canonical commands or code; **pending** names an
+accepted change still scheduled in [the backlog](docs/backlog.md). ADRs retain the history; this document
+states the current decision. The [reconciliation audit](docs/audits/2026-10-design-reconciliation.md)
+records the discrepancies corrected in version 0.11.
 
 ---
 
@@ -42,9 +46,10 @@ Sections without an explicit tag are **DECIDED**.
 
 1. **The product is the content, not the code.** Commands, templates, personas and the skills catalog are neutral Markdown/YAML. The CLI is thin: it installs, transforms and validates.
 2. **Harness-agnostic.** One canonical source, one adapter per tool. Nothing is tied to a single vendor.
-3. **Pluggable external dependencies.** Graphify, Archify and MCP servers are optional. When missing, a fallback runs (grep/glob, Mermaid, local files) and reports **lower confidence, never lower depth**.
+3. **Explicit dependencies and honest evidence.** Graphify and MCP servers have documented alternatives (grep/glob and local files), with **lower confidence, never lower depth**. **Archify is mandatory for diagrams**. Mermaid is used only when the user deliberately configures `diagrams.engine: mermaid`; never as an automatic fallback. Installation, a cross-harness script and enforcement are **DECIDED, pending Phase 4** (see §18.3).
 4. **Never invent context.** Missing information is marked `ASSUMPTION`, `OPEN` or `CONFLICT`, always with its source.
 5. **Human in the loop** at every meaningful approval and before any external publication. **DECIDED (ADR 0040):** an approval is the person's explicit word, their own `mandao approve`, or running the next command, which `mandao approve --by-running` accepts only when nothing is open or changed since the summary shown; otherwise it asks one question and records nothing.
+   **DECIDED, pending Phase 4 — autonomy:** the agent decides and records reversible technical details covered by the constitution. Human questions concern product or scope decisions, security, and external or irreversible actions; a technical choice alone is not an approval boundary. Budget and publication still require the person's own authorization. Commands must relay script decisions, not manufacture extra confirmations.
 6. **Lean commands.** Rules live in templates and skills; project lessons live in the project. Command prompts must not accumulate hardcoded lessons (a known weakness of AKILI, whose constitution command is ~1,500 lines).
 7. **Risk-proportional rigor.** Review depth scales with task risk; trivial work stays fast.
 8. **External content is data, not instructions.** Anything read from trackers, chat, documents or transcripts is untrusted input (see §20).
@@ -66,10 +71,10 @@ Sections without an explicit tag are **DECIDED**.
 
 ### 4.1 Stack
 
-- **TypeScript on Node ≥ 22**, distributed through npm.
-- Libraries: `citty` or `commander` (CLI), `@clack/prompts` (interactive init), `zod` (schemas), `yaml`, `gray-matter` (frontmatter), `tsup` (bundling), `vitest` (tests), `changesets` (releases).
+- **TypeScript on Node ≥ 22.18.0**, distributed through npm.
+- Libraries: `commander` (CLI), `@clack/prompts` (interactive init), `zod` (schemas), `yaml`, `gray-matter` (frontmatter), `tsup` (bundling), `vitest` (tests), `changesets` (releases).
 - Helper scripts invoked by commands are written **in Node, once** (no duplicated bash + PowerShell).
-- Development of the Mandao repo itself may use pnpm.
+- The Mandao repository currently uses npm (`package-lock.json`); generated worktree setup detects the consuming project’s package manager.
 
 ### 4.2 Repository structure
 
@@ -119,7 +124,7 @@ An override either replaces a file (`commands/<id>.md`) or patches only its fron
 
 Every generated artifact (spec documents, constitution documents, config, lock) carries `schema_version` in its frontmatter from day one, so future format changes can be migrated.
 
-- **OPEN:** migration command and policy (`mandao migrate`).
+- **OPEN:** migration command and policy (`mandao migrate`). Spec layout versions are separately defined by the story’s schema_version (§13); this does not imply a migration implementation.
 
 ## 5. Installation and distribution
 
@@ -159,7 +164,7 @@ A global install exposes **`/mandao-init`** in every installed harness. Run insi
 - **PROPOSED:** commit generated harness folders only for harnesses declared in the lock.
 - Maintenance commands: `mandao harness add <tool>`, `mandao skills add <pack>`, `mandao update`, `mandao doctor`.
 - `mandao update` detects the package manager that installed Mandao (npm, pnpm, bun) and uses the same one.
-- **DECIDED (ADR 0012) — runner:** generated commands call `node .mandao/bin/mandao.mjs`, which resolves Mandao from local `node_modules/.bin`, then a global install, then `npx -y mandao@<lock version>`. `scripts.runner` (`auto | local | global | npx`) forces one; `doctor` checks it resolves. Before publishing, use `npm link`.
+- **DECIDED (ADR 0012) — runner:** generated commands call `node .mandao/bin/mandao.mjs`, which resolves Mandao from local `node_modules/.bin`, then a global install, then `npx -y mandao@<lock version>`. `scripts.runner` (`auto | local | global | npx`) forces one; `doctor` checks it resolves. This is the current launcher behavior. **DECIDED, pending Phase 4:** Mandao's own checkout/worktree uses its local build (`npm run build`, then `node dist/cli.js`), never the global binary. For consuming projects the resolved version must match the lock: use the pinned `npx mandao@<version>` or warn and record the mismatch; `doctor` reports it. A global binary is not evidence of the checkout's behavior.
 - `AGENTS.md` is the universal fallback for harnesses without skills support.
 - **DECIDED (ADR 0018) — switching harness:** `mandao doctor` reports, per installed harness, whether its generated files are up to date, the model assigned to each role, and whether the harness's minimum version is met, so a person knows in advance whether they can switch mid-work.
 - **DECIDED (ADR 0015) — shared vs local agent settings:** committed harness settings (e.g. `.claude/settings.json`) are portable: tools resolve through PATH or the Mandao runner, never absolute paths. Machine-specific settings go in `settings.local.json`, which is git-ignored; a hook that needs an absolute path lives only there. `sync` and `doctor` respect this split.
@@ -255,7 +260,7 @@ AGENTS.md                       # root, project and module levels (CLAUDE.md is 
 
 - During `specify` and `implement`, changes are **recorded** in `Constitution Impact` and `Product Impact` sections.
 - Only `close` **applies** them, with human approval, a `CHANGELOG.md` entry, and an ADR if architectural.
-- **Single writer:** shared files are only edited on the apply-capable branch (AKILI's branch-gating model). On spec branches, impacts stay as pending items.
+- **Single writer:** close applies explicitly approved impacts and commits them with the spec on its unprotected worktree branch; never writes directly to a protected branch. Before close, impacts remain proposals. There is no separate implemented "apply-capable branch" requirement.
 - When the stack changes, the sync also proposes Skill Map adjustments.
 
 ### 7.4 AGENTS.md
@@ -320,7 +325,7 @@ Flow:
 constitution → story → specify → [clarify] → tasks → implement → verify → close
 ```
 
-Utilities: `quick`, `perf`, `audit`, `resume`.
+Utilities: `quick`, `resume`; `research`, `perf` and `audit` are **planned**. The reference below describes their intended outputs, not executable workflows. `init` is the installed setup command; `mandao start` is the CLI entry point for creating a worktree (§14.5). All canonical commands except the three planned entries are currently stable (ADR 0035 and command frontmatter).
 
 | Command | Who | Output |
 |---|---|---|
@@ -333,8 +338,9 @@ Utilities: `quick`, `perf`, `audit`, `resume`.
 | `/mandao-verify` | Dev | `verify-report.md` |
 | `/mandao-close` | Dev / lead | `close-summary.md`, docs, publication |
 | `/mandao-quick` | Dev | Edit + `quick-log.md` entry + commit |
-| `/mandao-perf` | Dev | `perf-report.md` + perf spec (see §19) |
-| `/mandao-audit` | Lead | `docs/audits/<date>.md` |
+| `/mandao-research` (planned) | Dev | Exploration ending in a decision; scope and command contract remain OPEN |
+| `/mandao-perf` (planned) | Dev | `perf-report.md` + perf spec (see §19) |
+| `/mandao-audit` (planned) | Lead | `docs/audits/<date>.md` |
 | `/mandao-resume` | Anyone | Dashboard of active specs; `/mandao-resume <ID>` continues one spec in any harness (§14.6) |
 
 ### 10.1 constitution
@@ -359,44 +365,58 @@ Utilities: `quick`, `perf`, `audit`, `resume`.
 ### 10.3 specify
 
 - Depth levels: **lite** | **standard** | **full**.
-- Produces `requirements.md` (FR-n, NFR-n, scenarios with `BUT it must NOT` / `AND IT MUST`, AC→FR matrix, Consistency Check) and `design.md` (Premise Ledger, decisions, Constitution / Product / Module Docs Impact, contract section when multi-project).
+- At standard/full depth produces `requirements.md` (FR-n, NFR-n, scenarios with `BUT it must NOT` / `AND IT MUST`, AC→FR matrix, Consistency Check) and `design.md` (Premise Ledger, decisions, Constitution / Product / Module Docs Impact, contract section when multi-project). At lite depth requirements and design share `spec.md`; `tasks.md` is always separate in layout v2. `quickstart.md` is conditional on user-visible behavior; `data-model.md` on data changes (ADR 0034). Documents are readable summaries with linked evidence, not execution logs (ADR 0035).
 - Tracker resolution: §11.
 - Marks unknowns as `[NEEDS CLARIFICATION]`.
-- **DECIDED (ADR 0022, implemented in 2b) — diagram for approval.** `specify` generates with Archify the diagram of the proposed flow, **derived from `design.md`** (never drawn by hand), its type chosen with the table in §18.3. Mandatory at standard and full depth when there is a new flow or the spec touches several projects; optional at lite. It is part of the design approval: the PO or lead approves looking at it. With a tracker MCP it is attached as PNG to the story; without Archify, Mermaid. When `design.md` changes, the diagram is regenerated.
+- **DECIDED (ADR 0022, implemented in 2b) — diagram for approval.** `specify` generates with Archify the diagram of the proposed flow, **derived from `design.md`** (never drawn by hand), its type chosen with the table in §18.3. Mandatory at standard/full depth for a new flow, several projects, a new service/integration, an LLM pipeline, a data change or a state machine; optional at lite. At most 2–3 diagrams per spec (ADR 0034). It is part of the design approval: the PO or lead approves looking at it. With a tracker MCP it is attached as PNG to the story after confirmation. Archify is required unless the user explicitly configures Mermaid (§18.3); the canonical fallback text is pending correction in Phase 4. When `design.md` changes, the diagram is regenerated.
 
 ### 10.4 clarify
 
 - Triggered automatically if specify left `[NEEDS CLARIFICATION]` or the Consistency Check found conflicts; also callable manually.
 - Max 5 questions per round, prioritized by impact.
-- Technical questions → dev in chat. Business questions → PO via MCP (comment on the story, Slack message); answers flow back to the spec.
+- Current command routes technical questions to the dev and business questions to the PO through the configured channel. **DECIDED, pending Phase 4:** resolve reversible technical questions from the constitution, record the decision and rationale, and ask only about product, scope, security or external actions. Sending a tracker or chat message still requires authorization; answers flow back to the spec.
 - Answers are recorded with dates in `## Clarifications`. A critical `OPEN` blocks `tasks`.
 
 ### 10.5 tasks
 
-Each task `T-n` declares: project, model tier, files and modules (from the graph), risk tags, tests required and at which level, AC covered, DoD, verification command, dependencies and parallel safety. Optionally pushes subtasks to the tracker (**later iteration**, ADR 0015).
-
-**DECIDED (ADR 0015) — format:** one heading per task with a status checkbox, followed by a YAML block with its fields, so humans can read it and scripts can parse it:
+Each task `Tn` has a result heading and checkbox, **What**, **Done when** (3–5 behavior bullets),
+optional **Notes**, and a YAML block without prose. `tasks.md` has a generated **Overview**, grouped by
+acceptance criterion with checkpoints, then **Details** (ADR 0035). Every depth uses this file in layout
+v2, even one task; version 1 lite specs may keep their existing inline tasks.
 
 ````markdown
-### [ ] T2 — Remember-me token endpoint
+### [ ] T2 — Keep refresh tokens within the session policy
+
+**What:** Add the endpoint using the decision linked from design.md.
+
+**Done when:**
+- S-1.1/C1 enforces the policy cap.
+- S-1.2 rejects an expired token.
+- The impacted tests pass.
 
 ```yaml
 project: api
+kind: feat
 tier: standard
 files: [apps/api/src/auth/remember-me.ts]
 exemplar: apps/api/src/auth/login.ts
 risk_tags: [auth]
 ac: [AC-1, AC-3]
 scenarios: [S-1.1/C1, S-1.2]
-tests: { unit: [refresh token is capped by policy], e2e: [] }
-dod: [module AGENTS.md updated]
+test_levels: { S-1.1/C1: unit, S-1.2: unit }
+evidence: tdd
 verify: npm test -- remember-me
 depends_on: [T1]
 parallel_safe: true
 ```
 ````
 
-`[x]` marks a task done (updated in the task's commit).
+`kind` determines the commit type and is checked against the real diff. `test_levels` and `evidence`
+replace legacy `tests`, `dod` and `characterization`, still accepted for older specs. Module AGENTS.md
+and its Claude pointer remain implicit DoD. `[x]` is written with the task's PASS commit. Tracker
+subtasks are pending. **DECIDED, pending Phase 3:** the Implementer brief must contain the relevant
+design decisions, rejected alternatives and the scenario/clause checklist; reconcile the command and
+doc-tasks rule about repeating decisions without dropping their constraints.
 
 ### 10.6 implement, verify, close
 
@@ -420,7 +440,7 @@ id: PROJ-123
 url: https://…
 parent: PROJ-100
 projects: [api, web]
-status: draft          # see §23 (OPEN)
+status: draft          # states decided in §23.2
 ```
 
 ### 11.3 Type changes the flow
@@ -465,7 +485,9 @@ Runs at the end of `specify`, `tasks` and `verify`.
 | `PREMISE` | A design assumption about existing code is false (Premise Ledger) |
 | `CONTRACT` | Front and back disagree with the contract |
 
-No conflict is resolved silently: it goes to `clarify` (business → PO, technical → dev). A critical conflict blocks `tasks`.
+A critical conflict blocks `tasks`. Product/scope conflicts go to `clarify` and the appropriate owner.
+**DECIDED, pending Phase 4:** a reversible technical detail already governed by the constitution is
+resolved by the agent with a recorded rationale; it does not create a human approval round.
 
 ### 12.3 Premise Ledger (from AKILI)
 
@@ -473,23 +495,54 @@ No conflict is resolved silently: it goes to `clarify` (business → PO, technic
 
 ## 13. Spec folder
 
+**DECIDED (ADR 0041), implemented by MDO-0011.** The story's `schema_version` selects the layout:
+2 for new specs, 1 for existing specs; unsupported versions fail. Never infer the version from which
+files happen to exist. `layoutManifest(version, depth)` in `src/spec/layout.ts` is the single manifest
+used by the layout check and the generated [spec anatomy](docs/spec-anatomy.md). That reference lists
+when each file becomes required; `approved` still maps to the draft stage, before specify.
+
+| Content | Lite | Standard / full |
+|---|---|---|
+| Request / AC | `story.md` | `story.md` |
+| Requirements and design | `spec.md` | `requirements.md`, `design.md` |
+| Task plan, any task count | `tasks.md` | `tasks.md` |
+| Verification | `verify-report.md` | `verify-report.md` |
+| Complete close | `close-summary.md` | `close-summary.md` |
+
+Conditional by content, never by an arbitrary task count: `quickstart.md` for behavior a user/PO can
+see; `data-model.md` for data changes; `contract/` for several projects. `diagrams/` holds the structured
+source and renders when a diagram is required. `perf` is planned, so its future report is not a new v2
+layout exception today.
+
 ```
 specs/<ID>-<slug>/
-├── story.md             # AC-n (critical flag), sources, assumptions
-├── requirements.md      # FR-n / NFR-n, scenarios, AC→FR matrix, Consistency Check, ## Clarifications
-├── design.md            # Premise Ledger, decisions, impacts (constitution / product / module docs)
-├── contract/            # only when the spec touches more than one project
-├── tasks.md             # T-n with project, tier, files, risk tags, tests, AC, DoD, deps
-├── execution.md         # audit trail, pivots, advisories, commit hashes
-├── verify-report.md     # AC→test traceability, evals, critical smoke
-├── perf-report.md       # performance specs only
-└── close-summary.md     # kaizen, applied impacts, publication ids
+├── story.md
+├── spec.md                     # lite; requirements.md + design.md at standard/full
+├── tasks.md
+├── verify-report.md
+├── close-summary.md            # Outcome, For the PO, For developers, Kaizen, Delivery
+├── quickstart.md               # conditional
+├── data-model.md               # conditional
+├── contract/                   # conditional
+├── diagrams/                   # when needed
+└── _log/                       # six committed files, written by scripts
+    ├── state.yml               # start, baseline, progress, approvals, cut_estimates
+    ├── execution.md
+    ├── reviews.md
+    ├── gates.md                 # status; output excerpts only for failures
+    ├── premises.md
+    └── costs.yml
 
-docs/releases/<ID>/      # technical doc, release notes, diagram
-docs/kaizen/<ID>.md
-docs/audits/<date>.md
-specs/quick/quick-log.md
+.mandao/cache/<ID>/             # local, gitignored bulk evidence and integrity hashes
+docs/CHANGELOG.md               # one line per closed v2 spec
+specs/quick/quick-log.md         # quick does not create a spec
 ```
+
+The cache holds packs, full gate output, premise probes, mutation artifacts and integrity hashes.
+`logs.level: summary` (default) removes it at close; `full` retains it locally, never commits it.
+Version 1 logs remain where they already live (root or `_log/`), readable without conversion.
+`docs/releases/<ID>/` and `docs/kaizen/<ID>.md` are legacy v1 close outputs only. Migration of
+MDO-0008–0010 is outside the current improvement phases until v2 has been proven on a real spec.
 
 ## 14. Implementation harness
 
@@ -525,10 +578,10 @@ One story = **one spec, one development**, even across projects.
   - Two modes: `simple` (one model to implement, another to review) and `routed` (the Implementer follows each task's tier).
   - `init` asks for each role's model, showing Mandao's recommendation and the option to type another. `mandao models set <role> <model>` changes it; `mandao models` shows the result and its source.
   - Precedence: command flag (`--reviewer-model`, …) > spec frontmatter (`models:` in `story.md`) > project `models.yml` > workspace `models.yml` > Mandao's recommendation.
-  - Recommendations live in `core/models/recommendations.yml`, per harness, with a review date and the official documentation they come from (never from memory). **Defaults must be available on every plan of the harness** (ADR 0012); plan- or admin-dependent models are listed as `optional` with the note "requires availability on your plan". Claude Code (ADR 0014): pinned to the 5.5 family by full ID — `claude-opus-5-5` for leader, reviewer and strong implementer; `claude-sonnet-5-5` for reviewer_alt, standard implementer and tester; `claude-haiku-5-5` for fast implementer — requiring Claude Code ≥ 2.1.293, which `doctor` checks; aliases and `claude-fable-5-1` are optional. Copilot Free and Student only get auto model selection. `mandao update` refreshes them without touching the user's choices and only offers the new recommendation.
+  - Recommendations live in `core/models/recommendations.yml`, per harness, with a review date and the official documentation they come from (never from memory). **Availability is documented per harness**, not assumed universal: ADR 0012's all-plan preference is refined for Codex by ADRs 0016/0020 (paid/API defaults, Free/Go and Enterprise/Edu caveats) and provider-based OpenCode by ADRs 0017/0025/0029. Optional models carry availability notes and verified sources. Claude Code (ADR 0014): pinned to the 5.5 family by full ID — `claude-opus-5-5` for leader, reviewer and strong implementer; `claude-sonnet-5-5` for standard implementer and tester; no default reviewer_alt below Opus (ADR 0020); `claude-haiku-5-5` for fast implementer — requiring Claude Code ≥ 2.1.293, which `doctor` checks; aliases and `claude-fable-5-1` are optional. Copilot Free and Student only get auto model selection. `mandao update` refreshes them without touching the user's choices and only offers the new recommendation.
   - **DECIDED (ADR 0020) — Reviewer tier rule:** the Reviewer never runs on a lower tier or effort than the Implementer, in every harness. When no reviewer on another model qualifies, the review runs on the implementer's model in a clean context (`reduced independence`), and `doctor` recommends an optional model of the same tier or reviewing in another harness. Strong equal to standard is judged on the pair (model, effort).
   - `reviewer_alt` reviews when the Implementer ended on the Reviewer's model (for example after escalating to `strong`). If no different model is available, or the user picks the same model for both roles: warn, review in a clean context, and record `reduced independence` in `execution.md`. Never block.
-  - **DECIDED (ADR 0021) — cross-harness Reviewer.** When the review would otherwise be `reduced independence` (reviewer = implementer model, e.g. strong tasks in Claude Code, which has no default `reviewer_alt`) and another harness is installed, logged in and has its CLI on PATH, `loop` offers that harness's `reviewer` as `crossReview`. The Leader runs `mandao run review <spec> <Tn> --via <harness>`: Mandao launches the reviewer as a **read-only process** (`codex exec -s read-only`, or `claude -p` with read-only tools and plan mode) with the brief, the diff and the gate results the Leader ran, parses `VERDICT: PASS|FAIL`, saves the review in `reviews/` and writes the execution row itself. The tier rule still holds across vendors (Mandao's tier classification). Without another harness: the same model in a clean context and `reduced independence`. `claude-fable-5-1` stays optional for plans that include it.
+  - **DECIDED (ADR 0021) — cross-harness Reviewer.** When the review would otherwise be `reduced independence` (reviewer = implementer model, e.g. strong tasks in Claude Code, which has no default `reviewer_alt`) and another harness is installed, logged in and has its CLI on PATH, `loop` offers that harness's `reviewer` as `crossReview`. The Leader runs `mandao run review <spec> <Tn> --via <harness>`: Mandao launches the reviewer as a **read-only process** (`codex exec -s read-only`, or `claude -p` with read-only tools and plan mode) with the brief, the diff and the gate results the Leader ran, parses `VERDICT: PASS|FAIL`, saves the review in `_log/reviews.md` (v2; `reviews/` in v1) and writes the execution row itself. The tier rule still holds across vendors (Mandao's tier classification). Without another harness: the same model in a clean context and `reduced independence`. `claude-fable-5-1` stays optional for plans that include it.
   - `mandao doctor` checks that every role has a model in each active harness and warns when a chosen model is not among the recommendations.
 - **Escalation:** 2 FAILs at a tier → retry one tier up → 3 FAILs at `strong` → HALT.
 - **DECIDED (ADR 0015) — Leader in the main session.** The Leader is the session that runs `/mandao-implement` (in Claude Code a subagent cannot start subagents). It runs on the session's model, so `implement` compares that model with `leader` in `models.yml` at start and warns on a mismatch without blocking. Same rule in Copilot.
@@ -538,7 +591,7 @@ One story = **one spec, one development**, even across projects.
 
 - **Pivot Record:** if the spec itself is wrong, stop the loop and open a pivot for human sign-off; no retries are consumed.
 - **Scope discipline:** no refactors outside the task. Opportunities are reported as advisory and become separate tasks or quick changes.
-- **Evidence re-run:** verification is re-executed by a non-author context and compared with the author's report (from AKILI).
+- **Evidence re-run (current):** verification is re-executed by a non-author context and compared with the author's report. **DECIDED, pending Phase 4:** exact receipts allow reuse only when the code tree, configuration, selected tests and tool versions match; otherwise rerun. Independent review and gates remain mandatory.
 - **Disqualifying evidence:** every gate states what makes its evidence worthless (e.g., variance larger than the measured effect), not only what passes.
 - **DECIDED (ADR 0022, implemented in 2b) — professional discipline**, written into the personas as checkable rules (never "follow the book"): say no or HALT when something cannot be done well instead of delivering something partial as done; "done" means the whole DoD is met, with evidence; never report something as tested without the test output; state uncertainty explicitly instead of assuming.
 
@@ -562,20 +615,20 @@ One story = **one spec, one development**, even across projects.
 
 **Branches.**
 
-- **DECIDED (ADR 0023, implemented in 2b; release association waits for `close`) — branching adapts to the team.** `branching.model` picks a preset — `trunk` (base and PR on `main`, short-lived branches, warning past `max_branch_age_days` with a suggestion to split the spec, stack PRs or use a feature flag), `feature-branch` (base and PR on `main`), `gitflow` (base and PR on `develop`; hotfix from `main` merged into `main` and `develop`; `release/` branches made by the team, which `close` can associate with the spec), `env-branches` (base and PR on `test`; promotion `test → staging → main`; hotfix from `main` with back-merge to `staging` and `test`). Fields, each with the preset default and overridable: `model`, `base`, `promotion`, `production`, `prefixes` (`feature`, `fix`, `hotfix`, `release`), `hotfix` (`from`, `merge_to`), `protected`, `max_branch_age_days` (trunk). Per-project override in polyrepo, otherwise inherited. `constitution` detects the model (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` → asks trunk or feature-branch), always confirms it and documents it in `infrastructure.md`.
+- **DECIDED (ADR 0023, implemented in 2b; release association implemented with close in iteration 3) — branching adapts to the team.** `branching.model` picks a preset — `trunk` (base and PR on `main`, short-lived branches, warning past `max_branch_age_days` with a suggestion to split the spec, stack PRs or use a feature flag), `feature-branch` (base and PR on `main`), `gitflow` (base and PR on `develop`; hotfix from `main` merged into `main` and `develop`; `release/` branches made by the team, which `close` can associate with the spec), `env-branches` (base and PR on `test`; promotion `test → staging → main`; hotfix from `main` with back-merge to `staging` and `test`). Fields, each with the preset default and overridable: `model`, `base`, `promotion`, `production`, `prefixes` (`feature`, `fix`, `hotfix`, `release`), `hotfix` (`from`, `merge_to`), `protected`, `max_branch_age_days` (trunk). Per-project override in polyrepo, otherwise inherited. `constitution` detects the model (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` → asks trunk or feature-branch), always confirms it and documents it in `infrastructure.md`.
 - `implement` never creates branches: it checks that it runs inside the spec's worktree and, if not, warns and shows the path.
-- The PR targets `base`; Mandao never commits or pushes to a `protected` branch; `verified` is confirmed by the CI of `base`. Promotion between environments is never automated: Mandao only records the environment reached when CI or a tracker MCP reports it.
-- Commits are local and need no confirmation after the Reviewer's PASS. Mandao never pushes.
-- **DECIDED (ADR 0021) — commits by trailer, pending commits.** A task's commit is found in git by its `Refs` and `Mandao-Task` trailers; no hash is stored, so rebases and cherry-picks never break traceability, and the PASS row lands inside the task's own commit. When a harness cannot commit (the Codex sandbox keeps `.git` read-only), the task stays `PASS · pending-commit` in `progress.yml`; `mandao run commit <spec>` — run by the Leader, the user or the next session, in any harness — makes one commit per pending task with its trailers. In Codex, `.codex/rules/mandao.rules` makes Codex ask the user before running that one command outside the sandbox (TUI, trusted project). `resume` and `doctor` show pending commits.
+- The PR targets `base`; Mandao never commits or pushes to a `protected` branch. Deferred tests require CI confirmation before `verified`. **Current behavior:** promotion is not automated; Mandao records the environment reached when CI or a tracker MCP reports it. Confirmed progressive delivery is pending Phase 6.
+- Commits are local and need no confirmation after the Reviewer's PASS. **Current behavior:** Mandao never pushes. **DECIDED, pending Phase 6:** one explicit delivery choice authorizes all / push and PR only / nothing; all includes merge only after green PR CI, using a merge commit, then cleanup. Target follows `branching`; progressive promotion always requires confirmation. No direct push to protected branches.
+- **DECIDED (ADR 0021) — commits by trailer, pending commits.** A task's commit is found in git by its `Refs` and `Mandao-Task` trailers; no hash is stored, so rebases and cherry-picks never break traceability, and the PASS row lands inside the task's own commit. When a harness cannot commit (the Codex sandbox keeps `.git` read-only), the task stays `PASS · pending-commit` in `_log/state.yml` (`progress` section; `progress.yml` in v1); `mandao run commit <spec>` — run by the Leader, the user or the next session, in any harness — makes one commit per pending task with its trailers. In Codex, `.codex/rules/mandao.rules` makes Codex ask the user before running that one command outside the sandbox (TUI, trusted project). `resume` and `doctor` show pending commits.
 - Polyrepo: the same branch name in every touched repo.
 
 ### 14.6 Checkpoints and handoff
 
 **DECIDED (ADR 0018).** State lives in files, never only in a session, so work can move between harnesses (or survive an interrupted session) without reinstalling.
 
-- **Checkpoint after every step** — task started, implementation reported, Reviewer verdict, commit. **DECIDED (ADR 0021):** the checkpoint takes the *agent* invoked (`mandao-reviewer@codex`, `self`), never a model name; the script records model and effort from the agent file the harness loads, or from the process it launched itself. A model's claim about itself that differs is recorded as `identity mismatch`. The Leader writes to the spec folder:
+- **Checkpoint after every step** — task started, implementation reported, Reviewer verdict, commit. **DECIDED (ADR 0021):** the checkpoint takes the *agent* invoked (`mandao-reviewer@codex`, `self`), never a model name; the script records model and effort from the agent file the harness loads, or from the process it launched itself. A model's claim about itself that differs is recorded as `identity mismatch`. The Leader calls the checkpoint script; it writes to the spec folder:
   - the status of each task in `tasks.md` (heading checkbox);
-  - `progress.yml` (machine-readable; `execution.md` keeps the human log): the task in progress, its phase (`implementing | awaiting-review | rework-n`), the harness and model running it, open questions, and the next step.
+  - `_log/state.yml` → `progress` (version 1: `progress.yml`; `_log/execution.md` keeps the human log): the task in progress, its phase (`implementing | awaiting-review | rework-n`), the harness and model running it, open questions, and the next step.
 - Checkpoints are written eagerly; Mandao never relies on detecting the end of a session's tokens. An interruption loses at most the task in progress.
 - **`/mandao-resume <ID>`** works in any harness:
   1. reads the checkpoint and checks it runs in the spec's worktree (§14.5);
@@ -583,6 +636,43 @@ One story = **one spec, one development**, even across projects.
   3. takes models from `models.yml` for the **current** harness;
   4. when a task was implemented in one harness and is reviewed in another, `execution.md` records it as **provider independence** (stronger than a different model in the same harness);
   5. commits pending (`pending_commits`) come first, before deciding what to do with uncommitted work.
+
+### 14.7 Lean execution, costs and session cuts
+
+**DECIDED (ADRs 0035–0038), implemented:** `run step` combines checkpoint, next action and scoped brief;
+`gates`, `review-pack` and `implement-summary` perform mechanical work and emit compact JSON. Each
+command loads the document rules it writes. Readable spec documents keep facts once and evidence at
+the end. Stable instructions precede variable context; generated command/agent files have no run IDs
+or changing dates that would defeat prompt-cache reuse.
+
+Model profiles `peak` (default), `balanced` and `economy` are explicit user choices at init or models
+profile, preserving role overrides. Reviewer tier/effort never drops below the Implementer. Cost is
+recorded per command and role, separating billed API spend from subscription-equivalent pricing;
+never sum those bases as one amount. A budget is off by default; only a person or an approved rule sets
+one. At 80% warn; past 100% step waits for budget authorization. Agents never choose a cap.
+
+Doctor diagnoses Claude cache TTL and its source; Mandao recommends 5m and never writes the user's
+settings. Session cuts use measured cache/context costs and natural boundaries (ADR 0038), with the
+harness's in-place new-conversation action first and worktree re-entry when needed. Script estimates
+are recorded in v2 state.cut_estimates (legacy session-cuts.md). **Pending Phase 4:** persist a boundary
+ID so the same recommendation is not repeated. **Pending Phase 2:** script-owned timing and question
+events, distinct active/user/agent wait time, costs before the final commit and a corrected historical
+view that leaves original logs untouched.
+
+### 14.8 Rules enforced by scripts
+
+**DECIDED (ADR 0039), implemented:** attempts derive from prior FAIL rows, not agent input;
+checkpoints preserve the full Reviewer answer and enforce matching verdicts; scripts own evidence
+writes and integrity checks report manual edits. Tagged high/critical security findings block PASS.
+The current parser still uses tagged text/section heuristics. **Pending Phase 3:** structured severity
+and open/resolved status replace those heuristics, so only open high/critical security findings block.
+
+Current red enforcement compares names in declared/recorded test files, including rework. **Pending
+Phase 5:** restrict it to tests added/modified in the task diff, offer mutation evidence or test review
+when the first run is green, and halt unchanged-action loops after the configured limit (default 3).
+Version 2 integrity hashes already live in the ignored local cache (§13); Phase 5 still records the
+explicit tracking policy, including legacy v1 handling. Approval revocation/annulment is also pending;
+logs remain append-only. TDD, independent review and meaningful gates stay required.
 
 ## 15. Review model
 
@@ -625,10 +715,10 @@ Declared per task in `tasks.md`.
 - Each scenario is proven at the **cheapest level that demonstrates it**. No coverage-percentage chasing. Missing mandatory tests are blocking; unnecessary tests are flagged as noise.
 
 **DECIDED (ADR 0022, implemented in 2b) — TDD where tests are mandatory.** Where the policy above says "always tested": red test first, derived from the scenario or clause; then the minimum code to pass it; then refactor within the task's scope. Where it says "not tested", TDD does not apply.
-- **Red evidence:** the Implementer records in `execution.md`, with the output of `mandao run tests`, that the test failed for the expected reason before implementing. The Reviewer FAILs the task if it is missing.
+- **Red evidence:** the Tester or Implementer invokes `mandao run red` to run the tests and record the failing verdict through the script in `_log/execution.md` (v2; the existing execution log in v1). The output must show failure for the expected reason before implementation; the Reviewer FAILs the task if valid evidence is missing. The agent never writes the evidence row by hand.
 - **Weakening a red test is forbidden.** Any change to a test written in the red phase is a discrepancy reported to the Reviewer.
 - **Tests by another agent** for tasks with risk tags or tier strong: the Tester writes the red tests from the spec; the Implementer makes them pass.
-- **DECIDED (ADR 0033) — characterization tests.** A task that only pins down existing behavior (`characterization: true`) proves each assertion with a recorded mutation (`mandao run mutation`: applied, run, always reverted, clean tree checked; a `MUTANT` row plus the diff and failing output). New behavior always needs a red test; the Reviewer checks the classification. Kaizen counts these tasks as `characterization`.
+- **DECIDED (ADR 0033) — characterization tests.** A task that only pins down existing behavior (`evidence: mutation`; legacy `characterization: true`) proves each assertion with a recorded mutation (`mandao run mutation`: applied, run, always reverted, clean tree checked; a `MUTANT` row plus the diff and failing output). New behavior always needs a red test; the Reviewer checks the classification. Kaizen counts these tasks as `characterization`.
 - **Measurement:** Kaizen compares specs with and without TDD (rework rate, Reviewer FAILs, bugs after merge) to validate the impact with data.
 
 **DECIDED (ADR 0026) — verify.** Suites come from the files the spec's own commits touched (by trailer),
@@ -710,8 +800,9 @@ Mandao-AC: AC-1, AC-3
     - { name: web, path: apps/web, resources: { e2e_workers: 2 } }
   ```
 
+- **DECIDED (ADR 0024), implemented — operation floors:** `resources.operations.{build,tests,e2e}.min_free_memory_mb` defaults to 1024/2048/3072 MB, with per-project overrides. The legacy min_free_memory_mb remains the test floor when no operation-specific one is set. Below the floor use one worker; below half defer. Forced runs require authorization and are recorded in ignored `.mandao/cli.log` and the active spec execution log.
 - **Not enough resources:** reduce workers. If that is still not enough, mark the run `DEFERRED_TO_CI`.
-- **DECIDED (ADR 0020):** the runner is detected (vitest, jest, nx, pytest, go) unless `projects[].tests.impacted` (with `{files}` and `{workers}`) is set, which wins. `mandao run tests` is the one helper script that executes (the exception to ADR 0006): it applies the budget and waits in a single queue (`.mandao/run.lock`).
+- **DECIDED (ADR 0020):** the runner is detected (vitest, jest, nx, pytest, go) unless `projects[].tests.impacted` (with `{files}` and `{workers}`) is set, which wins. `mandao run tests` is the central test executor: it applies the budget and waits in a single queue (`.mandao/run.lock`). Execution is not limited to that helper: build, recorded premise/mutation probes and cross-harness review also execute scoped processes, with their documented resource/safety controls. Script writes use the writer (ADRs 0007, 0020–0027, 0035).
 - **Deferred is not PASS:** `execution.md` records what was deferred and why, and the spec cannot reach `verified` until CI confirms those tests.
 
 ## 17. Skills
@@ -728,7 +819,7 @@ Mandao-AC: AC-1, AC-3
 | brainstorming | New mode: elicit intent when there is no code |
 | **mandao-skills** (own) | Resolves which skills to bring next |
 
-Archify is optional at this stage. No framework skills in the bootstrap.
+Archify is required for diagrams (§18.3). **DECIDED, pending Phase 4:** init offers its pinned installation with confirmation and doctor checks it. No framework skills in the bootstrap.
 
 2. **Resolution** (end of `constitution`):
    - Build a **stack fingerprint**: languages, frameworks with versions, style-defining libraries (state management, ORM, UI kit), cloud, profile, infra.
@@ -770,38 +861,63 @@ Archify is optional at this stage. No framework skills in the bootstrap.
 
 ### 18.1 Steps
 
-**DECIDED (ADR 0026) — implemented in iteration 3.** Kaizen is measured from the execution log; the
-TDD comparison shows sample sizes and says `insufficient data` below `kaizen.min_specs_per_group`
-(default 5); bugs after merge count `fix` commits referencing the spec and, with a tracker, bugs linked
-to the story, and depend on those references being made. Diagram drift compares structured graphs by
-module path or contract id, never by label. Release notes are in `language.business`, technical notes
-in `language.technical`. The first publication of a spec shows the whole payload before confirmation.
+**DECIDED (ADRs 0026, 0041), implemented.** Verify must have passed. Kaizen uses execution evidence;
+the TDD comparison states sample sizes and says `insufficient data` below `kaizen.min_specs_per_group`
+(default 5). Bugs after merge depend on `Refs` commits or linked tracker bugs; missing references are a
+measurement limitation. Diagram drift compares module paths and contract IDs, never labels.
 
-1. **Kaizen:** measure (rework, pivots, bugs, review FAILs) → learn (0–3 root-cause lessons with evidence) → standardize (1–3 line edits proposed) → record (`docs/kaizen/<ID>.md`).
-2. Apply Constitution / Product Impact (human approval, single writer).
-3. Sync AGENTS.md; update the graph.
-4. Generate artifacts:
-   - **Technical doc** (devs): what was built, touched modules, decisions and pivots, contract changes, how to test, links to PR and spec.
-   - **Release notes** (PO): business language, criterion by criterion vs the story (met / partial / pending).
-   - **Diagram** of the implemented flow, derived from the diff. **DECIDED (ADR 0022, 2b):** it is compared with the diagram approved in `specify`; differences are reported as **drift** and explained in the technical doc.
-5. Publish.
+1. Measure Kaizen (rework, pivots, bugs, review FAILs), propose 0–3 evidenced lessons and concise
+   standards changes. In v2 write `## Kaizen` in the close summary; v1 uses `docs/kaizen/<ID>.md`.
+2. Show Constitution / Product Impact diffs, apply only approved items and update the constitution
+   changelog. Sync module guides and graph; report writes the harness refuses as pending.
+3. Derive the implemented diagram from the actual diff and compare with the approved graph; explain drift.
+4. In **layout v2, the complete close is `close-summary.md`**:
+   - **Outcome:** script-derived AC status (`met`, `partial`, `pending`), never upgraded by prose.
+   - **For the PO:** what the user gets and what remains, in `language.business`.
+   - **For developers:** modules, decisions, contracts, drift and how to test, in `language.technical`.
+   - **Kaizen:** measured headline and lessons, in `language.technical`.
+   - **Delivery:** script-owned recorded publication, release/environment and applied-file information.
+   The script rewrites Outcome and Delivery, preserving the three prose sections. Empty sections are
+   omitted. At close it upserts **one line per spec in `docs/CHANGELOG.md`**.
+5. Publish only after confirmation; commit close outputs and approved regenerated files, excluding
+   unrelated work. Version 2 writes no `docs/releases/<ID>/` or `docs/kaizen/<ID>.md`; version 1 keeps
+   those legacy outputs. Shared accepted lessons may update `docs/kaizen/lessons.md`.
+
+**DECIDED, pending Phases 5–6:** unresolved ASSUMPTION/CONFLICT items must be resolved with a decision
+and link or transferred to the backlog with an owner. Delivery target and PR URL must land in the same
+PR before merge; subsequent release state is derived read-only from git, with no post-merge record commit.
 
 ### 18.2 Publication
 
-- Destination from `sources.yml`: **Jira, Linear, ClickUp or Monday** via MCP → published **on the original story** (comment or linked document) with the diagram attached.
-- No MCP → files in `docs/releases/<ID>/` plus a copy-paste block in chat.
-- Always asks for confirmation before publishing.
-- **Idempotent:** stores published ids in `close-summary.md`; re-running updates instead of duplicating.
+- Target comes from `sources.yml`: tracker MCP publication is a comment or linked document on the
+  original story, with diagram exports attached. Real Jira publication still awaits maintainer validation.
+- Without MCP, v2's **For the PO** section is the publication plus a copy-paste block; v1 uses
+  `docs/releases/<ID>/`.
+- Preview the whole first payload (text and attachment sizes/hashes), then ask before every external
+  publication. Store IDs and payload hash in `close-summary.md`; reruns update rather than duplicate.
+- Current release/environment association records CI/tracker evidence. The Phase 6 read-only git-derived
+  release status and progressive delivery replace this limitation only when implemented.
 
 ### 18.3 Diagrams
 
-- **Archify** (deterministic renderer from typed JSON → self-contained HTML/SVG; architecture, workflow, sequence, data-flow, lifecycle).
-- The JSON is built **from the graph and the actual diff**, not from what the model believes it did.
-- Type by change: new endpoint/integration → sequence · RAG/pipeline/ETL → data-flow · new module/service → architecture · user/approval process → workflow · entity states → lifecycle · changes to existing behavior → before/after.
-- Trackers don't render HTML: attach exported **PNG/SVG**; the interactive HTML stays in `docs/releases/`.
-- Fallback when Archify is unavailable (unsupported harness, no Node, failure): **Mermaid** in Markdown.
+**DECIDED (ADR 0042) — Archify is mandatory unless the user explicitly chooses `diagrams.engine: mermaid`.**
+Mermaid is never an automatic response to a missing tool, unsupported harness or renderer failure.
+A missing Archify blocks diagram-required steps with installation instructions. **Pending Phase 4:**
+pinned confirmed installation during init, script-based invocation in every harness, config support and
+error-level doctor enforcement. Current canonical commands still contain fallback wording; that is an
+implementation gap, not permission to fall back.
 
-## 19. Performance — `/mandao-perf`
+- Write typed structured source from the graph, `design.md`, `data-model.md` and actual diff; never from
+  memory. Preserve module/contract identity, mark changed elements and grey unchanged context.
+- Choose the Archify type from the change: frontend → workflow; API or frontend/backend → sequence;
+  service boundaries → architecture; LLM/ETL → data-flow; entity states → lifecycle; data schema → ERD.
+- Keep at most 2–3 diagrams, required by content at standard/full depth and optional at lite (ADR 0034).
+- Stamp source hashes and structured graph identity; relevant design/data-model changes require
+  regeneration, while mere graph reformatting does not (ADR 0027).
+- Tracker attachments use PNG/SVG. Interactive HTML stays in the spec's `diagrams/` in v2; legacy v1
+  release exports may remain in `docs/releases/<ID>/`.
+
+## 19. Performance — `/mandao-perf` (planned)
 
 ### 19.1 Purpose
 
@@ -909,7 +1025,7 @@ Double-checked gate.
 
 Depth ladder: **quick** (no spec) → **lite** (short but complete spec) → **standard** → **full**.
 
-## 22. Audit — `/mandao-audit`
+## 22. Audit — `/mandao-audit` (planned)
 
 Read-only, by lenses; run all or one (`/mandao-audit security`).
 
@@ -930,19 +1046,19 @@ Output: dated report with a score per lens, findings with severity, evidence and
 
 ## 23. Open decisions
 
-Raised in the gap sweep. Each needs a decision (and an ADR) before dependent work is built.
+Raised in the gap sweep. **In this section, untagged items are OPEN**, overriding the document-wide default. Explicit DECIDED/implemented items identify resolved parts; remaining policy needs a decision and ADR before dependent work is built.
 
 ### 23.1 Lifecycle after code
-- **PR and human review:** PR description template generated from the spec; what the human reviewer should focus on that the AI Reviewer cannot see; merge strategy.
-- **Release and deploy:** feature flags, rollout, rollback plan, environments, post-deploy verification. Today `close` ends before deploy.
-- **Hotfix lane:** production bugs need a fast path *with* rigor — mandatory regression test, lightweight postmortem.
-- **Spikes / research:** exploration without implementation, ending in a decision (go / clarify / stop), not code.
+- **DECIDED, pending Phase 6:** PR delivery, target selection, green-CI merge and cleanup follow §14.5 and §24. Human review beyond the AI Reviewer remains **OPEN** where the project has not defined it.
+- **Release and deploy:** feature flags, rollout, rollback plan and post-deploy verification remain **OPEN**. Release/environment recording exists (§18); Phase 6 adds confirmed progressive promotion and read-only git-derived release state, not permission for arbitrary deployment.
+- **DECIDED (ADR 0030), implemented — hotfix lane:** specify selects hotfix.from/prefix, records lane: hotfix, and close lists required back-merges. Automatic authorized delivery is pending Phase 6. A distinct lightweight postmortem format remains **OPEN**.
+- **Research:** standalone research command is planned; its exact contract remains **OPEN**. **DECIDED, pending Phase 8:** version-dependent or unfamiliar design questions become delegated research with dated URLs; unresolved research blocks design approval, and unverified model knowledge cannot justify high-impact decisions.
 
 ### 23.2 Process governance
-- **Roles and approvals:** who approves what (PO → AC; tech lead → design and constitution; dev → tasks); approval modes (e.g., `pre-approved` with logged auto-approvals).
+- **DECIDED (ADRs 0035/0040):** script-recorded story/design/spec/tasks/close approvals, including safe approval by running the next command (§2). Organization-specific permission/identity enforcement and a general pre-approved mode remain **OPEN**; git user.name alone is not proof of authority.
 - **DECIDED (ADR 0011) — spec states:** `draft → approved → in-progress → blocked → verified → closed | abandoned`. A spec with tests `DEFERRED_TO_CI` reaches `verified` only after CI confirms them (ADR 0013).
 - **Mid-flight changes:** AC changed after approval → spec versioning and a spec changelog.
-- **Concurrent specs:** two specs touching the same module; parallel branches; worktrees.
+- **Implemented:** isolated spec worktrees (§14.5). **DECIDED, pending Phase 9:** isolated parallel task worktrees, eligibility and integration queue. Coordination between independent specs touching the same module remains **OPEN**.
 - **DECIDED (ADR 0011) — artifact language:** `language.business` and `language.technical` (§3).
 
 ### 23.3 Quality
@@ -951,7 +1067,7 @@ Raised in the gap sweep. Each needs a decision (and an ADR) before dependent wor
 - **Data and migrations:** expand/contract strategy, backfills, data rollback.
 - **Accessibility and i18n:** a11y exists only as a tag; i18n not covered.
 - **Testing:** test data and fixtures, flaky test policy, contract testing tooling.
-- **Technical debt:** a concrete destination (backlog) for advisories, beyond Kaizen.
+- **DECIDED (ADR 0042):** docs/backlog.md is the single execution backlog; unresolved closure items require an owner in Phase 5.
 
 ### 23.4 Harness security
 - See §20.
@@ -960,34 +1076,72 @@ Raised in the gap sweep. Each needs a decision (and an ADR) before dependent wor
 - Eval dataset management, prompt registry, model change as a controlled change, LLM observability, cost per request tracking.
 
 ### 23.6 Operating Mandao
-- **Context management:** long sessions, when to start a fresh session, context budget per subagent.
-- **Cost budget** per spec, with alerts.
+- **DECIDED (ADRs 0036/0038), implemented:** minimal command context, model profiles, cache diagnostics and session-cut advice (§14.7). A general enforced per-subagent context budget remains **OPEN**.
+- **DECIDED (ADR 0036), implemented:** optional per-spec budgets, 80% warning and explicit continuation authorization (§14.7).
 - **Notifications:** Slack alerts on HALT, pending approvals and close.
-- **Process metrics:** lead time, rework rate, Reviewer FAIL rate (aggregate view beyond per-spec Kaizen).
-- **Adoption mid-project:** onboarding a repo with work already in flight.
+- **Implemented:** per-spec Kaizen, cross-spec comparison and role costs. **DECIDED, pending Phases 2/9:** script-owned active/user/agent timing, corrected historical cost view and parallelism comparison. Actual waiting time is not inferred from gaps between commits.
+- **Implemented (ADR 0030):** init can create a new folder/repo or run a shadow pilot without modifying tracked managed files; doctor detects conflicting SDD framework folders without removing them. Semantic import of in-flight work remains **OPEN**.
 - **Format migrations:** `mandao migrate` using `schema_version`.
 - **Testing Mandao itself:** evals of the commands (e.g., does `specify` catch a planted AC↔FR contradiction?).
 - **Multi-repo beyond polyrepo:** `related:` repos outside the workspace.
 - **Work types beyond app/ai** (ML, infrastructure, DevOps, security): see §9.1 and ADR 0031. After the pilot.
 - ~~Cross-harness Reviewer~~ — **DECIDED (ADR 0021)**, now §14.3: optional, offered when the review would be reduced independence and another harness is installed and logged in.
 
-## 24. MVP
+## 24. Current status and roadmap
 
-### 24.1 In scope
-1. Repo skeleton, CLI and zod schemas for `config.yml`, `mandao.lock`, `sources.yml`, `models.yml`, `catalog/skills.yml`.
-2. Canonical command format (frontmatter defined and documented, with `schema_version`).
-3. **Two adapters:** Claude Code and **GitHub Copilot** (chosen because its format differs most from Claude's, which stress-tests the abstraction). Verify Copilot's current docs before fixing the adapter; record the verification date in an ADR.
-4. `init`, `sync`, `doctor` working, with snapshot tests.
-5. Resolution stack (overrides > presets > core).
-6. Workspace modes `single`, `monorepo`, `polyrepo` (detection and config).
-7. Real content for three commands: `constitution`, `specify`, `quick`. The rest as stubs with frontmatter and their input/output contract.
+### 24.1 Implemented baseline
 
-### 24.2 Out of scope
-Tracker publication, Archify, full `ai` profile, `audit`, `perf`, Kaizen, everything in §23.
+The TypeScript/npm CLI installs canonical content through pure adapters, layered resolution and a
+single writer. Claude Code, GitHub Copilot, Codex and OpenCode adapters are implemented; Antigravity is
+experimental and has snapshot coverage, with no live acceptance run. Init/sync/update/doctor, model
+routing, worktrees, deterministic helpers, TDD/mutation evidence, independent review, impacted tests,
+resource guards, verify/close and layout v2 exist. This supersedes the original two-adapter/three-command
+MVP scope; it does not claim every accepted improvement is implemented.
 
-### 24.3 Working agreement for the building agent
-- Propose the iteration plan (structure, canonical command format with an example, schemas, how an adapter works) **before writing code**; wait for approval.
-- If a decision here looks wrong or contradictory, say so with a reason before implementing.
-- Small conventional commits (§16.4); tests for every piece.
-- Record decisions taken along the way as short ADRs in `docs/decisions/`, and update this document.
-- **Dogfooding:** as soon as `constitution` and `specify` exist, use them on the Mandao repo itself.
+Stable commands: init, constitution, story, specify, clarify, tasks, implement, verify, close, quick,
+resume. **Planned:** research, perf, audit. Tracker payloads exist; live Jira publication is not yet proven.
+
+### 24.2 Accepted improvement program
+
+**DECIDED (ADR 0042) — pending by phase.** [docs/backlog.md](docs/backlog.md) is the single itemized backlog;
+it records acceptance criteria, dependencies, status and the phase responsible for each item. MDO-0012,
+0013 and 0014 are historical references fulfilled through these phases, without opening Mandao specs.
+
+| Phase | Scope |
+|---|---|
+| 0 | Reconcile design, decisions and implementation; consolidate the backlog |
+| 1 | HTTPS skill sources, preserved SSH configuration, correct Graphify installation |
+| 2 | Script-owned timing/questions, cost recording order and corrected historical views |
+| 3 | Canonical review packs, complete Implementer briefs, structured review findings |
+| 4 | Exact gate receipts, once-per-boundary cuts, autonomy, commit manifests, launcher and Archify |
+| 5 | Script-enforced loop, red/mutation, tests, approval, closure and integrity rules |
+| 6 | Authorized delivery, green-CI merge, cleanup, git-derived release state, implement → verify |
+| 7 | Security gates based on actual local tools and the user's CI |
+| 8 | Delegated research with dated sources and unresolved-research approval gate |
+| 9 | AC-based deliveries, isolated task parallelism, integration queue and measurements |
+| 10 | Version release notes from merged specs in business language |
+
+Migration of v1 MDO-0008–0010 remains outside these phases until layout v2 is proven on a real spec.
+Work types in ADR 0031 remain **PROPOSED**; decisions still unresolved in §23 remain **OPEN**, except
+where a later accepted phase explicitly resolves them. Research-in-specify in Phase 8 does not by
+itself define the standalone planned research command.
+
+### 24.3 Working agreement for the improvement program
+
+- One `perf/<phase>` branch and PR per phase from updated main; show the plan and wait for approval.
+- Do not invoke Mandao workflow commands or skills to execute this program. Product CLI probes, when
+  needed, use the checkout/worktree's local build, never a global Mandao executable.
+- Preserve TDD, independent Reviewer and quality gates. Behavior changes have tests; design choices
+  have short ADRs; design, README and docs stay synchronized in the same phase.
+- Small emoji + conventional commits, without spec trailers for this program.
+- After each change: lint, typecheck and impacted tests with limited workers. Before push also build.
+  **Never run the full suite locally for this program; it runs only in PR CI.** Do not use
+  `npm run check` locally while it includes the full suite. Test-created git repositories set local
+  user.name/user.email; fixtures use process.exitCode when output may still be pending.
+- **Delivery policy, pending Phase 6:** `delivery.pre_push: impacted | full | none`, default `impacted`
+  (lint, typecheck, build and impacted tests), respecting resource guards. `full` requires explicit
+  project configuration; CI still runs the complete suite. Docker/act are optional.
+- Merge only with green PR CI, using a merge commit, never squash. Fix failing CI and push again.
+  After merge, pull main and build in the principal checkout. Mark completed work in the backlog.
+- The agent decides reversible technical implementation details and records its recommendation in an
+  ADR; questions are for scope, product behavior, security or irreversible actions.

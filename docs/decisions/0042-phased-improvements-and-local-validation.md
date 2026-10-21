@@ -33,7 +33,8 @@ that belongs in PR CI.
   command. This autonomy policy is accepted; propagation to every command is Phase 4 work.
 - Archify is required for diagrams. Mermaid is an explicit project choice
   (`diagrams.engine: mermaid`), never an automatic fallback. This supersedes the automatic-fallback
-  clauses of ADRs 0022 and 0034 and design principle 3. Installer, configuration and enforcement are
+  clauses of ADR 0022 and design principle 3, and preserves ADR 0034's Archify support for ERD.
+  Installer, configuration and enforcement are
   Phase 4 work; this documentation phase does not claim they already exist.
 - Phase 6 delivery will default `delivery.pre_push` to `impacted` (lint, typecheck, build and impacted
   tests). `full` requires explicit user configuration; `none` remains configurable. Full PR CI stays
