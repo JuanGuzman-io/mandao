@@ -1,0 +1,10 @@
+#!/bin/sh
+# mandao: commit-msg gate
+set -e
+# Worktrees made from a commit before commitlint was added have neither the config nor the package:
+# say so and let the commit through (CI lints every PR's commits).
+if [ ! -f commitlint.config.mjs ] || ! npx --no-install commitlint --version >/dev/null 2>&1; then
+  echo "mandao: commitlint is not installed in this checkout; commit message not linted here (CI checks it)" >&2
+  exit 0
+fi
+npx --no-install commitlint --edit "$1"
