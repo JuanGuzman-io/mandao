@@ -29,7 +29,7 @@ cli ──▶ engine ──▶ adapters ──▶ render ──▶ schemas
 | Layer | Path | Role | May depend on |
 |---|---|---|---|
 | CLI | `src/cli/` | `program.ts` assembles command groups (`setup`, `extensions`, `models-command`, `run`, `start`, `approve`, `worktree`, `hook`); prompts and printing | everything below |
-| Engine | `src/engine/` | Sync pipeline (`buildProject`, shared with doctor), doctor, launcher, graph exclusions, config/lock reads | adapters, resolver, writer, models, render, schemas |
+| Engine | `src/engine/` | Sync pipeline (`buildProject`, shared with doctor), doctor, launcher, graph exclusions, config/lock reads | adapters, resolver, writer, models, render, schemas, skills |
 | Adapters | `src/adapters/` | **Pure** canonical → harness files (ADR 0007) | render, resolver types, models types, schemas |
 | Render | `src/render/` | Token and conditional rendering, template install (ADR 0002) | schemas |
 | Resolver | `src/resolver/` | overrides > presets > core (ADR 0004) | schemas |
@@ -77,6 +77,7 @@ is separate from the packaged `src/` runtime. Evidence: `package.json`, `scripts
 | git | `src/scripts/quick-check.ts`, `src/cli/start.ts`, `src/scripts/commits.ts` | `execFileSync('git', …)` |
 | npm registry | `{{script:x}}` rendering in `src/render/render.ts` | `npx -y mandao@<version>` |
 | Skill ecosystems | `src/skills/install.ts` | shell installers after confirmation |
+| Skill repositories | `src/skills/git-copy.ts` | `git` fetch of a pinned commit after confirmation; argument arrays, timeout, no prompts |
 | graphify | `src/engine/doctor.ts`, `src/cli/hook.ts` | graph checks and graph-first guards; locally installed git hook refreshes the graph |
 | External tracker | `src/scripts/publish.ts`, `core/commands/close.md` | CLI prepares an idempotent payload; the agent uses MCP only after approval |
 

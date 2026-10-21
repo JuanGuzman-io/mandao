@@ -4,6 +4,18 @@ schema_version: 1
 
 # Constitution changelog
 
+## 2026-10-21 — MDO-0009 close (recommend each command's skills at init)
+- critical-flows.md: new flow "`init` runs no skill installer or copy before the person selects it"
+  (`test/integration/init-skills.test.ts`); the `skills add` row's `OPEN` is covered by the shared
+  `installAndPin` path.
+- business-rules.md: BR-8 notes that a `git` source is copied into the person's project, never into the
+  package; new BR-15 "init never preselects or installs a skill without the person's selection; `--yes`
+  only lists them".
+- architecture.md: integration "Skill repositories" (`src/skills/git-copy.ts`, pinned-commit fetch
+  after confirmation); Engine may depend on `skills` (resolves the verify finding CC-6).
+- product.md capability map: "Recommends the commands' skills at init, for every harness", implemented.
+- Approved by: maintainer in the MDO-0009 close session, item by item.
+
 ## 2026-10-20 — approved active review after public contribution and execution updates
 
 - Reconcile supported harnesses, task execution, safe frontmatter, evidence integrity, costs and release workflows.
