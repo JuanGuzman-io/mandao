@@ -1,7 +1,7 @@
 # Public repository maintainer checklist
 
 Owner: **@JuanGuzman-io**. Apply these settings on GitHub after the CI workflow reaches `main`.
-The files in this PR prepare the repository; they do not change hosted settings.
+Repository files prepare these controls; verify hosted settings separately on GitHub.
 
 ## Merge methods — Settings → General → Pull Requests
 
@@ -50,6 +50,24 @@ The files in this PR prepare the repository; they do not change hosted settings.
 - [ ] If Changesets creates version PRs, enable **Allow GitHub Actions to create and approve pull
       requests**. Review those PRs with the same required checks; do not squash them.
 - [ ] Configure npm trusted publishing as described in [CONTRIBUTING.md](../CONTRIBUTING.md).
+
+## Secret scanning and dependency security
+
+- [ ] Settings → Advanced Security / Code security: verify **Secret scanning** is active and review
+      all open alerts. Public repositories receive automatic secret scanning; confirm the alert
+      view and enable **Push protection** where available. Rotate any exposed credential before
+      resolving its alert; deleting a file does not revoke a credential.
+- [ ] Enable **Dependency graph**, **Dependabot alerts** and **Dependabot security updates**.
+- [ ] Review existing alerts and their affected lockfile versions before the beta release.
+- [ ] For scheduled version-update PRs, add `.github/dependabot.yml` covering `npm` at `/` and
+      `github-actions` at `/`, with a weekly schedule. This file is not present yet; security
+      updates and scheduled version updates are separate settings.
+- [ ] Ensure bot commits meet commitlint (for example, `🔧 chore(deps): …`), or amend them while
+      preserving their trailers. Do not bypass required checks or use squash to accommodate bots.
+- [ ] Verify all required checks on an actual fork PR; local checks do not prove GitHub settings.
+
+Security references: [GitHub secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning),
+[Dependabot configuration](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
 
 References: [GitHub ruleset rules](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets),
 [creating rulesets and bypass permissions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/creating-rulesets).

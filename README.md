@@ -9,9 +9,7 @@
 *mandao* · Cali slang for an errand you send someone to run — and expect done right.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-<!-- After the repository is public (the URL returns 404 today):
-[![CI](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml/badge.svg)](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml)
--->
+[![CI](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml)
 <!-- After the first publish:
 [![npm](https://img.shields.io/npm/v/mandao.svg)](https://www.npmjs.com/package/mandao)
 [![provenance](https://img.shields.io/badge/npm-provenance-green.svg)](https://www.npmjs.com/package/mandao)
