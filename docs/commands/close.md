@@ -20,6 +20,8 @@ Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and pro
 ## Writes
 
 - `specs/<ID>-<slug>/close-summary.md`
+- `docs/CHANGELOG.md`
+- `docs/kaizen/lessons.md`
 - `docs/releases/<ID>/`
 - `docs/kaizen/<ID>.md`
 - `docs/constitution/CHANGELOG.md`

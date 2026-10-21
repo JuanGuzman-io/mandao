@@ -54,6 +54,14 @@ spec: MDO-0011-one-fixed-layout-for-every-spec-folder
 | 2026-10-21 | T4 | 2 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/log-cache.test.ts; `npx vitest run test/unit/log-cache.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T4 | 2 | strong | claude | claude-opus-5-5 | — | REPORTED | red test changed: test/integration/log-v2.test.ts; test split for lint by mandao-tester: 5 wide tests moved from log-v2.test.ts to log-v2-wide.test.ts, names unchanged |
 | 2026-10-21 | T4 | 2 | strong | claude | — | claude-opus-5-5 | PASS | red test changed: test/integration/log-v2.test.ts; advisories: storyField 2.0/+2/0x2 version split; writer regex front matter (security/low); logPath routing not centralised (D3); schemas/spec.ts not zod; integrity gone after close; free-text headings in reviews.md; untagged security mention: No blocking findings remain. There is no high or critical security finding.; log edited outside the scripts: _log/execution.md |
+| 2026-10-21 | T5 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T5 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts, test/unit/release.test.ts, test/integration/spec-log.test.ts, test/unit/content.test.ts; `npx vitest run test/integration/close.test.ts test/unit/release.test.ts test/integration/spec-log.test.ts test/unit/content.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T5 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts, test/unit/release.test.ts, test/integration/spec-log.test.ts, test/unit/content.test.ts; `npx vitest run test/integration/close.test.ts test/unit/release.test.ts test/integration/spec-log.test.ts test/unit/content.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T5 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/close.test.ts, test/unit/content.test.ts |
+| 2026-10-21 | T5 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/integration/close.test.ts, test/unit/content.test.ts; FAIL: run close-summary deletes the lead text the template asks for between the title and ## Outcome (D5: rewrites only Outcome and Delivery) |
+| 2026-10-21 | T5 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/integration/close.test.ts; `npx vitest run test/integration/close.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T5 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/content.test.ts |
+| 2026-10-21 | T5 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/content.test.ts |
 
 ### Pivot Record — T4 — 2026-10-21
 

@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { configSchema } from '../../src/schemas/index.js';
 import { fixCommitsAfter, releaseBranchesContaining } from '../../src/scripts/close.js';
 import { parseCloseSummary, renderCloseSummary, withEnvironment, withPublication } from '../../src/spec/index.js';
 import { makeTree, pkg } from '../helpers.js';
+import { repo, run, useLogEnv, SPEC as V2_SPEC } from '../log-v2-helpers.js';
 
 const trailers = configSchema.parse({ schema_version: 1, workspace: 'single', projects: [{ name: 'p', path: '.' }], harnesses: ['claude'] })
   .commits.trailers;
@@ -204,5 +205,98 @@ describe('Kaizen shows the sessions (MDO-0008 S-3.1)', () => {
     expect(closeCommand).toContain('## Sessions');
     expect(closeCommand).toMatch(/sessions/);
     expect(readFileSync(join(root, '.mandao/templates/app/close/kaizen.md'), 'utf8')).toContain('## Sessions');
+  });
+});
+
+describe('a version 2 close is one document inside the spec (MDO-0011 AC-4)', () => {
+  useLogEnv();
+  const PO = 'Ya puedes ver tus habilidades fijadas.\n';
+  const DEV = 'The `skills list` command reads the lock.\n';
+  const seed = (root: string) => {
+    const file = join(root, V2_SPEC, 'close-summary.md');
+    writeFileSync(
+      file,
+      `---\nschema_version: 1\nspec: MDO-0001-skills-list\napplied: []\n---\n\n# Close — MDO-0001-skills-list\n\n## Outcome\n\nstale\n\n## For the PO\n\n${PO}\n## For developers\n\n${DEV}\n## Kaizen\n\nOne lesson.\n\n## Delivery\n\nstale\n`,
+    );
+    return file;
+  };
+  const sections = (text: string): Record<string, string> =>
+    Object.fromEntries(
+      text
+        .split(/^## /m)
+        .slice(1)
+        .map((s) => [s.split('\n')[0], s.split('\n').slice(1).join('\n')]),
+    );
+  const changelogLines = (root: string) =>
+    readFileSync(join(root, 'docs/CHANGELOG.md'), 'utf8')
+      .split('\n')
+      .filter((l) => l.includes('MDO-0001'));
+
+  test('S-4.1: the summary has the five sections, CHANGELOG has one line, and no per-spec release or kaizen document exists', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    const text = readFileSync(file, 'utf8');
+    expect([...text.matchAll(/^## (.+)$/gm)].map((m) => m[1])).toEqual(['Outcome', 'For the PO', 'For developers', 'Kaizen', 'Delivery']);
+    expect(sections(text).Outcome).toContain('AC-1');
+    const lines = changelogLines(root);
+    expect(lines).toHaveLength(1);
+    expect(lines[0]).toContain('List the skills pinned in a workspace');
+    expect(lines[0]).toContain('story');
+    expect(lines[0]).toContain('[spec](../specs/MDO-0001-skills-list/)');
+    expect(existsSync(join(root, 'docs/releases/MDO-0001'))).toBe(false);
+    expect(existsSync(join(root, 'docs/kaizen/MDO-0001.md'))).toBe(false);
+  });
+
+  test('S-4.1/C2: the summary points to no docs/releases or docs/kaizen file', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    expect(readFileSync(file, 'utf8')).not.toMatch(/docs\/releases|docs\/kaizen\/MDO-0001/);
+    expect(changelogLines(root)).toHaveLength(1);
+  });
+
+  test('S-4.3: with no environment and no publication, no `—` field and no empty section is written', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    const text = readFileSync(file, 'utf8');
+    expect(text).not.toMatch(/:\s*—/);
+    expect(text).not.toMatch(/^- Release:|^- Environments:|^- Published:/m);
+    for (const [name, body] of Object.entries(sections(text))) expect(body.trim(), name).not.toBe('');
+  });
+
+  test('S-4.4: the lead written between the title and Outcome survives a first and a second --closed', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    const LEAD = 'Two lines of lead\nwritten by the agent.\n';
+    writeFileSync(file, readFileSync(file, 'utf8').replace('## Outcome', `${LEAD}\n## Outcome`));
+    for (const _ of [1, 2]) {
+      await run(root, 'close-summary', 'MDO-0001', '--closed');
+      const text = readFileSync(file, 'utf8');
+      expect(text.slice(text.indexOf('# Close'), text.indexOf('## Outcome'))).toContain(LEAD);
+    }
+  });
+
+  test('S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    const first = readFileSync(file, 'utf8');
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    const second = readFileSync(file, 'utf8');
+    expect(sections(second)['For the PO']).toBe(`\n${PO}\n`);
+    expect(sections(second)['For the PO']).toBe(sections(first)['For the PO']);
+    expect(sections(second)['For developers']).toBe(sections(first)['For developers']);
+    expect(changelogLines(root)).toHaveLength(1);
+  });
+
+  test('AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases', async () => {
+    const root = repo(2);
+    seed(root);
+    const plan = await run(root, 'publish-plan', 'MDO-0001', '--target', 'jira:PROJ-1');
+    expect(plan.payload.text).toContain('Ya puedes ver tus habilidades fijadas.');
+    expect(plan.payload.text).not.toContain('reads the lock');
+    expect(existsSync(join(root, 'docs/releases/MDO-0001'))).toBe(false);
   });
 });

@@ -40,7 +40,9 @@ Then `node .mandao/bin/mandao.mjs run status $spec closed` must be allowed (the 
    followed, with the mean absolute error. Below the minimum (3 specs) write "insufficient data (minimum 3)" and
    propose nothing. Proposals are recommendations only: Mandao never changes the constants.
 3. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
-   approval. Write `docs/kaizen/<ID>.md` from `.mandao/templates/app/close/kaizen.md`.
+   approval. Version 1 spec: write `docs/kaizen/<ID>.md` from `.mandao/templates/app/close/kaizen.md`. Version 2
+   spec (`schema_version: 2` in story.md): write the `## Kaizen` section of `close-summary.md` from the same
+   guide, and append one line per approved lesson to `docs/kaizen/lessons.md`; write no `docs/kaizen/<ID>.md`.
 
 ## 2. Constitution and product impacts (single writer)
 
@@ -68,7 +70,22 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-Following `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-close.md` (summary first, evidence at the end), in `docs/releases/<ID>/`:
+Following `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-close.md` (summary first, evidence at the end).
+
+**Version 2 spec:** the whole close is `close-summary.md`, from `.mandao/templates/app/close/close-summary.md`. Run
+`node .mandao/bin/mandao.mjs run close-summary $spec` first: it writes the record, `## Outcome` (from `node .mandao/bin/mandao.mjs run release-status`)
+and `## Delivery`; never edit those two. Then write the three sections it keeps, each one only when it has
+something to say:
+- `## For the PO` in `en`: business language, no code names, what the user gets now and
+  what is still pending, from the guide `.mandao/templates/app/close/release-notes.md`.
+- `## For developers` in `en`: what was built per module, decisions, contract changes,
+  the drift from step 4, how to test, from the guide `.mandao/templates/app/close/technical.md`.
+- `## Kaizen` in `en`: the headline numbers and the lessons from step 1.
+
+Version 2 writes no `docs/releases/<ID>/` and no `docs/kaizen/<ID>.md`. Never write an empty section or
+a field with `—`: leave it out.
+
+**Version 1 spec**, in `docs/releases/<ID>/`:
 - `technical.md` from `.mandao/templates/app/close/technical.md`, in `en`.
 - `release-notes.md` from `.mandao/templates/app/close/release-notes.md`, in `en`, one row per
   criterion with the status from `node .mandao/bin/mandao.mjs run release-status $spec` — never upgraded by hand.
@@ -95,8 +112,9 @@ For each tracker target (e.g. `jira:PROJ-123`, from `.mandao/sources.yml`):
    (PNG of the diagrams), updating the previous comment when the action is `update`.
 3. Record it: `node .mandao/bin/mandao.mjs run close-summary $spec --published "<target>|comment|<id>|<hash>|<url>"`.
 
-Without a tracker MCP: the files in `docs/releases/<ID>/` are the publication; also print the
-release notes as a block the user can paste.
+Version 2: the payload is the `## For the PO` section of `close-summary.md`. Without a tracker MCP, that
+section (or, for version 1, the files in `docs/releases/<ID>/`) is the publication; also print it as a
+block the user can paste.
 
 **Approved from the terminal:** when `_log/approvals.yml` holds a `close` approval (`mandao approve
 <ID> close --items …`), apply exactly those items without asking again; anything not listed stays
@@ -104,10 +122,11 @@ unapplied and is reported.
 
 ## 8. Finish
 
-`node .mandao/bin/mandao.mjs run close-summary $spec --closed` (it writes the record and the links to the documents
-the close produced; never edit it by hand), set `status: closed` in story.md, then commit everything
-close wrote on its own: `node .mandao/bin/mandao.mjs run commit-spec $spec close` (the spec folder, `docs/releases/<ID>/`,
-`docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
+`node .mandao/bin/mandao.mjs run close-summary $spec --closed` (it writes the record; for version 2 it also rewrites
+`## Outcome` and `## Delivery`, keeps your prose sections as they are, and upserts the spec's one line in
+`docs/CHANGELOG.md`; never edit the record by hand), set `status: closed` in story.md, then commit everything
+close wrote on its own: `node .mandao/bin/mandao.mjs run commit-spec $spec close` (the spec folder, `docs/CHANGELOG.md`, `docs/kaizen/lessons.md`
+or, for version 1, `docs/releases/<ID>/` and `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.
 
 **Worktree** (`worktrees.cleanup` in `.mandao/config.yml`): after the spec's branch is merged, `ask`

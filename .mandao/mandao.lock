@@ -57,7 +57,7 @@ files:
     harness: codex
     from: command:close
     ownership: owned
-    hash: sha256-2aU7sMTUpd5z9VcKuo8OWEk5BhZlQJkAeexkXBZmslE=
+    hash: sha256-tH7WWvmYFW1z08xOcRwsCxxq8j0zhQ0AvUQGzAPtQxk=
     scope: project
   - path: .agents/skills/mandao-constitution/agents/openai.yaml
     harness: codex
@@ -231,7 +231,7 @@ files:
     harness: claude
     from: command:close
     ownership: owned
-    hash: sha256-aT0bVRK56V5WYPZ01PC+gxL23MoNdHeXQHQDTXr79NE=
+    hash: sha256-sZ1FqWIhQoAxrk5OP7eEDndkuxBWJUNyFfLyacAflhw=
     scope: project
   - path: .claude/skills/mandao-constitution/SKILL.md
     harness: claude
@@ -399,7 +399,7 @@ files:
     harness: copilot
     from: command:close
     ownership: owned
-    hash: sha256-qNxHwmDetR9iUj1r6kc70t8sxm0QYtE6RJhb/AXv9LU=
+    hash: sha256-Vmqn9ons5ynDCtOHgiNHHqNDHAln8K5KBnKocnf5dUo=
     scope: project
   - path: .github/prompts/mandao-constitution.prompt.md
     harness: copilot
@@ -490,6 +490,12 @@ files:
     from: guide:mandao
     ownership: owned
     hash: sha256-ntaaMICmC22L/iBk1/EkhsYtoN3I9Y8/auaTPxGiJ88=
+    scope: project
+  - path: .mandao/templates/app/close/close-summary.md
+    harness: mandao
+    from: template:shared/close/close-summary.md
+    ownership: owned
+    hash: sha256-2vn9iYaugdbk6adCV/wpLXGSBGQ9vyOYjIEX9rUJJRw=
     scope: project
   - path: .mandao/templates/app/close/kaizen.md
     harness: mandao
@@ -615,7 +621,7 @@ files:
     harness: mandao
     from: template:shared/rules/doc-close.md
     ownership: owned
-    hash: sha256-GR0arlcRmO5SFmAB20FNQYCU02WybmhIA7THXunbxmM=
+    hash: sha256-pZbeBes8lOyAfB0hOSgqkpg1Ch9PSFwcqmZBwHTQoTM=
     scope: project
   - path: .mandao/templates/app/rules/doc-data-model.md
     harness: mandao
@@ -687,7 +693,7 @@ files:
     harness: mandao
     from: template:shared/rules/spec-docs.md
     ownership: owned
-    hash: sha256-+2Tse15PT4SRQzmFtfoEIuPKLEsFa0XPFS0CExEd8TY=
+    hash: sha256-s9SQShdZD/+6MZVS/2a1bMIM3Y1V4DabgbVw5WtfE5I=
     scope: project
   - path: .mandao/templates/app/rules/spec-types.md
     harness: mandao

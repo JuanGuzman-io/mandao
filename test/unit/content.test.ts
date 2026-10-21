@@ -263,5 +263,62 @@ describe('core content', () => {
       const tpl = readFileSync(join(process.cwd(), 'core/templates/shared/spec/story.md'), 'utf8');
       expect(frontmatterOf(tpl).data.schema_version).toBe(2);
     });
+    /** MDO-0011 T5: the whole close is one document inside the spec (AC-4). */
+    describe('close writes one close-summary.md (AC-4)', () => {
+      const config = (business: string, technical: string) =>
+        configSchema.parse({
+          schema_version: 1,
+          workspace: 'single',
+          projects: [{ name: 'a', path: '.', profile: 'app' }],
+          harnesses: ['claude'],
+          language: { business, technical },
+        });
+      const closeCommand = (business: string, technical: string) => {
+        const { files } = buildOutputs(config(business, technical), {}, layers, '0.0.0', 'project');
+        const f = files.find((x) => /mandao-close(\/SKILL\.md|\.md)$/.test(x.path));
+        expect(f, 'mandao-close').toBeDefined();
+        return f!.content;
+      };
+      const template = () => readFileSync(join(process.cwd(), 'core/templates/shared/close/close-summary.md'), 'utf8');
+
+      test('S-4.2: with business es and technical en, the close command writes For the PO in es and For developers in en', () => {
+        const text = closeCommand('es', 'en');
+        expect(text).toMatch(/For the PO[^\n]*\bes\b/);
+        expect(text).toMatch(/For developers[^\n]*\ben\b/);
+      });
+
+      test('S-4.2/C1: the languages come from the configuration, not fixed in the text', () => {
+        const text = closeCommand('fr', 'de');
+        expect(text).toMatch(/For the PO[^\n]*\bfr\b/);
+        expect(text).toMatch(/For developers[^\n]*\bde\b/);
+        expect(text).not.toMatch(/For the PO[^\n]*\bes\b/);
+      });
+
+      test('S-4.2: the template has the five sections in order and names each prose language by its setting', () => {
+        const tpl = template();
+        const heads = [...tpl.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
+        expect(heads).toEqual(['Outcome', 'For the PO', 'For developers', 'Kaizen', 'Delivery']);
+        expect(tpl).toMatch(/language\.business/);
+        expect(tpl).toMatch(/language\.technical/);
+      });
+
+      test('S-4.3/C2: the template and the command seed no empty field and no `—` placeholder', () => {
+        expect(template()).not.toMatch(/^- [A-Za-z ]+: —\s*$/m);
+        expect(closeCommand('es', 'en')).toMatch(/(no|never|not)[^\n]*(empty|—)/i);
+      });
+
+      test('AC-4: the close command writes the CHANGELOG line and the lessons, not docs/releases or docs/kaizen per spec', () => {
+        const text = closeCommand('es', 'en');
+        expect(text).toContain('docs/CHANGELOG.md');
+        expect(text).toContain('docs/kaizen/lessons.md');
+        expect(text).toMatch(/version 2[^\n]*(no|not|never)[^\n]*docs\/releases/i);
+      });
+
+      test('AC-4: spec-docs.md no longer says close-summary.md is the "generated record and links"', () => {
+        const rule = readFileSync(join(process.cwd(), 'core/templates/shared/rules/spec-docs.md'), 'utf8');
+        expect(rule).not.toContain('generated record and links');
+        expect(rule).toMatch(/close-summary\.md[^\n]*(PO|developers|Kaizen)/);
+      });
+    });
   });
 });

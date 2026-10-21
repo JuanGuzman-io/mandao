@@ -13,6 +13,8 @@ inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/" }
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/close-summary.md" }
+  - { path: "docs/CHANGELOG.md" }
+  - { path: "docs/kaizen/lessons.md" }
   - { path: "{{paths.releases}}/<ID>/" }
   - { path: "docs/kaizen/<ID>.md" }
   - { path: "{{paths.constitution}}/CHANGELOG.md" }
@@ -20,6 +22,7 @@ capabilities: [read, search, edit, shell, mcp]
 templates:
   - rules/context.md
   - rules/spec-docs.md
+  - close/close-summary.md
   - close/release-notes.md
   - close/technical.md
   - close/kaizen.md
@@ -65,7 +68,9 @@ Then `{{script:status}} {{arg:spec}} closed` must be allowed (the spec is `verif
    followed, with the mean absolute error. Below the minimum (3 specs) write "insufficient data (minimum 3)" and
    propose nothing. Proposals are recommendations only: Mandao never changes the constants.
 3. **Learn:** 0–3 root-cause lessons, each with evidence. **Standardize:** 1–3 one-line edits, each for
-   approval. Write `docs/kaizen/<ID>.md` from `{{template:close/kaizen.md}}`.
+   approval. Version 1 spec: write `docs/kaizen/<ID>.md` from `{{template:close/kaizen.md}}`. Version 2
+   spec (`schema_version: 2` in story.md): write the `## Kaizen` section of `close-summary.md` from the same
+   guide, and append one line per approved lesson to `docs/kaizen/lessons.md`; write no `docs/kaizen/<ID>.md`.
 
 ## 2. Constitution and product impacts (single writer)
 
@@ -93,7 +98,22 @@ edge is drift and goes, explained, into the technical notes; a relabelled box is
 
 ## 5. Documents
 
-Following `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-close.md}}` (summary first, evidence at the end), in `{{paths.releases}}/<ID>/`:
+Following `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-close.md}}` (summary first, evidence at the end).
+
+**Version 2 spec:** the whole close is `close-summary.md`, from `{{template:close/close-summary.md}}`. Run
+`{{script:close-summary}} {{arg:spec}}` first: it writes the record, `## Outcome` (from `{{script:release-status}}`)
+and `## Delivery`; never edit those two. Then write the three sections it keeps, each one only when it has
+something to say:
+- `## For the PO` in `{{language.business}}`: business language, no code names, what the user gets now and
+  what is still pending, from the guide `{{template:close/release-notes.md}}`.
+- `## For developers` in `{{language.technical}}`: what was built per module, decisions, contract changes,
+  the drift from step 4, how to test, from the guide `{{template:close/technical.md}}`.
+- `## Kaizen` in `{{language.technical}}`: the headline numbers and the lessons from step 1.
+
+Version 2 writes no `{{paths.releases}}/<ID>/` and no `docs/kaizen/<ID>.md`. Never write an empty section or
+a field with `—`: leave it out.
+
+**Version 1 spec**, in `{{paths.releases}}/<ID>/`:
 - `technical.md` from `{{template:close/technical.md}}`, in `{{language.technical}}`.
 - `release-notes.md` from `{{template:close/release-notes.md}}`, in `{{language.business}}`, one row per
   criterion with the status from `{{script:release-status}} {{arg:spec}}` — never upgraded by hand.
@@ -120,8 +140,9 @@ For each tracker target (e.g. `jira:PROJ-123`, from `.mandao/sources.yml`):
    (PNG of the diagrams), updating the previous comment when the action is `update`.
 3. Record it: `{{script:close-summary}} {{arg:spec}} --published "<target>|comment|<id>|<hash>|<url>"`.
 
-Without a tracker MCP: the files in `{{paths.releases}}/<ID>/` are the publication; also print the
-release notes as a block the user can paste.
+Version 2: the payload is the `## For the PO` section of `close-summary.md`. Without a tracker MCP, that
+section (or, for version 1, the files in `{{paths.releases}}/<ID>/`) is the publication; also print it as a
+block the user can paste.
 
 **Approved from the terminal:** when `_log/approvals.yml` holds a `close` approval (`mandao approve
 <ID> close --items …`), apply exactly those items without asking again; anything not listed stays
@@ -129,10 +150,11 @@ unapplied and is reported.
 
 ## 8. Finish
 
-`{{script:close-summary}} {{arg:spec}} --closed` (it writes the record and the links to the documents
-the close produced; never edit it by hand), set `status: closed` in story.md, then commit everything
-close wrote on its own: `{{script:commit-spec}} {{arg:spec}} close` (the spec folder, `{{paths.releases}}/<ID>/`,
-`docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
+`{{script:close-summary}} {{arg:spec}} --closed` (it writes the record; for version 2 it also rewrites
+`## Outcome` and `## Delivery`, keeps your prose sections as they are, and upserts the spec's one line in
+`docs/CHANGELOG.md`; never edit the record by hand), set `status: closed` in story.md, then commit everything
+close wrote on its own: `{{script:commit-spec}} {{arg:spec}} close` (the spec folder, `docs/CHANGELOG.md`, `docs/kaizen/lessons.md`
+or, for version 1, `{{paths.releases}}/<ID>/` and `docs/kaizen/<ID>.md`, the constitution and changed module guides; a `docs` commit with `Refs: <ID>`,
 never pushed). Report: Kaizen headline, impacts applied, drift, where it was published, the commit.
 
 **Worktree** (`worktrees.cleanup` in `.mandao/config.yml`): after the spec's branch is merged, `ask`

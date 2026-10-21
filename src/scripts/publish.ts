@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import type { CloseSummary } from '../spec/index.js';
+import { type CloseSummary, sectionOf } from '../spec/index.js';
 
 export interface PublishPayload {
   target: string;
@@ -37,12 +37,30 @@ function attachments(root: string, dirs: string[]): PublishPayload['attachments'
     .map((file) => ({ path: relative(root, file), bytes: statSync(file).size, sha256: sha(readFileSync(file)) }));
 }
 
+/** A version 2 spec publishes the `For the PO` section of its `close-summary.md`; a version 1 spec, its release notes. */
+function notesText(root: string, releaseDir: string, specDir: string, version: 1 | 2): string {
+  if (version === 1) {
+    const notes = join(releaseDir, 'release-notes.md');
+    if (!existsSync(notes)) throw new Error(`${relative(root, notes)} does not exist: close writes the release notes first`);
+    return readFileSync(notes, 'utf8');
+  }
+  const file = join(specDir, 'close-summary.md');
+  const text = existsSync(file) ? sectionOf(readFileSync(file, 'utf8'), 'For the PO')?.trim() : undefined;
+  if (!text) throw new Error(`${relative(root, file)} has no "For the PO" section: close writes it first`);
+  return `${text}\n`;
+}
+
 /** What would be published to `target`, and whether it is new, changed or already there. */
-export function publishPlan(root: string, releaseDir: string, specDir: string, target: string, summary: CloseSummary): PublishPlan {
-  const notes = join(releaseDir, 'release-notes.md');
-  if (!existsSync(notes)) throw new Error(`${relative(root, notes)} does not exist: close writes the release notes first`);
-  const text = readFileSync(notes, 'utf8');
-  const files = attachments(root, [releaseDir, join(specDir, 'diagrams')]);
+export function publishPlan(
+  root: string,
+  releaseDir: string,
+  specDir: string,
+  target: string,
+  summary: CloseSummary,
+  version: 1 | 2 = 1,
+): PublishPlan {
+  const text = notesText(root, releaseDir, specDir, version);
+  const files = attachments(root, version === 1 ? [releaseDir, join(specDir, 'diagrams')] : [join(specDir, 'diagrams')]);
   const hash = sha(JSON.stringify({ text, files: files.map((f) => f.sha256) }));
   const payload: PublishPayload = { target, kind: 'comment', text, attachments: files, hash };
   const previous = summary.published.find((p) => p.target === target && p.kind === 'comment');

@@ -159,7 +159,7 @@ parallel_safe: false
 verify: npx vitest run test/integration/log-v2.test.ts test/integration/spec-log.test.ts test/integration/ledger.test.ts test/integration/enforced-rules.test.ts test/integration/tdd.test.ts
 ```
 
-### [ ] T5 — The whole close is one document inside the spec
+### [x] T5 — The whole close is one document inside the spec
 
 - **What:** `close-summary.md` becomes a record plus five sections, from a new template. `run close-summary` rewrites only Outcome and Delivery, `--closed` upserts the `docs/CHANGELOG.md` line, and approved lessons go to `docs/kaizen/lessons.md` ([D5](design.md#d5)). `publish-plan` reads `For the PO` for version 2. The close command and its rules change to match.
 - **Done when:**

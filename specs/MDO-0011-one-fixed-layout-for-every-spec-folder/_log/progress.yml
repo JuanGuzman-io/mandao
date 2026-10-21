@@ -1,10 +1,10 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0011-one-fixed-layout-for-every-spec-folder
-updated_at: 2026-10-21T21:33:30.822Z
+updated_at: 2026-10-21T21:54:00.544Z
 current: null
 open_questions: []
-next_step: ""
+next_step: commit T5, then T6
 deferred_to_ci: []
 red_tests:
   - task: T1
@@ -161,4 +161,61 @@ red_tests:
           - dropLogCache removes only the spec cache folder, not its siblings or .mandao/
           - a log write for a spec whose id is a path writes no integrity file outside .mandao/cache/
           - "schema_version: %s routes both to the cache: %s"
+  - task: T5
+    files:
+      - path: test/unit/release.test.ts
+        sha256: 772f2629be4cf269df6a30368309e1015aedbead6a5ebac21d831f77c087c03d
+        tests:
+          - met needs every covering task committed and verify PASS; otherwise partial or pending
+          - impacts are the bullet items of the design sections, without comments or "none"
+          - first publication shows a preview; the same payload is unchanged; new content is an update
+      - path: test/integration/spec-log.test.ts
+        sha256: a0942889b08907c9c2dea730a850af6a563ce1cb4d87a7dd02e7f254a1450656
+        tests:
+          - release-status, kaizen and kaizen-compare give the same answers with the log in the root or in _log/
+          - a new spec writes its log in _log/; an older spec keeps writing in the root, never split
+          - checkpoint writes to _log/ once the spec has moved
+          - close-summary writes the links itself, only to documents that exist
+      - path: test/unit/content.test.ts
+        sha256: 5f75161f2881bf7e2ffdf875c33159b4edad4f983c8acb81fb4064f2cd0fb6f2
+        tests:
+          - ships every command in the flow, with stubs declared as such
+          - "S-5.1: %s render says when to use each skill, with no harness label, and the brainstorming hand-off"
+          - "S-5.1/C1: %s render says a missing skill leaves the command on its own steps and names the missing skill"
+          - "S-2.2/C1: %s prints the resume field of the script output, never a command copied into the text"
+          - "S-2.2/C1: %s passes its own harness to run where and to spec-new"
+          - "S-2.1: claude specify, quick and implement enter the worktree with EnterWorktree and the path, without a new session"
+          - "S-2.3 and S-2.3/C1: claude prints the resume command and stops when EnterWorktree is refused, never working in the main checkout"
+          - "S-3.3 and S-3.3/C1: %s re-enters the worktree (claude) or prints the resume field (others) in its run where step"
+          - "S-4.3: quick records its cost before quick-log and the commit, and the commit lists the quick costs file"
+          - "S-4.3: %s implement and tasks call approve --by-running with --harness and no longer say running the command is no approval"
+          - the catalog is valid
+          - "S-1.2: no command or lite rule decides where tasks go by how many there are"
+          - "S-1.2/C2: the spec template has no ## Tasks, and the tasks step writes tasks.md at every depth"
+          - "S-1.3: specify writes quickstart.md only for visible behavior and data-model.md only for data changes"
+          - "S-1.3/C1: neither file is conditioned on the number of tasks, requirements or scenarios"
+          - "S-1.2: the tasks command warns on an open version 1 spec, does not convert it, and never writes tasks in spec.md"
+          - "AC-1: a story rendered from the template starts at layout version 2"
+          - "S-4.2: with business es and technical en, the close command writes For the PO in es and For developers in en"
+          - "S-4.2/C1: the languages come from the configuration, not fixed in the text"
+          - "S-4.2: the template has the five sections in order and names each prose language by its setting"
+          - "S-4.3/C2: the template and the command seed no empty field and no `—` placeholder"
+          - "AC-4: the close command writes the CHANGELOG line and the lessons, not docs/releases or docs/kaizen per spec"
+          - 'AC-4: spec-docs.md no longer says close-summary.md is the "generated record and links"'
+      - path: test/integration/close.test.ts
+        sha256: 74a3d942c33ddd93244127cca369df9f888fa9e656a9889a61a022ac14fca615
+        tests:
+          - "bugs after merge: fix commits that reference the spec, after it closed"
+          - "gitflow: the release branch that contains every commit of the spec"
+          - close-summary keeps real ISO timestamps as text across a round trip
+          - "close-summary is idempotent: an environment or a publication is recorded once and updated"
+          - derives the implemented graph from the spec commits and compares it by identity
+          - "mandao run kaizen has sessions: pauses, turns per task, verify, close, after tasks and the missing sessions"
+          - after mandao sync the close command carries the step and the Kaizen template has a Sessions section
+          - "S-4.1: the summary has the five sections, CHANGELOG has one line, and no per-spec release or kaizen document exists"
+          - "S-4.1/C2: the summary points to no docs/releases or docs/kaizen file"
+          - "S-4.3: with no environment and no publication, no `—` field and no empty section is written"
+          - "S-4.4: a second --closed keeps For the PO byte-identical and CHANGELOG with a single line"
+          - "AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases"
+          - "S-4.4: the lead written between the title and Outcome survives a first and a second --closed"
 pending_commits: []

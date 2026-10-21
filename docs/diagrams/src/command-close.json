@@ -11,7 +11,7 @@
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "24169d112095227eaffaef9203e4fb4e4b75ed853073f3648523f42d049c6d12"
+      "sha256": "60e1a9d2c6475fcded35599c773b14d4c71243b5acf652a8ff2b89e8ec496a38"
     },
     {
       "path": "core/commands/constitution.md",
@@ -54,7 +54,7 @@
       "sha256": "ca1abdb14e4641315cf3bcc3e80b482b74eb879e9dab96978f1279bfda00ab28"
     }
   ],
-  "specSha256": "12b2fccbab73bf4ec0e087a3aa3058aed25d1c4c0c300c90a30bad7a248e804d",
+  "specSha256": "e10d26704e5ef7dba7cdce6f0d2402a525dbbc68d702d2b80d3a4ebc3d81feb7",
   "spec": {
     "schema_version": 2,
     "diagram_type": "workflow",
@@ -158,8 +158,8 @@
         "col": 1,
         "type": "backend",
         "label": "5. Documents",
-        "sublabel": "mandao run release-status",
-        "width": 199
+        "sublabel": "mandao run close-summary +1",
+        "width": 213
       },
       {
         "id": "s6",
@@ -209,24 +209,24 @@
         "lane": "writes",
         "col": 1,
         "type": "database",
-        "label": "docs/releases/<ID>/",
-        "width": 157
+        "label": "docs/CHANGELOG.md",
+        "width": 143
       },
       {
         "id": "w2",
         "lane": "writes",
         "col": 2,
         "type": "database",
-        "label": "docs/kaizen/<ID>.md",
-        "width": 157
+        "label": "docs/kaizen/lessons.md",
+        "width": 178
       },
       {
         "id": "w3",
         "lane": "writes",
         "col": 3,
         "type": "database",
-        "label": "docs/constitution/CHANGELOG.md",
-        "width": 234
+        "label": "docs/releases/<ID>/",
+        "width": 157
       }
     ],
     "edges": [
