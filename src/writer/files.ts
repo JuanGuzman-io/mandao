@@ -2,6 +2,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rm
 import { dirname, isAbsolute, relative } from 'node:path';
 import { type Document, parseDocument } from 'yaml';
 import { sha256 } from '../util/hash.js';
+import { recordLogWrite } from './log-integrity.js';
 
 /**
  * The only place Mandao writes to disk (ADR 0007). Every write is idempotent: identical content is
@@ -12,9 +13,13 @@ export type WriteOutcome = 'created' | 'updated' | 'unchanged';
 
 export function writeText(abs: string, content: string): WriteOutcome {
   const before = existsSync(abs) ? readFileSync(abs, 'utf8') : undefined;
+  if (before !== content) {
+    mkdirSync(dirname(abs), { recursive: true });
+    writeFileSync(abs, content);
+  }
+  // A spec log written by a script: remember it, so an edit made any other way is caught.
+  recordLogWrite(abs, content);
   if (before === content) return 'unchanged';
-  mkdirSync(dirname(abs), { recursive: true });
-  writeFileSync(abs, content);
   return before === undefined ? 'created' : 'updated';
 }
 

@@ -32,6 +32,8 @@ export const NOTE_FLAGS = {
   redTestChanged: 'red test changed',
   /** A task with mandatory tests reached review without red evidence: the Reviewer FAILs it. */
   noRedEvidence: 'no red evidence',
+  /** A spec log changed outside Mandao's scripts since a script last wrote it (MDO-0008). */
+  logEdited: 'log edited outside the scripts',
 } as const;
 
 const cell = (s: string) => s.trim().replace(/^`|`$/g, '').replace(/\\\|/g, '|');

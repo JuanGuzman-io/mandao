@@ -6,10 +6,10 @@ import { appendExecutionRow, writeProgress } from '../scripts/checkpoint.js';
 import { repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell } from '../scripts/identity.js';
 import { detectRunner, fillCommand, projectDir, RUNNER_COMMANDS } from '../scripts/impact.js';
-import { fileHash, redCheck } from '../scripts/red.js';
+import { redCheck, redFile } from '../scripts/red.js';
 import { runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { type Task, testWriter } from '../spec/index.js';
+import { type Task, taskAttempt, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -18,7 +18,6 @@ interface RedOptions {
   self?: boolean;
   force?: boolean;
   harness?: string;
-  attempt: string;
 }
 
 /** The command that runs exactly these test files for the project: configured, or the runner's. */
@@ -46,6 +45,19 @@ export function routedWriter(
   return agentIdentity(root, testWriter(task, spec.execution, mode === 'simple'), harness);
 }
 
+type RedTests = NonNullable<SpecFolder['progress']>['red_tests'];
+
+/** A new red run adds to the task's record: files keep the names of every red run that saw them. */
+function mergeRed(all: RedTests, task: string, files: RedTests[number]['files']): RedTests {
+  const before = all.find((r) => r.task === task)?.files ?? [];
+  const merged = [...before.filter((f) => !files.some((n) => n.path === f.path))];
+  for (const f of files) {
+    const old = before.find((b) => b.path === f.path);
+    merged.push({ ...f, tests: [...new Set([...(old?.tests ?? []), ...(f.tests ?? [])])] });
+  }
+  return [...all.filter((r) => r.task !== task), { task, files: merged }];
+}
+
 /**
  * `mandao run red`: TDD red evidence (ADR 0022). Runs the given tests under the budget and queue, and
  * records a RED row only when they fail; their hashes go to progress.yml so a later change is flagged.
@@ -56,7 +68,6 @@ export function registerRed(run: Command, ctx: CliContext) {
     .description('Record TDD red evidence: run the task tests, require them to fail, and remember them')
     .option('--self', 'the Leader wrote the tests in its own context (no subagent): reduced independence')
     .option('--harness <id>', 'harness running the Leader', 'claude')
-    .option('--attempt <n>', 'attempt for the execution row', '1')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
     .action(async (ref: string, id: string, tests: string[], o: RedOptions) => {
       const root = ctx.root();
@@ -76,11 +87,11 @@ export function registerRed(run: Command, ctx: CliContext) {
       }
       const writer = routedWriter(root, config, spec, task, o.harness ?? 'claude', o.self);
       const repo = repoRoot(spec.dir);
-      const files = tests.map((path) => ({ path, sha256: fileHash(repo, path) }));
+      const files = tests.map((path) => redFile(repo, path));
       appendExecutionRow(spec.dir, spec.name, {
         date: new Date().toISOString().slice(0, 10),
         task: id,
-        attempt: Number(o.attempt),
+        attempt: taskAttempt(spec.execution, id),
         tier: task.tier,
         harness: writer.harness,
         implementer: identityCell(writer),
@@ -92,7 +103,7 @@ export function registerRed(run: Command, ctx: CliContext) {
       writeProgress(spec.dir, {
         ...progress,
         updated_at: new Date().toISOString(),
-        red_tests: [...(spec.progress?.red_tests ?? []).filter((r) => r.task !== id), { task: id, files }],
+        red_tests: mergeRed(spec.progress?.red_tests ?? [], id, files),
       });
       json({ red: true, task: id, tests: files, run: result });
     });

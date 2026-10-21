@@ -122,7 +122,7 @@ describe('mandao run red', () => {
     const spec = readSpec(join(root, SPEC));
     expect(spec.execution.at(-1)).toMatchObject({ verdict: 'RED', task: 'T2', implementer: 'claude-sonnet-5-5' });
     expect(spec.progress!.red_tests).toEqual([
-      { task: 'T2', files: [{ path: 'test/a.test.ts', sha256: expect.stringMatching(/^[0-9a-f]{64}$/) }] },
+      { task: 'T2', files: [{ path: 'test/a.test.ts', sha256: expect.stringMatching(/^[0-9a-f]{64}$/), tests: expect.any(Array) }] },
     ]);
 
     writeFileSync(join(root, 'test/a.test.ts'), 'expect(1).toBe(1)\n');

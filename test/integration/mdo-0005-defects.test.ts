@@ -14,7 +14,7 @@ import { agentIdentity, claimedModels, identityNotes } from '../../src/scripts/i
 import { reviewCell } from '../../src/scripts/quick-log.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { commitType, kindIssues, type Task } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { makeTree, pkg, reviewFile } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -97,7 +97,21 @@ describe('#1 and #5: identity comes from agent files and models.yml, never from 
     expect(spec.progress!.current!.model).toBe(`${leader.model}${leader.effort ? ` (${leader.effort})` : ''}`);
     // A model name where an agent is expected is refused: there is no agent file by that name.
     await expect(
-      run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--verdict', 'PASS', '--harness', 'claude', '--reviewer', 'claude-opus-5-5'),
+      run(
+        root,
+        'checkpoint',
+        'MDO-0001',
+        '--task',
+        'T2',
+        '--verdict',
+        'PASS',
+        '--harness',
+        'claude',
+        '--reviewer',
+        'claude-opus-5-5',
+        '--review',
+        reviewFile('PASS'),
+      ),
     ).rejects.toThrow(/does not exist/);
   });
 
@@ -233,7 +247,21 @@ describe('#3: a FAIL keeps its reason', () => {
   test('FAIL without --reason is refused; with it the row says why', async () => {
     const root = repo();
     await expect(
-      run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--verdict', 'FAIL', '--harness', 'claude', '--reviewer', 'mandao-reviewer'),
+      run(
+        root,
+        'checkpoint',
+        'MDO-0001',
+        '--task',
+        'T2',
+        '--verdict',
+        'FAIL',
+        '--harness',
+        'claude',
+        '--reviewer',
+        'mandao-reviewer',
+        '--review',
+        reviewFile('FAIL'),
+      ),
     ).rejects.toThrow(/--reason/);
     await run(
       root,
@@ -249,6 +277,8 @@ describe('#3: a FAIL keeps its reason', () => {
       'mandao-reviewer',
       '--reason',
       'schema_version is not checked',
+      '--review',
+      reviewFile('FAIL'),
     );
     expect(readSpec(join(root, SPEC)).execution.at(-1)!.notes).toBe('FAIL: schema_version is not checked');
   });

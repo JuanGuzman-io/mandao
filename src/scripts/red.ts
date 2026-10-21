@@ -27,3 +27,46 @@ export function redCheck(status: string, exitCode: number | undefined): RedCheck
   if (status === 'PASS') return { red: false, problem: 'the tests pass before any implementation: they do not prove the scenario' };
   return { red: false, problem: `the tests did not run to a verdict (${status}${exitCode !== undefined ? `, exit ${exitCode}` : ''})` };
 }
+
+/** Test names declared in a file: `test('…')` / `it('…')` (JS, TS), `def test_…` (Python), `func Test…` (Go). */
+export function testNames(text: string): string[] {
+  const names = [
+    ...[...text.matchAll(/\b(?:test|it)(?:\.(?:only|concurrent|each\([^)]*\)))?\(\s*(['"`])((?:\\.|(?!\1).)*)\1/g)].map((m) => m[2]!),
+    ...[...text.matchAll(/^\s*(?:async\s+)?def\s+(test_\w+)/gm)].map((m) => m[1]!),
+    ...[...text.matchAll(/^func\s+(Test\w+)\s*\(/gm)].map((m) => m[1]!),
+  ];
+  return [...new Set(names)];
+}
+
+/** One test file as recorded red: its hash and the names it declared then. */
+export function redFile(repo: string, path: string): { path: string; sha256: string; tests: string[] } {
+  const file = join(repo, path);
+  return { path, sha256: fileHash(repo, path), tests: existsSync(file) ? testNames(readFileSync(file, 'utf8')) : [] };
+}
+
+/**
+ * Tests of a task that never ran red: names in its test files (the declared ones and those recorded red)
+ * that no red run of the task saw. Files recorded before names were kept are skipped. Red first applies
+ * to rework too: a test added after a FAIL needs its own red run (MDO-0008).
+ */
+export function testsWithoutRed(
+  repo: string,
+  progress: Progress | undefined,
+  task: string,
+  declared: string[],
+): { file: string; tests: string[] }[] {
+  const recorded = progress?.red_tests.find((r) => r.task === task)?.files ?? [];
+  if (!recorded.length) return [];
+  const seen = new Map<string, Set<string> | undefined>();
+  for (const f of recorded) seen.set(f.path, f.tests ? new Set([...(seen.get(f.path) ?? []), ...f.tests]) : undefined);
+  const files = [...new Set([...declared.filter(isTestPath), ...seen.keys()])];
+  return files.flatMap((file) => {
+    const full = join(repo, file);
+    if (!existsSync(full) || (seen.has(file) && seen.get(file) === undefined)) return [];
+    const red = seen.get(file) ?? new Set<string>();
+    const missing = testNames(readFileSync(full, 'utf8')).filter((n) => !red.has(n));
+    return missing.length ? [{ file, tests: missing }] : [];
+  });
+}
+
+const isTestPath = (f: string) => /(\.(test|spec)\.[cm]?[jt]sx?$|(^|\/)test_[^/]*\.py$|_test\.(py|go)$)/.test(f);

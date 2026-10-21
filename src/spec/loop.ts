@@ -11,7 +11,8 @@ export type LoopAction =
   | 'commit'
   | 'done'
   | 'halt'
-  | 'pivot';
+  | 'pivot'
+  | 'await-budget';
 
 export interface LoopState {
   task: string;
@@ -143,6 +144,14 @@ function roles(tier: Tier, own: ExecutionRow[], models: ResolvedModels | undefin
 type StepBase = Omit<LoopState, 'action' | 'reason'>;
 
 /**
+ * The attempt in progress for a task: one plus its FAILs (a Reviewer's or the gates'). Computed from the
+ * log by every script that records a row; nobody types it (MDO-0008: rows said attempt 1 at attempt 3).
+ */
+export function taskAttempt(rows: ExecutionRow[], task: string): number {
+  return 1 + rows.filter((r) => r.task === task && r.verdict === 'FAIL').length;
+}
+
+/**
  * Before the implementation is reported: no implementation brief until the red run is recorded, whoever
  * writes the tests (MDO-0007: a brief that mixed both put the code before the red run). Else implement.
  */
@@ -175,7 +184,7 @@ export function loopState(
   const own = rows.filter((r) => r.task === task.id);
   const last = own.at(-1);
   const { tier, fails } = currentTier(task.tier, own);
-  const attempt = Math.max(1, ...own.map((r) => r.attempt));
+  const attempt = taskAttempt(rows, task.id);
   const tdd = tddFor(task, own);
   const base = { task: task.id, tier, attempt, failsAtTier: fails, tdd, ...roles(tier, own, models, harness, alternatives) };
   const failsAtStrong = own.filter((r) => r.verdict === 'FAIL' && r.tier === 'strong').length;
@@ -192,7 +201,7 @@ export function loopState(
       if (tdd.required && !tdd.red) base.notes.push(tdd.evidence === 'mutation' ? 'no mutation evidence' : 'no red evidence');
       return { ...base, action: 'review', reason: 'implementation reported, awaiting review' };
     case 'FAIL':
-      return { ...base, action: 'rework', attempt: attempt + 1, reason: `FAIL ${fails} at ${tier}` };
+      return { ...base, action: 'rework', reason: `FAIL ${fails} at ${tier}` };
     case 'PASS':
     case 'DEFERRED_TO_CI':
       return committed

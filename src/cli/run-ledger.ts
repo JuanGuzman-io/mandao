@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
@@ -7,19 +6,18 @@ import type { HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
-import { agentIdentity, type Identity, identityCell, identityNotes } from '../scripts/identity.js';
+import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
-import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
-import { type ExecutionRow, NOTE_FLAGS, type Progress, VERDICTS } from '../spec/index.js';
-import { writeText } from '../writer/files.js';
+import { type ExecutionRow, NOTE_FLAGS, type Progress, taskAttempt, VERDICTS } from '../spec/index.js';
+import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerClose } from './run-close.js';
 import { registerDiagram } from './run-diagram.js';
 import { registerMutation } from './run-mutation.js';
 import { registerRed } from './run-red.js';
+import { registerReview } from './run-review.js';
 
 function loadSpec(ctx: CliContext, ref: string) {
   const config = readConfig(ctx.root());
@@ -35,7 +33,6 @@ export interface CheckpointOptions {
   question?: string[];
   verdict?: (typeof VERDICTS)[number];
   tier?: string;
-  attempt: string;
   implementer?: string;
   reviewer?: string;
   claimedImplementer?: string;
@@ -46,6 +43,7 @@ export interface CheckpointOptions {
   clear?: boolean;
   deferred?: string;
   pendingCommit?: string;
+  review?: string;
 }
 
 /** `--deferred "a, b|low memory"` → one deferred_to_ci entry for the task. */
@@ -88,7 +86,7 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
   return {
     date: now.slice(0, 10),
     task: o.task ?? '—',
-    attempt: Number(o.attempt),
+    attempt: taskAttempt(spec.execution, o.task ?? '—'),
     tier: o.tier ?? rowTier(spec, o.task),
     harness,
     implementer: identityCell(implementer),
@@ -123,18 +121,32 @@ function leaderModel(ctx: CliContext, harness: string | undefined): string {
   return leader ? `${leader.model}${leader.effort ? ` (${leader.effort})` : ''}` : 'unknown';
 }
 
-export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
-  const now = new Date().toISOString();
+/** The task in progress after this checkpoint, with the Leader's model from models.yml. */
+function currentTask(ctx: CliContext, o: CheckpointOptions) {
+  const inProgress = o.nextTask ?? o.task;
+  if (o.clear || !inProgress) return null;
+  return { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: leaderModel(ctx, o.harness) };
+}
+
+/** Everything a checkpoint refuses before it writes; returns the commit it queues, already checked. */
+function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
+  requireRedFirst(spec, o.task, o.verdict);
+  checkReview(spec, o);
   const pending = pendingEntry(spec, o);
-  if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, o, now));
+  for (const p of pending) checkPendingSubject(readConfig(ctx.root()), spec, p.task, p.subject, p.files);
+  return pending;
+}
+
+export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
+  const now = new Date().toISOString();
+  const pending = checkedPending(ctx, spec, o);
+  const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim());
+  const notes = [o.notes, edited].filter(Boolean).join('; ');
+  if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, { ...o, notes }, now));
   if (o.done) markTask(spec.dir, o.done, true);
-  const inProgress = o.nextTask ?? o.task;
-  const current =
-    o.clear || !inProgress
-      ? null
-      : { task: inProgress, phase: o.phase ?? 'implementing', harness: o.harness ?? 'unknown', model: leaderModel(ctx, o.harness) };
+  const current = currentTask(ctx, o);
   writeProgress(spec.dir, {
     schema_version: 1,
     spec: spec.name,
@@ -152,6 +164,7 @@ export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: Checkpoint
     spec: spec.name,
     current,
     pendingCommits: [...(spec.progress?.pending_commits ?? []), ...pending].map((p) => p.task),
+    ...(edited ? { discrepancy: edited } : {}),
   };
 }
 
@@ -167,13 +180,16 @@ export function withCheckpointOptions(cmd: Command): Command {
     .option('--question <text...>', 'open questions')
     .option('--verdict <verdict>', `also append an execution row: ${VERDICTS.join(' | ')}`)
     .option('--tier <tier>', 'tier for the execution row')
-    .option('--attempt <n>', 'attempt for the execution row', '1')
     .option('--implementer <agent>', 'agent that implemented: mandao-implementer-<tier>[@<harness>] or self')
     .option('--reviewer <agent>', 'agent that reviewed: mandao-reviewer[@<harness>] or self')
     .option('--claimed-implementer <model>', 'model the implementer said it was (a mismatch is flagged)')
     .option('--claimed-reviewer <model>', 'model the reviewer said it was (a mismatch is flagged)')
     .option('--notes <text>', 'notes for the row (advisories, deferred tests…)', '')
     .option('--reason <text>', 'why the Reviewer failed the task: its first blocking finding (required with FAIL)')
+    .option(
+      '--review <file|->',
+      "with a Reviewer's PASS or FAIL: its whole answer (a file, or - for stdin), checked and kept in _log/reviews/",
+    )
     .option('--done <id>', 'mark a task done in tasks.md')
     .option('--clear', 'no task in progress')
     .option('--deferred <tests|reason>', 'record impacted tests deferred to CI for --task: "<tests, comma separated>|<reason>"')
@@ -260,64 +276,12 @@ function registerCommit(run: Command, ctx: CliContext) {
     });
 }
 
-/** The row for a process review: identity from the command line Mandao ran. */
-function reviewRow(spec: SpecFolder, task: string, identity: Identity, verdict: 'PASS' | 'FAIL', reviewFile: string): ExecutionRow {
-  const own = spec.execution.filter((r) => r.task === task);
-  const reported = [...own].reverse().find((r) => r.verdict === 'REPORTED');
-  const notes = [
-    ...(reported && reported.harness !== identity.harness ? [NOTE_FLAGS.providerIndependence] : []),
-    `read-only ${identity.harness} process; review in ${reviewFile}`,
-  ];
-  return {
-    date: new Date().toISOString().slice(0, 10),
-    task,
-    attempt: reported?.attempt ?? Math.max(1, ...own.map((r) => r.attempt)),
-    tier: rowTier(spec, task),
-    harness: identity.harness,
-    implementer: reported?.implementer ?? '—',
-    reviewer: identityCell(identity),
-    verdict,
-    notes: notes.join('; '),
-  };
-}
-
-/** `mandao run review --via <harness>`: a review in another harness, as a read-only process (ADR 0021). */
-function registerReview(run: Command, ctx: CliContext) {
-  run
-    .command('review <spec> <task>')
-    .description('Review a reported task in another harness as a read-only process and record the verdict')
-    .requiredOption('--via <harness>', `harness that reviews: ${REVIEW_PROCESSES.join(' | ')}`)
-    .requiredOption('--gates <file>', 'file with the gate and impacted-test results the Leader ran')
-    .requiredOption('--brief <file>', 'the task brief (`mandao run brief` output)')
-    .action((ref: string, task: string, opts: { via: string; gates: string; brief: string }) => {
-      if (!isReviewProcess(opts.via)) throw new Error(`--via must be one of ${REVIEW_PROCESSES.join(', ')}`);
-      const { config, spec } = loadSpec(ctx, ref);
-      const reviewer = resolveWorkspaceModels(ctx.root(), config, readRecommendations())[opts.via]?.reviewer;
-      if (!reviewer) throw new Error(`No reviewer model for ${opts.via}: run \`mandao models\``);
-      for (const f of [opts.gates, opts.brief]) if (!existsSync(f)) throw new Error(`${f} does not exist`);
-      const prompt = reviewPrompt(
-        reviewerInstructions(ctx.root(), opts.via),
-        JSON.parse(readFileSync(opts.brief, 'utf8')),
-        taskDiff(repoRoot(spec.dir), spec.dir),
-        readFileSync(opts.gates, 'utf8'),
-      );
-      const r = runReview(opts.via, ctx.root(), reviewer, prompt);
-      const attempt = Math.max(1, ...spec.execution.filter((x) => x.task === task).map((x) => x.attempt));
-      const file = join(logPath(spec.dir, 'reviews'), `${task}-${attempt}-${opts.via}.md`);
-      writeText(file, r.output);
-      const rel = relative(ctx.root(), file);
-      if (r.verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, r.identity, r.verdict, rel));
-      json({ verdict: r.verdict ?? null, reviewer: r.identity, review: rel, exitCode: r.exitCode, recorded: Boolean(r.verdict) });
-      if (!r.verdict) process.exitCode = 1;
-    });
-}
-
 /** Scripts that write the ledger (checkpoint), commit (commit) or launch a reviewer (review): ADR 0021. */
 export function registerLedger(run: Command, ctx: CliContext) {
   registerCheckpoint(run, ctx);
   registerCommit(run, ctx);
   registerCommitSpec(run, ctx);
-  registerReview(run, ctx);
+  registerReview(run, ctx, loadSpec);
   registerRed(run, ctx);
   registerMutation(run, ctx);
   registerDiagram(run, ctx);

@@ -18,7 +18,8 @@ export type LogFile =
   | 'premises'
   | 'costs.yml'
   | 'full-runs.md'
-  | 'session-cuts.md';
+  | 'session-cuts.md'
+  | 'discrepancies.md';
 
 /** Where a machine file of the spec is: `_log/<name>`, or the root when an older spec keeps it there. */
 export function logPath(specDir: string, name: LogFile): string {
