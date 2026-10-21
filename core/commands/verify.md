@@ -67,7 +67,8 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
 Write `verify-report.md` from `{{template:spec/verify-report.md}}`, following
 `{{template:rules/spec-docs.md}}` and `{{template:rules/doc-verify.md}}`: the verdict as the summary, AC → tests clause by clause first
 (`{{template:rules/traceability.md}}`), then suites, TDD evidence (`missingRed`, changed red tests),
-product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
+the untagged security mentions from `verify-plan` (`securityMentions`, listed verbatim per task; they do
+not block, a person reads them), product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
 the spec has a `quickstart.md`, bring its steps in line with what was built
 (`{{template:rules/doc-quickstart.md}}`). Then run the semantic
 Consistency Check (`{{template:rules/consistency-check.md}}`) over story, requirements, design and the
