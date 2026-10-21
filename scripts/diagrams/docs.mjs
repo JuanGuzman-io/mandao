@@ -113,10 +113,35 @@ export function plannedPage(read, id) {
   return `# /mandao-${id}\n\n${GENERATED.replace('the frontmatter above and core/commands', 'the command list')}\n\n**Planned.** ${description}\n`;
 }
 
+/** docs/commands/README.md: the index GitHub shows under the folder's file list. */
+export function commandIndex(read) {
+  const all = commands(read);
+  const row = (id, status) => {
+    const m = all[id]?.meta;
+    const what = PLANNED[id] ?? m.description;
+    const approval = status === 'planned' ? '—' : m.approval === 'required' ? 'yes' : 'no';
+    return `| [\`/mandao-${id}\`](${id}.md) | ${what.replace(/\|/g, '\\|')} | ${approval} | ${status === 'planned' ? '⚪ planned' : '🟢 stable'} |`;
+  };
+  return `${[
+    '# Commands',
+    '',
+    GENERATED.replace('the frontmatter above and core/commands', 'core/commands'),
+    '',
+    'One page per command: what it does, what it reads and writes, its steps and its diagram.',
+    'How they fit together: the [overview in the README](../../README.md#how-it-works) and the [process map](../process-map.md).',
+    '',
+    '| Command | What it does | You approve | Status |',
+    '|---|---|---|---|',
+    ...STABLE_COMMANDS.map((id) => row(id, 'stable')),
+    ...['research', 'perf', 'audit'].map((id) => row(id, 'planned')),
+  ].join('\n')}\n`;
+}
+
 /** Every generated page, path → content. */
 export function generatedDocs(read) {
   return {
     'docs/process-map.md': processMap(read),
+    'docs/commands/README.md': commandIndex(read),
     ...Object.fromEntries(STABLE_COMMANDS.map((id) => [`docs/commands/${id}.md`, commandPage(read, id)])),
     ...Object.fromEntries(['research', 'perf', 'audit'].map((id) => [`docs/commands/${id}.md`, plannedPage(read, id)])),
   };
