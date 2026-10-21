@@ -40,22 +40,18 @@ Four tasks, in order:
 
 ## Details
 
-### [ ] T1 — Mandao names the next command from the spec's state
+### [x] T1 — Mandao names the next command from the spec's state
 
 - **What:**
   - `nextStep(spec)` and `mandao run next <ID>`; `mandao approve` returns the same answer and records a hash of each approved document ([D1](spec.md#d1)).
   - `mandao run next --shown` records the hashes of a shown summary.
   - `approve --by-running <command> [--words <text>]` approves and returns `go`, or approves nothing and returns `ask` with the open item or the changed document ([D6](spec.md#d6)).
 - **Done when:**
-  - S-1.1, S-1.2 and S-1.5 hold on synthetic spec folders.
-  - S-1.3 and S-1.3/C1 hold: no implement for a draft spec or one with a critical `OPEN`.
+  - S-1.1, S-1.2 and S-1.5 hold on synthetic spec folders; S-1.3 and S-1.3/C1 hold: no implement for a draft spec or one with a critical `OPEN`.
   - S-1.4 and S-1.4/C1 hold: a changed approved document is named, and an approval without a hash makes no claim.
   - S-1.6 and S-1.6/C1 hold: plain `run next` writes nothing (the spec folder is byte-identical after the run).
-  - S-5.1 to S-5.5 hold, with `approve` run as a process:
-    - it approves and goes on in the normal case;
-    - it asks for each of a `CONFLICT`, a `[NEEDS CLARIFICATION]`, a pending decision and a document changed since `--shown`;
-    - it refuses on a critical `OPEN`;
-    - it records "approved by running /mandao-implement" or the exact `--words`, with the date and the person.
+  - S-5.1, S-5.4 and S-5.5 hold with `approve` run as a process: it approves and goes on in the normal case, refuses on a critical `OPEN`, and records "approved by running /mandao-implement" or the exact `--words`, with the date and the person.
+  - S-5.2 and S-5.3 hold: it returns `ask` and records nothing for each of a `CONFLICT`, a `[NEEDS CLARIFICATION]`, a pending decision and a document changed since `--shown`.
 
 ```yaml
 project: mandao
@@ -113,9 +109,8 @@ verify: npx vitest run test/unit/session-advice.test.ts test/integration/leader-
   - S-2.1 and S-2.2 hold end to end: `mandao sync` run as a process in a temporary workspace with all five harnesses writes the `EnterWorktree` step only into the Claude Code files, and the resume command into the others. S-2.2/C1 holds per render.
   - S-2.3 and S-2.3/C1 hold: the `claude` render prints the resume command and stops when `EnterWorktree` is refused.
   - S-3.3 and S-3.3/C1 hold: implement, verify and close re-enter before any other step.
-  - S-4.3 holds: in quick, the cost record comes before `quick-log` and the commit, and the commit lists `specs/quick/_log/costs.yml`.
+  - S-4.3 holds: in quick, the cost record comes before `quick-log` and the commit, and the commit lists `specs/quick/_log/costs.yml`. The rendered implement and tasks commands, for every harness, call `approve --by-running` on a draft spec, and no longer say that running the command is not an approval.
   - P1: a test runs `mandao hook graph-guard` with a worktree as its working directory and shows it reads that worktree.
-  - The rendered implement and tasks commands, for every harness, call `approve --by-running` on a draft spec, and no longer say that running the command is not an approval.
 
 ```yaml
 project: mandao

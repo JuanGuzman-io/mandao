@@ -58,6 +58,21 @@ tokens.
 - After approving the spec or the tasks, `approve` prints the command (`newSession`) that starts
   `/mandao-implement` in a new session from the worktree (ADR 0038).
 - `budget --to <usd|none>` sets or removes this spec's spend cap (ADR 0036).
+- `approve` ends with `next`: `{ recommended: { command, reason }, options }`, the commands that can follow
+  the spec's state. It only recommends; the person runs the command.
+- `--by-running <command> [--words <text>]` approves because the person ran the command that follows. It
+  prints `result: go` and approves (the row records "approved by running <command>", the words verbatim,
+  the date and the person), or `result: ask` with the open item or the changed document and approves
+  nothing. A critical OPEN is refused as always. `ask` fires on a `CONFLICT`, a `[NEEDS CLARIFICATION]`, a
+  pending decision (`- **Decision:** pending`), an unresolved critical Consistency Check row, or a document
+  changed after `run next --shown`. With no `shown` row, `--by-running` makes no change claim (older specs
+  approve without the change check).
+- Each approval row records `sha256` for the documents it approved (`tasks.md` excluded).
+
+`mandao run next <spec>` prints the same `{ recommended, options }` from the spec's state (open items,
+depth, drafts, a document changed after its approval, pending commits, tasks, verify, close). It writes
+nothing; `--shown` records a `shown` row in `approvals.yml` with the hash of each approvable document. A
+`shown` row never replaces an approval's hash: "changed after its approval" compares approval rows only.
 
 ## Cost
 

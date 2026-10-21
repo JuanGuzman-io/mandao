@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "4a64c63fd42c948b217fabdead7a7c3a5cad066e869b34a9833562ad0d918fbc"
+      "sha256": "c395417183c658c151fdbb40c903aaf2e3b4e23995c82062f0419698362639ff"
     },
     {
       "path": "src/schemas/common.ts",
@@ -63,7 +63,7 @@
     },
     {
       "path": "src/scripts/spec.ts",
-      "sha256": "43c51c14c6c438ae4943af17ddd53a7da83b546c31e54d0434f9e953892009bd"
+      "sha256": "bbca159765c9a7b44e7943604f2ca6b4fa5445d66d25a72d8401d7a8e0e8e769"
     }
   ],
   "specSha256": "0205591777369dc1d74376fb27b2c1ac32c7ac384ca7095cdbeb1a9045f3d949",

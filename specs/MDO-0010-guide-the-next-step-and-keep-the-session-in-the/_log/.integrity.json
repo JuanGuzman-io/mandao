@@ -2,7 +2,16 @@
   "_log/approvals.yml": "sha256-LBmG4+ROtMxgTCmflmi+O7e/+/QTYw++xrxHdomzPL0=",
   "_log/baseline.md": "sha256-bKBrkJqzYerT+222smbwFY94nuJsFwulpS4FRSEXhOA=",
   "_log/costs.yml": "sha256-NOYKQCU5a+wTOH0RbtHNTQVOPaIYCTuuu1MWvfPbrFw=",
+  "_log/execution.md": "sha256-a9ugCLYL1bzsreKJH6ehwqfkc65CnulyNQjGFrxBPao=",
+  "_log/gates/T1-1.md": "sha256-qo4MqlRDj2QhZCDilv6+oICLG92tSjD2CxGQvyr+1+c=",
+  "_log/gates/T1-2.md": "sha256-51pC/XuaI7nFDskEN+JhcL913698Br6jLkxgJD6XXjI=",
   "_log/premises/P1.md": "sha256-odUV9Nj54Xm4OfqZ/QOwuc2cToJVUXw5YlemPE8N5/o=",
   "_log/premises/P4.md": "sha256-WlJG6tM0nJ42yHTcheDZBWo0E/svfOzmpvtiIN/WCP0=",
+  "_log/progress.yml": "sha256-H5SRPGvuZKZ07n80jcS8/qtDQKB1dpvIfAH68US2b1E=",
+  "_log/reviews/T1-1-pack.md": "sha256-qh+Bt6xCIqNfJDRCwRdsDIBS5E9EvejiA7dS4f9IMmo=",
+  "_log/reviews/T1-1-review.md": "sha256-CXeRAZe9jJa9qC5GCknnVH3QqNjJy8RcbI5FIk8W7wo=",
+  "_log/reviews/T1-2-pack.md": "sha256-9ybE2nPvuBPQX+YyFtWU8cCvW8mMv+G9KglDYzr6Pto=",
+  "_log/reviews/T1-2-review.md": "sha256-wi3VQ/exjsEpDL5bP5Je943d187AHVcXs/FxEqc9RtE=",
+  "_log/session-cuts.md": "sha256-0cEVRy/4+6MQ8bdr6bCtz1+J9jg6BQsVzdcDvhL86xo=",
   "_log/start.yml": "sha256-kBvDqvtLN6lJH7dxAd1Gk2aT4AMr2qa0N00Y16+RJvQ="
 }

@@ -54,12 +54,12 @@
       "sha256": "9fdc2d3b6a358c5b27c618084efc8f54691dbfc95da23540e5469512903ed08a"
     },
     {
-      "path": "src/cli/approve.ts",
-      "sha256": "4a64c63fd42c948b217fabdead7a7c3a5cad066e869b34a9833562ad0d918fbc"
-    },
-    {
       "path": "src/cli/start.ts",
       "sha256": "80482928c81185875d58ce7da1db5e5baaa062109dc3666f21b989a768aa50e8"
+    },
+    {
+      "path": "src/spec/next.ts",
+      "sha256": "d4e59de544a61fddd927e092bf15cefaf8886a0923c6707130034574f48c08ca"
     }
   ],
   "specSha256": "9f4504b95eb79a49fc89d6863c13f8e7c841fee43bb6b8ffefdaf19837aa4014",

@@ -4,13 +4,18 @@ import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
-import { commitSpecDocs, repoRoot } from '../scripts/commits.js';
+import { commitSpecDocs, commitState, repoRoot } from '../scripts/commits.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { docPath, LITE_DOC, logPath } from '../scripts/spec-log.js';
 import {
   APPROVAL_STEPS,
+  type Approval,
   type ApprovalStep,
-  blockingMarkers,
+  changedSince,
+  docHash,
+  frontmatterOf,
+  nextStep,
+  openItems,
   parseApprovals,
   planTasks,
   renderApprovals,
@@ -38,18 +43,17 @@ function approver(cwd: string, by?: string): string {
 
 /** What must be true before a step can be approved: the same gates the commands apply. */
 function blockers(spec: SpecFolder, step: ApprovalStep): string[] {
-  const raw = [spec.story?.raw, spec.requirements?.raw].filter((t): t is string => Boolean(t));
-  const open = raw.flatMap((t) => blockingMarkers(t).criticalOpen).map((q) => `critical OPEN: ${q}`);
+  const open = openItems(spec).criticalOpen.map((q) => `critical OPEN: ${q}`);
   if (step === 'story') return spec.story ? open : ['story.md is missing'];
   if (step === 'design' || step === 'spec') {
     if (!spec.requirements) return [`${step === 'spec' ? LITE_DOC : 'requirements.md'} is missing`];
     return [...open, ...specPremiseFindings(spec.dir).map((f) => f.message)];
   }
   if (step === 'tasks') {
-    if (!spec.tasks.length) return ['no tasks to approve'];
+    if (!spec.tasks.length) return [...open, 'no tasks to approve'];
     const file = docPath(spec.dir, 'tasks');
     const layout = taskLayoutIssues(readFileSync(file, 'utf8'), spec.tasks, spec.story, { inline: file.endsWith(LITE_DOC) });
-    return [...planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`), ...layout, ...spec.issues];
+    return [...open, ...planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`), ...layout, ...spec.issues];
   }
   return [];
 }
@@ -71,15 +75,6 @@ function stepDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
 
 const COMMIT_STEP: Partial<Record<ApprovalStep, keyof typeof SPEC_STEPS>> = { design: 'specify', spec: 'spec', tasks: 'tasks' };
 
-const NEXT: Record<ApprovalStep, string> = {
-  story: '/mandao-specify',
-  design: '/mandao-tasks',
-  spec: '/mandao-implement',
-  tasks: '/mandao-implement',
-  close: '/mandao-close (it applies the approved items)',
-  budget: 'the command that stopped at the budget (`mandao run step` delegates again)',
-};
-
 /** The approved documents get `status: approved`; returns the ones that changed, relative to the spec. */
 function approveDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
   const changed: string[] = [];
@@ -98,6 +93,8 @@ interface ApproveOptions {
   items?: string[];
   by?: string;
   note?: string;
+  byRunning?: string;
+  words?: string;
 }
 
 function budgetTo(to: string | undefined): number | 'none' {
@@ -107,19 +104,73 @@ function budgetTo(to: string | undefined): number | 'none' {
   return n;
 }
 
-/** Appends the approval to `_log/approvals.yml` and returns it. */
-function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions) {
+const APPROVABLE = ['story.md', 'requirements.md', 'design.md', 'spec.md'];
+
+/** The hash of each approvable document the spec has, by file name. tasks.md is left out: its checkboxes change as tasks pass. */
+export function currentHashes(dir: string, only?: string[]): Record<string, string> {
+  const files = APPROVABLE.filter((f) => (!only || only.includes(f)) && existsSync(join(dir, f)));
+  return Object.fromEntries(files.map((f) => [f, docHash(readFileSync(join(dir, f), 'utf8'))]));
+}
+
+const readApprovals = (spec: SpecFolder) => {
   const log = logPath(spec.dir, 'approvals.yml');
-  const record = {
-    step,
-    by: approver(spec.dir, o.by),
-    at: new Date().toISOString(),
-    ...(o.items ? { items: o.items } : {}),
-    ...(o.note ? { note: o.note } : {}),
-    ...(step === 'budget' ? { to: budgetTo(o.to) } : {}),
-  };
-  writeText(log, renderApprovals([...parseApprovals(existsSync(log) ? readFileSync(log, 'utf8') : undefined), record]));
+  return parseApprovals(existsSync(log) ? readFileSync(log, 'utf8') : undefined);
+};
+
+/** Appends a row to `_log/approvals.yml`, never rewriting the earlier ones, and returns it. */
+function appendApproval(spec: SpecFolder, row: Omit<Approval, 'by' | 'at'>, by?: string): Approval {
+  const record = { ...row, by: approver(spec.dir, by), at: new Date().toISOString() };
+  writeText(logPath(spec.dir, 'approvals.yml'), renderApprovals([...readApprovals(spec), record]));
   return record;
+}
+
+/** Records the hashes of the summary just shown to the person, for `approve --by-running` to compare against. */
+export function recordShown(spec: SpecFolder): Approval {
+  return appendApproval(spec, { step: 'shown', sha256: currentHashes(spec.dir) });
+}
+
+/** The next step from the spec's state and its facts: pending commits, approvals and the documents' hashes. */
+export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>) {
+  const tasks = join(spec.dir, 'tasks.md');
+  const tasksStatus = existsSync(tasks) ? frontmatterOf(readFileSync(tasks, 'utf8')).data.status : undefined;
+  return nextStep(spec, {
+    ...(typeof tasksStatus === 'string' ? { tasksStatus } : {}),
+    pendingCommits: commitState(spec, config.commits.trailers).pending,
+    approvals: readApprovals(spec),
+    hashes: currentHashes(spec.dir),
+  });
+}
+
+/** Appends the approval to `_log/approvals.yml` and returns it. */
+function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions, docs: string[]) {
+  const note = o.byRunning ? `approved by running ${o.byRunning}` : o.note;
+  const hashes = currentHashes(spec.dir, docs);
+  return appendApproval(
+    spec,
+    {
+      step,
+      ...(o.items ? { items: o.items } : {}),
+      ...(note ? { note } : {}),
+      ...(o.words ? { words: o.words } : {}),
+      ...(Object.keys(hashes).length ? { sha256: hashes } : {}),
+      ...(step === 'budget' ? { to: budgetTo(o.to) } : {}),
+    },
+    o.by,
+  );
+}
+
+/**
+ * Approving by running the next command asks one question first when something is open, or a document
+ * changed after the last summary shown (a critical OPEN never gets here: `blockers` refuses it on every step
+ * that approves documents). Undefined
+ * means go. A spec with no `shown` row makes no claim about changes.
+ */
+function questionBefore(spec: SpecFolder): string | undefined {
+  const item = openItems(spec).ask[0];
+  if (item) return `open item: ${item}`;
+  const shown = readApprovals(spec).filter((a) => a.step === 'shown');
+  const changed = changedSince(shown.slice(-1), currentHashes(spec.dir));
+  return changed.length ? `${changed.join(', ')} changed after the summary was shown` : undefined;
 }
 
 /** The spec commit the step makes in the commands (specify, tasks), with the same fixed subject. */
@@ -146,6 +197,8 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .option('--to <usd|none>', 'budget: the total this spec may spend, or none to remove its cap')
     .option('--by <name>', 'who approves (default: git user.name)')
     .option('--note <text>', 'a note kept with the approval')
+    .option('--by-running <command>', 'approve because the person ran this command; asks first when something is open or changed')
+    .option('--words <text>', 'with --by-running: what the person wrote next to the command, recorded verbatim')
     .action((ref: string, step: string, o: ApproveOptions) => {
       if (!(APPROVAL_STEPS as readonly string[]).includes(step)) throw new Error(`step must be one of ${APPROVAL_STEPS.join(', ')}`);
       const s = step as ApprovalStep;
@@ -157,12 +210,27 @@ export function registerApprove(program: Command, ctx: CliContext) {
         process.exitCode = 1;
         return;
       }
+      const question = o.byRunning ? questionBefore(spec) : undefined;
+      if (question) {
+        json({ result: 'ask', approved: false, step: s, reason: question });
+        return;
+      }
+      const docs = documentsFor(spec, s).map((f) => f.slice(spec.dir.length + 1));
       const statusChanged = approveDocuments(spec, s);
-      const record = recordApproval(spec, s, o);
+      const record = recordApproval(spec, s, o, docs);
       const commit = commitApproval(config, spec, s);
       // A natural boundary with a human pause, and the most turns still ahead: implement starts in a new
       // session from the checkpoint instead of re-reading the specify context (ADR 0038).
       const newSession = s === 'spec' || s === 'tasks' ? { newSession: newSessionCommand(config, spec, 'implement') } : {};
-      json({ approved: true, ...record, statusChanged, ...(commit ? { commit } : {}), next: NEXT[s], ...newSession });
+      const next = nextFor(readSpec(spec.dir), config);
+      json({
+        ...(o.byRunning ? { result: 'go' } : {}),
+        approved: true,
+        ...record,
+        statusChanged,
+        ...(commit ? { commit } : {}),
+        next,
+        ...newSession,
+      });
     });
 }

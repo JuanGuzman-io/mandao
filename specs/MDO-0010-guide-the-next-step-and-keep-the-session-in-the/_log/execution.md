@@ -1,0 +1,20 @@
+---
+schema_version: 1
+spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
+---
+
+# Execution — MDO-0010-guide-the-next-step-and-keep-the-session-in-the
+
+## Log
+
+| Date | Task | Attempt | Tier | Harness | Implementer | Reviewer | Verdict | Notes |
+|---|---|---|---|---|---|---|---|---|
+| 2026-10-21 | T1 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T1 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/next.test.ts, test/integration/approve.test.ts; `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T1 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/integration/approve.test.ts |
+| 2026-10-21 | T1 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | red test changed: test/integration/approve.test.ts; FAIL: approve tasks --by-running records an approval with a critical OPEN (AC-5/C3) |
+| 2026-10-21 | T1 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/next.test.ts, test/integration/approve.test.ts; `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T1 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/next.test.ts, test/integration/approve.test.ts; `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T1 | 2 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T1 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T1 | 2 | standard | claude | — | claude-opus-5-5 | PASS |  |

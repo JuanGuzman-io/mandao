@@ -22,6 +22,7 @@ import {
   withIndex,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
+import { nextFor, recordShown } from './approve.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -89,6 +90,19 @@ function registerPlanning(run: Command, ctx: CliContext) {
           ...taskLayoutIssues(raw, spec.tasks, spec.story, { inline: tasksFile.endsWith(LITE_DOC) }),
         ],
       });
+    });
+}
+
+/** `mandao run next`: the command that follows from the spec's state. Data only; `--shown` also records what was shown. */
+function registerNext(run: Command, ctx: CliContext) {
+  run
+    .command('next <spec>')
+    .description("The command that follows from the spec's state, and the others that can; --shown records the summary shown")
+    .option('--shown', 'record the hashes of the documents just shown to the person (approvals.yml)')
+    .action((ref: string, o: { shown?: boolean }) => {
+      const { config, spec } = loadSpec(ctx, ref);
+      if (o.shown) recordShown(spec);
+      json(nextFor(spec, config));
     });
 }
 
@@ -255,4 +269,5 @@ export function registerSpecWriters(run: Command, ctx: CliContext) {
   registerLedger(run, ctx);
   registerTestRuns(run, ctx);
   registerBuild(run, ctx);
+  registerNext(run, ctx);
 }

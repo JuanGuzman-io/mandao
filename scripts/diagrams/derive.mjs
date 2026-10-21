@@ -65,9 +65,9 @@ const cmd = (id) => `/mandao-${id}`;
 /** 1. Every command and how they connect: frontmatter `flow`, `approval` and the terminal steps around them. */
 export function panorama(read) {
   const c = commands(read);
-  const approveSrc = read('src/cli/approve.ts');
+  const nextSrc = read('src/spec/next.ts');
   const startSrc = read('src/cli/start.ts');
-  must(/spec: '\/mandao-implement'/.test(approveSrc) || undefined, 'approve → implement');
+  must(/rec\('\/mandao-implement'/.test(nextSrc) || undefined, 'approve → implement');
   must(/mandao-specify/.test(startSrc) || undefined, 'start → specify');
   const tag = (id) => (c[id]?.meta.approval === 'required' ? 'you approve' : undefined);
   const node = (id, lane, col, type, label, sublabel) => ({
