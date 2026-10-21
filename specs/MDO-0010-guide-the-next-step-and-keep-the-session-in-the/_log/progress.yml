@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
-updated_at: 2026-10-21T14:16:35.753Z
+updated_at: 2026-10-21T14:31:58.684Z
 current: null
 open_questions: []
 next_step: ""
@@ -43,4 +43,32 @@ red_tests:
           - "S-5.5: the words written next to the command are recorded verbatim, with the command, date and person"
           - "S-5.2: a resolved critical Consistency Check row does not ask"
           - "S-5.4/C3: on the tasks step a critical OPEN in requirements.md is refused and nothing is recorded"
+  - task: T2
+    files:
+      - path: test/unit/session-advice.test.ts
+        sha256: c7f39b56adf6e7a97fa89fbe80405b2ac8c5ad9fac2d0d4c3f48de36adc72155
+        tests:
+          - "S-3.1: Claude Code reads /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.2: %s names %s, then the next command, with its open command as the fallback"
+          - 'S-3.2: Copilot names "New chat" with its shortcuts'
+          - "S-3.2: Antigravity names its shortcuts"
+          - "S-3.2/C2: a harness with no in-place action gets the open-session command and no action"
+      - path: test/integration/leader-scripts.test.ts
+        sha256: 9df0e42bd8829e6589e7144aac0e226a53aa3b1e378289f94ebaf1777143ec84
+        tests:
+          - script output is compact JSON unless MANDAO_JSON=pretty
+          - "gates: pass/fail per gate and the failure excerpt; a missing tool is NOT_INSTALLED; the full output stays in the log"
+          - "step: the checkpoint, the next action and the brief in one call; the brief only when delegating"
+          - "review-pack: brief, gate table and diff in one file for the Reviewer, without the full gate output"
+          - "implement-summary: verdicts, FAIL reasons and identities from the log"
+          - "MDO-0007: rows without --tier take the task tier, and advisories in row notes are counted"
+          - "MDO-0007: run tests refuses the full suite without --full, and --full without --reason"
+          - step at a task boundary in Claude Code says whether to cut the session (ADR 0038)
+          - "S-3.1: approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback"
+          - "S-3.1: the active harness (--harness), not config.harnesses[0], picks the action"
+          - "S-3.1: implement-summary in Claude Code carries the same advice with the verify command"
+          - "MDO-0007: the scan-markers gate fails a changed test that lists folders without saying what it scans"
+          - "FR-3/D4: step that stops to suggest a cut carries session.advice for the harness (/clear, then the next command)"
+          - "one active-harness rule: approve --harness bogus is rejected like run --harness bogus, and approves nothing"
+          - "one active-harness rule: with no --harness and no session id the default is the run default (claude), not config.harnesses[0]"
 pending_commits: []

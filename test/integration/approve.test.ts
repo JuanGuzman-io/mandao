@@ -82,7 +82,11 @@ describe('mandao approve: no model session', () => {
       commit: { committed: true },
       next: { recommended: { command: '/mandao-implement' } },
       // ADR 0038: implement starts in a new session from the worktree, not in the specify one.
-      newSession: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
+      newSession: {
+        action: '/clear',
+        then: '/mandao-implement MDO-0001',
+        fallback: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
+      },
     });
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 spec');
   });

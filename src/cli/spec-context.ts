@@ -10,7 +10,10 @@ import type { LoopContext } from '../spec/index.js';
 import { onPath } from '../util/which.js';
 import type { CliContext } from './context.js';
 
-/** What the spec scripts share: the spec, its project, models and loop context for a harness. */
+/**
+ * The active harness, one rule for `approve` and the `run` commands: `--harness` (validated), else `claude`.
+ * Claude Code (`CLAUDE_CODE_SESSION_ID` set) and the unset case both give `claude`; never `config.harnesses[0]`.
+ */
 export function harnessOption(value: string | undefined): HarnessId {
   const h = value ?? 'claude';
   if (!(HARNESS_IDS as readonly string[]).includes(h)) throw new Error(`Unknown harness "${h}"`);

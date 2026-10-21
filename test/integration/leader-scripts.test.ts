@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -226,6 +226,90 @@ describe('Leader scripts', () => {
     const mid = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
     expect(mid.loop.action).toBe('implement');
     expect(mid.session).toBeUndefined();
+  });
+
+  test('S-3.1: approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback', async () => {
+    const root = repo();
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', 'approve-session');
+    await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec']);
+    // ASSUMPTION: the advice shape { action, then, fallback } (spec D4) replaces approve's `newSession` string.
+    expect(JSON.parse(out.at(-1)!).newSession).toEqual({
+      action: '/clear',
+      then: '/mandao-implement MDO-0001',
+      fallback: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
+    });
+  });
+
+  test('S-3.1: the active harness (--harness), not config.harnesses[0], picks the action', async () => {
+    const root = repo();
+    await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec', '--harness', 'codex']);
+    expect(JSON.parse(out.at(-1)!).newSession).toMatchObject({ action: '/new' });
+  });
+
+  test('S-3.1: implement-summary in Claude Code carries the same advice with the verify command', async () => {
+    const root = repo();
+    const session = 'cut-session-2';
+    const usage = (read: number, write: number) => ({
+      input_tokens: 0,
+      cache_read_input_tokens: read,
+      cache_creation_input_tokens: write,
+      cache_creation: { ephemeral_1h_input_tokens: write },
+    });
+    const turn = (id: string, read: number, write: number) =>
+      JSON.stringify({ timestamp: new Date().toISOString(), message: { id, model: 'claude-opus-5-5', usage: usage(read, write) } });
+    const home = makeTree({ [`projects/x/${session}.jsonl`]: `${turn('a', 0, 34_000)}\n${turn('b', 34_000, 126_000)}\n` });
+    vi.stubEnv('CLAUDE_CONFIG_DIR', home);
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', session);
+    const summary = await run(root, 'implement-summary', 'MDO-0001');
+    expect(summary.session).toMatchObject({
+      cut: true,
+      advice: { action: '/clear', then: '/mandao-verify MDO-0001', fallback: expect.stringContaining('"/mandao-verify MDO-0001"') },
+    });
+  });
+
+  test('FR-3/D4: step that stops to suggest a cut carries session.advice for the harness (/clear, then the next command)', async () => {
+    const root = repo();
+    // A lower threshold than the 0.65 the fixture saves, so the rule says stop.
+    const cfg = join(root, '.mandao/config.yml');
+    writeFileSync(cfg, `${readFileSync(cfg, 'utf8')}\nsession:\n  cut_min_savings: 0.5\n`);
+    const session = 'cut-session-stop';
+    const usage = (read: number, write: number) => ({
+      input_tokens: 0,
+      cache_read_input_tokens: read,
+      cache_creation_input_tokens: write,
+      cache_creation: { ephemeral_1h_input_tokens: write },
+    });
+    const turn = (id: string, read: number, write: number) =>
+      JSON.stringify({ timestamp: new Date().toISOString(), message: { id, model: 'claude-opus-5-5', usage: usage(read, write) } });
+    const home = makeTree({ [`projects/x/${session}.jsonl`]: `${turn('a', 0, 34_000)}\n${turn('b', 34_000, 126_000)}\n` });
+    vi.stubEnv('CLAUDE_CONFIG_DIR', home);
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', session);
+    const step = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
+    expect(step.session.stop).toBe(true);
+    expect(step.session.advice).toEqual({
+      action: '/clear',
+      then: '/mandao-implement MDO-0001',
+      fallback: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
+    });
+  });
+
+  test('one active-harness rule: approve --harness bogus is rejected like run --harness bogus, and approves nothing', async () => {
+    const root = repo();
+    await expect(
+      buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec', '--harness', 'bogus']),
+    ).rejects.toThrow(/Unknown harness/);
+    expect(existsSync(logPath(join(root, SPEC), 'approvals.yml'))).toBe(false);
+  });
+
+  test('one active-harness rule: with no --harness and no session id the default is the run default (claude), not config.harnesses[0]', async () => {
+    const root = repo();
+    const cfg = join(root, '.mandao/config.yml');
+    writeFileSync(cfg, readFileSync(cfg, 'utf8').replace(/harnesses:\n\s*- claude/, 'harnesses:\n  - codex\n  - claude'));
+    expect(readFileSync(cfg, 'utf8')).toMatch(/- codex\n\s*- claude/);
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', 'x');
+    delete process.env.CLAUDE_CODE_SESSION_ID; // unstubAllEnvs restores the original value
+    await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec']);
+    expect(JSON.parse(out.at(-1)!).newSession).toMatchObject({ action: '/clear' });
   });
 
   test('MDO-0007: the scan-markers gate fails a changed test that lists folders without saying what it scans', async () => {

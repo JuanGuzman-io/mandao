@@ -51,6 +51,11 @@ const syntax: TokenSyntax = {
 export const claudeAdapter: Adapter = {
   id: 'claude',
   name: 'Claude Code',
+  session: {
+    enterWorktree: true,
+    newConversation: '/clear',
+    resume: (worktree, first) => ({ text: `cd ${JSON.stringify(worktree)} && claude ${JSON.stringify(first)}`, launch: ['claude', first] }),
+  },
   verified: { date: '2026-10-19', docs: ['https://code.claude.com/docs/en/skills'] },
   render(input) {
     const ctx = renderContext(input, 'claude');

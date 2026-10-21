@@ -2,8 +2,10 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
+import { ADAPTERS } from '../adapters/index.js';
+import { openByHand } from '../adapters/shared.js';
 import { readConfig } from '../engine/files.js';
-import type { Config } from '../schemas/index.js';
+import type { Config, HarnessId } from '../schemas/index.js';
 import { excerpt } from '../scripts/gates.js';
 import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { proposeSpec, type SpecProposal } from '../scripts/spec.js';
@@ -42,17 +44,8 @@ export function parseRequest(words: string[]): { id?: string; title: string } {
 
 /** The exact command that opens each harness in the worktree with the first mandao; `launch` when `--open` can run it. */
 export function openCommand(harness: string, worktree: string, first: string): { text: string; launch?: string[] } {
-  const cd = `cd ${JSON.stringify(worktree)}`;
-  switch (harness) {
-    case 'claude':
-      return { text: `${cd} && claude ${JSON.stringify(first)}`, launch: ['claude', first] };
-    case 'codex':
-      return { text: `${cd} && codex ${JSON.stringify(first.replace(/^\//, '$'))}`, launch: ['codex', first.replace(/^\//, '$')] };
-    case 'copilot':
-      return { text: `code ${JSON.stringify(worktree)}   # then run ${first} in Copilot Chat` };
-    default:
-      return { text: `${cd}   # open ${harness} there and run ${first}` };
-  }
+  const known = ADAPTERS[harness as HarnessId];
+  return known ? known.session.resume(worktree, first) : openByHand(harness, worktree, first);
 }
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });

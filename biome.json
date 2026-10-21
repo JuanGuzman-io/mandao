@@ -249,6 +249,21 @@
           }
         }
       }
+    },
+    {
+      "includes": [
+        "src/cli/session-advice.ts",
+        "test/unit/session-advice.test.ts",
+        "test/integration/approve.test.ts",
+        "test/integration/leader-scripts.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noThenProperty": "off"
+          }
+        }
+      }
     }
   ]
 }

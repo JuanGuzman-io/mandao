@@ -27,7 +27,8 @@ import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
-import { newSessionCommand } from './session-advice.js';
+import { newSessionAdvice } from './session-advice.js';
+import { harnessOption } from './spec-context.js';
 
 /** Who approves: the person at the terminal, as git knows them; never a model. */
 function approver(cwd: string, by?: string): string {
@@ -95,6 +96,7 @@ interface ApproveOptions {
   note?: string;
   byRunning?: string;
   words?: string;
+  harness?: string;
 }
 
 function budgetTo(to: string | undefined): number | 'none' {
@@ -199,9 +201,11 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .option('--note <text>', 'a note kept with the approval')
     .option('--by-running <command>', 'approve because the person ran this command; asks first when something is open or changed')
     .option('--words <text>', 'with --by-running: what the person wrote next to the command, recorded verbatim')
+    .option('--harness <id>', 'the harness running this session (default: claude)')
     .action((ref: string, step: string, o: ApproveOptions) => {
       if (!(APPROVAL_STEPS as readonly string[]).includes(step)) throw new Error(`step must be one of ${APPROVAL_STEPS.join(', ')}`);
       const s = step as ApprovalStep;
+      const harness = harnessOption(o.harness); // before anything is approved
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const problems = blockers(spec, s);
@@ -221,7 +225,7 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const commit = commitApproval(config, spec, s);
       // A natural boundary with a human pause, and the most turns still ahead: implement starts in a new
       // session from the checkpoint instead of re-reading the specify context (ADR 0038).
-      const newSession = s === 'spec' || s === 'tasks' ? { newSession: newSessionCommand(config, spec, 'implement') } : {};
+      const newSession = s === 'spec' || s === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
       const next = nextFor(readSpec(spec.dir), config);
       json({
         ...(o.byRunning ? { result: 'go' } : {}),

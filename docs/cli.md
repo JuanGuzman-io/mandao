@@ -55,8 +55,13 @@ approved and when in `_log/approvals.yml`, and makes the spec commit. No model r
 tokens.
 
 - `close` records which proposals you approved (`--items`); `/mandao-close` applies them.
-- After approving the spec or the tasks, `approve` prints the command (`newSession`) that starts
-  `/mandao-implement` in a new session from the worktree (ADR 0038).
+- After approving the spec or the tasks, `approve` prints `newSession: { action, then, fallback }`: the
+  active harness's own new-conversation action (`/clear` in Claude Code, `/new` in Codex and OpenCode,
+  "New chat" in Copilot, Ctrl+N in Antigravity), the command to run then (`/mandao-implement`), and the
+  command that opens a session in the worktree (ADR 0038). The harness is `--harness <id>` (an unknown id
+  is an error and nothing is approved), else `claude`, the same rule as the `run` commands; never the first
+  configured one. `run step` (when it stops to suggest a cut) and `run implement-summary` (when a cut is
+  advised) add the same shape as `session.advice`; the latter keeps `session.command`.
 - `budget --to <usd|none>` sets or removes this spec's spend cap (ADR 0036).
 - `approve` ends with `next`: `{ recommended: { command, reason }, options }`, the commands that can follow
   the spec's state. It only recommends; the person runs the command.

@@ -16,7 +16,7 @@ Four tasks, in order:
 
 ### AC-1, AC-5 — The next step fits the spec's state; Running the next command approves the spec, unless something is open
 
-- [ ] T1 [AC-1, AC-5] Mandao names the next command from the spec's state — `src/spec/next.ts`
+- [x] T1 [AC-1, AC-5] Mandao names the next command from the spec's state — `src/spec/next.ts`
 
 **Checkpoint:** `npx vitest run test/unit/next.test.ts test/integration/approve.test.ts` passes (T1); this confirms AC-1, AC-5 before the next group.
 
@@ -69,7 +69,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/next.test.ts test/integration/approve.test.ts
 ```
 
-### [ ] T2 — Each harness's session facts drive the cut advice
+### [x] T2 — Each harness's session facts drive the cut advice
 
 - **What:** the `session` entry per adapter ([D2](spec.md#d2)). The advice of `approve`, `run step` and `implement-summary` becomes `{ action, then, fallback }` for the active harness ([D4](spec.md#d4)). `openCommand` moves behind the table.
 - **Done when:**
@@ -82,7 +82,7 @@ verify: npx vitest run test/unit/next.test.ts test/integration/approve.test.ts
 project: mandao
 kind: feat
 tier: standard
-files: [src/adapters/types.ts, src/adapters/claude.ts, src/adapters/codex.ts, src/adapters/opencode.ts, src/adapters/copilot.ts, src/adapters/antigravity.ts, src/cli/session-advice.ts, src/cli/start.ts, src/cli/approve.ts, src/cli/run-leader.ts, src/adapters/AGENTS.md, test/unit/session-advice.test.ts, test/integration/leader-scripts.test.ts, test/integration/start.test.ts]
+files: [src/adapters/types.ts, src/adapters/claude.ts, src/adapters/codex.ts, src/adapters/opencode.ts, src/adapters/copilot.ts, src/adapters/antigravity.ts, src/cli/session-advice.ts, src/cli/start.ts, src/cli/approve.ts, src/cli/run-leader.ts, src/adapters/AGENTS.md, test/unit/session-advice.test.ts, test/integration/leader-scripts.test.ts]
 exemplar: src/adapters/types.ts
 ac: [AC-3, AC-3/C2]
 scenarios: [S-3.1, S-3.2, S-3.2/C2]

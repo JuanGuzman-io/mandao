@@ -1,6 +1,6 @@
 import type { TokenSyntax } from '../render/render.js';
 import { renderAgentsSkills } from './agents-skills.js';
-import { commandName, frontmatter, generatedNotice, personaVariants, renderContext, renderPersonaBody } from './shared.js';
+import { commandName, frontmatter, generatedNotice, openByHand, personaVariants, renderContext, renderPersonaBody } from './shared.js';
 import type { Adapter, AdapterInput, GeneratedFile } from './types.js';
 
 const syntax: TokenSyntax = {
@@ -39,6 +39,11 @@ function renderAgents(input: AdapterInput): GeneratedFile[] {
 export const antigravityAdapter: Adapter = {
   id: 'antigravity',
   name: 'Antigravity',
+  session: {
+    enterWorktree: false,
+    newConversation: '⌘N / Ctrl+N',
+    resume: (worktree, first) => openByHand('antigravity', worktree, first),
+  },
   experimental:
     'not live-tested: covered by snapshot tests only (no Antigravity account); its formats moved this month (workflows became skills on 2026-10-19) and skill arguments and agent tool names are not documented',
   verified: {

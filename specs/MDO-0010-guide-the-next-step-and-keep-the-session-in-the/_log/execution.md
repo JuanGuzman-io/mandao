@@ -18,3 +18,11 @@ spec: MDO-0010-guide-the-next-step-and-keep-the-session-in-the
 | 2026-10-21 | T1 | 2 | standard | claude | — | — | STARTED |  |
 | 2026-10-21 | T1 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
 | 2026-10-21 | T1 | 2 | standard | claude | — | claude-opus-5-5 | PASS |  |
+| 2026-10-21 | T2 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T2 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/session-advice.test.ts, test/integration/leader-scripts.test.ts; `npx vitest run test/unit/session-advice.test.ts test/integration/leader-scripts.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T2 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T2 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | FAIL: run step does not return the { action, then, fallback } advice (FR-3) |
+| 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/session-advice.test.ts, test/integration/leader-scripts.test.ts; `npx vitest run test/unit/session-advice.test.ts test/integration/leader-scripts.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T2 | 2 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T2 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED | red test changed: test/unit/session-advice.test.ts |
+| 2026-10-21 | T2 | 2 | standard | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/session-advice.test.ts |
