@@ -12,6 +12,8 @@ permissions:
 
 jobs:
   release:
+    # Manual dispatch may select any ref; reject all other branches and PR refs.
+    if: github.event_name == 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +29,7 @@ jobs:
       - run: npm run build
       - run: npm run smoke
       - name: Version or publish
+        if: github.ref == 'refs/heads/main'
         uses: changesets/action@v1
         with:
           publish: npm run release
@@ -34,4 +37,9 @@ jobs:
           title: "🔧 chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"
+      - name: Publish tagged version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: npm run release
+        env:
           NPM_CONFIG_PROVENANCE: "true"
