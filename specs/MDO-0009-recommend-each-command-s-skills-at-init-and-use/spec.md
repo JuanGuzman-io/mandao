@@ -438,7 +438,7 @@ parallel_safe: false
 verify: npx vitest run test/unit/skills.test.ts test/integration/init-skills.test.ts test/integration/cli.test.ts
 ```
 
-### [ ] T3 — doctor names the commands that lose a missing skill
+### [x] T3 — doctor names the commands that lose a missing skill
 
 - **What:** `doctor-skills.ts` with the levels of [D4](#d4) and the folders of [D3](#d3), wired in
   `runDoctor`.

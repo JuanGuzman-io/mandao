@@ -1,7 +1,7 @@
 # Written by mandao run checkpoint after every Leader step (ADR 0018).
 schema_version: 1
 spec: MDO-0009-recommend-each-command-s-skills-at-init-and-use
-updated_at: 2026-10-21T04:25:35.873Z
+updated_at: 2026-10-21T04:35:58.809Z
 current:
   task: T3
   phase: implementing
@@ -82,4 +82,33 @@ red_tests:
           - "S-2.2 and D3: the lock does not pin the skill with the catalog commit"
           - "S-3.1/C1: the existing folders are left untouched and nothing is left in temp"
           - "S-2.2 and D3: a folder holding other files but no SKILL.md is not verified either, and is left as is"
+  - task: T3
+    files:
+      - path: test/unit/doctor-skills.test.ts
+        sha256: b1d800230b524c128a85426fca5cb1e6e22eef3d9adaf5f086bc331ac93bc449
+        tests:
+          - "S-6.1: a pinned skill that is gone warns with its harnesses, the commands that lose it, its fallback and the fix"
+          - "S-6.1: only the harnesses that lack the skill are named"
+          - "S-6.1: a skill in the home folder of the harness counts as found"
+          - "S-6.2: a skill never installed is an info with the same content, and nothing warns or errors"
+          - "S-6.2: graphify, which doctor reports as an optional tool, gives no skill finding"
+      - path: test/integration/engine.test.ts
+        sha256: 8ea8bec33de468067fd030a4df1b81af66439410d41bdf919eee4e931fc36682
+        tests:
+          - is idempotent and records every generated file in the lock
+          - removing a harness deletes its files
+          - removing Codex keeps the skills Antigravity shares and drops the Codex-only files
+          - an override wins and survives the next sync
+          - clean after sync; reports drift and config changes
+          - "S-6.2/C1: a fresh workspace reports the skills it lacks as info, never as warn or error"
+          - a task waiting for its commit is a warning with the command that commits it
+          - invalid config is an error with the field path
+          - syncGlobal installs only /mandao-init under the user folders
+          - works in a repository without commits and counts untracked files
+          - reports reduced independence and models outside the recommendations
+          - another harness reviews strong tasks only with a reviewer of the strong tier (ADR 0021)
+          - models from an optional provider set are noted with its terms, not flagged as unknown (ADR 0027)
+          - a project models.yml applies to that project only
+          - graph exclusions follow the adapters and module guides get CLAUDE.md pointers
+          - doctor sees exactly what sync writes, module pointers included
 pending_commits: []

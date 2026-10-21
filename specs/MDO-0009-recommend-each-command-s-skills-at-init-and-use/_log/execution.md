@@ -23,3 +23,9 @@ spec: MDO-0009-recommend-each-command-s-skills-at-init-and-use
 | 2026-10-21 | T2 | 2 | strong | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-tester: test/unit/git-copy.test.ts; `npx vitest run test/unit/git-copy.test.ts --maxWorkers=5` failed (exit 1) |
 | 2026-10-21 | T2 | 2 | strong | claude | claude-opus-5-5 | — | REPORTED | red test changed: test/unit/skills.test.ts, test/integration/init-skills.test.ts |
 | 2026-10-21 | T2 | 2 | strong | claude | — | claude-opus-5-5 | PASS | red test changed: test/unit/skills.test.ts, test/integration/init-skills.test.ts |
+| 2026-10-21 | T3 | 1 | standard | claude | — | — | STARTED |  |
+| 2026-10-21 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | RED | red tests by mandao-implementer-standard: test/unit/doctor-skills.test.ts, test/integration/engine.test.ts; `npx vitest run test/unit/doctor-skills.test.ts test/integration/engine.test.ts --maxWorkers=5` failed (exit 1) |
+| 2026-10-21 | T3 | 1 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T3 | 1 | standard | claude | — | claude-opus-5-5 | FAIL | FAIL: doctor-skills.ts copies the D3 shared-folder map that lives in src/skills/install.ts |
+| 2026-10-21 | T3 | 2 | standard | claude | claude-sonnet-5-5 | — | REPORTED |  |
+| 2026-10-21 | T3 | 2 | standard | claude | — | claude-opus-5-5 | PASS |  |

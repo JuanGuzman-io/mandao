@@ -107,6 +107,17 @@ describe('doctor', () => {
     );
   });
 
+  test('S-6.2/C1: a fresh workspace reports the skills it lacks as info, never as warn or error', () => {
+    const root = workspace();
+    syncProject(root);
+    const findings = runDoctor(root, { probe });
+    expect(findings.filter((f) => f.level === 'error' || f.level === 'warn')).toEqual([]);
+    const missing = findings.filter((f) => f.message.includes(' is missing: '));
+    expect(missing.map((f) => f.level)).toEqual(missing.map(() => 'info'));
+    expect(missing.map((f) => f.message.split(' ')[0])).toContain('brainstorming');
+    expect(missing.filter((f) => f.message.includes('graphify'))).toEqual([]);
+  });
+
   test('a task waiting for its commit is a warning with the command that commits it', () => {
     const root = workspace();
     syncProject(root);

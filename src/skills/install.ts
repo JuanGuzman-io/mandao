@@ -90,6 +90,11 @@ const HARNESS_FOLDER: Record<HarnessId, string> = {
 const READS_SHARED: readonly HarnessId[] = ['opencode', 'copilot'];
 const SHARED_FOLDERS = ['.claude/skills', '.agents/skills'];
 
+/** Pure: every project skills folder this harness reads, its own first (detection, unlike the copy target). */
+export function readableSkillFolders(harness: HarnessId): string[] {
+  return [...new Set([HARNESS_FOLDER[harness], ...(READS_SHARED.includes(harness) ? SHARED_FOLDERS : [])])];
+}
+
 /** Pure: the folders a skill is copied into for these harnesses, each once. */
 export function skillFolders(harnesses: readonly HarnessId[]): string[] {
   const out: string[] = [];

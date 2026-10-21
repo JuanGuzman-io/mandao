@@ -15,6 +15,7 @@ import { readCatalog } from './catalog.js';
 import { cacheFindings } from './doctor-cache.js';
 import { harnessFindings } from './doctor-harness.js';
 import { modelFindings } from './doctor-models.js';
+import { skillFindings } from './doctor-skills.js';
 import { branchingFindings, pendingCommitFindings } from './doctor-specs.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
@@ -107,6 +108,16 @@ function cacheCheck(root: string, probe: Probe, harnesses: string[]): Finding[] 
   return cacheFindings(root, home(), process.env, probe, harnesses);
 }
 
+/** Catalog tools (versions) and the skills the commands use, against the lock's pins. */
+function catalogFindings(root: string, config: Config, skills: { id: string }[], probe: Probe): Finding[] {
+  const catalog = readCatalog();
+  const pinned = skills.map((s) => s.id);
+  return [
+    ...skillFindings({ catalog, pinned, harnesses: config.harnesses, root, home: home() }),
+    ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...pinned])], probe),
+  ];
+}
+
 export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   const probe = opts.probe ?? shellProbe;
   const findings: Finding[] = [];
@@ -156,10 +167,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   const recs = readRecommendations();
   findings.push(...modelFindings(root, config, recs), ...cacheCheck(root, probe, config.harnesses));
   findings.push(...harnessFindings(root, config, build.files, lockForTools?.files ?? [], recs, probe));
-  const catalog = readCatalog();
-  findings.push(
-    ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...(lockForTools?.skills ?? []).map((s) => s.id)])], probe),
-  );
+  findings.push(...catalogFindings(root, config, lockForTools?.skills ?? [], probe));
 
   const lock = readLock(join(root, LOCK_FILE));
   if (!lock) {

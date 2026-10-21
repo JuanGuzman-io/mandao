@@ -13,6 +13,9 @@ pin it in the lock (`installSkills`, `pinSkills` in `install.ts`; `commandSkills
   never pinned with a commit nobody checked. A copy that fails midway removes the targets this call
   created and returns `failed`. Each git call has a timeout and runs ssh in `BatchMode` (no prompt can
   block init); a timeout is `pending`.
+- `readableSkillFolders(harness)` is the folder map for detection (`src/engine/doctor-skills.ts`):
+  the harness's own folder, plus `.claude/skills` and `.agents/skills` for OpenCode and Copilot.
+  Copy targets stay `skillFolders`.
 - Scripts (executable bit, script extension, or under `scripts/`) are left out and named unless
   `withScripts`; then `warn` is called before any copy and the lock records `scripts: true`.
 - `pending` means the person must act (tool missing, fetch failed: the detail is the manual step);
