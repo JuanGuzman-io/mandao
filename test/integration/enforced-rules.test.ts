@@ -113,6 +113,10 @@ describe('a high-severity security finding blocks a PASS', () => {
     await pass('- [core/high] a long function\n- [security/low] log line could be shorter');
     expect(readFileSync(join(logPath(join(root, SPEC), 'reviews'), 'T2-1-review.md'), 'utf8')).toContain('[core/high]');
     expect(rows(root).find((r) => r.verdict === 'PASS')?.notes).toMatch(/untagged security mention: The high-severity eval/);
+    // Not blocking, but a person sees them in the implement report and in verify.
+    const mention = { task: 'T2', attempt: 1, mentions: [expect.stringMatching(/^The high-severity eval finding/)] };
+    expect((await run(root, 'run', 'implement-summary', 'MDO-0001')).securityMentions).toEqual([mention]);
+    expect((await run(root, 'run', 'verify-plan', 'MDO-0001')).securityMentions).toEqual([mention]);
   });
 
   test('tagged and untagged findings', () => {
@@ -142,6 +146,10 @@ describe('past the budget, step waits for a person', () => {
     await run(capped, 'approve', 'MDO-0001', 'budget', '--to', '16', '--by', 'Ana PO');
     expect((await run(capped, 'run', 'step', 'MDO-0001', 'T2', '--harness', 'claude')).loop.action).not.toBe('await-budget');
     await expect(run(capped, 'approve', 'MDO-0001', 'budget')).rejects.toThrow(/--to <USD>/);
+    spend(capped, 40);
+    expect((await run(capped, 'run', 'step', 'MDO-0001', 'T2', '--harness', 'claude')).loop.action).toBe('await-budget');
+    await run(capped, 'approve', 'MDO-0001', 'budget', '--to', 'none');
+    expect((await run(capped, 'run', 'cost', 'MDO-0001')).status).toBe('no-budget');
 
     const open = workspace();
     spend(open, 50);
@@ -153,6 +161,7 @@ describe('past the budget, step waits for a person', () => {
     expect(specBudget([a(12), a(16)], 8)).toBe(16);
     expect(specBudget([], 8)).toBe(8);
     expect(specBudget([], undefined)).toBeUndefined();
+    expect(specBudget([a(12), { ...a(), to: 'none' as const }], 8)).toBeUndefined();
   });
 });
 

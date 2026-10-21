@@ -21,6 +21,10 @@ date:
 
 ## TDD evidence (ADR 0022)
 
+## Security mentions (not blocking)
+
+None.
+
 ## Product bugs
 
 None.

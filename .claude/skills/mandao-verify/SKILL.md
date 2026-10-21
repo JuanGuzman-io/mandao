@@ -45,7 +45,8 @@ For each suite, a `tester` agent in a fresh context (it did not author the code)
 Write `verify-report.md` from `.mandao/templates/app/spec/verify-report.md`, following
 `.mandao/templates/app/rules/spec-docs.md` and `.mandao/templates/app/rules/doc-verify.md`: the verdict as the summary, AC → tests clause by clause first
 (`.mandao/templates/app/rules/traceability.md`), then suites, TDD evidence (`missingRed`, changed red tests),
-product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
+the untagged security mentions from `verify-plan` (`securityMentions`, listed verbatim per task; they do
+not block, a person reads them), product bugs, deferred runs and the remaining blockers; commands and outputs only in `## Evidence`. When
 the spec has a `quickstart.md`, bring its steps in line with what was built
 (`.mandao/templates/app/rules/doc-quickstart.md`). Then run the semantic
 Consistency Check (`.mandao/templates/app/rules/consistency-check.md`) over story, requirements, design and the

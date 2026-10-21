@@ -88,9 +88,10 @@ shows the total per command and role.
     (`basis: equivalent`). The subscription has its own limits, and usage beyond the plan is charged
     as credits Mandao cannot see.
   - The basis is read from `claude auth status`; billed and equivalent amounts are never added up as one.
-- **Budget.** `budget.per_spec` is optional and only you set it: `init` asks, with no suggested number.
-  Without it there is no cap; spend is recorded and reported. With it, Mandao warns at 80% and asks at
-  100%.
+- **Budget: off by default.** Spend is recorded and reported, and nothing stops. `budget.per_spec` is
+  optional and only you set it: `init` asks, with no suggested number. With a budget, Mandao warns at
+  80%, and past 100% `mandao run step` stops delegating until you run
+  `mandao approve <spec> budget --to <usd|none>`.
 
 ## Harnesses
 
