@@ -1,8 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import * as p from '@clack/prompts';
-import { CONFIG_FILE, hasConfig, MODELS_FILE, SOURCES_FILE, writeYaml } from '../engine/files.js';
+import { CONFIG_FILE, hasConfig } from '../engine/files.js';
 import { syncGlobal, syncProject } from '../engine/sync.js';
 import { forProviders, profileChoices } from '../models/defaults.js';
 import { readRecommendations } from '../models/load.js';
@@ -24,9 +22,10 @@ import {
   TIERS,
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
-import { createIfMissing } from '../writer/files.js';
 import { chooseBudget } from './init-budget.js';
+import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
+import { offerSkills } from './init-skills.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
@@ -47,6 +46,8 @@ export interface InitOptions {
   shadow?: boolean;
   /** USD per spec; `none` for no cap. Never defaulted: a person sets it (ADR 0036). */
   budget?: string;
+  /** Copy the accepted skills' executable scripts too (C-2); off by default. */
+  withScripts?: boolean;
 }
 
 const HARNESS_LABEL: Record<HarnessId, string> = {
@@ -275,47 +276,9 @@ function initWorkspaceRepo(root: string) {
   execFileSync('git', ['init', '--quiet'], { cwd: root });
 }
 
-const OVERRIDES_README = `# Overrides
-
-Files here win over presets and Mandao core. \`mandao update\` never touches this folder.
-
-- Replace a whole command: \`commands/<id>.md\`
-- Patch only its frontmatter: \`commands/<id>.patch.yml\` (objects merge, arrays replace, \`null\` deletes)
-- Replace a template: \`templates/<shared|app|ai|data>/<name>\`
-- Replace or patch a persona: \`personas/<id>.md\` or \`personas/<id>.patch.yml\`
-
-Run \`mandao sync\` after editing.
-`;
-
-const SOURCES_TEMPLATE = {
-  schema_version: 1,
-  tracker: 'none',
-  docs: [],
-  meetings: [],
-  chat: [],
-  design: [],
-};
-
 /** Workspace flags that are only written when set: local-only polyrepo, shadow mode (ADR 0030). */
 function modeFlags(localOnly: boolean | undefined, opts: InitOptions): Pick<ConfigInput, 'local_only' | 'shadow'> {
   return { ...(localOnly ? { local_only: true } : {}), ...(opts.shadow ? { shadow: true } : {}) };
-}
-
-/** The config, and the models, sources and overrides files when they are missing. */
-function writeInitFiles(root: string, config: ConfigInput, models: Models) {
-  writeYaml(join(root, CONFIG_FILE), config, '# Mandao configuration. Run `mandao sync` after editing. Schema: docs/schemas.md');
-  if (!existsSync(join(root, MODELS_FILE))) {
-    writeYaml(
-      join(root, MODELS_FILE),
-      models,
-      '# Model per role and harness. Change with `mandao models set <role> <model>`; see `mandao models`.',
-    );
-  }
-  if (!existsSync(join(root, SOURCES_FILE))) {
-    writeYaml(join(root, SOURCES_FILE), SOURCES_TEMPLATE, '# Where business context lives: tracker, docs, chat, design, transcripts.');
-  }
-  const overrides = join(root, '.mandao', 'overrides');
-  createIfMissing(join(overrides, 'README.md'), OVERRIDES_README);
 }
 
 export async function runInit(root: string, opts: InitOptions) {
@@ -392,6 +355,7 @@ export async function runInit(root: string, opts: InitOptions) {
   const result = syncProject(root, { force: opts.force });
   printChanges(result.changes);
   printWarnings(result.warnings);
+  await offerSkills(root, harnesses, opts);
 
   const next = [...harnessSetupNotes(harnesses), 'Next: open your agent here and run /mandao-constitution.'].join('\n');
   interactive ? p.outro(next) : console.log(next);

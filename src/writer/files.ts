@@ -1,5 +1,20 @@
-import { cpSync, existsSync, mkdirSync, readdirSync, readFileSync, rmdirSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, relative } from 'node:path';
+import {
+  chmodSync,
+  constants,
+  copyFileSync,
+  cpSync,
+  existsSync,
+  lstatSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, isAbsolute, join, relative } from 'node:path';
 import { type Document, parseDocument } from 'yaml';
 import { sha256 } from '../util/hash.js';
 import { recordLogWrite } from './log-integrity.js';
@@ -47,11 +62,31 @@ export function removeFile(abs: string, pruneUpTo: string[]): void {
   }
 }
 
-/** Removes a scratch folder, but only one strictly inside `within` (a spec's own `_log/`): never anything else. */
+/**
+ * Removes a folder Mandao created, but only one strictly inside `within`: a scratch folder in a spec's
+ * `_log/`, a temporary clone in `os.tmpdir()`, or a partial skill copy in the workspace. Never anything else.
+ */
 export function removeScratchDir(abs: string, within: string): void {
   const rel = relative(within, abs);
   if (!rel || rel.startsWith('..') || isAbsolute(rel)) throw new Error(`${abs} is not inside ${within}`);
   rmSync(abs, { recursive: true, force: true });
+}
+
+/** A fresh folder under the OS temporary folder; the caller removes it with `removeScratchDir(dir, tmpdir())`. */
+export function makeScratchDir(prefix: string): string {
+  return mkdtempSync(join(tmpdir(), prefix));
+}
+
+/**
+ * Copies one regular file to a path that must not exist yet (a skill copy, D3 of MDO-0009), keeping its
+ * permission bits. Refuses a symlink or anything that is not a regular file; never overwrites.
+ */
+export function copyNewFile(src: string, dest: string): void {
+  const stat = lstatSync(src);
+  if (!stat.isFile()) throw new Error(`${src} is not a regular file`);
+  mkdirSync(dirname(dest), { recursive: true });
+  copyFileSync(src, dest, constants.COPYFILE_EXCL);
+  chmodSync(dest, stat.mode & 0o777);
 }
 
 /** Copies a file or a folder into place (worktree setup: env files, the graph cache). Never a symlink. */

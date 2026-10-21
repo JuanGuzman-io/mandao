@@ -44,6 +44,8 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
    `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
    spec to `verified`.
+   An approval is the person's explicit word for that item, or their own `mandao approve`; running the
+   next command is not one.
 4. Read `_log/progress.yml` (older specs keep it in the spec root): if a task is in progress, continue it as `/mandao-resume` would.
 
 ## 1. For each task
@@ -145,6 +147,8 @@ their short JSON, and decide; never paste their full output into the conversatio
       `--next-task`). `<subject>` is **only the subject** (`add --json to mandao doctor`): the script
       adds the emoji, type and scope itself (`{{template:rules/commits.md}}`). When `{{script:review}}` already wrote
       the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
+   Before step 2, stage with `git add --` every file of the reviewed diff outside the task's `files`:
+   the commit must build on its own.
    2. `{{script:commit}} {{arg:spec}} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
       per pending task with its trailers.
 <!-- mandao:if harness=codex -->
@@ -157,7 +161,8 @@ their short JSON, and decide; never paste their full output into the conversatio
    `{{script:commit}} {{arg:spec}}`. Start the next task only if it touches none of the pending files.
 
 The Definition of Done includes the module's `AGENTS.md` and, when the workspace uses Claude Code, its
-`CLAUDE.md` pointer.
+`CLAUDE.md` pointer. A task that edits `core/` runs `mandao sync` and commits the generated files with
+the task.
 
 ## 2. After the last task
 

@@ -11,7 +11,14 @@ const verify = z.string().min(1).optional();
 const versionCommand = z.string().min(1).optional();
 
 const source = z.discriminatedUnion('type', [
-  z.object({ type: z.literal('git'), url: repo, ref: z.string().min(1), path: z.string().optional(), verify }),
+  z.object({
+    type: z.literal('git'),
+    url: repo,
+    ref: z.string().min(1),
+    path: z.string().optional(),
+    commit: z.string().regex(/^[0-9a-f]{40}$/),
+    verify,
+  }),
   z.object({ type: z.literal('npm'), package: z.string().min(1), repo: repo.optional(), verify }),
   /** Installed through the skills CLI: `npx skills add <ref>`. */
   z.object({ type: z.literal('skills'), ref: z.string().min(1), repo: repo.optional(), verify }),
@@ -35,6 +42,8 @@ const skill = z.object({
   binding: z.enum(['core', 'profile', 'stack', 'conditional']),
   phases: z.array(z.enum(PHASES)).min(1),
   profiles: z.array(profile).default([...PROFILES]),
+  /** What the commands do without the skill (shown when it is not installed). */
+  fallback: z.string().min(1).optional(),
 });
 
 const matcher = z

@@ -34,5 +34,6 @@ export function registerExtensions(program: Command, ctx: CliContext) {
     .command('add <ids...>')
     .description('Install catalog skills (or packs) with their ecosystem tool, verify them and pin them in the lock')
     .option('-y, --yes', 'install without asking for confirmation (CI)')
-    .action((ids: string[], opts: { yes?: boolean }) => skillsAdd(ctx, ids, opts));
+    .option('--with-scripts', "also copy a repository skill's executable scripts (third-party code; left out by default)")
+    .action((ids: string[], opts: { yes?: boolean; withScripts?: boolean }) => skillsAdd(ctx, ids, opts));
 }
