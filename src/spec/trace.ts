@@ -14,7 +14,9 @@ export type TraceFindingType =
   /** A High premise with neither a recorded run nor the UNVERIFIED marker (ADR 0033). */
   | 'PREMISE_UNPROVEN'
   | 'PRINCIPLE_GATE'
-  | 'DATA_WRITE';
+  | 'DATA_WRITE'
+  | 'SECURITY_GAPS'
+  | 'SECURITY_CI_PENDING';
 
 export interface TraceFinding {
   type: TraceFindingType;

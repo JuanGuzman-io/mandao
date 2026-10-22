@@ -78,7 +78,7 @@ function quickRepo() {
   return { root, remote };
 }
 
-function githubWorktree(checks: 'pass' | 'fail' = 'pass') {
+function githubWorktree(checks: 'pass' | 'fail' = 'pass', securityCheck: 'yes' | 'no' = 'yes') {
   const { root, remote } = repo('github');
   const branch = 'feat/MDO-0009-delivery';
   git(root, 'checkout', '-q', 'main');
@@ -89,12 +89,13 @@ function githubWorktree(checks: 'pass' | 'fail' = 'pass') {
   symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
   writeFileSync(
     join(localBin, 'gh'),
-    '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$GH_CHECKS" = "fail" ]; then echo "checks failed" >&2; exit 1; fi ;;\n  merge) git -C "$TEST_REPO" checkout -q main && git -C "$TEST_REPO" merge --no-ff -m "Merge pull request #42" "$3" && git -C "$TEST_REPO" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
+    '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$GH_CHECKS" = "fail" ]; then echo "checks failed" >&2; exit 1; fi; if [ "$4" = "--json" ]; then if [ "$GH_SECURITY" = "yes" ]; then echo \'[{"name":"gitleaks / scan","workflow":"Secrets"}]\'; else echo \'[{"name":"build","workflow":"CI"}]\'; fi; fi ;;\n  merge) git -C "$TEST_REPO" checkout -q main && git -C "$TEST_REPO" merge --no-ff -m "Merge pull request #42" "$3" && git -C "$TEST_REPO" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
     { mode: 0o755 },
   );
   vi.stubEnv('PATH', `${localBin}:${process.env.PATH}`);
   vi.stubEnv('TEST_REPO', root);
   vi.stubEnv('GH_CHECKS', checks);
+  vi.stubEnv('GH_SECURITY', securityCheck);
   return { root, remote, worktree, branch };
 }
 
@@ -212,5 +213,19 @@ describe('mandao deliver GitHub merge path', () => {
     expect(git(root, 'worktree', 'list', '--porcelain')).toContain(branch);
     expect(git(root, 'branch', '--show-current')).toBe('main');
     expect(git(root, 'show-ref', '--verify', `refs/heads/${branch}`)).toBeTruthy();
+  });
+
+  test('warns when green PR checks include no identifiable security scan', async () => {
+    promptState.groups = 0;
+    promptState.target = 'main';
+    promptState.scope = 'all';
+    const { root } = githubWorktree('pass', 'no');
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+
+    await run(root, 'MDO-0009');
+
+    expect(logs.join('\n')).toContain('no identifiable secret-scanning or SAST check');
+    expect(logs.join('\n')).toContain('Merged into main.');
   });
 });

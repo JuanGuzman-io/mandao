@@ -2,8 +2,11 @@ import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
+import { collectSecurityScanning } from '../engine/security-scanning.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { findSpec, readLayout, readSpec } from '../scripts/spec.js';
+import { readApprovalLog } from '../scripts/spec-log.js';
+import { activeApprovals } from '../spec/approvals.js';
 import { securityMentions, verifyPlan } from '../spec/index.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -43,6 +46,8 @@ export function registerVerify(run: Command, ctx: CliContext) {
         spec.tasks.map((task) => task.project),
       );
       const designFindings = readLayout(spec.dir, principleIds).designFindings;
+      const security = collectSecurityScanning(repo, config);
+      const securityGapsApproved = activeApprovals(readApprovalLog(spec.dir)).some((row) => row.step === 'security-gaps');
       json({
         ...verifyPlan({
           story: spec.story,
@@ -57,6 +62,22 @@ export function registerVerify(run: Command, ctx: CliContext) {
           ),
           commits: commitState(spec, config.commits.trailers),
           designFindings,
+          securityCoverage: security.map((scan) => ({
+            project: scan.project,
+            ...Object.fromEntries(
+              (['secrets', 'sast'] as const).map((kind) => [
+                kind,
+                {
+                  local: scan.detected[kind].local.length > 0,
+                  ci: scan.detected[kind].ci.length > 0,
+                  provider: scan.detected[kind].provider.length > 0,
+                  declared: (['local', 'ci', 'provider'] as const).some((place) => scan.recorded[kind].declared[place].length > 0),
+                  state: scan.state[kind],
+                },
+              ]),
+            ),
+          })) as Parameters<typeof verifyPlan>[0]['securityCoverage'],
+          securityGapsApproved,
           ciConfirmed: Boolean(opts.ciConfirmed),
         }),
         issues: spec.issues,

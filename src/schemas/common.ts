@@ -45,6 +45,7 @@ export type SpecStatus = z.infer<typeof specStatus>;
 /** Risk tags assigned per task; they select review lenses and gate `quick`. */
 export const RISK_TAGS = [
   'auth',
+  'security',
   'input',
   'pii',
   'payments',

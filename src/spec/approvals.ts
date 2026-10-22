@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { sha256 } from '../util/hash.js';
 
 /** What a human approves without a model session (cost-conscious design, `mandao approve`). */
-export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close', 'budget'] as const;
+export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close', 'budget', 'security-gaps'] as const;
 export type ApprovalStep = (typeof APPROVAL_STEPS)[number];
 
 export const approvalSchema = z
@@ -28,6 +28,8 @@ export const approvalSchema = z
     if ((row.step === 'revocation' || row.step === 'annulment') && (!row.target_at || !row.note?.trim()))
       ctx.addIssue({ code: 'custom', message: 'revocation and annulment rows need target_at and a reason in note' });
     if (row.step === 'revocation' && !row.target_step) ctx.addIssue({ code: 'custom', message: 'a revocation row needs target_step' });
+    if (row.step === 'security-gaps' && !row.note?.trim())
+      ctx.addIssue({ code: 'custom', message: 'security-gaps approval needs a reason in note' });
   });
 export type Approval = z.infer<typeof approvalSchema>;
 

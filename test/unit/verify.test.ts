@@ -84,4 +84,44 @@ describe('verifyPlan', () => {
     expect(plan.blockers).toContain('PRINCIPLE_GATE DP-SIMPLE: missing gate row');
     expect(plan.blockers).toContain('DATA_WRITE partial_failure_tests: missing partial-failure evidence');
   });
+
+  test('security-tagged work blocks without coverage and reports unknown separately from none', () => {
+    const tasks = base().tasks.map((task) => ({ ...task, risk_tags: ['security' as const] }));
+    const plan = verifyPlan({ ...base(), tasks });
+    expect(plan.blockers.some((blocker) => blocker.includes('SECURITY_GAPS'))).toBe(true);
+    expect(plan.securityScans).toEqual([{ project: 'mandao', secrets: 'unknown', sast: 'unknown', pendingCi: false }]);
+  });
+
+  test('CI-only scans stay pending until CI is confirmed; local or recorded declared scans count as coverage', () => {
+    const tasks = base().tasks.map((task) => ({ ...task, risk_tags: ['security' as const] }));
+    const coverage = [
+      {
+        project: 'mandao',
+        secrets: { local: false, ci: true, provider: false, declared: false, state: 'covered' as const },
+        sast: { local: false, ci: false, provider: false, declared: false, state: 'none' as const },
+      },
+    ];
+    const pending = verifyPlan({ ...base(), tasks, securityCoverage: coverage });
+    expect(pending.securityScans[0]?.pendingCi).toBe(true);
+    expect(pending.blockers.some((blocker) => blocker.includes('pending PR CI'))).toBe(true);
+    expect(
+      verifyPlan({ ...base(), tasks, securityCoverage: coverage, ciConfirmed: true }).blockers.some((blocker) =>
+        blocker.includes('SECURITY_CI_PENDING'),
+      ),
+    ).toBe(false);
+
+    const local = [{ ...coverage[0]!, secrets: { ...coverage[0]!.secrets, local: true } }];
+    expect(verifyPlan({ ...base(), tasks, securityCoverage: local }).blockers.some((blocker) => blocker.includes('SECURITY_'))).toBe(false);
+    const declared = [{ ...coverage[0]!, secrets: { ...coverage[0]!.secrets, ci: false, declared: true, state: 'covered' as const } }];
+    expect(verifyPlan({ ...base(), tasks, securityCoverage: declared }).blockers.some((blocker) => blocker.includes('SECURITY_'))).toBe(
+      false,
+    );
+  });
+
+  test('a recorded security-gaps approval allows the task to proceed but remains reported', () => {
+    const tasks = base().tasks.map((task) => ({ ...task, risk_tags: ['security' as const] }));
+    const plan = verifyPlan({ ...base(), tasks, securityGapsApproved: true });
+    expect(plan.blockers.some((blocker) => blocker.includes('SECURITY_'))).toBe(false);
+    expect(plan.securityScans[0]).toMatchObject({ secrets: 'unknown', sast: 'unknown', pendingCi: false });
+  });
 });

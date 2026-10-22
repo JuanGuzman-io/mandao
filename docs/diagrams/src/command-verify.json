@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "e4b57ea5af22631ff8962c72e42d631f0a63c47b3a55a29f2360b00f26ac4257"
+      "sha256": "7cccc017b15e87a58a94f79a26253c30c3a0d0f676d65284e2de7472530b9fbb"
     },
     {
       "path": "core/commands/implement.md",
@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "6657cd5971027e7661253b969d1507b1a0f96620873b23d4b12627481c028c49"
+      "sha256": "5e2eebbb880caa9dfa2d16eda9b4c31e267ac57b3ce2a0fd5dd755cf7eaa7835"
     },
     {
       "path": "core/commands/story.md",
@@ -51,13 +51,13 @@
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "620cd641d06990ef940cb9ead78798d04ee6873ceb446c420e1e2a24f5fef4bd"
+      "sha256": "2b4c6794e341e93b744acdc7e2a83c0ed3da3d179f4085f75d75f26772a3a114"
     }
   ],
-  "specSha256": "f5622dfe8078303ae2b7a4b9dbc1d4a8b0227190a890fea80433a00db79bac05",
+  "specSha256": "8469344990f64fc440c29732a460c0cff474ea6dd174bfb0180c77c734e051ad",
   "svgSha256": {
-    "light": "d13c7a216dd3939b2fc3fce9d8a6ed43071571da9759d5606530ee2bb64b2314",
-    "dark": "e4011c0de88a2c157c2cb99c75ce9b77d68c6ff8680555debc356ea3dc8cc950"
+    "light": "3ecb041aba606d9b58b50b4d907b418880fb7514709e36d61858ac36ce1bf806",
+    "dark": "29ea89ec8ef13e09f7aa29f3f811980ae82a4a95c777b026879477e9ae8a62d3"
   },
   "spec": {
     "schema_version": 2,
@@ -110,7 +110,7 @@
         "col": 0,
         "type": "backend",
         "label": "1. Plan",
-        "sublabel": "mandao run where +1",
+        "sublabel": "mandao run where +2",
         "width": 157
       },
       {

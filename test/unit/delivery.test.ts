@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import { resolveBranching } from '../../src/schemas/branching.js';
 import {
   canDeleteMergedBranch,
+  hasSecurityCheck,
   manualPullRequestUrl,
   parseRemoteBranches,
   providerForRemote,
@@ -60,6 +61,13 @@ describe('provider-neutral delivery helpers', () => {
   test('requires a positive ancestry check before deleting a merged branch', () => {
     expect(canDeleteMergedBranch(true)).toBe(true);
     expect(canDeleteMergedBranch(false)).toBe(false);
+  });
+
+  test('recognizes security checks by their check name or workflow and warns when absent', () => {
+    expect(hasSecurityCheck([{ name: 'Secrets scan', workflow: 'CI' }])).toBe(true);
+    expect(hasSecurityCheck([{ name: 'ubuntu / semgrep', workflow: 'Quality' }])).toBe(true);
+    expect(hasSecurityCheck([{ name: 'build', workflow: 'CI' }])).toBe(false);
+    expect(hasSecurityCheck(undefined)).toBe(false);
   });
 
   test('reports the expected historical release evidence', () => {

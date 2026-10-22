@@ -34,7 +34,7 @@ templates:
   - constitution/ux.md
   - constitution/infrastructure.md
   - constitution/CHANGELOG.md
-scripts: [fingerprint, branching]
+scripts: [fingerprint, branching, security-scanning]
 approval: required
 ---
 
@@ -113,6 +113,12 @@ Write the workspace level in `{{paths.constitution}}/` from the templates, and a
 - Name one **exemplar file** per kind of module (controller, service, component…) in `standards.md`.
 - Propose gate commands per project (format, lint, typecheck, test, secrets, audit, sast, metrics)
   from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`.
+- Inspect local security gates and every project CI definition for secret scanners and SAST. Run
+  `{{script:security-scanning}}` for deterministic detection and, when a GitHub remote and `gh` are
+  available, read-only provider API evidence. Present each result as detected, user-declared or
+  unknown; never turn a missing file, unavailable tool or denied API request into `none`. Put the
+  approved per-type result in `security_scanning` frontmatter of `infrastructure.md`, keeping
+  `secrets` and `sast` separate and preserving user declarations as declarations.
 - A project inherits from the workspace. A contradiction is a `CONFLICT`, never a silent override.
 - **Branching model** (ADR 0023): `{{script:branching}}` reports the model in force and what the existing
   branches suggest (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` →

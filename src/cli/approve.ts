@@ -180,7 +180,7 @@ export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>)
 
 /** Appends the approval to the spec's approvals and returns it. */
 function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions, docs: string[]) {
-  const note = o.byRunning ? `approved by running ${o.byRunning}` : o.note;
+  const note = step === 'security-gaps' ? o.reason : o.byRunning ? `approved by running ${o.byRunning}` : o.note;
   const hashes = currentHashes(spec.dir, docs);
   return appendApproval(
     spec,
@@ -335,6 +335,7 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const s = step as ApprovalStep;
+      if (s === 'security-gaps' && !o.reason?.trim()) throw new Error('security-gaps approval needs --reason <why>');
       if (approvalEvent(spec, config, s, o)) return;
       approveStep(config, spec, s, o);
     });
