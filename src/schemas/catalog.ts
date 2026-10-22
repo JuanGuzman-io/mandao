@@ -4,7 +4,7 @@ import { kebabId, PROFILES, profile, schemaVersion } from './common.js';
 
 export const MAX_PROJECT_SKILLS = 10;
 
-const repo = z.url();
+const repo = z.url().refine((value) => /^https:\/\//i.test(value), 'repository URL must use HTTPS');
 /** Shell command whose success proves the skill is installed, e.g. `graphify --version`. */
 const verify = z.string().min(1).optional();
 /** Shell command that prints the installed version, compared by doctor with the pinned `version`. */

@@ -27,7 +27,25 @@ function skillRepo() {
   git(dir, 'add', '-A');
   git(dir, 'commit', '--quiet', '-m', 'v7');
   git(dir, 'tag', 'v7.0.0');
-  return { url: `file://${dir}`, commit: git(dir, 'rev-parse', 'HEAD') };
+  return { url: 'https://fixture.invalid/brainstorming.git', localUrl: `file://${dir}`, commit: git(dir, 'rev-parse', 'HEAD') };
+}
+
+/** Rewrites the HTTPS fixture only for the synchronous git invocation; the catalog still exercises HTTPS policy. */
+function withLocalGitFixture<T>(repo: { url: string; localUrl: string }, fn: () => T): T {
+  const keys = ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'] as const;
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
+  process.env.GIT_CONFIG_COUNT = '1';
+  process.env.GIT_CONFIG_KEY_0 = `url.${repo.localUrl}.insteadOf`;
+  process.env.GIT_CONFIG_VALUE_0 = repo.url;
+  try {
+    return fn();
+  } finally {
+    for (const key of keys) {
+      const value = previous[key];
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
 }
 
 const catalogFor = (url: string, commit: string) =>
@@ -81,9 +99,11 @@ describe('a copy that fails does not throw (AC-3/C1, S-3.3/C1)', () => {
       try {
         const run = () =>
           leftInTemp(() =>
-            installSkills(['brainstorming'], catalogFor(repo.url, repo.commit), root, root, shellRunner, {
-              harnesses: ['claude', 'codex'],
-            }),
+            withLocalGitFixture(repo, () =>
+              installSkills(['brainstorming'], catalogFor(repo.url, repo.commit), root, root, shellRunner, {
+                harnesses: ['claude', 'codex'],
+              }),
+            ),
           );
         let outcome: ReturnType<typeof run> | undefined;
         expect(() => {
@@ -111,7 +131,9 @@ describe('a folder that merely exists is not pinned unverified (S-2.2, FR-2, D3)
     const root = makeTree({ '.claude/skills/brainstorming/': '', '.agents/skills/brainstorming/': '' });
     const catalog = catalogFor(repo.url, repo.commit);
     const { value, left } = leftInTemp(() =>
-      installSkills(['brainstorming'], catalog, root, root, shellRunner, { harnesses: ['claude', 'codex'] }),
+      withLocalGitFixture(repo, () =>
+        installSkills(['brainstorming'], catalog, root, root, shellRunner, { harnesses: ['claude', 'codex'] }),
+      ),
     );
     return { repo, root, catalog, value, left };
   };
@@ -146,7 +168,9 @@ describe('a folder that merely exists is not pinned unverified (S-2.2, FR-2, D3)
     mkdirSync(join(root, '.agents/skills'), { recursive: true });
     writeFileSync(join(root, '.agents/skills/brainstorming'), 'a file, not a folder');
     const catalog = catalogFor(repo.url, repo.commit);
-    const [r] = installSkills(['brainstorming'], catalog, root, root, shellRunner, { harnesses: ['claude', 'codex'] });
+    const [r] = withLocalGitFixture(repo, () =>
+      installSkills(['brainstorming'], catalog, root, root, shellRunner, { harnesses: ['claude', 'codex'] }),
+    );
     expect(r?.status).toBe('pending');
     expect(r?.detail).toMatch(/not verified|unverified/i);
     expect(readdirSync(join(root, '.claude/skills/brainstorming'))).toEqual(['notes.txt']);
