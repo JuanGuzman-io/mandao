@@ -140,6 +140,16 @@ describe('research evidence', () => {
       needsPriority: false,
       dispatchable: [{ id: 'Q2', question: 'B' }],
     });
+    expect(researchQuestions(['[NEEDS RESEARCH] A'], 1, ['Q99'])).toMatchObject({
+      needsPriority: true,
+      selectionIssues: ['unknown research question IDs: Q99'],
+      dispatchable: [],
+    });
+    expect(researchQuestions(['[NEEDS RESEARCH] A', '[NEEDS RESEARCH] B'], 1, ['Q1', 'Q2'])).toMatchObject({
+      needsPriority: true,
+      selectionIssues: ['select at most 1 questions per dispatch'],
+      dispatchable: [],
+    });
   });
 
   test('requires an entry for each marker and allows evidence to accumulate across dispatch batches', () => {

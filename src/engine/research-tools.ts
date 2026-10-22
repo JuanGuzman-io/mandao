@@ -14,56 +14,57 @@ const NATIVE_SEARCH: Partial<Record<HarnessId, { source: string; condition: stri
   },
 };
 
-const MCP_FILES = ['.mcp.json', '.vscode/mcp.json', '.codex/config.toml', 'opencode.json', 'opencode.jsonc'];
-const SEARCH_SERVER = /\b(?:web[-_ ]?search|search|exa|tavily|firecrawl|brave|serp|context7)\b/i;
+const MCP_FILES: Partial<Record<HarnessId, string[]>> = {
+  claude: ['.mcp.json'],
+  copilot: ['.vscode/mcp.json'],
+  codex: ['.codex/config.toml'],
+  opencode: ['opencode.json', 'opencode.jsonc'],
+};
 
-function strings(value: unknown): string[] {
-  if (typeof value === 'string') return [value];
-  if (Array.isArray(value)) return value.flatMap(strings);
-  if (value && typeof value === 'object') return Object.values(value).flatMap(strings);
-  return [];
-}
-
-function mcpCandidates(root: string, file: string): string[] {
+function mcpServers(root: string, file: string): string[] {
   const path = join(root, file);
   if (!existsSync(path)) return [];
   const text = readFileSync(path, 'utf8');
-  if (file.endsWith('.toml'))
-    return [...text.matchAll(/^\[mcp_servers\.([^\]]+)\]([\s\S]*?)(?=^\[|$)/gm)]
-      .map((match) => `${match[1]} ${match[2]}`)
-      .filter((row) => SEARCH_SERVER.test(row));
+  if (file.endsWith('.toml')) return [...text.matchAll(/^\[mcp_servers\.([^\]]+)\]/gm)].map((match) => match[1]!);
   try {
     const json = text.replace(/^\s*\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '');
     const data = JSON.parse(json) as Record<string, unknown>;
     const configured = data.mcpServers ?? data.servers ?? (data.mcp as Record<string, unknown> | undefined)?.servers;
     if (!configured || typeof configured !== 'object') return [];
-    return Object.entries(configured as Record<string, unknown>)
-      .filter(([name, value]) => SEARCH_SERVER.test(`${name} ${strings(value).join(' ')}`))
-      .map(([name]) => `${file}:${name}`);
+    return Object.keys(configured as Record<string, unknown>);
   } catch {
     return [];
   }
 }
 
-/** Reports configured MCP search servers separately from conditional native capability. */
-export function researchToolCapabilities(root: string, harnesses: HarnessId[]) {
-  const mcp = [...new Set(MCP_FILES.flatMap((file) => mcpCandidates(root, file)))];
-  return harnesses.map((harness) => ({
-    harness,
-    native: NATIVE_SEARCH[harness],
-    mcp,
-    capability: NATIVE_SEARCH[harness] ? (mcp.length ? 'native + MCP' : 'native') : mcp.length ? 'MCP' : 'none',
-    verifiedSearchAvailable: mcp.length > 0,
-  }));
+/** Uses only explicit, harness-matched declarations; server names and possible native support are not proof. */
+export function researchToolCapabilities(root: string, harnesses: HarnessId[], declaredWebSearchServers: string[] = []) {
+  return harnesses.map((harness) => {
+    const files = MCP_FILES[harness] ?? [];
+    const mcp = files.flatMap((file) => mcpServers(root, file).map((name) => `${file}:${name}`));
+    const webSearchMcp = declaredWebSearchServers.filter((reference) => {
+      const [declaredHarness, file, ...nameParts] = reference.split(':');
+      const name = nameParts.join(':');
+      return declaredHarness === harness && files.includes(file!) && Boolean(name) && mcp.includes(`${file}:${name}`);
+    });
+    return {
+      harness,
+      native: NATIVE_SEARCH[harness],
+      mcp,
+      webSearchMcp,
+      capability: NATIVE_SEARCH[harness] ? (webSearchMcp.length ? 'native + MCP' : 'native') : webSearchMcp.length ? 'MCP' : 'none',
+      configuredWebSearchAvailable: webSearchMcp.length > 0,
+    };
+  });
 }
 
 /** Adds an informational doctor row per configured harness with its source of web research. */
-export function researchToolFindings(root: string, harnesses: HarnessId[]): Finding[] {
-  return researchToolCapabilities(root, harnesses).map((item) => ({
+export function researchToolFindings(root: string, harnesses: HarnessId[], declaredWebSearchServers: string[] = []): Finding[] {
+  return researchToolCapabilities(root, harnesses, declaredWebSearchServers).map((item) => ({
     level: 'info',
-    message: `harness ${item.harness}: web research ${item.capability}${item.native ? ` (${item.native.condition}; ${item.native.source})` : ''}${item.mcp.length ? ` (${item.mcp.join(', ')})` : ''}`,
-    ...(item.capability === 'none'
-      ? { fix: 'research claims remain unverified (model knowledge); high-impact decisions require sourced evidence' }
+    message: `harness ${item.harness}: web search ${item.configuredWebSearchAvailable ? 'declared' : 'not declared'}${item.native ? `; native support is conditional (${item.native.condition}; ${item.native.source})` : ''}${item.mcp.length ? `; MCP servers: ${item.mcp.join(', ')}` : ''}`,
+    ...(!item.configuredWebSearchAvailable
+      ? { fix: 'declare a confirmed web-search MCP in research.web_search_servers; possible native support does not count' }
       : {}),
   }));
 }

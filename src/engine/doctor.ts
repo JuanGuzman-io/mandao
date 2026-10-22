@@ -146,7 +146,7 @@ function catalogFindings(root: string, config: Config, skills: { id: string }[],
   const catalog = readCatalog();
   const pinned = skills.map((s) => s.id);
   return [
-    ...researchToolFindings(root, config.harnesses),
+    ...researchToolFindings(root, config.harnesses, config.research.web_search_servers),
     ...skillFindings({ catalog, pinned, harnesses: config.harnesses, root, home: home() }),
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...pinned])], probe),
   ];

@@ -114,6 +114,13 @@ describe('mandao approve: no model session', () => {
     const requirements = join(root, SPEC, 'requirements.md');
     writeFileSync(requirements, `${readFileSync(requirements, 'utf8')}\n${marker}\n`);
     writeFileSync(join(root, '.mcp.json'), JSON.stringify({ mcpServers: { web_search: { url: 'https://search.example/mcp' } } }));
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'mandao', path: '.' }],
+      harnesses: ['claude'],
+      research: { web_search_servers: ['claude:.mcp.json:web_search'] },
+    });
     const research = {
       schema_version: 1,
       entries: [
@@ -145,6 +152,11 @@ describe('mandao approve: no model session', () => {
     writeFileSync(join(root, SPEC, 'research.md'), `---\n${stringifyYaml(research)}---\n`);
     const result = await approve(root, 'MDO-0001', 'design');
     expect(result.approved, JSON.stringify(result)).toBe(true);
+    const otherHarness = await approve(root, 'MDO-0001', 'design', '--harness', 'copilot');
+    expect(otherHarness).toMatchObject({
+      approved: false,
+      problems: [expect.stringContaining('high-impact decisions cannot rely on model knowledge')],
+    });
   });
 
   test('revocation records an append-only event, resets status, and makes the approval inactive', async () => {

@@ -131,10 +131,11 @@ function registerNext(run: Command, ctx: CliContext) {
     .command('next <spec>')
     .description("The command that follows from the spec's state, and the others that can; --shown records the summary shown")
     .option('--shown', 'record the hashes of the documents just shown to the person (the approvals log)')
-    .action((ref: string, o: { shown?: boolean }) => {
+    .option('--harness <id>', 'active harness for capability-gated research (default: claude)')
+    .action((ref: string, o: { shown?: boolean; harness?: string }) => {
       const { config, spec } = loadSpec(ctx, ref);
       if (o.shown) recordShown(spec);
-      json(nextFor(ctx.root(), spec, config));
+      json(nextFor(ctx.root(), spec, config, harnessOption(o.harness)));
     });
 }
 

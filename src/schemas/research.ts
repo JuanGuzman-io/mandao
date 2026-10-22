@@ -65,6 +65,8 @@ export type ResearchEntry = z.infer<typeof researchEntrySchema>;
 export const researchConfigSchema = z
   .object({
     max_questions: z.number().int().min(1).max(50).default(5),
+    /** Explicit MCP references: <harness>:<config-file>:<server-name>; checked against the repository config. */
+    web_search_servers: z.array(z.string().min(1)).default([]),
     expires_months: z
       .object({
         'ai-model': z.number().int().min(1).max(120).default(3),

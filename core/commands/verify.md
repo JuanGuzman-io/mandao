@@ -104,4 +104,4 @@ report.
 - Either way, commit the report on its own: `{{script:commit-spec}} {{arg:spec}} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.

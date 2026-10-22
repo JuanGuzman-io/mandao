@@ -220,6 +220,7 @@ export interface ResearchQuestionReport {
   total: number;
   maxQuestions: number;
   needsPriority: boolean;
+  selectionIssues: string[];
   dispatchable: ResearchQuestion[];
 }
 
@@ -249,15 +250,22 @@ export function researchQuestions(markdowns: string[], maxQuestions: number, sel
     ...new Map(found.map((item) => [`${item.topic_type}/${normalizeTopic(item.topic)}/${normalizeTopic(item.question)}`, item])).values(),
   ];
   const questions = unique.map((item, index) => ({ ...item, id: `Q${index + 1}` }));
-  const needsPriority = (questions.length > maxQuestions && selected === undefined) || Boolean(selected && selected.length > maxQuestions);
-  const dispatchable =
-    selected === undefined && !needsPriority
+  const selectionIssues: string[] = [];
+  if (selected) {
+    const ids = new Set(questions.map((question) => question.id));
+    const unknown = [...new Set(selected.filter((id) => !ids.has(id)))];
+    const duplicates = selected.filter((id, index) => selected.indexOf(id) !== index);
+    if (unknown.length) selectionIssues.push(`unknown research question IDs: ${unknown.join(', ')}`);
+    if (selected.length > maxQuestions) selectionIssues.push(`select at most ${maxQuestions} questions per dispatch`);
+    if (duplicates.length) selectionIssues.push(`duplicate research question IDs: ${[...new Set(duplicates)].join(', ')}`);
+  }
+  const needsPriority = (questions.length > maxQuestions && selected === undefined) || selectionIssues.length > 0;
+  const dispatchable = needsPriority
+    ? []
+    : selected === undefined
       ? questions
-      : (selected ?? [])
-          .map((id) => questions.find((question) => question.id === id))
-          .filter((question): question is ResearchQuestion => Boolean(question))
-          .slice(0, maxQuestions);
-  return { questions, total: questions.length, maxQuestions, needsPriority, dispatchable };
+      : selected.flatMap((id) => questions.filter((question) => question.id === id));
+  return { questions, total: questions.length, maxQuestions, needsPriority, selectionIssues, dispatchable };
 }
 
 function parseResearchMarker(line: string): { topic_type: ResearchTopicType; topic: string; question: string }[] {

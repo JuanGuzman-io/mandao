@@ -47,7 +47,45 @@ describe('research context before delegation', () => {
     });
     const result = researchContext(root, config, 'MDO-0002');
     expect(result).toMatchObject({ max_questions: 1, needs_priority: true, dispatchable: [], unverified_without_search: true });
+    expect(researchContext(root, config, 'MDO-0002', ['Q99'])).toMatchObject({
+      needs_priority: true,
+      selection_issues: ['unknown research question IDs: Q99'],
+      dispatchable: [],
+    });
+    expect(researchContext(root, config, 'MDO-0002', ['Q1', 'Q2'])).toMatchObject({
+      needs_priority: true,
+      selection_issues: ['select at most 1 questions per dispatch'],
+      dispatchable: [],
+    });
+    expect(researchContext(root, config, 'MDO-0002', undefined, 'copilot')).toMatchObject({
+      harness: 'copilot',
+      unverified_without_search: true,
+    });
     expect(result.questions[0]?.reusable).toEqual([expect.objectContaining({ source: 'specs/MDO-0001-old/research.md#R1' })]);
     expect(result.questions[1]?.reusable).toEqual([]);
+  });
+
+  test('counts only a present MCP server explicitly declared for its harness as web search', () => {
+    const root = makeTree({
+      '.mcp.json': JSON.stringify({ mcpServers: { web_search: { url: 'https://search.example/mcp' } } }),
+      'specs/MDO-0001-current/story.md': readFileSync(join(fixture, 'story.md'), 'utf8'),
+      'specs/MDO-0001-current/requirements.md': `${readFileSync(join(fixture, 'requirements.md'), 'utf8')}\n[NEEDS RESEARCH: architecture / Auth] Which boundary is supported?\n`,
+    });
+    const config = configSchema.parse({
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'app', path: '.' }],
+      harnesses: ['claude', 'copilot'],
+      paths: { specs: 'specs' },
+      research: { web_search_servers: ['claude:.mcp.json:web_search'] },
+    });
+    expect(researchContext(root, config, 'MDO-0001')).toMatchObject({
+      unverified_without_search: false,
+      capabilities: [{ harness: 'claude', configuredWebSearchAvailable: true }],
+    });
+    expect(researchContext(root, config, 'MDO-0001', undefined, 'copilot')).toMatchObject({
+      unverified_without_search: true,
+      capabilities: [{ harness: 'copilot', configuredWebSearchAvailable: false }],
+    });
   });
 });

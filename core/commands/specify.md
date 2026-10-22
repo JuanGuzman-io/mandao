@@ -112,11 +112,11 @@ When the story's `type` is not `story`, follow `{{template:rules/spec-types.md}}
 
 ## 2. Research
 
-Mark uncertain questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec>`;
-reuse exact-topic evidence only while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
+Mark uncertain questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec> --harness <this harness>`;
+reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `{{template:spec/research.md}}`; create one subagent task for every uncovered question, parallelize
-independent tasks, and copy its §20 safety rule into each brief.
+independent tasks and include §20 safety rule in each brief.
 
 ## 3. Depth
 
@@ -208,4 +208,4 @@ and `{{template:rules/consistency-check.md}}` for the semantic part, over story,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `{{script:commit-spec}} {{arg:ref}} specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
-  `{{script:next}} <ID> --shown` (it records what was shown) and give the command it names as the next mandao.
+  `{{script:next}} <ID> --shown --harness <this harness>` (it records what was shown) and give the command it names as the next mandao.
