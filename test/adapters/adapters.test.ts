@@ -113,6 +113,25 @@ describe('the AGENTS.md block every session loads', () => {
   });
 });
 
+describe('the guide commit section', () => {
+  const guide = (commits?: { emoji: false }) =>
+    renderAgentsMd({ ...input('single'), config: configSchema.parse({ ...configs.single, ...(commits ? { commits } : {}) }) }).files.find(
+      (f) => f.path === '.mandao/guide.md',
+    )!.content;
+
+  test('with commits.emoji false the subject has no emoji and no emoji map is listed', () => {
+    const section = guide({ emoji: false }).split('## Commits')[1]!;
+    expect(section).toContain('`<type>(<scope>): <subject>`');
+    expect(section).not.toContain('<emoji>');
+    expect(section).not.toContain('Emoji per type');
+    expect(section).toContain('`!` after the scope');
+  });
+
+  test('by default the emoji map is listed', () => {
+    expect(guide().split('## Commits')[1]).toContain('Emoji per type: feat ✨');
+  });
+});
+
 describe('selection', () => {
   test('profile-specific commands install only when a project uses the profile', () => {
     const paths = (n: string) => ADAPTERS.claude.render(input(n)).files.map((f) => f.path);

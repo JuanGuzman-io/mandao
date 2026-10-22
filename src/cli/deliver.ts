@@ -6,6 +6,7 @@ import type { Command } from 'commander';
 import { parse as parseYaml } from 'yaml';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
+import type { Config } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import {
   canDeleteMergedBranch,
@@ -20,6 +21,7 @@ import { STATE_FILE } from '../scripts/spec-log.js';
 import { deliveryTargets, resolveDeliveryTarget } from '../spec/delivery.js';
 import {
   changelogLine,
+  emojiPrefix,
   parseCloseSummary,
   pullRequestBody,
   renderCloseDocument,
@@ -168,7 +170,7 @@ async function mergeWithGithub(
 ): Promise<void> {
   const { repo, worktree, branch, quick, specDir, start, branching } = delivery;
   const prUrl = command(worktree, 'gh', ['pr', 'create', '--base', target, '--head', branch, '--title', title, '--body', body]);
-  if (!quick) recordSpecDelivery(worktree, specDir, target, prUrl);
+  if (!quick) recordSpecDelivery(worktree, specDir, target, delivery.config, prUrl);
   command(worktree, 'git', ['push', 'origin', branch]);
   console.log(`PR: ${prUrl}`);
   if (scope !== 'all') return;
@@ -188,7 +190,7 @@ async function mergeWithGithub(
 
 async function manualDelivery(delivery: DeliveryContext, target: string): Promise<void> {
   const manualUrl = manualPullRequestUrl(delivery.info.url, target, delivery.branch);
-  if (!delivery.quick) recordSpecDelivery(delivery.worktree, delivery.specDir, target, manualUrl);
+  if (!delivery.quick) recordSpecDelivery(delivery.worktree, delivery.specDir, target, delivery.config, manualUrl);
   command(delivery.worktree, 'git', ['push', 'origin', delivery.branch]);
   console.log(
     manualUrl ? `Open the PR manually: ${manualUrl}` : `Open a PR manually from ${delivery.branch} into ${target} on ${delivery.info.url}.`,
@@ -216,7 +218,7 @@ function recordManualPrUrl(delivery: DeliveryContext, url: string): void {
   if (delivery.quick) throw new Error('quick delivery does not have a close-summary record');
   const current = parseCloseSummary(readIf(join(delivery.specDir, 'close-summary.md')), delivery.spec!.name).delivery;
   if (!current) throw new Error('select and record a delivery target before recording the PR URL');
-  recordSpecDelivery(delivery.worktree, delivery.specDir, current.target, url);
+  recordSpecDelivery(delivery.worktree, delivery.specDir, current.target, delivery.config, url);
   command(delivery.worktree, 'git', ['push', 'origin', delivery.branch]);
   console.log(`Recorded PR URL for ${current.target}; the PR now contains the delivery record.`);
 }
@@ -277,7 +279,7 @@ function command(cwd: string, bin: string, args: string[], timeout = 15 * 60_000
   return result.stdout.trim();
 }
 
-function recordSpecDelivery(repo: string, specDir: string, target: string, prUrl?: string) {
+function recordSpecDelivery(repo: string, specDir: string, target: string, config: Config, prUrl?: string) {
   const spec = readSpec(specDir);
   if (!spec.story) return;
   const summaryFile = join(specDir, 'close-summary.md');
@@ -304,7 +306,8 @@ function recordSpecDelivery(repo: string, specDir: string, target: string, prUrl
   } catch {
     // A non-zero status means the delivery record is staged and needs its own branch commit.
   }
-  command(repo, 'git', ['commit', '-m', '📝 docs(delivery): record PR destination']);
+  const header = `${emojiPrefix(config, 'docs')}docs(delivery): record PR destination`;
+  command(repo, 'git', ['commit', '-m', `${header}\n\n${config.commits.trailers.refs}: ${spec.story.meta.id}`]);
 }
 
 function findWorktree(repo: string, branch: string): string | undefined {
