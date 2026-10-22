@@ -88,6 +88,44 @@ describe('tasks.md in two layers', () => {
     expect(taskLayoutIssues(text, parsed, story)).toEqual([]);
   });
 
+  test('with several deliveries the Overview groups by delivery, with a partial verify at the end of each', () => {
+    const split = task('T1', 'Customers pay by card', `${T1}\ndelivery: 1`) + task('T2', 'Customers get refunds', `${T2}\ndelivery: 2`);
+    const { text, tasks } = file(split);
+    expect(taskIndex(tasks, story)).toBe(
+      [
+        '### Delivery 1 — AC-1',
+        '',
+        '#### AC-1 — Pay by card',
+        '',
+        '- [ ] T1 [AC-1] [P] Customers pay by card — `src/pay.ts`',
+        '',
+        '**Checkpoint:** `npm test -- pay` passes (T1); this confirms AC-1 before the next group.',
+        '',
+        '**Delivery checkpoint:** run `mandao run verify-plan <spec> --delivery 1` before delivery 2; it passes when `scope.clear` is true.',
+        '',
+        '### Delivery 2 — AC-2',
+        '',
+        '#### AC-2 — Refund',
+        '',
+        '- [ ] T2 [AC-2] Customers get refunds — `src/refund.ts`',
+        '',
+        '**Checkpoint:** `npm test -- refund` passes (T2); this confirms AC-2 before the next group.',
+        '',
+        '**Delivery checkpoint:** run `mandao run verify-plan <spec> --delivery 2`; it passes when `scope.clear` is true.',
+      ].join('\n'),
+    );
+    expect(taskLayoutIssues(text, tasks, story)).toEqual([]);
+    expect(taskLayoutIssues(withIndex(text, tasks, story), tasks, story)).toEqual([]);
+  });
+
+  test('a single declared delivery keeps the flat Overview byte for byte', () => {
+    const flat = parseTasks(details).tasks;
+    const one = parseTasks(
+      task('T1', 'Customers pay by card', `${T1}\ndelivery: 1`) + task('T2', 'Customers get refunds', `${T2}\ndelivery: 1`),
+    ).tasks;
+    expect(taskIndex(one, story)).toBe(taskIndex(flat, story));
+  });
+
   test('a stale Overview fails, and --index --write puts the generated one back', () => {
     const { text, tasks } = file(details, '- [ ] T1 something else');
     expect(taskLayoutIssues(text, tasks, story)).toEqual([expect.stringMatching(/Overview does not match the details/)]);
