@@ -59,6 +59,7 @@ open version 1 spec it warns and does not convert it; the migration goes through
      (`{{template:rules/traceability.md}}`);
    - `test_levels`: the level of every scenario it cites, `unit | e2e | eval | none`, as
      `{{template:rules/test-policy.md}}` requires; concrete test names are chosen by whoever writes them;
+   - `partial_failure_tests`: concrete test names for partial-failure behavior when the design declares or implies data writes;
    - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
    - `verify`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`.
    A task's **Done when** lists every entry point, list item and clause of the FRs it serves; include a

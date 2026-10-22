@@ -11,6 +11,14 @@ Applies the principles in `spec-docs.md`.
 - **Decisions:** `### Dn — <decision>` with why and the alternatives rejected in one compact list.
 - **Changes by project and module:** project, module, change and an exemplar file to mimic.
 - **Contract:** mandatory when the spec touches more than one project.
+- **Principle check:** frontmatter requires `writes_data: yes | no`; exactly one table row per
+  applicable constitution principle ID (`DP-*`), stating applicability and how or why not. Lite uses
+  the same fields in `spec.md`.
+- **Justified exceptions:** for each violated principle, state why it is needed and why the simpler
+  alternative was rejected.
+- When writes are declared or inferred, the `Data writes (ACID)` table names grouped writes, the
+  stack transaction/tool, compensation across systems and concurrency/isolation. Every multi-write
+  operation has a partial-failure test declared in a task.
 - **Risks and risk tags:** `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
 - **Constitution / Product / Module Docs Impact:** proposals only; close applies them with approval.

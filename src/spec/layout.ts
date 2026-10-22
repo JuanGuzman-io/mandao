@@ -1,4 +1,6 @@
 import { LAYOUT_VERSIONS, type LayoutVersion } from '../schemas/spec.js';
+import { type DesignFinding, designFindings } from './principles.js';
+import type { Task } from './tasks.js';
 
 /** The depths a spec can have, and the stages its story status moves it through (design D1). */
 export const DEPTHS = ['lite', 'standard', 'full'] as const;
@@ -116,6 +118,7 @@ export interface LayoutFindings {
   stage: Stage;
   missing: string[];
   unexpected: string[];
+  designFindings: DesignFinding[];
   ok: boolean;
 }
 
@@ -136,6 +139,11 @@ export interface LayoutInput {
   story: { schema_version?: unknown; status?: unknown };
   /** One key per present `spec.md`, `requirements.md` or `design.md`, with that document's frontmatter. */
   docs: Record<string, { depth?: unknown } | undefined>;
+  /** The design (or lite spec) and tasks are read by the scripts layer. */
+  design?: string;
+  tasks?: Task[];
+  principleIds?: string[];
+  hasDataModel?: boolean;
   /** The folder's entry names; directories end in `/`. */
   entries: string[];
 }
@@ -150,7 +158,15 @@ function depthOf(docs: LayoutInput['docs']): Depth {
 }
 
 /** Compares a folder's contents with its manifest. The version is the story's `schema_version`, nothing else. */
-export function layoutFindings({ story, docs, entries }: LayoutInput): LayoutFindings {
+export function layoutFindings({
+  story,
+  docs,
+  entries,
+  design,
+  tasks = [],
+  principleIds = [],
+  hasDataModel = false,
+}: LayoutInput): LayoutFindings {
   const version = LAYOUT_VERSIONS.find((v) => v === story.schema_version);
   if (!version) throw new Error(`story.md: schema_version must be ${LAYOUT_VERSIONS.join(' or ')}, got ${String(story.schema_version)}`);
   const depth = depthOf(docs);
@@ -167,7 +183,16 @@ export function layoutFindings({ story, docs, entries }: LayoutInput): LayoutFin
   ]);
   const missing = required.filter((f) => !present.includes(f)).sort();
   const unexpected = present.filter((f) => !allowed.has(f)).sort();
-  return { version, depth, stage, missing, unexpected, ok: !missing.length && !unexpected.length };
+  const designChecks = version === 2 ? designFindings({ design, principleIds, tasks, hasDataModel }) : [];
+  return {
+    version,
+    depth,
+    stage,
+    missing,
+    unexpected,
+    designFindings: designChecks,
+    ok: !missing.length && !unexpected.length && !designChecks.length,
+  };
 }
 
 /** The problems a close refusal names, one line each; empty when the folder matches. */
@@ -175,6 +200,7 @@ export function layoutProblems(found: LayoutFindings): string[] {
   return [
     ...(found.missing.length ? [`layout: missing ${found.missing.join(', ')}`] : []),
     ...(found.unexpected.length ? [`layout: unexpected ${found.unexpected.join(', ')}`] : []),
+    ...found.designFindings.map((finding) => `layout: ${finding.type} ${finding.ref}: ${finding.message}`),
   ];
 }
 

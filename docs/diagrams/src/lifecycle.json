@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "59a033aa48192bfa3cdb7f89e9ce0f779c456d49bcad682075af107c9daca64f"
+      "sha256": "e4b57ea5af22631ff8962c72e42d631f0a63c47b3a55a29f2360b00f26ac4257"
     },
     {
       "path": "core/commands/implement.md",
@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "2514251e717286e5cafc28238982cad42f1f7d5db9d5ae86c4d537dc1d08aa86"
+      "sha256": "6657cd5971027e7661253b969d1507b1a0f96620873b23d4b12627481c028c49"
     },
     {
       "path": "core/commands/story.md",
@@ -47,7 +47,7 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "0bda653ff32ad7b0473d1152bf026a71eeeea27791f1bca7eaaa585166364b46"
+      "sha256": "8f7582a12df6e11787b8d1b48e334b63b3a57a8a218c7112ce8cdf0e9d1674c4"
     },
     {
       "path": "core/commands/verify.md",
@@ -59,11 +59,11 @@
     },
     {
       "path": "src/schemas/common.ts",
-      "sha256": "3a7136345759577a8a8b775074ab849ad5dd88a298379b0441706c1bc21f0fc3"
+      "sha256": "7c68370d2504f03468fb5080513bfdc0e32378df4e757667d221d116135c1e42"
     },
     {
       "path": "src/scripts/spec.ts",
-      "sha256": "e01c18b4cbcaa1b75543175a1a54d0bae9af5f4e6e5e59db13c4b86cc403386b"
+      "sha256": "f986d1b62adcea8441379104549868c7a090bf7c2e4e0813a8d765b2179ae696"
     }
   ],
   "specSha256": "0205591777369dc1d74376fb27b2c1ac32c7ac384ca7095cdbeb1a9045f3d949",

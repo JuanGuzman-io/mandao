@@ -1,5 +1,6 @@
 import { isTestFile } from '../scripts/impact.js';
 import type { ExecutionRow } from './execution.js';
+import type { DesignFinding } from './principles.js';
 import type { Progress } from './progress.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
@@ -30,7 +31,7 @@ interface ProjectRef {
   path: string;
 }
 
-const BLOCKING = new Set(['GAP', 'BROKEN_REF', 'UNCOMMITTED', 'E2E_MISSING']);
+const BLOCKING = new Set(['GAP', 'BROKEN_REF', 'UNCOMMITTED', 'E2E_MISSING', 'PRINCIPLE_GATE', 'DATA_WRITE']);
 
 const inProject = (file: string, p: ProjectRef) => p.path === '.' || file === p.path || file.startsWith(`${p.path}/`);
 
@@ -69,9 +70,10 @@ export function verifyPlan(input: {
   changed: string[];
   commits: CommitState;
   ciConfirmed?: boolean;
+  designFindings?: DesignFinding[];
 }): VerifyPlan {
   const { tasks, execution } = input;
-  const findings = trace(input.story, input.requirements, tasks, input.commits).findings;
+  const findings = trace(input.story, input.requirements, tasks, input.commits, input.designFindings).findings;
   const missingRed = tasks
     .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none')
     .filter((t) => !execution.some((r) => r.task === t.id && r.verdict === (t.characterization ? 'MUTANT' : 'RED')))

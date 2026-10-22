@@ -1,10 +1,14 @@
 import { describe, expect, test } from 'vitest';
 import { configSchema } from '../../src/schemas/config.js';
-import { composeBrief } from '../../src/scripts/brief.js';
+import { composeBrief, LENSES } from '../../src/scripts/brief.js';
 import type { SpecFolder } from '../../src/scripts/spec.js';
 import { parseTasks } from '../../src/spec/tasks.js';
 
 describe('task decision context in the Implementer brief', () => {
+  test('the data risk tag selects the data lens', () => {
+    expect(LENSES.data).toEqual(['data']);
+  });
+
   test('includes only linked design decisions and emits an ID based coverage checklist', () => {
     const parsed = parseTasks(
       `### [ ] T1 — preserve behavior\n\n\`\`\`yaml\nproject: app\ntier: standard\nfiles: [src/a.ts]\nac: [AC-1/C1]\nscenarios: [S-1.1/C1]\ndecisions: [D2]\n\`\`\`\n`,

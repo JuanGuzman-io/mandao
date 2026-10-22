@@ -46,6 +46,14 @@ Build the foundation every other mandao relies on: how the system is built (tech
 owned by the tech lead) and what it does and for whom (product context, owned by the PO). Keep them in
 separate files: different people approve them.
 
+For a new or legacy constitution, propose stack-specific design principles in `standards.md` for user
+approval: stable `DP-*` IDs, concrete SRP/DIP rules (especially single responsibility and dependency
+inversion where required), ACID rules where relevant, and simplicity / anti-
+abstraction as the counterweight. Record architecture as an explicit team choice in `architecture.md`;
+never infer it from the framework. State precedence: chosen project architecture, then documented
+framework conventions, then generic principles only where the first two are silent. In active mode,
+show this as a per-file proposal and do not add it unless the user approves.
+
 Follow `{{template:rules/context.md}}` throughout. Product context is written in
 `{{language.business}}`; the technical constitution in `{{language.technical}}`. Headings, keywords and
 markers stay in English.

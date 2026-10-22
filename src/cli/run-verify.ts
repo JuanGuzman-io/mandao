@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
+import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
-import { findSpec, readSpec } from '../scripts/spec.js';
+import { findSpec, readLayout, readSpec } from '../scripts/spec.js';
 import { securityMentions, verifyPlan } from '../spec/index.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -36,6 +37,12 @@ export function registerVerify(run: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       if (!spec.story || !spec.requirements) throw new Error(`${spec.name} needs story.md and requirements.md`);
       const repo = repoRoot(spec.dir);
+      const principleIds = principlesForProjects(
+        ctx.root(),
+        config,
+        spec.tasks.map((task) => task.project),
+      );
+      const designFindings = readLayout(spec.dir, principleIds).designFindings;
       json({
         ...verifyPlan({
           story: spec.story,
@@ -49,6 +56,7 @@ export function registerVerify(run: Command, ctx: CliContext) {
             (f) => !f.startsWith(`${config.paths.specs}/`),
           ),
           commits: commitState(spec, config.commits.trailers),
+          designFindings,
           ciConfirmed: Boolean(opts.ciConfirmed),
         }),
         issues: spec.issues,

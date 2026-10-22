@@ -31,7 +31,7 @@ change to production behavior means it is not characterization → FAIL. Each re
 |---|---|
 | `auth`, `input`, `pii`, `payments`, `public-api`, `infra` | security |
 | `perf` | performance |
-| `migration`, `pii` | data |
+| `data`, `migration`, `pii` | data |
 | `ui` | accessibility |
 | `ai-prompt` | AI: prompt injection, PII sent to models, cost |
 
@@ -75,6 +75,10 @@ rely on free text to imply finding status.
 - **Blocking**: violates the spec, the constitution, the contract, a mandatory test, or a high-severity
   security rule. Rework. Only a finding with `status: open`, `lens: security` and `severity: high` or
   `critical` prevents PASS; the script validates this JSON structure and does not interpret free text.
+- Check only design principles the Principle check declares applicable. An unjustified violation
+  blocks; suggestions about principles outside that gate are advisory.
+- A violated applicable principle needs a Justified exceptions row naming why it is needed and why a
+  simpler alternative was rejected; otherwise it is blocking.
 - **Advisory**: improvements and preferences. Recorded in `execution.md`, feeds Kaizen, never reopens
   the loop.
 

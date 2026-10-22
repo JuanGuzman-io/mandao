@@ -43,11 +43,23 @@ export const specStatus = z.enum(SPEC_STATUSES);
 export type SpecStatus = z.infer<typeof specStatus>;
 
 /** Risk tags assigned per task; they select review lenses and gate `quick`. */
-export const RISK_TAGS = ['auth', 'input', 'pii', 'payments', 'migration', 'public-api', 'infra', 'ai-prompt', 'ui', 'perf'] as const;
+export const RISK_TAGS = [
+  'auth',
+  'input',
+  'pii',
+  'payments',
+  'data',
+  'migration',
+  'public-api',
+  'infra',
+  'ai-prompt',
+  'ui',
+  'perf',
+] as const;
 export const riskTag = z.enum(RISK_TAGS);
 export type RiskTag = z.infer<typeof riskTag>;
 /** Tags that always escalate a quick change to story/specify. */
-export const QUICK_FORBIDDEN_TAGS: readonly RiskTag[] = ['auth', 'payments', 'pii', 'migration'];
+export const QUICK_FORBIDDEN_TAGS: readonly RiskTag[] = ['auth', 'payments', 'pii', 'data', 'migration'];
 
 /** Deterministic gates (review level 0). Concrete tools are configured per project. */
 export const GATES = ['format', 'lint', 'typecheck', 'test', 'build', 'secrets', 'audit', 'sast', 'metrics'] as const;

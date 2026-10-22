@@ -22,6 +22,7 @@ export const LENSES: Record<RiskTag, string[]> = {
   input: ['security'],
   pii: ['security', 'data'],
   payments: ['security'],
+  data: ['data'],
   'public-api': ['security'],
   infra: ['security'],
   migration: ['data'],

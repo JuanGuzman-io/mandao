@@ -8,6 +8,7 @@ const task = (id: string, project: string, depends_on: string[] = []): Task =>
     tier: 'standard',
     files: [],
     risk_tags: [],
+    partial_failure_tests: [],
     ac: [],
     scenarios: [],
     decisions: [],
