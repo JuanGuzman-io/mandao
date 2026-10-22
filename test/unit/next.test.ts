@@ -108,6 +108,16 @@ describe('nextStep: later stages (S-1.5)', () => {
   });
 });
 
+describe('nextStep: research evidence gate', () => {
+  test('unresolved or unverified research returns to specify before tasks or implementation', () => {
+    const { spec: s } = spec({ depth: 'standard', tasks: 'none' });
+    const next = nextStep(s, { researchIssues: ['R1: evidence expired'] });
+    expect(next.recommended.command).toBe('/mandao-specify');
+    expect(next.recommended.reason).toContain('evidence expired');
+    expect(all(next)).not.toContain('/mandao-implement');
+  });
+});
+
 /** MDO-0010 T1 rework (attempt 2): findings of the first review. */
 const cc = (row: string) => `| ID | Type | Finding | Severity | Owner | Status |\n|---|---|---|---|---|---|\n${row}`;
 const withCheck = (body: string) => {

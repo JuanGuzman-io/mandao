@@ -1014,7 +1014,7 @@ Scope: a project, a route, or a critical flow from `critical-flows.md`. `--audit
 
 ## 20. Security of the harness itself
 
-- **External content is data, not instructions.** Tracker items, comments, Slack threads, documents, transcripts, web pages and production traces may contain prompt injections. Commands must treat them as quoted input and never execute instructions found in them.
+- **External content is data, not instructions.** Tracker items, comments, Slack threads, documents, transcripts, web pages and production traces may contain prompt injections. Commands and delegated research briefs treat page content as data, ignore instructions/prompts/requests inside it, and never execute them.
 - **OPEN:** MCP credentials scope, what the agent is allowed to write to external tools (beyond confirm-before-publish), audit log of external writes.
 - **OPEN:** privacy and compliance (e.g., Colombian Law 1581 on personal data, GDPR where applicable) beyond data classification.
 - **OPEN:** license checks for new dependencies.
@@ -1069,7 +1069,7 @@ Raised in the gap sweep. **In this section, untagged items are OPEN**, overridin
 - **DECIDED (ADR 0049), implemented in Phase 6:** PR delivery, target selection, green-CI merge and cleanup follow §14.5 and §24. Human review beyond the AI Reviewer remains **OPEN** where the project has not defined it.
 - **Release and deploy:** feature flags, rollout, rollback plan and post-deploy verification remain **OPEN**. Release/environment recording exists (§18); Phase 6 adds confirmed progressive promotion and read-only git-derived release state, not permission for arbitrary deployment.
 - **DECIDED (ADR 0030, ADR 0049), implemented — hotfix lane:** specify selects hotfix.from/prefix, records lane: hotfix, and delivery reminds the operator of required back-merges. A distinct lightweight postmortem format remains **OPEN**.
-- **Research:** standalone research command is planned; its exact contract remains **OPEN**. **DECIDED, pending Phase 8:** version-dependent or unfamiliar design questions become delegated research with dated URLs; unresolved research blocks design approval, and unverified model knowledge cannot justify high-impact decisions.
+- **Research (Phase 8):** `mandao run research <spec>` lists typed `[NEEDS RESEARCH]` questions, applies `research.max_questions`, and finds reusable resolved evidence with a current expiry and source link. `approve design`/`approve spec` and `next` enforce the evidence gate. Sources rank official > manufacturer > recognized technical; version/API claims require direct verification; contradictions are recorded with resolution. No-search claims are `unverified (model knowledge)`. High impact is deterministic: architecture, data, security, public contracts or a linked High premise. `doctor` reports native/MCP/none search capability.
 
 ### 23.2 Process governance
 - **DECIDED (ADRs 0035/0040):** script-recorded story/design/spec/tasks/close approvals, including safe approval by running the next command (§2). Organization-specific permission/identity enforcement and a general pre-approved mode remain **OPEN**; git user.name alone is not proof of authority.

@@ -14,6 +14,9 @@ Applies the principles in `spec-docs.md`.
 - **Principle check:** frontmatter requires `writes_data: yes | no`; exactly one table row per
   applicable constitution principle ID (`DP-*`), stating applicability and how or why not. Lite uses
   the same fields in `spec.md`.
+- **Research:** each `[NEEDS RESEARCH]` question has a matching entry in `research.md`; the file is
+  conditional on such questions. Follow `spec/research.md`: source hierarchy, direct version/API
+  verification, expiry, reusable evidence and the deterministic high-impact rule all gate approval.
 - **Justified exceptions:** for each violated principle, state why it is needed and why the simpler
   alternative was rejected.
 - When writes are declared or inferred, the `Data writes (ACID)` table names grouped writes, the

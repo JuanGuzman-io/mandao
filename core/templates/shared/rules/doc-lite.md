@@ -12,6 +12,8 @@ and `design.md`; the tasks are in `tasks.md`, as at every depth. Same ids and th
 documents it replaces: FRs and scenarios, the AC → FR matrix, decisions, changes with exemplars, the Consistency
 Check, clarifications, and a Premise Ledger with **High premises only**. Parsers, the Consistency
 Check and traceability read the same sections from `spec.md`.
+When `spec.md` contains `[NEEDS RESEARCH]`, include conditional `research.md` and satisfy the research
+evidence gate in `spec/research.md` before approving the lite spec.
 
 ## One session
 

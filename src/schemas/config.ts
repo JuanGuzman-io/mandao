@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { branchingInput } from './branching.js';
 import { gate, harnessId, kebabId, profile, relPath, schemaVersion, workspaceMode } from './common.js';
+import { researchConfigSchema } from './research.js';
 
 /**
  * Size thresholds, measured on the real diff only (ADR 0028): never estimated, never stored in a spec.
@@ -171,6 +172,8 @@ export const configSchema = z
     budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** Session cuts (ADR 0038): inside implement the Leader stops to suggest one only above this saving (USD). */
     session: z.object({ cut_min_savings: z.number().nonnegative().optional() }).prefault({}),
+    /** Research evidence freshness and per-spec question budget (Phase 8). */
+    research: researchConfigSchema,
     /** Diagram engine is an explicit project choice; Archify is required by default. */
     diagrams: z.object({ engine: z.enum(['archify', 'mermaid']).default('archify') }).prefault({}),
     /**

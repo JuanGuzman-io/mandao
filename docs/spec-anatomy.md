@@ -60,6 +60,7 @@ reported as unexpected. `diagrams/` and `_log/` are allowed at every depth.
 | `quickstart.md` | How a PO checks the behavior by hand | only when the spec has behavior a user or PO can see |
 | `data-model.md` | The data the spec changes | only when the spec changes data |
 | `contract/` | The contract between projects | only when the spec spans several projects |
+| `research.md` | Dated evidence and decisions for research questions | only when the spec contains NEEDS RESEARCH questions |
 
 ### The six log files (`_log/`)
 

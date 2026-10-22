@@ -14,6 +14,7 @@ import { registerCost } from './run-cost.js';
 import { registerLeader } from './run-leader.js';
 import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
+import { registerResearch } from './run-research.js';
 import { registerSecurityScanning } from './run-security-scanning.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 import { registerTelemetry } from './run-telemetry.js';
@@ -24,6 +25,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerSpecScripts(run, ctx);
   registerSpecWriters(run, ctx);
   registerQuickLog(run, ctx);
+  registerResearch(run, ctx);
   registerLeader(run, ctx);
   registerPremise(run, ctx);
   registerCost(run, ctx);

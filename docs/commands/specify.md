@@ -26,21 +26,23 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 - `specs/<ID>-<slug>/requirements.md`: standard and full
 - `specs/<ID>-<slug>/design.md`: standard and full
 - `specs/<ID>-<slug>/spec.md`: lite: requirements and design
+- `specs/<ID>-<slug>/research.md`: only when the spec contains NEEDS RESEARCH questions
 - `specs/<ID>-<slug>/quickstart.md`: only when the spec has behavior a user or PO can see
 - `specs/<ID>-<slug>/contract/`: only when the spec touches more than one project
 
 ## Steps
 
 1. Resolve the spec
-2. Depth
-3. Impact analysis
-4. requirements.md
-5. design.md
+2. Research questions before design
+3. Depth
+4. Impact analysis
+5. requirements.md
+6. design.md
 5b. quickstart.md (only with visible behavior)
 5c. data-model.md (only when data changes)
-6. Consistency Check
-7. Diagram for approval (you approve)
-8. Close
+7. Consistency Check
+8. Diagram for approval (you approve)
+9. Close
 
 ## Approval
 
@@ -57,6 +59,7 @@ Yes: it stops for your approval.
 - `mandao run resources`
 - `mandao run premise`
 - `mandao run event`
+- `mandao run research`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

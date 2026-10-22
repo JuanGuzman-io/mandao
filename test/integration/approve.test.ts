@@ -89,6 +89,23 @@ describe('mandao approve: no model session', () => {
     });
   });
 
+  test('design approval blocks an uncovered research marker without changing document status', async () => {
+    const root = repo();
+    const file = join(root, SPEC, 'requirements.md');
+    writeFileSync(file, `${readFileSync(file, 'utf8')}\n[NEEDS RESEARCH: api / Auth.js sessions] Which API is supported?\n`);
+    const result = await approve(root, 'MDO-0001', 'design');
+    expect(result).toMatchObject({ approved: false, problems: [expect.stringContaining('research question is not recorded')] });
+    expect(status(root, 'requirements.md')).toBe('draft');
+  });
+
+  test('design approval records the research document hash when it exists', async () => {
+    const root = repo();
+    writeFileSync(join(root, SPEC, 'research.md'), '---\nschema_version: 1\nentries: []\n---\n# Research\n');
+    const result = await approve(root, 'MDO-0001', 'design');
+    expect(result.approved).toBe(true);
+    expect(parsed(root).at(-1)?.sha256).toMatchObject({ 'research.md': expect.stringMatching(/^sha256-/) });
+  });
+
   test('revocation records an append-only event, resets status, and makes the approval inactive', async () => {
     const root = repo();
     await approve(root, 'MDO-0001', 'story');

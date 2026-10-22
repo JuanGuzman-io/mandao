@@ -6,6 +6,7 @@ export * from './config.js';
 export * from './format.js';
 export * from './lock.js';
 export * from './models.js';
+export * from './research.js';
 export * from './review.js';
 export * from './security-scanning.js';
 export * from './sources.js';

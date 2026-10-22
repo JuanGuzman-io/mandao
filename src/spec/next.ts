@@ -27,6 +27,8 @@ export interface NextFacts {
   verifyVerdict?: string;
   /** Where a closed spec's branch stands in git: not pushed, pushed and not merged, or merged into its base. */
   delivery?: 'unpushed' | 'pushed' | 'merged';
+  /** Deterministic research gate findings (read and validated by the caller). */
+  researchIssues?: string[];
 }
 
 export interface NextStep {
@@ -105,6 +107,7 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
   const open = openItems(spec);
   const item = open.criticalOpen[0] ?? open.ask[0];
   if (item) return rec('/mandao-clarify', `${open.criticalOpen.length ? 'critical OPEN' : 'open item'}: ${item}`);
+  if (facts.researchIssues?.length) return rec('/mandao-specify', `research gate: ${facts.researchIssues[0]}`, '/mandao-clarify');
   const draft = draftStep(spec, lite, facts.tasksStatus);
   if (draft) return rec(approve(id, draft), `the ${draft === 'story' ? 'story' : 'spec'} is still draft`, '/mandao-clarify');
   const approvals = activeApprovals(facts.approvals ?? []).filter((a) => a.step !== 'shown');
