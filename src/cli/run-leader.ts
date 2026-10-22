@@ -1,8 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
+import type { Config } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
-import { changedFiles, commitState, repoRoot } from '../scripts/commits.js';
+import { changedFiles, changeManifest, commitState, renderChangeManifest, repoRoot } from '../scripts/commits.js';
+import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
@@ -95,13 +97,9 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
       notConfigured.push(gate);
       continue;
     }
-    const kind = gate === 'build' ? 'build' : 'unit';
-    const budget = budgetFor(ctx.root(), config, project, kind, `${task.id} ${gate}`, force, spec.dir);
-    const run = await measureGate(spec.dir, spec.name, gate, () =>
-      runTests(ctx.root(), `${task.id} ${gate}`, inProject(command, project.path), budget, undefined, { keepOutput: true }),
-    );
-    results.push(gateResult(gate, run));
-    if (run.output) outputs[gate] = run.output;
+    const execution = await executeGate(ctx, config, spec, task, project, gate, command, changed, force);
+    results.push(execution.result);
+    if (execution.output) outputs[gate] = execution.output;
   }
   const full = gatesLog(task.id, attempt, results, outputs, notConfigured);
   const rel = (f: string) => relative(ctx.root(), f).split('\\').join('/');
@@ -121,6 +119,40 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
   const section = gatesSection(results, outputs, notConfigured, task.files ?? [], earlier);
   const file = writeLogSection(spec.dir, 'gates.md', attemptTitle(task.id, attempt), section);
   return { results, notConfigured, log: rel(file), output: rel(cached) };
+}
+
+async function executeGate(
+  ctx: CliContext,
+  config: Config,
+  spec: SpecFolder,
+  task: Task,
+  project: Config['projects'][number],
+  gate: (typeof GATE_ORDER)[number],
+  command: string,
+  changed: string[],
+  force?: boolean,
+): Promise<{ result: GateResult; output?: string }> {
+  const kind = gate === 'build' ? 'build' : 'unit';
+  const budget = budgetFor(ctx.root(), config, project, kind, `${task.id} ${gate}`, force, spec.dir);
+  const selectedTests = gate === 'test' ? impactFor(ctx, project, changed).files : [];
+  const run = await runWithGateReceipt(
+    {
+      root: repoRoot(spec.dir),
+      project: project.name,
+      gate,
+      command,
+      configuration: config,
+      selectedTests,
+      budget,
+      projectRoot: project.path === '.' ? ctx.root() : join(ctx.root(), project.path),
+      force,
+    },
+    () =>
+      measureGate(spec.dir, spec.name, gate, () =>
+        runTests(ctx.root(), `${task.id} ${gate}`, inProject(command, project.path), budget, undefined, { keepOutput: true }),
+      ),
+  );
+  return { result: gateResult(gate, run), ...(run.output ? { output: run.output } : {}) };
 }
 
 const attemptTitle = (task: string, attempt: number) => `${task} — attempt ${attempt}`;
@@ -226,6 +258,7 @@ function registerReviewPack(run: Command, ctx: CliContext) {
         1,
         loopContext(ctx, spec, id, harness, task.project),
       );
+      const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
       const pack = [
         `# Review pack — ${id}, attempt ${attempt}`,
         '',
@@ -236,6 +269,14 @@ function registerReviewPack(run: Command, ctx: CliContext) {
         '',
         '```json',
         JSON.stringify(brief, null, 2),
+        '```',
+        '',
+        '## Mandao change manifest',
+        '',
+        'Exact changed paths, working-tree statuses, and SHA-256 content hashes reviewed below:',
+        '',
+        '```json',
+        renderChangeManifest(manifest),
         '```',
         '',
         gates.replace(/^# /m, '## '),
