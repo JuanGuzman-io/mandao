@@ -33,7 +33,7 @@ scope, product behavior, security or irreversible actions.
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
 | [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | complete; PR #11 merged (`075cd2a`) |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
-| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | approved; in progress |
+| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | agreed, pending phase plan approval; no new spec |
@@ -303,7 +303,7 @@ and the [exposure audit](security/exposure-audit.md).
 
 ## Rules enforced by script
 
-**Phase 5, except cost recording (phase 2) and approved commit manifests (phase 4). Plan approved; implementation in progress.**
+**Phase 5, except cost recording (phase 2) and approved commit manifests (phase 4). Complete; PR #12.**
 
 Rules the commands state as prose become checks a script enforces.
 
