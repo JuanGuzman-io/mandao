@@ -34,6 +34,7 @@ import {
   renderCloseSummary,
   sessionCutKaizen,
   specMetrics,
+  splitDeliveries,
   summarizeTelemetry,
   unresolvedPremises,
   upsertChangelog,
@@ -355,7 +356,16 @@ function registerPrPlan(run: Command, ctx: CliContext) {
       const skip = notCode(ctx.root(), config, spec);
       const sizes = new Map(spec.tasks.map((t) => [t.id, commitsSize(repo, byTask.get(t.id) ?? [], skip)]));
       const limits = sizeLimits(config.size_limits).pr;
-      json(prPlan({ tasks: spec.tasks, waves: planTasks(spec.tasks).waves, sizes, limits, polyrepo: config.workspace === 'polyrepo' }));
+      json(
+        prPlan({
+          tasks: spec.tasks,
+          waves: planTasks(spec.tasks).waves,
+          sizes,
+          limits,
+          polyrepo: config.workspace === 'polyrepo',
+          deliveries: splitDeliveries(spec.tasks),
+        }),
+      );
     });
 }
 

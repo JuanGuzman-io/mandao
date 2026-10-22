@@ -1,3 +1,4 @@
+import type { Delivery } from './deliveries.js';
 import type { Task } from './tasks.js';
 
 /** Real size of a task: the files and changed lines of its commits (found by trailers). */
@@ -27,6 +28,8 @@ interface PrPlanInput {
   sizes: Map<string, TaskSize>;
   limits: { max_files: number; max_changed_lines: number };
   polyrepo: boolean;
+  /** The deliveries the spec declares (`splitDeliveries`); more than one wins over the waves. */
+  deliveries?: Delivery[];
 }
 
 function pr(name: string, ids: string[], tasks: Task[], sizes: Map<string, TaskSize>): PullRequest {
@@ -42,10 +45,10 @@ function pr(name: string, ids: string[], tasks: Task[], sizes: Map<string, TaskS
 }
 
 /**
- * How to deliver a spec (design §14.1, ADR 0028): from the task dependency structure, the projects
+ * How to deliver a spec (design §14.1, ADR 0028, MDO-0013): from the task dependency structure, the projects
  * touched and the real size of the commits — never from an estimate. One PR per repository in a
- * polyrepo; one PR within `size_limits.pr`; above it, stacked PRs along the dependency waves (or per
- * project), in order. Nothing here is written to the spec.
+ * polyrepo; one PR within `size_limits.pr`; above it, stacked PRs along the declared deliveries when there are
+ * several, else along the dependency waves (or per project), in order. It only proposes the cut. Nothing here is written to the spec.
  */
 export function prPlan(input: PrPlanInput): PrPlan {
   const { tasks, sizes, limits } = input;
@@ -71,6 +74,14 @@ export function prPlan(input: PrPlanInput): PrPlan {
     ...(whole.changedLines > limits.max_changed_lines ? [`${whole.changedLines} lines changed (limit ${limits.max_changed_lines})`] : []),
   ];
   if (!over.length) return { decision: 'single', reasons: ['within size_limits.pr'], prs: [whole] };
+  const deliveries = (input.deliveries ?? []).filter((d) => d.tasks.length);
+  if (deliveries.length > 1) {
+    return {
+      decision: 'stacked',
+      reasons: [...over, `split along ${deliveries.length} deliveries`],
+      prs: deliveries.map((d) => pr(`delivery ${d.number}`, d.tasks, tasks, sizes)),
+    };
+  }
   const waves = input.waves.filter((w) => w.length);
   if (waves.length > 1) {
     return {
