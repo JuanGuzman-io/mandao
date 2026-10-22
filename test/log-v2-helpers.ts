@@ -64,7 +64,7 @@ export function repo(version: 1 | 2) {
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
-    projects: [{ name: 'mandao', path: '.', gates: { typecheck: NOISY_GATE } }],
+    projects: [{ name: 'mandao', path: '.', gates: { typecheck: NOISY_GATE, build: 'node -e "process.exit(0)"' } }],
     harnesses: ['claude'],
     // The gate must run wherever the suite runs: a busy CI runner would otherwise defer it, with no output.
     resources: { min_free_memory_mb: 0 },

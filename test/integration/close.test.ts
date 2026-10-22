@@ -79,6 +79,7 @@ describe('mandao run diagram-drift', () => {
       workspace: 'single',
       projects: [{ name: 'p', path: '.' }],
       harnesses: ['claude'],
+      diagrams: { engine: 'mermaid' },
     });
     const spec = join(root, 'specs/MDO-0001-skills-list');
     cpSync(join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list'), spec, { recursive: true });

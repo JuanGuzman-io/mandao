@@ -16,8 +16,6 @@ describe('S-3.1: a version 2 log is six committed files', () => {
   test('S-3.1: after attempts, gates, reviews and premises, git ls-files _log lists exactly the six files, in at most 1000 lines', async () => {
     const root = repo(2);
     await history(root);
-    git(root, 'add', '-A');
-    git(root, 'commit', '-qm', 'log');
     const tracked = git(root, 'ls-files', `${SPEC}/_log`).split('\n').filter(Boolean);
     expect(tracked.map((f) => f.split('/').at(-1)).sort()).toEqual(SIX);
     expect(tracked.every((f) => f.split('/').length === SPEC.split('/').length + 2)).toBe(true);
