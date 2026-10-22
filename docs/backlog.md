@@ -28,7 +28,7 @@ scope, product behavior, security or irreversible actions.
 | Phase / item | Historical reference | Depends on | Status |
 |---|---|---|---|
 | [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
-| [1 — Security before beta](#security-quick-before-the-beta) | former security quick | phase 0 | agreed, pending phase plan approval |
+| [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
 | [2 — Measurement](#phase-2--measurement) | latency audit | phase 0 | agreed, pending phase plan approval |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | agreed, pending phase plan approval |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | agreed, pending phase plan approval |
@@ -229,16 +229,16 @@ real spec; until then the scripts read both layouts by the story's `schema_versi
 
 ## Security quick before the beta
 
-**Phase 1; directly implemented in its phase branch, not a Mandao quick.**
+**Phase 1; implemented in `perf/fase-1`.**
 
 Before the beta is published.
 
-- **Skill sources over `https:` only.** `http:` and `file:` sources are refused, with a test.
-- **The user's `GIT_SSH_COMMAND` is kept.** When BatchMode is needed, it is added without
-  overwriting the user's setting.
-- **Graphify install, checked.** When the catalog source is the whole repository with no skill path,
-  it is not copied whole into the skill folders: use its own installer, or the skill folder the
-  repository defines.
+- [x] **Skill sources over `https:` only.** `http:`, `file:`, `ssh:` and `git:` sources are refused
+  by schema and runtime guard, with tests.
+- [x] **The user's `GIT_SSH_COMMAND` is kept.** `BatchMode=yes` is appended only when neither
+  `BatchMode=yes` nor `BatchMode=no` is explicitly set.
+- [x] **Graphify install, checked.** Its pinned command installer is used; the repository is not
+  copied whole into skill folders.
 
 Related, already listed: [maintainer-checklist.md](maintainer-checklist.md#secret-scanning-and-dependency-security)
 and the [exposure audit](security/exposure-audit.md).

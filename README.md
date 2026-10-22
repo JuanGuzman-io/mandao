@@ -31,6 +31,7 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 - **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't.
 - **Tests before code (TDD).** Write a failing test from the spec, make it pass, then refactor. Mandao requires recorded red evidence before implementation where TDD applies: the test demonstrates the missing behavior before the code addresses it, keeping implementation tied to the spec. [TDD in the task flow](#test-driven-development-tdd).
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
+- **Safer skill installs.** Catalog skill repositories require HTTPS; Git preserves your `GIT_SSH_COMMAND` and adds non-interactive mode only when no `BatchMode` setting is present.
 - **Kaizen after every spec.** `close` measures the run (rework, review failures, cost, session turns), names up to three root causes with their evidence, and proposes one-line fixes to the commands or the constitution. Nothing changes until you approve it. For layout v2, lessons stay in the spec's `close-summary.md`; older specs keep [`docs/kaizen/`](docs/kaizen/).
 
 ## How it works
