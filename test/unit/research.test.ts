@@ -107,6 +107,16 @@ describe('research evidence', () => {
       [],
     );
     expect(
+      verifiedReusedResearchReferences([{ ...reused, checked_on: '2027-01-01', expires: '2028-01-01' }], candidates, '2026-10-22'),
+    ).toEqual([]);
+    const expiredPrior = {
+      ...prior,
+      checked_on: '2025-10-01',
+      expires: '2026-10-01',
+      claims: [{ ...claim, sources: claim.sources.map((item) => ({ ...item, checked_on: '2025-10-01' })) }],
+    };
+    expect(verifiedReusedResearchReferences([reused], [{ source: candidates[0]!.source, entry: expiredPrior }], '2026-10-22')).toEqual([]);
+    expect(
       researchGateFindings(
         ['[NEEDS RESEARCH: architecture / Auth boundary] Is the auth boundary adequate?'],
         { schema_version: 1, entries: [reused] },

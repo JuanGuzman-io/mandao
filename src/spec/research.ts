@@ -230,7 +230,14 @@ export function verifiedReusedResearchReferences(
     const prior = reusableResearch(candidates, entry.topic, entry.topic_type, today, expiryMonths).find(
       (candidate) => candidate.source === entry.reused_from,
     );
-    if (!prior || prior.entry.question !== entry.question || JSON.stringify(prior.entry.claims) !== JSON.stringify(entry.claims)) return [];
+    if (
+      !prior ||
+      prior.entry.question !== entry.question ||
+      prior.entry.checked_on !== entry.checked_on ||
+      prior.entry.expires !== entry.expires ||
+      JSON.stringify(prior.entry.claims) !== JSON.stringify(entry.claims)
+    )
+      return [];
     return [entry.reused_from];
   });
 }
