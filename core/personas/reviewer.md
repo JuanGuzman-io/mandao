@@ -29,12 +29,11 @@ Check, in order:
 7. **Module boundaries** (`architecture.md`): one responsibility per module, modules talk only through
    public contracts, no reaching into another module's internals. A violation is blocking.
 
-Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`. Put this attempt's findings under a
-`## Findings` heading. Start each finding's line with
-`[<lens>/<severity>]` (lens: core, security, performance, data, accessibility or ai; severity: low,
-medium, high or critical), then what and where, the violated rule quoted with its source file, blocking
-or advisory, and the remediation. A security finding of high or critical severity is always blocking:
-the verdict is FAIL, and the script refuses a PASS that carries one.
+Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`, then include a required `## Findings (JSON)`
+heading and a fenced JSON object: `{"version":1,"findings":[{"id":"F1","status":"open|resolved","severity":"low|medium|high|critical","lens":"core|security|performance|data|accessibility|ai","title":"...","file":"path","line":1,"evidence":"..."}]}`.
+Use `"findings": []` when there are none. Include resolved findings with `status: resolved`; do not
+rely on free-form text to classify findings. A finding with `status: open`, `lens: security` and
+`severity: high` or `critical` makes the verdict FAIL.
 
 **Professional discipline** (ADR 0022):
 - Say no, or HALT, when something cannot be done well; never hand in something partial as done.

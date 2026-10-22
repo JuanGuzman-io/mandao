@@ -35,6 +35,8 @@ export interface Brief {
   task: Task;
   acceptance: { ref: string; text: string }[];
   scenarios: { ref: string; text: string }[];
+  decisions: { ref: string; text: string }[];
+  coverageChecklist: { ref: string; kind: 'acceptance' | 'scenario' }[];
   project: { name: string; path: string; gates: Record<string, string> };
   skillMap: string[];
   lenses: string[];
@@ -82,6 +84,18 @@ function scenarios(spec: SpecFolder, task: Task) {
   });
 }
 
+function decisions(spec: SpecFolder, task: Task) {
+  const design = spec.design ?? '';
+  return task.decisions.map((ref) => {
+    const escaped = ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = new RegExp(`^###\\s+(${escaped})(?:\\s+[—–-]\\s+.*)?\\s*$`, 'm').exec(design);
+    if (!match || match.index === undefined) return { ref, text: 'NOT FOUND in design document' };
+    const start = match.index + match[0].length;
+    const rest = design.slice(start).replace(/^\s*\n/, '');
+    return { ref, text: rest.split(/^#{1,3}\s+/m)[0]!.trim() };
+  });
+}
+
 /** The scoped brief the Leader hands to the Implementer, and the rules the Reviewer applies. */
 export function composeBrief(
   root: string,
@@ -109,6 +123,11 @@ export function composeBrief(
     task,
     acceptance: acceptance(spec, task),
     scenarios: scenarios(spec, task),
+    decisions: decisions(spec, task),
+    coverageChecklist: [
+      ...task.ac.map((ref) => ({ ref, kind: 'acceptance' as const })),
+      ...task.scenarios.map((ref) => ({ ref, kind: 'scenario' as const })),
+    ],
     project: { name: project.name, path: project.path, gates: project.gates as Record<string, string> },
     skillMap: skillMapRows(root),
     lenses: [...new Set(task.risk_tags.flatMap((t) => LENSES[t]))],

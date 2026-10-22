@@ -11,6 +11,7 @@ const task = (id: string, tests = true): Task =>
     risk_tags: [],
     ac: [],
     scenarios: [],
+    decisions: [],
     tests: { unit: tests ? ['x'] : [], e2e: [] },
     dod: [],
     depends_on: [],

@@ -31,6 +31,8 @@ export const taskFieldsSchema = z
     exemplar: z.string().optional(),
     ac: z.array(z.string().regex(/^AC-\d+(\/C\d+)?$/)).default([]),
     scenarios: z.array(z.string().regex(SCENARIO_ID)).default([]),
+    /** Design decisions whose constraints or alternatives apply to this task. */
+    decisions: z.array(z.string().regex(/^D\d+$/)).default([]),
     test_levels: z.record(z.string().regex(SCENARIO_ID), z.enum(TEST_LEVELS)).optional(),
     evidence: z.enum(EVIDENCE).optional(),
     risk_tags: z.array(riskTag).default([]),

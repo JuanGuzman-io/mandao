@@ -26,6 +26,8 @@ export interface SpecFolder {
   name: string;
   story?: Story;
   requirements?: Requirements;
+  /** Design document (`spec.md` in lite layout). */
+  design?: string;
   tasks: Task[];
   /** `spec.md` exists: a lite spec keeps requirements, design and tasks in it. */
   lite: boolean;
@@ -76,6 +78,7 @@ export function readSpec(dir: string): SpecFolder {
     issues.push(...r.issues);
     out.requirements = r.requirements;
   }
+  out.design = readIf(docPath(dir, 'design')) ?? readIf(join(dir, 'spec.md'));
   const tasks = readIf(docPath(dir, 'tasks'));
   if (tasks) {
     const r = parseTasks(tasks);

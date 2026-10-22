@@ -6,7 +6,7 @@ import { testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
-import { commitMessage, NOTE_FLAGS, securityBlockers, taskAttempt, UNTAGGED_NOTE, untaggedSecurityMentions } from '../spec/index.js';
+import { commitMessage, NOTE_FLAGS, parseReviewFindings, securityBlockers, taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { acceptLogs, logDiscrepancies } from '../writer/log-integrity.js';
 
@@ -36,8 +36,8 @@ function readReview(source: string): string {
 /**
  * A Reviewer's verdict is recorded with its whole answer (`--review`), kept in `_log/reviews/` (version 2:
  * one `## Tn — attempt k` section of `_log/reviews.md`). The script
- * checks it: the answer's VERDICT must match, and a PASS with a high or critical security finding is
- * refused (MDO-0008). Returns a note for the row when untagged prose looks like a severe security issue.
+ * checks it: the answer's VERDICT must match, its findings must validate, and a PASS with an open
+ * high or critical security finding is refused (MDO-0008 / ADR 0045).
  */
 export function checkReview(
   spec: SpecFolder,
@@ -49,6 +49,7 @@ export function checkReview(
   const text = readReview(o.review);
   const said = parseVerdict(text);
   if (said !== o.verdict) throw new Error(`the review says ${said ? `VERDICT: ${said}` : 'no VERDICT line'}, not ${o.verdict}`);
+  if (!parseReviewFindings(text).success) throw new Error('the review needs a valid structured Findings (JSON) payload');
   const blockers = o.verdict === 'PASS' ? securityBlockers(text) : [];
   if (blockers.length) {
     throw new Error(`a PASS cannot carry an open high-severity security finding: record FAIL and rework. ${blockers.join(' | ')}`);
@@ -56,8 +57,7 @@ export function checkReview(
   const attempt = taskAttempt(spec.execution, o.task);
   if (specLogInCache(spec.dir)) writeLogSection(spec.dir, 'reviews.md', `${o.task} — attempt ${attempt}`, text);
   else writeText(join(logPath(spec.dir, 'reviews'), `${o.task}-${attempt}-review.md`), text);
-  const untagged = untaggedSecurityMentions(text);
-  return untagged.length ? `${UNTAGGED_NOTE}: ${untagged.join(' | ')}` : undefined;
+  return undefined;
 }
 
 /**

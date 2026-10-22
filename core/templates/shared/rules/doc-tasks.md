@@ -14,10 +14,11 @@ Applies the principles in `spec-docs.md`.
 - **`## Details`**, one `### [ ] Tn — <result>` per task, never repeating the title or the index:
   - **What:** 1–2 sentences on what it does and why, linking the design for the how.
   - **Done when:** 3–5 bullets of behavior. Cite scenarios by id and add only what requirements do not
-    say; never repeat design decisions.
+    say. Do not repeat decision rationale or alternatives; include a rejected alternative only as an
+    observable must-not when it adds a behavior constraint absent from the requirements.
   - **Notes** (only when needed): a visible exception, e.g. "no TDD red: mutation evidence".
   - The YAML block, no prose: `project`, `kind`, `tier`, `files`, `exemplar`, `ac`, `scenarios`,
     `test_levels` (`unit | e2e | eval | none` per scenario), `evidence` (`tdd | mutation | none`),
-    `risk_tags`, `depends_on`, `parallel_safe`, `verify`.
+    `risk_tags`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`, `verify`.
 - The title is the result, never a file path. Concrete test names are chosen by whoever writes the
   tests; the declared level per scenario is what the Reviewer checks.

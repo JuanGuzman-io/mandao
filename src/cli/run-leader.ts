@@ -6,7 +6,7 @@ import { changedFiles, commitState, repoRoot } from '../scripts/commits.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
-import { taskDiff } from '../scripts/review.js';
+import { reviewDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
@@ -243,7 +243,7 @@ function registerReviewPack(run: Command, ctx: CliContext) {
         '## Diff',
         '',
         '```diff',
-        taskDiff(repoRoot(spec.dir), spec.dir),
+        reviewDiff(repoRoot(spec.dir), spec.dir),
         '```',
         '',
       ].join('\n');

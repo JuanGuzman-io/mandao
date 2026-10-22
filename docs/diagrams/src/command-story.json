@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "e4fb2355bc1dd53b4550c10aeda542d1bf25f7c641c9d2ce19d222fd7c664b1a"
+      "sha256": "fb2493a579b6421af72b576657fa84ef325aafefe3a2c30da25561a1400a903b"
     },
     {
       "path": "core/commands/init.md",
@@ -47,7 +47,7 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "a44b33dd5eb916d0b87e96b508eaa599dd249aa938698eb684a4a0b7460e06c6"
+      "sha256": "0bda653ff32ad7b0473d1152bf026a71eeeea27791f1bca7eaaa585166364b46"
     },
     {
       "path": "core/commands/verify.md",
@@ -55,6 +55,10 @@
     }
   ],
   "specSha256": "198d75dbdddf67328fd5c90e9bea1bd512c41f90c81ac47c636cacaebf57e7a6",
+  "svgSha256": {
+    "light": "5fd244cdcb8377a8a86883d70b8e6db3f1f8ce286120c31d5b7f948d65c1c108",
+    "dark": "8b642d1fb3f8a184344fa0712f35cfd6948ff5a548c468626d70852f58a7b2e0"
+  },
   "spec": {
     "schema_version": 2,
     "diagram_type": "workflow",

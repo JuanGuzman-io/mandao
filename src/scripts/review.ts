@@ -1,6 +1,8 @@
 import { execFileSync, spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { LOCK_FILE, readLock } from '../engine/files.js';
 import { parseFrontmatter } from '../engine/frontmatter.js';
 import type { Choice, ResolvedModels } from '../models/resolve.js';
 import type { HarnessId } from '../schemas/index.js';
@@ -72,8 +74,42 @@ export function reviewerInstructions(root: string, harness: ReviewProcess): stri
   return body.trim();
 }
 
-/** Tracked changes as a diff plus untracked files in full, outside the spec folder. */
-export function taskDiff(repo: string, specDir: string): string {
+type Receipt = { path: string; hash: string; origin: string };
+const digest = (text: string) => createHash('sha256').update(text).digest('hex');
+
+function diagramReceipt(repo: string, file: string, content: string): Receipt | undefined {
+  const match = /^docs\/diagrams\/(.+?)(?:-(?:light|dark))?\.svg$/.exec(file);
+  if (!match) return undefined;
+  const name = match[1]!.replace(/-(?:light|dark)$/, '');
+  try {
+    const sourcePath = join(repo, 'docs', 'diagrams', 'src', `${name}.json`);
+    const record = JSON.parse(readFileSync(sourcePath, 'utf8')) as {
+      spec?: unknown;
+      specSha256?: string;
+      derivedFrom?: { path: string; sha256: string }[];
+      svgSha256?: { light?: string; dark?: string };
+    };
+    const sources = record.derivedFrom ?? [];
+    const sourcesMatch =
+      sources.length > 0 &&
+      sources.every((source) => {
+        const path = join(repo, source.path);
+        return existsSync(path) && digest(readFileSync(path, 'utf8')) === source.sha256;
+      });
+    const specMatches = Boolean(record.spec) && digest(JSON.stringify(record.spec)) === record.specSha256;
+    const markerMatches = content.includes(`mandao:diagram ${name} spec-sha256 ${record.specSha256}`);
+    const theme = file.endsWith('-dark.svg') ? 'dark' : 'light';
+    const outputMatches = record.svgSha256?.[theme] === digest(content);
+    return sourcesMatch && specMatches && markerMatches && outputMatches
+      ? { path: file, hash: digest(content), origin: `docs/diagrams/src/${name}.json` }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/** Source diff plus verifiable receipts for generated harness copies and source-derived diagrams. */
+export function reviewDiff(repo: string, specDir: string): string {
   const files = changedFiles(repo, specDir);
   if (!files.length) return '(no changes)';
   const git = (args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -82,10 +118,48 @@ export function taskDiff(repo: string, specDir: string): string {
       .split('\n')
       .filter(Boolean),
   );
-  const tracked = files.filter((f) => !untracked.has(f));
-  const diff = tracked.length ? git(['diff', 'HEAD', '--', ...tracked]) : '';
-  const added = [...untracked].map((f) => `--- /dev/null\n+++ b/${f} (new file)\n${readFileSync(join(repo, f), 'utf8')}`);
-  return [diff, ...added].filter(Boolean).join('\n');
+  const lock = (() => {
+    try {
+      return readLock(join(repo, LOCK_FILE));
+    } catch {
+      return undefined;
+    }
+  })();
+  const receipts: { path: string; hash: string; origin: string }[] = [];
+  const included: string[] = [];
+  const generatedByLock = new Map((lock?.files ?? []).filter((f) => f.ownership === 'owned').map((f) => [f.path, f]));
+  for (const file of files) {
+    const full = join(repo, file);
+    if (!existsSync(full)) {
+      included.push(file);
+      continue;
+    }
+    const content = readFileSync(full, 'utf8');
+    const lockEntry = generatedByLock.get(file);
+    if (lockEntry && `sha256-${createHash('sha256').update(content).digest('base64')}` === lockEntry.hash) {
+      receipts.push({ path: file, hash: digest(content), origin: lockEntry.from });
+      continue;
+    }
+    const diagram = diagramReceipt(repo, file, content);
+    if (diagram) {
+      receipts.push(diagram);
+      continue;
+    }
+    included.push(file);
+  }
+  const untrackedIncluded = included.filter((f) => untracked.has(f));
+  const trackedIncluded = included.filter((f) => !untracked.has(f));
+  const diff = trackedIncluded.length ? git(['diff', 'HEAD', '--', ...trackedIncluded]) : '';
+  const added = untrackedIncluded.map((f) => `--- /dev/null\n+++ b/${f} (new file)\n${readFileSync(join(repo, f), 'utf8')}`);
+  return [
+    diff,
+    ...added,
+    ...(receipts.length
+      ? ['## Generated file receipts\n', ...receipts.map((r) => `- ${r.path} · sha256 ${r.hash} · from ${r.origin}`)]
+      : []),
+  ]
+    .filter(Boolean)
+    .join('\n');
 }
 
 export function reviewPrompt(instructions: string, brief: unknown, diff: string, gates: string): string {
@@ -103,7 +177,7 @@ export function reviewPrompt(instructions: string, brief: unknown, diff: string,
     '```diff',
     diff,
     '```',
-    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then blocking findings, then advisories, each line starting with `[<lens>/<severity>]` (lens: core, security, performance, data, accessibility, ai; severity: low, medium, high, critical) and giving file:line and evidence. A security finding of high or critical severity means FAIL.',
+    'Answer with a line `VERDICT: PASS` or `VERDICT: FAIL`, then a required `## Findings (JSON)` heading and a ```json block shaped as `{"version":1,"findings":[{"id":"F1","status":"open|resolved","severity":"low|medium|high|critical","lens":"core|security|performance|data|accessibility|ai","title":"...","file":"path","line":1,"evidence":"..."}]}`. Include every finding, including resolved findings; use an empty array when there are none. A PASS is forbidden when any finding is open, security, and high or critical. Follow the JSON with any concise advisory prose; guard decisions use only this validated structure.',
   ].join('\n\n');
 }
 

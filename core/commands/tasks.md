@@ -60,9 +60,11 @@ open version 1 spec it warns and does not convert it; the migration goes through
    - `test_levels`: the level of every scenario it cites, `unit | e2e | eval | none`, as
      `{{template:rules/test-policy.md}}` requires; concrete test names are chosen by whoever writes them;
    - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
-   - `verify`, `depends_on`, `parallel_safe`.
-   A task's **Done when** lists every entry point, list item and clause of the FRs it serves, and states
-   each rejected option of its decisions as a must-not. A task added after specify declares scenarios
+   - `verify`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`.
+   A task's **Done when** lists every entry point, list item and clause of the FRs it serves; include a
+   rejected option only as an observable must-not when it adds a behavior constraint. Rationale and
+   alternatives stay in `design.md` and are included in the Implementer brief for linked decisions.
+   A task added after specify declares scenarios
    through {{command:clarify}}, never `scenarios: []`. A task that builds a filesystem path from spec
    or story content and deletes or writes there carries the `input` risk tag and a Done-when item that
    the path stays inside its root.

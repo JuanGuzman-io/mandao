@@ -7,6 +7,10 @@
     }
   ],
   "specSha256": "8856ad25ad6cb4db5fa345bd309b83f9ddee3be618275d582065fd188728933e",
+  "svgSha256": {
+    "light": "0d40727e51dcdfbc0e3210f86d131ef6af4e1ac8370498fb47d627a805d5ce81",
+    "dark": "7b8e51e239815aee2360e038253325817d0fa8a59bebc2d317a57ffd71621b5f"
+  },
   "spec": {
     "schema_version": 2,
     "diagram_type": "workflow",
