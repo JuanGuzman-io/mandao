@@ -33,7 +33,7 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 ## Steps
 
 1. Resolve the spec
-2. Research questions before design
+2. Research
 3. Depth
 4. Impact analysis
 5. requirements.md

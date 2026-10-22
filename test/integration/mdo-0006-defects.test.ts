@@ -158,8 +158,9 @@ describe('readability pass in the content', () => {
     for (const f of docs) {
       const text = readFileSync(f, 'utf8');
       expect(text, f).not.toContain('<!--');
-      if (/\.md$/.test(f) && /^# /m.test(text) && !/pivot-record|quick-log/.test(f))
-        expect(text, f).toMatch(/^# .+\n\n(<.+>|\*\*Before you start)/m);
+      const content = text.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '');
+      if (/\.md$/.test(f) && /^# /m.test(content) && !/pivot-record|quick-log/.test(f))
+        expect(content, f).toMatch(/^# .+\n\n(<.+>|\*\*Before you start)/m);
     }
   });
 

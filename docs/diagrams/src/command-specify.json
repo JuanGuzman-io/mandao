@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "3c843ed92c7feeca088445a06511f7d65e417a197ea0b574d4fa6f59182934db"
+      "sha256": "631a2a461bbd7c6e1199381cac0c87a552ecddb15f76ddb26cae156a3e20ec2b"
     },
     {
       "path": "core/commands/story.md",
@@ -54,10 +54,10 @@
       "sha256": "2b4c6794e341e93b744acdc7e2a83c0ed3da3d179f4085f75d75f26772a3a114"
     }
   ],
-  "specSha256": "b7d5407d735abe99aa483734c598c26f750059f199ff6acb65706ab178adbaeb",
+  "specSha256": "a9465293343e67dacc1c72604fe88490493fcf2112f9d2216d10df8b97398226",
   "svgSha256": {
-    "light": "a944ab0e685a7e4e179b2806c3b488d5d799499cc078a37b4c8b9c275338dddb",
-    "dark": "2b6f3c3e15a2e3dfd92a50f5ddcab67268d24b96aa70315bf8ab51cc40da5540"
+    "light": "67ad96b177cf00bf99dc99ad914fd288172b439223c6b28f5ebc6d7df1367cc8",
+    "dark": "563ebf3bc52edd0bef1f65f3a79c380847c1426957cf0b7dfabd64f67565c33e"
   },
   "spec": {
     "schema_version": 2,
@@ -126,9 +126,9 @@
         "lane": "steps",
         "col": 1,
         "type": "backend",
-        "label": "2. Research questions…",
+        "label": "2. Research",
         "sublabel": "mandao run research",
-        "width": 178
+        "width": 157
       },
       {
         "id": "s2",
