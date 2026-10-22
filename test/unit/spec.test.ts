@@ -149,6 +149,70 @@ describe('planTasks', () => {
   });
 });
 
+describe('planTasks.parallel', () => {
+  const base = parseTasks(read('tasks.md')).tasks[0]!;
+  const task = (id: string, files: string[], extra: Partial<typeof base> = {}) => ({
+    ...base,
+    id,
+    done: false,
+    files,
+    depends_on: [],
+    parallel_safe: true,
+    ...extra,
+  });
+
+  test('eligible parallel_safe tasks of the same wave with disjoint files run beside next', () => {
+    const plan = planTasks([task('T1', ['src/a.ts']), task('T2', ['src/b.ts']), task('T3', ['test/c.test.ts'])]);
+    expect(plan).toMatchObject({ next: 'T1', parallel: ['T2', 'T3'] });
+  });
+
+  test('a task in a later wave is never parallel, even when its dependencies are done', () => {
+    const plan = planTasks([
+      task('T1', ['src/a.ts'], { done: true }),
+      task('T2', ['src/b.ts']),
+      task('T3', ['src/c.ts'], { depends_on: ['T1'] }),
+    ]);
+    expect(plan).toMatchObject({ next: 'T2', parallel: [] });
+  });
+
+  test('overlapping files run in sequence: the same path, a folder that contains it, or a glob over it', () => {
+    const plan = planTasks([
+      task('T1', ['src/spec/plan.ts']),
+      task('T2', ['src/spec/plan.ts']),
+      task('T3', ['src/spec/']),
+      task('T4', ['src/**/*.ts']),
+      task('T5', ['./docs/a.md']),
+    ]);
+    expect(plan).toMatchObject({ next: 'T1', parallel: ['T5'] });
+  });
+
+  test.each([
+    ['a glob cut inside a segment', 'src/spec/pl*.ts'],
+    ['a brace glob inside a segment', 'src/spec/{plan,tasks}.ts'],
+    ['a parent segment', 'src/../src/spec/plan.ts'],
+    ['backslashes', 'src\\spec\\plan.ts'],
+    ['repeated slashes and dots', '././src//spec/plan.ts'],
+    ['a leading slash', '/src/spec/plan.ts'],
+    ['an extglob', 'src/spec/@(plan|tasks).ts'],
+    ['a path that climbs out of the root', '../other/plan.ts'],
+    ['the whole tree', './'],
+    ['the whole tree reached through a parent segment', 'src/../'],
+  ])('%s still overlaps the plain path', (_, declared) => {
+    expect(planTasks([task('T1', ['src/spec/plan.ts']), task('T2', [declared])]).parallel).toEqual([]);
+  });
+
+  test('tasks chosen beside next do not overlap each other either', () => {
+    const plan = planTasks([task('T1', ['src/a.ts']), task('T2', ['docs/x.md']), task('T3', ['docs/x.md'])]);
+    expect(plan.parallel).toEqual(['T2']);
+  });
+
+  test('a task without declared files, or not parallel_safe, is never parallel', () => {
+    const plan = planTasks([task('T1', ['src/a.ts']), task('T2', []), task('T3', ['src/c.ts'], { parallel_safe: false })]);
+    expect(plan.parallel).toEqual([]);
+    expect(planTasks([task('T1', []), task('T2', ['src/b.ts'])]).parallel).toEqual([]);
+  });
+});
+
 describe('loopState', () => {
   const recs = recommendationsSchema.parse({
     schema_version: 1,

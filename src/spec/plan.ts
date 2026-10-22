@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import type { Task } from './tasks.js';
 
 export interface TaskPlan {
@@ -5,9 +6,9 @@ export interface TaskPlan {
   waves: string[][];
   /** Dependency cycles; a non-empty list makes the plan invalid. */
   cycles: string[][];
-  /** The next task to run: dependencies done, itself not done, lowest wave first. */
+  /** The next task to run: the first one in tasks.md order whose dependencies are done and that is not done. */
   next?: string;
-  /** Tasks that could run in parallel with `next` (parallel_safe and eligible). */
+  /** Tasks that could run beside `next`: eligible, `parallel_safe`, in its wave, with files disjoint from it and each other. */
   parallel: string[];
   /** Why nothing can start, when that is the case. */
   blocked: string[];
@@ -31,6 +32,44 @@ function findCycles(tasks: Task[]): string[][] {
   return cycles;
 }
 
+/**
+ * The folder or file a declared path surely stays inside: normalized, cut back to the last `/` before its
+ * first glob character, without a trailing slash. `''` (overlaps everything) when it cannot be bounded.
+ */
+function pathRoot(file: string): string {
+  const path = posix.normalize(file.replaceAll('\\', '/')).replace(/^\/+/, '');
+  if (path === '..' || path.startsWith('../') || /[@+!]\(/.test(path)) return '';
+  const glob = path.search(/[*?[{]/);
+  const literal = glob < 0 ? path : path.slice(0, path.lastIndexOf('/', glob) + 1);
+  const root = literal.replace(/\/+$/, '');
+  return root === '.' ? '' : root;
+}
+
+/** Two declared paths overlap when one is the other or a folder (or glob root) that contains it. */
+function pathsOverlap(a: string, b: string): boolean {
+  const [x, y] = [pathRoot(a), pathRoot(b)];
+  return x === y || !x || !y || x.startsWith(`${y}/`) || y.startsWith(`${x}/`);
+}
+
+/** Files that cannot be shared: undeclared files (empty list) overlap everything, since nothing proves them apart. */
+function filesOverlap(a: Task, b: Task): boolean {
+  if (!a.files.length || !b.files.length) return true;
+  return a.files.some((f) => b.files.some((g) => pathsOverlap(f, g)));
+}
+
+/** Eligible `parallel_safe` tasks of `next`'s wave whose files overlap neither `next` nor one already chosen. */
+function parallelWith(next: Task, eligible: Task[], waves: string[][]): string[] {
+  if (!next.parallel_safe) return [];
+  const wave = waves.find((w) => w.includes(next.id)) ?? [];
+  const chosen: Task[] = [next];
+  for (const t of eligible) {
+    if (t === next || !t.parallel_safe || !wave.includes(t.id)) continue;
+    if (chosen.some((c) => filesOverlap(c, t))) continue;
+    chosen.push(t);
+  }
+  return chosen.slice(1).map((t) => t.id);
+}
+
 /** Waves, the next eligible task and what blocks the plan. `blockers` come from critical OPEN markers. */
 export function planTasks(tasks: Task[], blockers: string[] = []): TaskPlan {
   const cycles = findCycles(tasks);
@@ -51,12 +90,7 @@ export function planTasks(tasks: Task[], blockers: string[] = []): TaskPlan {
     waves,
     cycles,
     ...(next ? { next: next.id } : {}),
-    parallel: next?.parallel_safe
-      ? eligible
-          .slice(1)
-          .filter((t) => t.parallel_safe)
-          .map((t) => t.id)
-      : [],
+    parallel: next ? parallelWith(next, eligible, waves) : [],
     blocked: next || done.size === tasks.length ? [] : ['no eligible task: pending tasks wait on unfinished dependencies'],
   };
 }
