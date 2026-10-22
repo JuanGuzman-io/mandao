@@ -187,7 +187,9 @@ block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state (and the others that
-can); give it. When the summary has `session.cut: true`, give the harness's new-conversation action first
-(its `command`): the next command starts in a fresh conversation (ADR 0038). If that conversation would not
-be inside the worktree, give first the step back into it.
+Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state. When it returns
+`autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
+return control to the user with verification merely suggested. Report the implementation and verify
+results together. If the implementation summary has `session.cut: true`, start the recommended fresh
+conversation first and continue with verify there, inside the worktree (ADR 0038). Any verification
+blocker or question that requires the user still pauses normally.

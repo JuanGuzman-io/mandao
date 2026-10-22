@@ -114,9 +114,9 @@ describe('mandao start (§14.5, ADR 0037)', () => {
     writeFileSync(join(busy, 'wip.ts'), 'x');
     mkdirSync(join(merged, 'specs'), { recursive: true });
     git(merged, 'clean', '-fdq');
-    await cli(root, 'worktree', 'clean');
+    await cli(root, 'worktree', 'clean', '--yes');
     expect(out.join('\n')).toMatch(/removed .*PROJ-1/);
-    expect(out.join('\n')).toMatch(/kept .*PROJ-2.*(has uncommitted work|not merged)/);
+    expect(out.join('\n')).toMatch(/kept .*PROJ-2.*(uncommitted or untracked files|not merged)/);
     expect(existsSync(merged)).toBe(false);
     expect(existsSync(busy)).toBe(true);
   });

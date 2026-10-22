@@ -2,6 +2,7 @@ export * from './approvals.js';
 export * from './close-summary.js';
 export * from './commit.js';
 export * from './costs.js';
+export * from './delivery.js';
 export * from './diagram.js';
 export * from './diagram-graph.js';
 export * from './execution.js';

@@ -1,12 +1,23 @@
 import { execFileSync } from 'node:child_process';
 import { relative } from 'node:path';
+import * as p from '@clack/prompts';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
+import { canDeleteMergedBranch } from '../scripts/delivery.js';
 import { mainCheckout, worktreesDir } from '../scripts/spec.js';
 import type { CliContext } from './context.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+
+function isAncestor(root: string, branch: string, target: string): boolean {
+  try {
+    execFileSync('git', ['merge-base', '--is-ancestor', branch, target], { cwd: root, stdio: 'ignore' });
+    return true;
+  } catch {
+    return false; // Git's non-zero exit means the branch is not merged into the target.
+  }
+}
 
 export interface WorktreeInfo {
   path: string;
@@ -15,6 +26,34 @@ export interface WorktreeInfo {
   merged: boolean;
   /** Uncommitted or untracked files in the worktree. */
   dirty: boolean;
+}
+
+async function confirmClean(list: WorktreeInfo[], yes: boolean | undefined, dryRun: boolean | undefined): Promise<boolean> {
+  if (dryRun || yes || !list.length) return true;
+  console.log(`Eligible worktrees:\n${list.map((w) => `- ${w.branch} ${w.path}`).join('\n')}`);
+  const answer = await p.confirm({ message: `Remove these ${list.length} worktrees and their merged branches?`, initialValue: false });
+  if (p.isCancel(answer) || !answer) console.log('Kept all worktrees.');
+  return !p.isCancel(answer) && answer;
+}
+
+function cleanOne(main: string, w: WorktreeInfo, candidates: Set<string>, dryRun: boolean | undefined, base: string): void {
+  if (!w.merged || w.dirty) {
+    console.log(`kept     ${w.path} (${!w.merged ? 'not merged' : 'has uncommitted or untracked files'})`);
+    return;
+  }
+  if (dryRun) {
+    console.log(`would remove ${w.path} and branch ${w.branch}`);
+    return;
+  }
+  if (!candidates.has(w.path)) return;
+  if (!canDeleteMergedBranch(isAncestor(main, w.branch, base))) {
+    console.log(`kept     ${w.path} (branch is not an ancestor of the base)`);
+    return;
+  }
+  if (process.cwd() === w.path || process.cwd().startsWith(`${w.path}/`)) process.chdir(main);
+  git(main, ['worktree', 'remove', w.path]);
+  git(main, ['branch', '-d', w.branch]);
+  console.log(`removed  ${w.path} and branch ${w.branch}`);
 }
 
 /** The spec worktrees (those under `paths.worktrees`), with whether they were merged and whether they hold work. */
@@ -60,20 +99,14 @@ export function registerWorktree(program: Command, ctx: CliContext) {
   wt.command('clean')
     .description('Remove spec worktrees whose branch is merged into the base and that hold no work (never forced)')
     .option('--dry-run', 'only say what would be removed')
-    .action((o: { dryRun?: boolean }) => {
+    .option('--yes', 'confirm removal of every eligible spec worktree')
+    .action(async (o: { dryRun?: boolean; yes?: boolean }) => {
       const main = mainCheckout(ctx.root());
-      for (const w of specWorktrees(ctx.root())) {
-        if (!w.merged || w.dirty) {
-          console.log(`kept     ${w.path} (${!w.merged ? 'not merged' : 'has uncommitted work'})`);
-          continue;
-        }
-        if (o.dryRun) {
-          console.log(`would remove ${w.path} and branch ${w.branch}`);
-          continue;
-        }
-        git(main, ['worktree', 'remove', w.path]);
-        git(main, ['branch', '-d', w.branch]);
-        console.log(`removed  ${w.path} and branch ${w.branch}`);
-      }
+      const list = specWorktrees(ctx.root());
+      const eligible = list.filter((w) => w.merged && !w.dirty);
+      if (!(await confirmClean(eligible, o.yes, o.dryRun))) return;
+      const candidates = new Set(eligible.map((w) => w.path));
+      const base = branchingFor(readConfig(main)).base;
+      for (const w of list) cleanOne(main, w, candidates, o.dryRun, base);
     });
 }

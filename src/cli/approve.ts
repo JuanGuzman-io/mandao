@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { branchingFor } from '../scripts/branching.js';
-import { commitSpecDocs, commitState, repoRoot } from '../scripts/commits.js';
+import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
 import {
@@ -18,6 +18,7 @@ import {
   type NextFacts,
   nextStep,
   openItems,
+  parseCloseSummary,
   planTasks,
   taskLayoutIssues,
   withStatus,
@@ -144,10 +145,19 @@ const gitOk = (cwd: string, args: string[]) => {
 /** Where the spec's own branch stands: merged into `origin/<base>` (a local-only merge is not delivered), pushed (its remote branch holds it), or neither. No fact when the branch or git is missing. Read only. */
 function deliveryOf(spec: SpecFolder, config: ReturnType<typeof readConfig>): NextFacts['delivery'] {
   const repo = repoRoot(spec.dir);
-  const base = branchingFor(config, spec.story?.meta.projects[0]).base;
+  const summaryText = existsSync(join(spec.dir, 'close-summary.md')) ? readFileSync(join(spec.dir, 'close-summary.md'), 'utf8') : undefined;
+  const base = parseCloseSummary(summaryText, spec.name).delivery?.target ?? branchingFor(config, spec.story?.meta.projects[0]).base;
   const { branch } = expectedPlace(repo, config, spec);
-  if (!gitOk(repo, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`])) return undefined;
-  if (gitOk(repo, ['merge-base', '--is-ancestor', branch, `origin/${base}`])) return 'merged';
+  const local = gitOk(repo, ['rev-parse', '--verify', '--quiet', `refs/heads/${branch}`]);
+  if (local && gitOk(repo, ['merge-base', '--is-ancestor', branch, `origin/${base}`])) return 'merged';
+  if (!local && spec.story) {
+    const shas = [...taskCommits(repo, spec.story.meta.id, config.commits.trailers).values()].flat();
+    if (shas.length && shas.every((sha) => gitOk(repo, ['merge-base', '--is-ancestor', sha, `origin/${base}`]))) return 'merged';
+  }
+  if (!local) {
+    if (!gitOk(repo, ['rev-parse', '--verify', '--quiet', `refs/remotes/origin/${branch}`])) return undefined;
+    return gitOk(repo, ['merge-base', '--is-ancestor', `origin/${branch}`, `origin/${base}`]) ? 'merged' : 'pushed';
+  }
   return gitOk(repo, ['merge-base', '--is-ancestor', branch, `origin/${branch}`]) ? 'pushed' : 'unpushed';
 }
 

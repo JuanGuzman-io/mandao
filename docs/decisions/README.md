@@ -55,3 +55,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0046](0046-exact-gate-receipts-and-autonomous-execution.md) | Exact gate receipts and autonomous execution | Accepted |
 | [0047](0047-gated-design-principles-and-data-write-validation.md) | Gated design principles and data-write validation | Accepted |
 | [0048](0048-script-enforced-loop-and-approval-safety.md) | Script-enforced loop, test and approval safety | Accepted |
+| [0049](0049-confirmed-delivery-and-release-status.md) | Confirmed, provider-neutral delivery and Git-derived release status | Accepted (Phase 6) |

@@ -12,6 +12,10 @@ export const closeSummarySchema = z.object({
   closed_at: z.string().optional(),
   /** gitflow: the team-made `release/*` branch the spec ships in (ADR 0023). */
   release: z.object({ branch: z.string().min(1), how: z.enum(['detected', 'given']) }).optional(),
+  /** Delivery selected before merge; the PR URL lets release status point to the actual change. */
+  delivery: z
+    .object({ target: z.string().min(1), pr_url: z.string().url().optional(), pr_number: z.number().int().positive().optional() })
+    .optional(),
   /** Environments reached, as CI or the tracker reported them; never inferred, never automated. */
   environments: z.array(z.object({ name: z.string().min(1), at: z.string().min(1), source: z.enum(['ci', 'tracker']) })).default([]),
   /** Each publication: where, the id it got, and the hash of what was sent (same hash → nothing to update). */
@@ -69,6 +73,11 @@ export function withPublication(s: CloseSummary, p: CloseSummary['published'][nu
   return { ...s, published: [...s.published.filter((x) => !(x.target === p.target && x.kind === p.kind)), p] };
 }
 
+/** Records the selected destination and optional PR link before merge; repeating it is idempotent. */
+export function withDelivery(s: CloseSummary, delivery: NonNullable<CloseSummary['delivery']>): CloseSummary {
+  return { ...s, delivery };
+}
+
 /** The prose sections close writes by hand: `run close-summary` keeps them as written, edges trimmed. */
 const PROSE = ['For the PO', 'For developers', 'Kaizen'] as const;
 
@@ -97,6 +106,7 @@ function deliveryLines(s: CloseSummary, links: CloseLink[]): string[] {
   return [
     ...(s.closed_at ? [`- Closed: ${s.closed_at}`] : []),
     ...(s.release ? [`- Release: ${s.release.branch} (${s.release.how})`] : []),
+    ...(s.delivery ? [`- Target: ${s.delivery.target}`, ...(s.delivery.pr_url ? [`- PR: ${s.delivery.pr_url}`] : [])] : []),
     ...(s.environments.length ? [`- Environments: ${joined(s.environments.map((e) => `${e.name} (${e.source}, ${e.at})`))}`] : []),
     ...(s.published.length ? [`- Published: ${joined(s.published.map((p) => `${p.target} ${p.kind} ${p.id}`))}`] : []),
     ...(s.applied.length ? [`- Applied: ${joined(s.applied.map((a) => `\`${a}\``))}`] : []),

@@ -33,6 +33,8 @@ export interface NextStep {
   recommended: { command: string; reason: string };
   /** Every command that can follow, the recommended one first. */
   options: string[];
+  /** The agent should invoke this next command without returning control when the transition is safe. */
+  autoContinue?: true;
 }
 
 /** A Consistency Check row: `| ID | Type | Finding | Severity | Owner | Status |`. Header and separator rows have no `critical`/`normal` severity. */
@@ -146,5 +148,9 @@ function delivery(facts: NextFacts): NextStep {
 export function nextStep(spec: NextSpec, facts: NextFacts): NextStep {
   const lite = spec.lite ?? false;
   if (spec.story?.meta.status === 'closed') return delivery(facts);
-  return settle(spec, facts, lite) ?? stage(spec, facts, lite);
+  const next = settle(spec, facts, lite) ?? stage(spec, facts, lite);
+  const allTasksDone = spec.tasks.length > 0 && spec.tasks.every((task) => task.done);
+  if (next.recommended.command === '/mandao-verify' && allTasksDone && !facts.pendingCommits?.length && facts.verifyVerdict !== 'blocked')
+    return { ...next, autoContinue: true };
+  return next;
 }
