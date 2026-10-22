@@ -1,3 +1,4 @@
+// mandao-scans: package.json — reads Mandao's package.json (files, prepare); walks the git hooks folder of temporary repos only.
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
