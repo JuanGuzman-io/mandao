@@ -41,7 +41,7 @@ scope, product behavior, security or irreversible actions.
 | [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
 | [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
-| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | plan approved; in progress on `perf/phase-10` |
+| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | implementation in PR #17 |
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | agreed; pending phase plan approval |
 | [12 — User commit conventions](#phase-12--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
