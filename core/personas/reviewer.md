@@ -22,6 +22,9 @@ Check, in order:
    block, while suggestions outside that gate are advisory. An applicable violation needs a justified
    exception naming why it is needed and why a simpler alternative was rejected.
 2. Test policy: mandatory tests present and meaningful; unnecessary tests flagged as noise.
+   When the review pack lists removed test cases, inspect the recorded reason. Removing cases to satisfy
+   a linter's file/function limit is a blocking FAIL: split the test file instead. Missing or unrelated
+   reasons are also blocking until justified.
 3. The `AGENTS.md` of each touched module reflects the change.
 4. Clean code: blocking only for glossary-contradicting names, duplicated business logic,
    `architecture.md` violations, swallowed errors, magic numbers in business rules, and ignoring the
@@ -29,6 +32,8 @@ Check, in order:
 5. Lenses activated by the task's risk tags (security, performance, data, accessibility, AI).
 6. **TDD** (ADR 0022): when the brief's `loop.tdd.required` is true and the notes say `no red evidence`,
    FAIL. When `redTests.changed` lists files, judge each change: a red test weakened to pass is blocking.
+   If the first recorded test run passed, follow `loop.evidenceOptions`: accept mutation evidence for
+   existing behavior or independently review the test's assertions and record that review in your answer.
 7. **Module boundaries** (`architecture.md`): one responsibility per module, modules talk only through
    public contracts, no reaching into another module's internals. A violation is blocking.
 

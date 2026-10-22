@@ -64,7 +64,7 @@ TDD means writing a test for the expected behavior **before implementing it**. I
 
 **Why we use it:** tests written after the code can simply repeat its assumptions. Starting from the spec and seeing the tests fail first gives evidence that they can detect the missing behavior or reproduce the bug, before the implementation makes them pass.
 
-This is enforced in the execution flow: `mandao run red` records a `RED` row only after a failing run, and the loop withholds implementation until that evidence exists. Tests added during rework need red evidence too; changes to a red test are flagged for review.
+This is enforced in the execution flow: `mandao run red` records a `RED` row only after a failing run, and the loop withholds implementation until evidence exists. If a test passes on its first run, `run step` offers two alternatives instead of repeating it: a killed mutation probe (`mandao run mutation --for-first-pass`) or an independent test review (`mandao run test-review`). Rework red evidence is limited to test files changed by the task; removed test cases require a recorded reason and appear in the Reviewer pack.
 
 TDD applies where the test policy requires it. Documentation-only tasks need no red test. **Characterization tasks**, which protect existing behavior, use mutation evidence instead: their tests must catch a deliberate change to the behavior they protect.
 

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { configSchema } from '../../src/schemas/index.js';
 import { fixCommitsAfter, releaseBranchesContaining } from '../../src/scripts/close.js';
 import { parseCloseSummary, renderCloseSummary, withEnvironment, withPublication } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 import { repo, run, useLogEnv, SPEC as V2_SPEC } from '../log-v2-helpers.js';
 
 const trailers = configSchema.parse({ schema_version: 1, workspace: 'single', projects: [{ name: 'p', path: '.' }], harnesses: ['claude'] })
@@ -29,7 +29,7 @@ function commit(root: string, file: string, message: string, date: string) {
 describe('close in a real repository', () => {
   test('bugs after merge: fix commits that reference the spec, after it closed', () => {
     const root = realpathSync(makeTree({}));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     commit(root, 'a', '✨ feat(cli): add x\n\nRefs: MDO-0001\nMandao-Task: T1', '2026-10-01T10:00:00Z');
     commit(root, 'b', '🐛 fix(cli): before close\n\nRefs: MDO-0001', '2026-10-02T10:00:00Z');
     const after = commit(root, 'c', '🐛 fix(cli): after close\n\nRefs: MDO-0001', '2026-10-10T10:00:00Z');
@@ -40,7 +40,7 @@ describe('close in a real repository', () => {
 
   test('gitflow: the release branch that contains every commit of the spec', () => {
     const root = realpathSync(makeTree({}));
-    git(root, 'init', '-q', '-b', 'develop');
+    initTestRepo(root, '-q', '-b', 'develop');
     const t1 = commit(root, 'a', 'T1', '2026-10-01T10:00:00Z');
     git(root, 'branch', 'release/1.1');
     const t2 = commit(root, 'b', 'T2', '2026-10-02T10:00:00Z');
@@ -73,7 +73,7 @@ describe('mandao run diagram-drift', () => {
     const { writeYaml } = await import('../../src/engine/files.js');
     const { cpSync, mkdirSync, readFileSync } = await import('node:fs');
     const root = realpathSync(makeTree({ 'src/cli/run.ts': 'x', 'src/engine/sync.ts': 'y' }));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     writeYaml(join(root, '.mandao/config.yml'), {
       schema_version: 1,
       workspace: 'single',
@@ -163,7 +163,7 @@ describe('Kaizen shows the sessions (MDO-0008 S-3.1)', () => {
     const { writeYaml } = await import('../../src/engine/files.js');
     vi.stubEnv('CLAUDE_CONFIG_DIR', makeTree({ 'projects/-synthetic-repo/sess-one.jsonl': transcript }));
     const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     writeYaml(join(root, '.mandao/config.yml'), {
       schema_version: 1,
       workspace: 'single',

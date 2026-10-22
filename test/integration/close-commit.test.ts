@@ -41,6 +41,13 @@ async function closedSpec() {
 const committed = (root: string) => git(root, 'show', '--name-only', '--format=', 'HEAD').split('\n').filter(Boolean);
 
 describe('close commits what it applied and what was regenerated from it', () => {
+  test('close refuses an unresolved assumption or conflict', async () => {
+    const root = repo(2);
+    const requirements = join(root, SPEC, 'requirements.md');
+    writeFileSync(requirements, `${readFileSync(requirements, 'utf8')}\nASSUMPTION(source: vendor contract): retries are idempotent.\n`);
+    await expect(run(root, 'close-summary', 'MDO-0001', '--closed')).rejects.toThrow(/cannot close with unresolved ASSUMPTION or CONFLICT/);
+  });
+
   test('S-5.1: one commit holds the spec, the changelog line, the applied edit, the regenerated files and the lock', async () => {
     const root = await closedSpec();
     expect(readFileSync(join(root, SPEC, 'close-summary.md'), 'utf8')).toContain('core/commands/tasks.md');

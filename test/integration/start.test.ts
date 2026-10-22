@@ -7,7 +7,7 @@ import { openCommand, parseRequest } from '../../src/cli/start.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { dependencyInstalls } from '../../src/scripts/worktree-setup.js';
 import { parseState } from '../../src/spec/state.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
@@ -48,7 +48,7 @@ function repo(gates: Record<string, string> = {}, setup: string[] = []) {
       '.worktreeinclude': '.env.local\n',
     }),
   );
-  git(root, 'init', '-q', '-b', 'main');
+  initTestRepo(root, '-q', '-b', 'main');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',

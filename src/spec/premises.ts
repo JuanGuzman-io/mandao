@@ -1,3 +1,4 @@
+import { withoutCode } from './markdown.js';
 import type { TraceFinding } from './trace.js';
 
 export interface Premise {
@@ -57,4 +58,18 @@ export function premiseFindings(design: string | undefined, recorded: Set<string
       ref: p.id,
       message: `${p.id} is High impact with no recorded run: run it with \`mandao run premise <spec> ${p.id} -- <command>\` or mark it UNVERIFIED`,
     }));
+}
+
+/** Returns real unresolved assumption/conflict markers, excluding examples, resolved lines and resolved table rows. */
+export function unresolvedPremises(markdown: string): string[] {
+  return withoutCode(markdown)
+    .split('\n')
+    .flatMap((line) => {
+      if (!/\b(?:ASSUMPTION|CONFLICT)\b/i.test(line) || /\bresolved\b/i.test(line)) return [];
+      const cells = line.split('|').map((cell) => cell.trim());
+      if (cells.length >= 7 && /^(?:ASSUMPTION|CONFLICT)$/i.test(cells[2] ?? '')) {
+        return /^resolved\b/i.test(cells[6] ?? '') ? [] : [line.trim()];
+      }
+      return /\b(?:ASSUMPTION\s*\(|CONFLICT\s*\()/i.test(line) ? [line.trim()] : [];
+    });
 }

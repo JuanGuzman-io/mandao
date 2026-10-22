@@ -7,7 +7,7 @@ import { configSchema, resolveBranching } from '../../src/schemas/index.js';
 import { branchingFor, detectBranching, specBranch } from '../../src/scripts/branching.js';
 import { commitPending } from '../../src/scripts/commits.js';
 import { proposeSpec } from '../../src/scripts/spec.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const config = (extra: Record<string, unknown> = {}) =>
   configSchema.parse({ schema_version: 1, workspace: 'single', projects: [{ name: 'shop', path: '.' }], harnesses: ['claude'], ...extra });
@@ -22,7 +22,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 function repo(branches: string[] = []) {
   const root = realpathSync(makeTree({ 'README.md': 'x\n' }));
-  git(root, 'init', '-q', '-b', 'main');
+  initTestRepo(root, '-q', '-b', 'main');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'init');
   for (const b of branches) git(root, 'branch', b);

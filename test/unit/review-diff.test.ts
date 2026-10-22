@@ -5,12 +5,12 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { reviewDiff } from '../../src/scripts/review.js';
 import { sha256 } from '../../src/util/hash.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 function repo(files: Record<string, string>) {
   const root = makeTree(files);
   const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
-  git('init', '-q');
+  initTestRepo(root, '-q');
   git('config', 'user.name', 'Mandao Test');
   git('config', 'user.email', 'mandao-test@example.invalid');
   git('add', '.');

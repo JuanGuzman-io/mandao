@@ -11,7 +11,7 @@ import { cutAdvice, recordCutEstimate } from '../../src/scripts/session-cut.js';
 import { measureSessions } from '../../src/scripts/session-turns.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { withStatus } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -40,7 +40,7 @@ afterEach(() => {
 /** The fixture as a spec of layout `version`, documents in draft, log in `_log/`, committed on the spec branch. */
 function repo(version: 1 | 2) {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   git(root, 'config', 'user.name', 'Ana PO');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
@@ -266,7 +266,7 @@ describe('T3 Kaizen: a schema error in state.yml is not swallowed', () => {
 describe('mandao start in a new (version 2) spec', () => {
   function startRepo() {
     const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'README.md': 'x\n', '.gitignore': '.worktrees/\n' }));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     const typecheck = 'node -e "console.log(\'error TS1: broken on main\'); process.exit(2)"';
     writeYaml(join(root, '.mandao/config.yml'), {
       schema_version: 1,

@@ -51,6 +51,7 @@ No approval step of its own.
 - `mandao run gates`
 - `mandao run review-pack`
 - `mandao run review`
+- `mandao run test-review`
 - `mandao run commit`
 - `mandao run pr-plan`
 - `mandao run mutation`

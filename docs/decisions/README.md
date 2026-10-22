@@ -54,3 +54,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0045](0045-structured-review-context.md) | Structured review context and findings | Accepted |
 | [0046](0046-exact-gate-receipts-and-autonomous-execution.md) | Exact gate receipts and autonomous execution | Accepted |
 | [0047](0047-gated-design-principles-and-data-write-validation.md) | Gated design principles and data-write validation | Accepted |
+| [0048](0048-script-enforced-loop-and-approval-safety.md) | Script-enforced loop, test and approval safety | Accepted |

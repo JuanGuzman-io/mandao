@@ -54,18 +54,33 @@ export function testsWithoutRed(
   progress: Progress | undefined,
   task: string,
   declared: string[],
+  touchedFiles?: string[],
 ): { file: string; tests: string[] }[] {
   const recorded = progress?.red_tests.find((r) => r.task === task)?.files ?? [];
   if (!recorded.length) return [];
   const seen = new Map<string, Set<string> | undefined>();
   for (const f of recorded) seen.set(f.path, f.tests ? new Set([...(seen.get(f.path) ?? []), ...f.tests]) : undefined);
-  const files = [...new Set([...declared.filter(isTestPath), ...seen.keys()])];
+  const touched = touchedFiles ? new Set(touchedFiles) : undefined;
+  const files = [...new Set([...declared.filter(isTestPath), ...seen.keys()])].filter((file) => !touched || touched.has(file));
   return files.flatMap((file) => {
     const full = join(repo, file);
     if (!existsSync(full) || (seen.has(file) && seen.get(file) === undefined)) return [];
     const red = seen.get(file) ?? new Set<string>();
     const missing = testNames(readFileSync(full, 'utf8')).filter((n) => !red.has(n));
     return missing.length ? [{ file, tests: missing }] : [];
+  });
+}
+
+/** Test cases removed from a task's recorded red baseline; a deleted file counts as removing all its cases. */
+export function deletedTests(repo: string, progress: Progress | undefined, task: string): { file: string; tests: string[] }[] {
+  const entry = progress?.red_tests.find((r) => r.task === task);
+  if (!entry) return [];
+  return entry.files.flatMap((baseline) => {
+    if (!baseline.tests?.length) return [];
+    const full = join(repo, baseline.path);
+    const current = existsSync(full) ? new Set(testNames(readFileSync(full, 'utf8'))) : new Set<string>();
+    const removed = baseline.tests.filter((name) => !current.has(name));
+    return removed.length ? [{ file: baseline.path, tests: removed }] : [];
   });
 }
 

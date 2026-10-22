@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md]
-scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, commit, pr-plan, mutation, implement-summary, event]
+scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -94,6 +94,11 @@ their short JSON, and decide; never paste their full output into the conversatio
    An `evidence: mutation` task (`tdd.evidence: mutation` in `loop`) has no red step: its tests pin down existing
    behavior, and the Implementer proves each assertion with `{{script:mutation}}` (rules/test-policy.md)
    before reporting.
+   If a new test passes on its first run, `step` returns `choose-test-evidence`: do not repeat the red
+   command. Choose one route from its `evidenceOptions`: a killed mutation with
+   `{{script:mutation}} … --for-first-pass`, or an independent Reviewer test inspection recorded with
+   `{{script:test-review}} … --reviewer <agent> --review <file>`. Both routes need script-owned evidence
+   before the implementation step is released.
    **Implement** in a fresh context with the implementer for the tier:
 <!-- mandao:if harness=claude -->
    the `mandao-implementer-<tier>` agent (or `mandao-implementer` in simple mode).

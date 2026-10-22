@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync, realpathSync, writeFileSync } from 'node
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 import { lastOut, useLogEnv } from '../log-v2-helpers.js';
 
 const git = (cwd: string, ...args: string[]) =>
@@ -32,7 +32,7 @@ describe('diagram-drift by spec depth (MDO-0011 AC-6)', () => {
   /** One committed spec: lite keeps spec.md; standard keeps an unstamped design.md and its proposed graph. */
   function specRepo(depth: 'lite' | 'standard') {
     const root = realpathSync(makeTree({ 'src/cli/run.ts': 'x', 'src/engine/sync.ts': 'y' }));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     mkdirSync(join(root, '.mandao'));
     writeFileSync(join(root, '.mandao/config.yml'), CONFIG);
     const spec = join(root, SPEC);

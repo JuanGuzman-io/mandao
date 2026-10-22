@@ -18,9 +18,23 @@ import { routedWriter, testCommand } from './run-red.js';
 
 interface MutationOptions {
   patch: string;
+  forFirstPass?: boolean;
   self?: boolean;
   harness: string;
   force?: boolean;
+}
+
+function assertMutationAllowed(
+  task: NonNullable<ReturnType<typeof readSpec>['tasks'][number]>,
+  spec: ReturnType<typeof readSpec>,
+  id: string,
+  options: MutationOptions,
+): void {
+  const firstPass = spec.execution.some((row) => row.task === id && row.verdict === 'TESTS_PASS');
+  if (task.characterization || (options.forFirstPass && firstPass)) return;
+  if (options.forFirstPass)
+    throw new Error(`${id} is not a characterization task; --for-first-pass is allowed only after a TESTS_PASS result`);
+  throw new Error(`${id} is not a characterization task: new behavior needs a red test`);
 }
 
 function evidence(task: string, n: number, tests: string[], patch: string, run: TestRun, state: string): string {
@@ -62,16 +76,16 @@ function keepEvidence(specDir: string, repo: string, name: string, content: stri
 }
 
 /**
- * `mandao run mutation`: characterization evidence (ADR 0022). Applies a mutation to the code the tests
- * pin down, runs them, always reverts it and checks the tree is back as it was. Only a failing run with a
- * clean revert is recorded: a `MUTANT` row plus the diff and the failing output in `mutations/` (version 2:
- * in the spec's local cache).
+ * `mandao run mutation`: characterization or first-green TDD evidence. Applies a mutation to the code the
+ * tests pin down, runs them, always reverts it and checks the tree is back as it was. Only a failing run
+ * with a clean revert is recorded as a `MUTANT` row plus its diff and output.
  */
 export function registerMutation(run: Command, ctx: CliContext) {
   run
     .command('mutation <spec> <task> <tests...>')
-    .description('Record characterization evidence: apply a mutation, require the tests to fail, revert it cleanly')
+    .description('Record characterization or first-green test evidence by killing and cleanly reverting a mutation')
     .requiredOption('--patch <file>', 'unified diff of the mutation (applied, then reverted)')
+    .option('--for-first-pass', 'prove a TDD test that passed before implementation with a killed mutation')
     .option('--self', 'the Leader wrote the tests in its own context (no subagent): reduced independence')
     .option('--harness <id>', 'harness running the Leader', 'claude')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
@@ -81,8 +95,7 @@ export function registerMutation(run: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(root, config, ref));
       const task = spec.tasks.find((t) => t.id === id);
       if (!task) throw new Error(`No ${id} in ${spec.name}/tasks.md`);
-      if (!task.characterization)
-        throw new Error(`${id} is not a characterization task: new behavior needs a red test (\`mandao run red\`)`);
+      assertMutationAllowed(task, spec, id, o);
       const repo = repoRoot(spec.dir);
       const patchFile = resolve(o.patch);
       const patch = readFileSync(patchFile, 'utf8');

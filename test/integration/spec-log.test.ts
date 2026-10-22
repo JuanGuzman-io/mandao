@@ -7,7 +7,7 @@ import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { logPath } from '../../src/scripts/spec-log.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -28,7 +28,7 @@ afterEach(() => {
 
 function repo() {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'README.md': 'x\n' }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',

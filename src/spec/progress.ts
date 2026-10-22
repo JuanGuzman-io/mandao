@@ -60,6 +60,16 @@ export const progressSchema = z.object({
       }),
     )
     .default([]),
+  /** Consecutive identical run-step recommendations without a new execution row (Phase 5 loop brake). */
+  loop_brake: z
+    .object({
+      task: z.string().regex(/^T\d+$/),
+      action: z.string().min(1),
+      execution_rows: z.number().int().nonnegative(),
+      approval_rows: z.number().int().nonnegative().default(0),
+      repeats: z.number().int().positive(),
+    })
+    .optional(),
 });
 export type Progress = z.infer<typeof progressSchema>;
 /** What a writer passes: defaults may be left out. */

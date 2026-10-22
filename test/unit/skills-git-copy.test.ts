@@ -6,7 +6,7 @@ import { describe, expect, test } from 'vitest';
 
 import { catalogSchema, lockSchema } from '../../src/schemas/index.js';
 import { installSkills, pinSkills, type Runner, shellRunner, skillFolders } from '../../src/skills/install.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const meta = { version: '1.0.0', author: 'a', license: 'MIT', vetted: true, binding: 'stack', phases: ['implement'], description: 'x' };
 
@@ -36,7 +36,7 @@ const DOCS = ['SKILL.md', 'visual-companion.md', 'reference/notes.md'];
 /** A local git repository with the skill under `skills/brainstorming`, tagged `v7.0.0`. */
 function skillRepo() {
   const dir = makeTree({});
-  git(dir, 'init', '--quiet', '--initial-branch=main');
+  initTestRepo(dir, '--quiet', '--initial-branch=main');
   git(dir, 'config', 'uploadpack.allowFilter', 'true');
   for (const [file, content] of Object.entries(SKILL_FILES)) {
     const full = join(dir, 'skills', 'brainstorming', file);

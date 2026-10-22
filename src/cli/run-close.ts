@@ -35,6 +35,7 @@ import {
   sessionCutKaizen,
   specMetrics,
   summarizeTelemetry,
+  unresolvedPremises,
   upsertChangelog,
   verifyResults,
   withEnvironment,
@@ -46,6 +47,15 @@ import { json } from './json.js';
 
 const readIf = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : undefined);
 const summaryOf = (spec: SpecFolder) => parseCloseSummary(readIf(join(spec.dir, 'close-summary.md')), spec.name);
+
+/** Collects unresolved uncertainty markers from the documents that define the spec before closure. */
+function closePremiseFindings(spec: SpecFolder): string[] {
+  const files = [join(spec.dir, 'story.md'), docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design'), docPath(spec.dir, 'tasks')];
+  return [...new Set(files)].flatMap((file) => {
+    const text = readIf(file);
+    return text === undefined ? [] : unresolvedPremises(text).map((line) => `${relative(spec.dir, file)}: ${line}`);
+  });
+}
 
 const BUGS_NOTE =
   'Counts fix commits whose Refs trailer names the spec and, with a tracker, bugs linked to the story; unreferenced fixes are invisible.';
@@ -281,6 +291,10 @@ function registerSummary(run: Command, ctx: CliContext) {
     .action((ref: string, o: SummaryOptions) => {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
+      if (o.closed) {
+        const open = closePremiseFindings(spec);
+        if (open.length) throw new Error(`cannot close with unresolved ASSUMPTION or CONFLICT: ${open.join(' | ')}`);
+      }
       const summary = updatedSummary(config, spec, o);
       if (specLogInCache(spec.dir)) writeCloseDocument(ctx.root(), config, spec, summary);
       else writeText(join(spec.dir, 'close-summary.md'), renderCloseSummary(summary, closeLinks(ctx.root(), config, spec)));

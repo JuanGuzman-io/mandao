@@ -8,7 +8,7 @@ import { runInit } from '../../src/cli/init.js';
 import { readCatalog } from '../../src/engine/catalog.js';
 import { LOCK_FILE, readLock } from '../../src/engine/files.js';
 import { commandSkills } from '../../src/skills/command-skills.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 // MDO-0009 T2: `init` offers the commands' skills and copies only what the person selects (FR-2, FR-3, FR-4).
 // Prompts are mocked like the budget question; Git rewrites its HTTPS fixture URL to a local tagged repository.
@@ -91,7 +91,7 @@ const git = (cwd: string, ...args: string[]) =>
 /** A local repository holding the three git skills at their catalog paths, tagged `v1.0.0`. */
 function skillRepo() {
   const dir = makeTree({});
-  git(dir, 'init', '--quiet', '--initial-branch=main');
+  initTestRepo(dir, '--quiet', '--initial-branch=main');
   git(dir, 'config', 'uploadpack.allowFilter', 'true');
   for (const [id, path] of Object.entries(SKILLS)) {
     mkdirSync(join(dir, path, 'scripts'), { recursive: true });

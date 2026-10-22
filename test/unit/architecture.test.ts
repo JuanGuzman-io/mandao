@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vitest';
-import { findClimbs, withoutAllowed } from '../guards.js';
+import { findClimbs, findProcessExits, findRawGitInits, withoutAllowed } from '../guards.js';
 
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(join(dir, e.name)) : [join(dir, e.name)]));
@@ -60,4 +60,23 @@ test('only src/engine/frontmatter.ts imports gray-matter', () => {
     .filter((f) => f !== 'src/engine/frontmatter.ts')
     .filter((f) => /from 'gray-matter'|require\('gray-matter'\)/.test(readFileSync(join(root, f), 'utf8')));
   expect(offenders).toEqual([]);
+});
+
+/** Machine-independent fixtures use local Git identity and never terminate before buffered output flushes. */
+test('test repos configure local Git identity and test scripts use process.exitCode', () => {
+  const root = join(import.meta.dirname, '../..');
+  const helper = readFileSync(join(root, 'test/helpers.ts'), 'utf8');
+  expect(helper).toMatch(/\['config', '--local', 'user\.name'/);
+  expect(helper).toMatch(/\['config', '--local', 'user\.email'/);
+  const code = files(join(root, 'test')).filter((f) => /\.(?:[cm]?[jt]sx?)$/.test(f));
+  const rawGit = code
+    .filter((f) => relative(root, f) !== 'test/helpers.ts')
+    .flatMap((f) =>
+      findRawGitInits(relative(root, f), readFileSync(f, 'utf8')).map((call) => `${relative(root, f)}:${call.line} ${call.text}`),
+    );
+  const processExits = code.flatMap((f) =>
+    findProcessExits(relative(root, f), readFileSync(f, 'utf8')).map((call) => `${relative(root, f)}:${call.line} ${call.text}`),
+  );
+  expect(rawGit).toEqual([]);
+  expect(processExits).toEqual([]);
 });

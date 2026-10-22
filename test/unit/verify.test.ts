@@ -41,6 +41,35 @@ describe('verifyPlan', () => {
     expect(verifyPlan({ ...base(), progress, ciConfirmed: true }).blockers.some((b) => b.includes('deferred'))).toBe(false);
   });
 
+  test('first-green tests need both the recorded pass and the independent Reviewer event', () => {
+    const rows = [
+      {
+        date: 'today',
+        task: 'T1',
+        attempt: 1,
+        tier: 'standard',
+        harness: 'claude',
+        implementer: 'impl',
+        reviewer: '—',
+        verdict: 'TESTS_PASS' as const,
+        notes: '',
+      },
+      {
+        date: 'today',
+        task: 'T1',
+        attempt: 1,
+        tier: 'standard',
+        harness: 'claude',
+        implementer: 'impl',
+        reviewer: 'reviewer',
+        verdict: 'TEST_REVIEWED' as const,
+        notes: '',
+      },
+    ];
+    expect(verifyPlan({ ...base(), execution: rows }).missingRed).toEqual(['T2']);
+    expect(verifyPlan({ ...base(), execution: rows.slice(0, 1) }).missingRed).toEqual(['T1', 'T2']);
+  });
+
   test('a passed task without its commit blocks verified', () => {
     const plan = verifyPlan({ ...base(), commits: { passed: ['T1'], committed: new Set(), pending: [] } });
     expect(plan.blockers.some((b) => b.startsWith('UNCOMMITTED T1'))).toBe(true);

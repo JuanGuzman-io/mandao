@@ -7,8 +7,8 @@ import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { logPath } from '../../src/scripts/spec-log.js';
-import { parseApprovals, setTaskDone, withStatus } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { activeApprovals, parseApprovals, withStatus } from '../../src/spec/index.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -32,7 +32,7 @@ afterEach(() => {
 /** The fixture with its documents back in draft, committed on the spec branch. */
 function repo() {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   git(root, 'config', 'user.name', 'Ana PO');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
@@ -73,6 +73,43 @@ describe('mandao approve: no model session', () => {
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 requirements and design');
     const log = parseApprovals(readFileSync(logPath(join(root, SPEC), 'approvals.yml'), 'utf8'));
     expect(log).toEqual([expect.objectContaining({ step: 'design', by: 'Ana PO', at: expect.any(String) })]);
+  });
+
+  test('design approval re-records the hash of story.md even when the story was already approved', async () => {
+    const root = repo();
+    await approve(root, 'MDO-0001', 'story');
+    const result = await approve(root, 'MDO-0001', 'design');
+    expect(result.approved).toBe(true);
+    expect(parsed(root).at(-1)).toMatchObject({
+      step: 'design',
+      sha256: {
+        'story.md': expect.stringMatching(/^sha256-/),
+        'requirements.md': expect.stringMatching(/^sha256-/),
+      },
+    });
+  });
+
+  test('revocation records an append-only event, resets status, and makes the approval inactive', async () => {
+    const root = repo();
+    await approve(root, 'MDO-0001', 'story');
+    const result = await approve(root, 'MDO-0001', 'story', '--revoke', '--reason', 'the product scope changed');
+    expect(result).toMatchObject({ revoked: true, step: 'story', reason: 'the product scope changed' });
+    expect(status(root, 'story.md')).toBe('draft');
+    const history = parsed(root);
+    expect(history.map((row) => row.step)).toEqual(['story', 'revocation']);
+    expect(activeApprovals(history).map((row) => row.step)).toEqual([]);
+  });
+
+  test('annulment appends a reasoned event rather than deleting the target row', async () => {
+    const root = repo();
+    await run(root, 'next', 'MDO-0001', '--shown');
+    const shown = parsed(root).find((row) => row.step === 'shown')!;
+    const result = await approve(root, 'MDO-0001', 'story', '--annul', shown.at, '--reason', 'the summary was incomplete');
+    expect(result).toMatchObject({ annulled: true, target: shown.at });
+    const history = parsed(root);
+    expect(history).toHaveLength(2);
+    expect(history[0]).toEqual(shown);
+    expect(activeApprovals(history)).toEqual([]);
   });
 
   test('a lite spec is approved under its own subject (MDO-0007)', async () => {
@@ -308,72 +345,5 @@ describe('mandao approve --by-running: more refusals (AC-5)', () => {
     expect(process.exitCode).toBe(1);
     expect(status(root, 'tasks.md')).toBe('draft');
     expect(readApprovals(root)).toBe(before);
-  });
-});
-
-/** MDO-0010 T5 (D1): `run next` reads a failed verify from the report and a closed spec's delivery from git. */
-describe('mandao run next: a failed verify and a closed spec (T5)', () => {
-  const closedRepo = () => {
-    const root = repo();
-    const file = join(specDir(root), 'story.md');
-    writeFileSync(file, withStatus(readFileSync(file, 'utf8'), 'closed'));
-    append(root, 'requirements.md', '- [NEEDS CLARIFICATION]: left behind?');
-    git(root, 'add', '.');
-    git(root, 'commit', '-qm', 'closed');
-    return root;
-  };
-  const names = async (root: string) => text(await run(root, 'next', 'MDO-0001'));
-
-  test('a verify-report.md with verdict blocked recommends implement, not verify', async () => {
-    const root = repo();
-    for (const f of ['story.md', 'requirements.md', 'tasks.md']) {
-      const file = join(specDir(root), f);
-      writeFileSync(file, withStatus(readFileSync(file, 'utf8'), 'approved'));
-    }
-    const tasks = join(specDir(root), 'tasks.md');
-    writeFileSync(tasks, setTaskDone(readFileSync(tasks, 'utf8'), 'T2', true));
-    expect((await run(root, 'next', 'MDO-0001')).recommended.command).toBe('/mandao-verify');
-    writeFileSync(join(specDir(root), 'verify-report.md'), '---\nverdict: blocked\n---\n# Verify\n');
-    const n = await run(root, 'next', 'MDO-0001');
-    expect(n.recommended.command).toBe('/mandao-implement');
-  });
-
-  test('closed, branch only local: names the push; pushed: names the PR and merge; merged: nothing', async () => {
-    const root = closedRepo();
-    const unpushed = await run(root, 'next', 'MDO-0001');
-    expect(unpushed.recommended.command).toMatch(/push/);
-    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
-
-    const remote = realpathSync(makeTree({}));
-    git(remote, 'init', '-q', '--bare');
-    git(root, 'remote', 'add', 'origin', remote);
-    git(root, 'push', '-q', '-u', 'origin', 'feat/MDO-0001-skills-list');
-    const pushed = await run(root, 'next', 'MDO-0001');
-    expect(pushed.recommended.command).toMatch(/PR|pull request/i);
-    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
-
-    git(root, 'branch', 'main');
-    const local = await run(root, 'next', 'MDO-0001');
-    expect(local.recommended.command, 'a merge only into the local base is not delivered').toMatch(/push|PR|pull request/i);
-    expect(local.options).not.toEqual([]);
-
-    git(root, 'push', '-q', 'origin', 'main');
-    const merged = await run(root, 'next', 'MDO-0001');
-    expect(merged.options).toEqual([]);
-    expect(await names(root)).not.toMatch(/mandao-story|mandao-clarify/);
-  });
-
-  test('the delivery is read from the spec branch, not from the checked-out one', async () => {
-    const root = closedRepo();
-    git(root, 'commit', '-q', '--allow-empty', '-m', 'more work');
-    git(root, 'branch', 'main', 'HEAD~1');
-    git(root, 'checkout', '-q', 'main');
-    expect((await run(root, 'next', 'MDO-0001')).recommended.command).toMatch(/push/);
-  });
-
-  test('run next on a closed spec writes nothing', async () => {
-    const root = closedRepo();
-    await run(root, 'next', 'MDO-0001');
-    expect(git(root, 'status', '--porcelain')).toBe('');
   });
 });

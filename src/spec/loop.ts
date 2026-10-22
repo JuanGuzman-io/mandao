@@ -4,6 +4,7 @@ import type { ExecutionRow } from './execution.js';
 
 export type LoopAction =
   | 'write-red-tests'
+  | 'choose-test-evidence'
   | 'implement'
   | 'resume-implementation'
   | 'review'
@@ -34,7 +35,9 @@ export interface LoopState {
    * TDD (ADR 0022): required when the task declares tests; the red tests are written by the Tester for
    * tasks with risk tags or tier strong, by the Implementer otherwise; `red` once `mandao run red` recorded them.
    */
-  tdd: { required: boolean; testsBy: 'tester' | 'implementer'; red: boolean; evidence: 'red' | 'mutation' };
+  tdd: { required: boolean; testsBy: 'tester' | 'implementer'; red: boolean; evidence: 'red' | 'mutation' | 'review' };
+  /** Available when the declared test suite passes before implementation: mutation proof or independent test review. */
+  evidenceOptions?: ['mutation', 'review-test'];
   reason: string;
 }
 
@@ -53,8 +56,16 @@ export interface LoopTask {
 function tddFor(task: LoopTask, own: ExecutionRow[]): LoopState['tdd'] {
   const required = Boolean(task.tests && task.tests.unit.length + task.tests.e2e.length > 0) && task.evidence !== 'none';
   const testsBy = required && (task.risk_tags?.length || task.tier === 'strong') ? 'tester' : 'implementer';
-  const evidence = task.characterization ? 'mutation' : 'red';
-  return { required, testsBy, red: own.some((r) => r.verdict === (evidence === 'mutation' ? 'MUTANT' : 'RED')), evidence };
+  const firstRunPassed = own.some((r) => r.verdict === 'TESTS_PASS');
+  const evidence = task.characterization
+    ? 'mutation'
+    : firstRunPassed && own.some((r) => r.verdict === 'TEST_REVIEWED')
+      ? 'review'
+      : firstRunPassed && own.some((r) => r.verdict === 'MUTANT')
+        ? 'mutation'
+        : 'red';
+  const red = own.some((r) => r.verdict === (evidence === 'review' ? 'TEST_REVIEWED' : evidence === 'mutation' ? 'MUTANT' : 'RED'));
+  return { required, testsBy, red, evidence };
 }
 
 /** A reviewer another installed harness offers, with Mandao's tier for its model. */
@@ -73,6 +84,34 @@ export interface LoopContext {
 
 const MAX_FAILS_PER_TIER = 2;
 const MAX_FAILS_AT_STRONG = 3;
+export const LOOP_BRAKE_LIMIT = 3;
+
+export interface LoopObservation {
+  task: string;
+  action: string;
+  execution_rows: number;
+  approval_rows: number;
+  repeats: number;
+}
+
+/** Count the same recommendation only while no execution row has advanced the task. */
+export function observeLoop(
+  prior: LoopObservation | undefined,
+  task: string,
+  action: string,
+  executionRows: number,
+  approvalRows = 0,
+): LoopObservation {
+  const repeats =
+    prior &&
+    prior.task === task &&
+    prior.action === action &&
+    prior.execution_rows === executionRows &&
+    prior.approval_rows === approvalRows
+      ? prior.repeats + 1
+      : 1;
+  return { task, action, execution_rows: executionRows, approval_rows: approvalRows, repeats };
+}
 
 /** The tier after `fails` FAILs at `tier`: 2 FAILs move one tier up; strong has no tier above. */
 function escalate(tier: Tier, fails: number): Tier {
@@ -195,6 +234,22 @@ export function loopState(
       return startStep(base, Boolean(last));
     case 'RED':
       return { ...base, action: 'implement', reason: 'red tests recorded: make them pass with the minimum code' };
+    case 'TESTS_PASS':
+      return {
+        ...base,
+        action: 'choose-test-evidence',
+        evidenceOptions: ['mutation', 'review-test'],
+        reason:
+          'the tests pass before implementation; choose mutation evidence for existing behavior or have the Reviewer inspect the tests instead of repeating the red run',
+      };
+    case 'TEST_REVIEWED':
+      return own.some((r) => r.verdict === 'TESTS_PASS')
+        ? {
+            ...base,
+            action: 'implement',
+            reason: 'the Reviewer independently accepted the first-passing test; implement the minimum change and preserve the assertions',
+          }
+        : { ...base, action: 'halt', reason: 'test review has no preceding TESTS_PASS event' };
     case 'MUTANT':
       return { ...base, action: 'resume-implementation', reason: 'mutation recorded: report once every assertion has one' };
     case 'REPORTED':

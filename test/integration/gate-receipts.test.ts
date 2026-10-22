@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { runWithGateReceipt } from '../../src/scripts/gate-receipts.js';
 import type { TestRun } from '../../src/scripts/run-tests.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const passed: TestRun = {
   status: 'PASS',
@@ -18,7 +18,7 @@ const passed: TestRun = {
 test('gate receipt persists across identical runs and invalidates when the code tree changes', async () => {
   const root = makeTree({ 'src/app.ts': 'export const value = 1;\n' });
   const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
-  git('init', '-q');
+  initTestRepo(root, '-q');
   git('add', 'src/app.ts');
   const input = {
     root,

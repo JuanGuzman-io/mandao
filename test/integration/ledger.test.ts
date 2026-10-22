@@ -7,7 +7,7 @@ import { appendExecutionRow, writeProgress } from '../../src/scripts/checkpoint.
 import { changedFiles, changeManifest, commitPending, commitState, taskCommits } from '../../src/scripts/commits.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { commitFindings, type ExecutionRow } from '../../src/spec/index.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const config = configSchema.parse({
@@ -29,7 +29,7 @@ afterEach(() => vi.unstubAllEnvs());
 /** A repo on branch `feat` with the sample spec committed (T1 PASS in the log, T2 started). */
 function repo() {
   const root = realpathSync(makeTree({ 'README.md': 'x\n' }));
-  git(root, 'init', '-q', '-b', 'main');
+  initTestRepo(root, '-q', '-b', 'main');
   git(root, 'commit', '-qm', 'init', '--allow-empty');
   git(root, 'checkout', '-qb', 'feat');
   cpSync(fixture, join(root, SPEC), { recursive: true });

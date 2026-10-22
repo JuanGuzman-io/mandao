@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "fb2493a579b6421af72b576657fa84ef325aafefe3a2c30da25561a1400a903b"
+      "sha256": "ed499e903e46512efc5bfc41da9364d409f9d7a1146859d8d4e21997b9f43c98"
     },
     {
       "path": "core/commands/init.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/spec/loop.ts",
-      "sha256": "587dd81c9ca2bdc4cfdb7c6b5704c4842482803eabcd5141a3f3d20cd78323c6"
+      "sha256": "595e11bedc06e2e28fa1988b8095c7be5c27fa83bd0172d68c45e13f5388ebc6"
     }
   ],
   "specSha256": "33a8c5c6e286711a7f2e83b9c43732aa440089db7a97f158edce269a61cbdab6",

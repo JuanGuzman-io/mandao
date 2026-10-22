@@ -13,7 +13,7 @@ import {
   unmarkedScanners,
 } from '../../src/scripts/impact.js';
 import { decideBudget, effectiveResources } from '../../src/scripts/resources.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const graph = {
   dependents: new Map([
@@ -87,7 +87,7 @@ describe('impact', () => {
       'test/b.test.ts': '// mandao-scans: nothing here\n',
       'test/c.test.ts': '// mandao-scans: src/\n',
     });
-    execFileSync('git', ['init', '-q'], { cwd: root });
+    initTestRepo(root, '-q');
     execFileSync('git', ['add', 'test/a.test.ts', 'test/b.test.ts'], { cwd: root });
     expect(findScanners(root, '.')).toEqual([{ test: 'test/a.test.ts', paths: ['src/', 'lib/x'] }]);
     expect(findScanners(join(root, 'not-a-repo'), '.')).toEqual([]);

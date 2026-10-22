@@ -14,7 +14,7 @@ import { agentIdentity, claimedModels, identityNotes } from '../../src/scripts/i
 import { reviewCell } from '../../src/scripts/quick-log.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { commitType, kindIssues, type Task } from '../../src/spec/index.js';
-import { makeTree, pkg, reviewFile } from '../helpers.js';
+import { initTestRepo, makeTree, pkg, reviewFile } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -39,7 +39,7 @@ afterEach(() => {
 /** A synced repo (agent files exist) with the MDO-0001 spec, committed on a feature branch. */
 function repo(impacted = 'node -e "process.exit(0)" {files}') {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'README.md': 'x\n', 'src/code.js': 'export const answer = 42;\n' }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
@@ -168,6 +168,7 @@ describe('#1 and #5: identity comes from agent files and models.yml, never from 
         'mandao run step --claimed-reviewer',
         'mandao run step --implementer',
         'mandao run step --reviewer',
+        'mandao run test-review --reviewer',
         'mandao run quick-log --reviewer',
       ].sort(),
     );

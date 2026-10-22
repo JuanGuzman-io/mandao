@@ -1,8 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Config } from '../schemas/index.js';
-import { type ChangeManifestEntry, changeManifest, repoRoot } from '../scripts/commits.js';
-import { testsWithoutRed } from '../scripts/red.js';
+import { type ChangeManifestEntry, changedFiles, changeManifest, repoRoot } from '../scripts/commits.js';
+import { deletedTests, testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
@@ -18,12 +18,34 @@ export function requireRedFirst(spec: SpecFolder, task: string | undefined, verd
   if (verdict !== 'REPORTED' || !task) return;
   const t = spec.tasks.find((x) => x.id === task);
   if (!t || t.evidence === 'none' || t.evidence === 'mutation' || t.characterization) return;
-  const missing = testsWithoutRed(repoRoot(spec.dir), spec.progress, task, t.files ?? []);
+  const firstPassMutation =
+    spec.execution.some((row) => row.task === task && row.verdict === 'TESTS_PASS') &&
+    spec.execution.some((row) => row.task === task && row.verdict === 'MUTANT');
+  const reviewedFirstPass =
+    spec.execution.some((row) => row.task === task && row.verdict === 'TESTS_PASS') &&
+    spec.execution.some((row) => row.task === task && row.verdict === 'TEST_REVIEWED');
+  if (firstPassMutation || reviewedFirstPass) return;
+  const repo = repoRoot(spec.dir);
+  const missing = testsWithoutRed(repo, spec.progress, task, t.files ?? [], changedFiles(repo, spec.dir));
   if (!missing.length) return;
   const list = missing.map((m) => `${m.file}: ${m.tests.map((n) => `"${n}"`).join(', ')}`).join('; ');
   throw new Error(
     `${task}: tests with no red run: ${list}. Record them failing before the fix with \`mandao run red ${spec.name} ${task} <files>\`, then report.`,
   );
+}
+
+/** Removed cases need a reason in the script-owned execution row so the Reviewer can judge the change. */
+export function requireTestDeletionReason(
+  spec: SpecFolder,
+  task: string | undefined,
+  verdict: string | undefined,
+  reason: string | undefined,
+): void {
+  if (!task || (verdict !== 'REPORTED' && verdict !== 'PASS')) return;
+  const removed = deletedTests(repoRoot(spec.dir), spec.progress, task);
+  if (!removed.length || reason?.trim()) return;
+  const list = removed.map((item) => `${item.file}: ${item.tests.map((name) => `"${name}"`).join(', ')}`).join('; ');
+  throw new Error(`${task}: deleted test cases need --test-deletion-reason explaining why: ${list}`);
 }
 
 /** The Reviewer's whole answer: a file, or `-` for stdin (a heredoc from the Leader). */

@@ -9,7 +9,7 @@ import { commitsSize } from '../../src/scripts/close.js';
 import { commitSpecDocs } from '../../src/scripts/commits.js';
 import { nextLocalId, readSpec } from '../../src/scripts/spec.js';
 import { impactItems, readClauses, verifyResults } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -35,7 +35,7 @@ afterEach(() => {
 
 function repo() {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'README.md': 'x\n' }));
-  git(root, 'init', '-q', '-b', 'main');
+  initTestRepo(root, '-q', '-b', 'main');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',

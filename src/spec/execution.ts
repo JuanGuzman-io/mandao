@@ -4,7 +4,19 @@ import { z } from 'zod';
  * `RED`: the task's tests failed for the expected reason before implementing (TDD, ADR 0022). `MUTANT`: a
  * characterization task's tests failed under a recorded, reverted mutation of the code they pin down.
  */
-export const VERDICTS = ['STARTED', 'RED', 'MUTANT', 'REPORTED', 'PASS', 'FAIL', 'HALT', 'PIVOT', 'DEFERRED_TO_CI'] as const;
+export const VERDICTS = [
+  'STARTED',
+  'RED',
+  'TESTS_PASS',
+  'TEST_REVIEWED',
+  'MUTANT',
+  'REPORTED',
+  'PASS',
+  'FAIL',
+  'HALT',
+  'PIVOT',
+  'DEFERRED_TO_CI',
+] as const;
 export const verdict = z.enum(VERDICTS);
 export type Verdict = z.infer<typeof verdict>;
 

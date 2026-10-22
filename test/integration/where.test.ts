@@ -1,11 +1,10 @@
-import { execFileSync } from 'node:child_process';
 import { cpSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ADAPTERS } from '../../src/adapters/index.js';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 // MDO-0010 D2: `run where` and `run spec-new` hand the command texts the active harness resume command.
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
@@ -23,7 +22,7 @@ afterEach(() => {
 
 function repo() {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
-  execFileSync('git', ['init', '-q', '-b', 'main'], { cwd: root });
+  initTestRepo(root, '-q', '-b', 'main');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
