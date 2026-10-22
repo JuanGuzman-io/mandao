@@ -89,7 +89,7 @@ See the [test policy](core/templates/shared/rules/test-policy.md#tdd-where-tests
 
 ## Quick start
 
-**Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) required for diagrams by the accepted design (Mermaid only when explicitly configured with `diagrams.engine: mermaid`; installer and enforcement are pending [Phase 4](docs/backlog.md)) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
+**Requirements:** Node ≥ 22.18 · git · at least one [supported harness](#harnesses) · [Archify](https://github.com/tt-a1i/archify) required for diagrams and offered as a pinned install during interactive init (Mermaid only when explicitly configured with `diagrams.engine: mermaid`) · [Graphify](https://github.com/Graphify-Labs/graphify) recommended (without it, repository mapping falls back to plain search, with lower confidence).
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/diagrams/install-dark.svg">

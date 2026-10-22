@@ -30,6 +30,32 @@ describe('core content', () => {
     },
   );
 
+  test.each(['claude', 'codex', 'opencode', 'copilot', 'antigravity'])(
+    'reversible technical questions are resolved and recorded in %s content',
+    (harness) => {
+      const config = configSchema.parse({
+        schema_version: 1,
+        workspace: 'single',
+        projects: [{ name: 'a', path: '.', profile: 'app' }],
+        harnesses: [harness],
+      });
+      const { files } = buildOutputs(config, {}, layers, '0.0.0', 'project');
+      const rendered = files.map((f) => f.content).join('\n');
+      expect(rendered).toMatch(/For reversible technical choices, decide from the project's constitution and accepted ADRs/);
+      const clarify = files.find((f) => /mandao-clarify(?:\.md|\/SKILL\.md|\.prompt\.md)$/.test(f.path));
+      expect(clarify?.content).toMatch(/choose the least risky option that satisfies the requirements/);
+      expect(clarify?.content).toMatch(/do not wait for a user answer/);
+    },
+  );
+
+  test('diagram instructions invoke Archify uniformly and allow Mermaid only when configured', () => {
+    const diagram = readFileSync('core/templates/shared/rules/diagram.md', 'utf8');
+    const close = readFileSync('core/commands/close.md', 'utf8');
+    expect(diagram).toMatch(/render it with Archify through `mandao run archify`/);
+    expect(diagram).toMatch(/never switch renderers automatically/);
+    expect(close).toMatch(/use Mermaid only when\s+`diagrams\.engine: mermaid` is explicitly configured/);
+  });
+
   test('ships every command in the flow, with stubs declared as such', () => {
     const layers = loadLayers(process.cwd(), []).filter((l) => l.kind === 'core');
     const config = configSchema.parse({

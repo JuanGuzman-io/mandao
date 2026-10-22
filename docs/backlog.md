@@ -29,9 +29,9 @@ scope, product behavior, security or irreversible actions.
 |---|---|---|---|
 | [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
 | [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
-| [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | implemented; pending PR CI and merge |
-| [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | agreed, pending phase plan approval |
-| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | agreed, pending phase plan approval |
+| [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
+| [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
+| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | in progress; plan approved |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
@@ -84,7 +84,7 @@ Acceptance criteria:
 
 ## Phase 3 — Context and rework
 
-**Implemented; pending PR CI and merge.** See [ADR 0045](decisions/0045-structured-review-context.md).
+**Complete:** PR #9 merged into `main` (`c315d3c`). See [ADR 0045](decisions/0045-structured-review-context.md).
 
 - [x] Reviewer diff uses canonical changed files; verified generated harness files and diagram SVGs
   have hash/origin receipts, with full-diff fallback on provenance mismatch.
@@ -107,31 +107,31 @@ Acceptance criteria:
 
 Acceptance criteria:
 
-- Gate receipts are reused by Implementer, Leader, pre-commit and verify only when the code tree,
+- [x] Gate receipts are reused by Implementer, Leader, pre-commit and verify only when the code tree,
   configuration, selected tests and tool versions are unchanged; invalidation is exact.
-- Session-cut suggestions persist a boundary ID and appear only once per boundary.
-- All users' commands let the agent resolve and record reversible technical questions covered by
+- [x] Session-cut suggestions persist a boundary ID and appear only once per boundary.
+- [x] All users' commands let the agent resolve and record reversible technical questions covered by
   the constitution. Product, scope, security and external actions still reach the user.
-- `run commit` uses the reviewed, approved change manifest rather than just task file declarations.
+- [x] `run commit` uses the reviewed, approved change manifest rather than just task file declarations.
   Undeclared and unreviewed changes stop the commit; no non-building state is committed. This
   supersedes the older task-list-only implementation proposal, preserving its safety requirement.
-- Implement [launcher version](#launcher-version), including the old-global/new-lock regression.
-- `init` installs missing Archify with confirmation and a pinned version; a Mandao script invokes it
+- [x] Implement [launcher version](#launcher-version), including the old-global/new-lock regression.
+- [x] `init` installs missing Archify with confirmation and a pinned version; a Mandao script invokes it
   for every harness. Without it, `doctor` errors and required diagram steps stop with instructions,
   unless the user explicitly configures `diagrams.engine: mermaid`.
 
 ## Launcher version
 
-**Phase 4; agreed, not yet implemented.**
+**Phase 4; implemented (ADR 0046).**
 
 `.mandao/bin/mandao.mjs` compares the version of the `mandao` it is about to run (local, global or
 `npx`) with the one pinned in `mandao.lock`.
 
 - On a mismatch it runs the pinned version (`npx mandao@<lock version>`); when it cannot, it warns
-  and records the mismatch.
-- `mandao doctor` reports the mismatch too.
+  and reports the mismatch.
+- `mandao doctor` reports runner resolution and version problems.
 - In the Mandao repository (dogfooding) it prefers the worktree's own build.
-- A test reproduces the case: an old global install, a newer lock.
+- A regression covers an old global install and a newer lock.
 
 ## MDO-0012 — Delivery and research
 

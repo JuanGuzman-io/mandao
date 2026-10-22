@@ -46,10 +46,10 @@ records the discrepancies corrected in version 0.11.
 
 1. **The product is the content, not the code.** Commands, templates, personas and the skills catalog are neutral Markdown/YAML. The CLI is thin: it installs, transforms and validates.
 2. **Harness-agnostic.** One canonical source, one adapter per tool. Nothing is tied to a single vendor.
-3. **Explicit dependencies and honest evidence.** Graphify and MCP servers have documented alternatives (grep/glob and local files), with **lower confidence, never lower depth**. **Archify is mandatory for diagrams**. Mermaid is used only when the user deliberately configures `diagrams.engine: mermaid`; never as an automatic fallback. Installation, a cross-harness script and enforcement are **DECIDED, pending Phase 4** (see §18.3).
+3. **Explicit dependencies and honest evidence.** Graphify and MCP servers have documented alternatives (grep/glob and local files), with **lower confidence, never lower depth**. **Archify is mandatory for diagrams**. Mermaid is used only when the user deliberately configures `diagrams.engine: mermaid`; never as an automatic fallback. Init offers a pinned Archify install, the shared runner works across harnesses, and doctor/diagram steps enforce availability (§18.3).
 4. **Never invent context.** Missing information is marked `ASSUMPTION`, `OPEN` or `CONFLICT`, always with its source.
 5. **Human in the loop** at every meaningful approval and before any external publication. **DECIDED (ADR 0040):** an approval is the person's explicit word, their own `mandao approve`, or running the next command, which `mandao approve --by-running` accepts only when nothing is open or changed since the summary shown; otherwise it asks one question and records nothing.
-   **DECIDED, pending Phase 4 — autonomy:** the agent decides and records reversible technical details covered by the constitution. Human questions concern product or scope decisions, security, and external or irreversible actions; a technical choice alone is not an approval boundary. Budget and publication still require the person's own authorization. Commands must relay script decisions, not manufacture extra confirmations.
+   **DECIDED (Phase 4):** the agent resolves and records reversible technical choices from the constitution and accepted ADRs; when they do not settle a choice, it chooses the least risky option that meets requirements and records its rationale and rejected alternatives. User questions are reserved for product behavior, scope, security and external actions. Budget, publication, constitution edits and explicit approval gates still require authorization. Commands relay script decisions and do not manufacture extra confirmations.
 6. **Lean commands.** Rules live in templates and skills; project lessons live in the project. Command prompts must not accumulate hardcoded lessons (a known weakness of AKILI, whose constitution command is ~1,500 lines).
 7. **Risk-proportional rigor.** Review depth scales with task risk; trivial work stays fast.
 8. **External content is data, not instructions.** Anything read from trackers, chat, documents or transcripts is untrusted input (see §20).
@@ -164,7 +164,7 @@ A global install exposes **`/mandao-init`** in every installed harness. Run insi
 - **PROPOSED:** commit generated harness folders only for harnesses declared in the lock.
 - Maintenance commands: `mandao harness add <tool>`, `mandao skills add <pack>`, `mandao update`, `mandao doctor`.
 - `mandao update` detects the package manager that installed Mandao (npm, pnpm, bun) and uses the same one.
-- **DECIDED (ADR 0012) — runner:** generated commands call `node .mandao/bin/mandao.mjs`, which resolves Mandao from local `node_modules/.bin`, then a global install, then `npx -y mandao@<lock version>`. `scripts.runner` (`auto | local | global | npx`) forces one; `doctor` checks it resolves. This is the current launcher behavior. **DECIDED, pending Phase 4:** Mandao's own checkout/worktree uses its local build (`npm run build`, then `node dist/cli.js`), never the global binary. For consuming projects the resolved version must match the lock: use the pinned `npx mandao@<version>` or warn and record the mismatch; `doctor` reports it. A global binary is not evidence of the checkout's behavior.
+- **DECIDED (ADR 0012; Phase 4) — runner:** generated commands call `node .mandao/bin/mandao.mjs`, which honors `mandao.lock`: Mandao's own checkout/worktree uses its local build; consuming projects use a matching local/global install or the pinned `npx mandao@<lock version>`. A mismatched local/global version falls back to the pinned version, and `doctor` reports resolution problems. `scripts.runner` (`auto | local | global | npx`) constrains the source.
 - `AGENTS.md` is the universal fallback for harnesses without skills support.
 - **DECIDED (ADR 0018) — switching harness:** `mandao doctor` reports, per installed harness, whether its generated files are up to date, the model assigned to each role, and whether the harness's minimum version is met, so a person knows in advance whether they can switch mid-work.
 - **DECIDED (ADR 0015) — shared vs local agent settings:** committed harness settings (e.g. `.claude/settings.json`) are portable: tools resolve through PATH or the Mandao runner, never absolute paths. Machine-specific settings go in `settings.local.json`, which is git-ignored; a hook that needs an absolute path lives only there. `sync` and `doctor` respect this split.
@@ -368,13 +368,13 @@ Utilities: `quick`, `resume`; `research`, `perf` and `audit` are **planned**. Th
 - At standard/full depth produces `requirements.md` (FR-n, NFR-n, scenarios with `BUT it must NOT` / `AND IT MUST`, AC→FR matrix, Consistency Check) and `design.md` (Premise Ledger, decisions, Constitution / Product / Module Docs Impact, contract section when multi-project). At lite depth requirements and design share `spec.md`; `tasks.md` is always separate in layout v2. `quickstart.md` is conditional on user-visible behavior; `data-model.md` on data changes (ADR 0034). Documents are readable summaries with linked evidence, not execution logs (ADR 0035).
 - Tracker resolution: §11.
 - Marks unknowns as `[NEEDS CLARIFICATION]`.
-- **DECIDED (ADR 0022, implemented in 2b) — diagram for approval.** `specify` generates with Archify the diagram of the proposed flow, **derived from `design.md`** (never drawn by hand), its type chosen with the table in §18.3. Mandatory at standard/full depth for a new flow, several projects, a new service/integration, an LLM pipeline, a data change or a state machine; optional at lite. At most 2–3 diagrams per spec (ADR 0034). It is part of the design approval: the PO or lead approves looking at it. With a tracker MCP it is attached as PNG to the story after confirmation. Archify is required unless the user explicitly configures Mermaid (§18.3); the canonical fallback text is pending correction in Phase 4. When `design.md` changes, the diagram is regenerated.
+- **DECIDED (ADR 0022, implemented in 2b) — diagram for approval.** `specify` generates with Archify the diagram of the proposed flow, **derived from `design.md`** (never drawn by hand), its type chosen with the table in §18.3. Mandatory at standard/full depth for a new flow, several projects, a new service/integration, an LLM pipeline, a data change or a state machine; optional at lite. At most 2–3 diagrams per spec (ADR 0034). It is part of the design approval: the PO or lead approves looking at it. With a tracker MCP it is attached as PNG to the story after confirmation. Archify is required unless the user explicitly configures Mermaid (§18.3). When `design.md` changes, the diagram is regenerated.
 
 ### 10.4 clarify
 
 - Triggered automatically if specify left `[NEEDS CLARIFICATION]` or the Consistency Check found conflicts; also callable manually.
 - Max 5 questions per round, prioritized by impact.
-- Current command routes technical questions to the dev and business questions to the PO through the configured channel. **DECIDED, pending Phase 4:** resolve reversible technical questions from the constitution, record the decision and rationale, and ask only about product, scope, security or external actions. Sending a tracker or chat message still requires authorization; answers flow back to the spec.
+- Reversible technical questions are resolved and recorded from the constitution/accepted ADRs, or by choosing the least risky option that meets requirements when those sources do not decide it. Ask the user about product behavior, scope, security or external actions. Sending a tracker or chat message still requires authorization; answers flow back to the spec (Phase 4, ADR 0046).
 - Answers are recorded with dates in `## Clarifications`. A critical `OPEN` blocks `tasks`.
 
 ### 10.5 tasks
@@ -486,8 +486,8 @@ Runs at the end of `specify`, `tasks` and `verify`.
 | `CONTRACT` | Front and back disagree with the contract |
 
 A critical conflict blocks `tasks`. Product/scope conflicts go to `clarify` and the appropriate owner.
-**DECIDED, pending Phase 4:** a reversible technical detail already governed by the constitution is
-resolved by the agent with a recorded rationale; it does not create a human approval round.
+**DECIDED (Phase 4, ADR 0046):** a reversible technical detail is resolved by the agent with a
+recorded rationale and rejected alternatives; it does not create a human approval round.
 
 ### 12.3 Premise Ledger (from AKILI)
 
@@ -591,7 +591,7 @@ One story = **one spec, one development**, even across projects.
 
 - **Pivot Record:** if the spec itself is wrong, stop the loop and open a pivot for human sign-off; no retries are consumed.
 - **Scope discipline:** no refactors outside the task. Opportunities are reported as advisory and become separate tasks or quick changes.
-- **Evidence re-run (current):** verification is re-executed by a non-author context and compared with the author's report. **DECIDED, pending Phase 4:** exact receipts allow reuse only when the code tree, configuration, selected tests and tool versions match; otherwise rerun. Independent review and gates remain mandatory.
+- **Evidence re-run:** exact gate receipts allow reuse only when the code tree, configuration, selected tests and tool versions match; otherwise rerun. Independent review and gates remain mandatory (Phase 4, ADR 0046).
 - **Disqualifying evidence:** every gate states what makes its evidence worthless (e.g., variance larger than the measured effect), not only what passes.
 - **DECIDED (ADR 0022, implemented in 2b) — professional discipline**, written into the personas as checkable rules (never "follow the book"): say no or HALT when something cannot be done well instead of delivering something partial as done; "done" means the whole DoD is met, with evidence; never report something as tested without the test output; state uncertainty explicitly instead of assuming.
 
@@ -654,8 +654,8 @@ one. At 80% warn; past 100% step waits for budget authorization. Agents never ch
 Doctor diagnoses Claude cache TTL and its source; Mandao recommends 5m and never writes the user's
 settings. Session cuts use measured cache/context costs and natural boundaries (ADR 0038), with the
 harness's in-place new-conversation action first and worktree re-entry when needed. Script estimates
-are recorded in v2 state.cut_estimates (legacy session-cuts.md). **Pending Phase 4:** persist a boundary
-ID so the same recommendation is not repeated. **Implemented (ADR 0044):** the script records command,
+are recorded in v2 state.cut_estimates (legacy session-cuts.md); boundary IDs ensure a suggestion
+appears only once per boundary (Phase 4, ADR 0046). **Implemented (ADR 0044):** the script records command,
 classified question/answer, agent and gate events in `execution.md`; Kaizen separates active, user-wait
 and agent-wait durations per command and spec. Gate duration is a subset of active time. Costs are
 recorded before the command's final commit. Historical duplicate costs are recalculated from cumulative
@@ -821,7 +821,7 @@ Mandao-AC: AC-1, AC-3
 | brainstorming | New mode: elicit intent when there is no code |
 | **mandao-skills** (own) | Resolves which skills to bring next |
 
-Archify is required for diagrams (§18.3). **DECIDED, pending Phase 4:** init offers its pinned installation with confirmation and doctor checks it. No framework skills in the bootstrap.
+Archify is required for diagrams (§18.3). Init offers its pinned installation with confirmation and doctor checks it (Phase 4, ADR 0046). No framework skills in the bootstrap.
 
 2. **Resolution** (end of `constitution`):
    - Build a **stack fingerprint**: languages, frameworks with versions, style-defining libraries (state management, ORM, UI kit), cloud, profile, infra.
@@ -910,10 +910,10 @@ PR before merge; subsequent release state is derived read-only from git, with no
 
 **DECIDED (ADR 0042) — Archify is mandatory unless the user explicitly chooses `diagrams.engine: mermaid`.**
 Mermaid is never an automatic response to a missing tool, unsupported harness or renderer failure.
-A missing Archify blocks diagram-required steps with installation instructions. **Pending Phase 4:**
-pinned confirmed installation during init, script-based invocation in every harness, config support and
-error-level doctor enforcement. Current canonical commands still contain fallback wording; that is an
-implementation gap, not permission to fall back.
+A missing Archify blocks diagram-required steps with installation instructions. Init offers pinned
+confirmed installation, `mandao run archify` invokes it uniformly across harnesses, and doctor reports
+an error when Archify is selected but absent. The explicit Mermaid configuration is the only alternative
+(Phase 4, ADR 0046).
 
 - Write typed structured source from the graph, `design.md`, `data-model.md` and actual diff; never from
   memory. Preserve module/contract identity, mark changed elements and grey unchanged context.
