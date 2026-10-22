@@ -56,7 +56,7 @@ function wideRepo() {
       {
         name: 'mandao',
         path: '.',
-        gates: { typecheck: NOISY_GATE, secrets: 'mandao-no-such-tool-xyz --scan' },
+        gates: { typecheck: NOISY_GATE, secrets: 'mandao-no-such-tool-xyz --scan', build: 'node -e "process.exit(0)"' },
         tests: { impacted: IMPACTED },
       },
     ],
@@ -96,7 +96,7 @@ async function wideAttempt(root: string, t: string, attempt: number) {
     await run(root, 'mutation', 'MDO-0001', 'T3', 'test/a.test.ts', '--patch', mutationPatch(root));
     expect(lastOut()).toMatchObject({ recorded: true });
   }
-  const review = join(root, `review-${t}-${attempt}.txt`);
+  const review = join(makeTree({}), `review-${t}-${attempt}.txt`);
   writeFileSync(review, attempt === 1 ? REVIEW_FAIL : REVIEW_PASS);
   const verdict =
     attempt === 1 ? ['--verdict', 'FAIL', '--reason', 'B1: alias missing'] : ['--verdict', 'PASS', '--pending-commit', `finish ${t}`];
@@ -120,7 +120,7 @@ describe('S-3.1 at the Done-when size: 3 tasks x 2 attempts, a mutation, 2 premi
     const root = wideRepo();
     await wideHistory(root);
     git(root, 'add', '-A');
-    git(root, 'commit', '-qm', 'log');
+    if (git(root, 'status', '--porcelain')) git(root, 'commit', '-qm', 'log');
     const tracked = git(root, 'ls-files', `${SPEC}/_log`).split('\n').filter(Boolean);
     expect(tracked.map((f) => f.split('/').at(-1)).sort()).toEqual(SIX);
     const touched = git(root, 'log', '--name-only', '--format=', '--', `${SPEC}/_log`).split('\n').filter(Boolean);

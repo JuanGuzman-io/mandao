@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { configSchema } from '../../src/schemas/index.js';
 import { appendExecutionRow, writeProgress } from '../../src/scripts/checkpoint.js';
-import { changedFiles, commitPending, commitState, taskCommits } from '../../src/scripts/commits.js';
+import { changedFiles, changeManifest, commitPending, commitState, taskCommits } from '../../src/scripts/commits.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { commitFindings, type ExecutionRow } from '../../src/spec/index.js';
 import { makeTree } from '../helpers.js';
@@ -59,7 +59,8 @@ function passPending(root: string, task: string, file: string, subject: string) 
   const spec = readSpec(dir);
   const queued = new Set(spec.progress!.pending_commits.flatMap((p) => p.files));
   const files = changedFiles(root, dir).filter((f) => !queued.has(f));
-  writeProgress(dir, { ...spec.progress!, pending_commits: [...spec.progress!.pending_commits, { task, subject, files }] });
+  const manifest = changeManifest(root, dir);
+  writeProgress(dir, { ...spec.progress!, pending_commits: [...spec.progress!.pending_commits, { task, subject, files, manifest }] });
 }
 
 const pending = (root: string) => {
@@ -131,5 +132,37 @@ describe('commits found by trailers (ADR 0021)', () => {
       pending_commits: [...spec.progress!.pending_commits, { task: 'T1', subject: 'x', files: ['src/b.ts'] }],
     };
     expect(commitPending({ ...pending(root), progress: twice }).error).toBe('src/b.ts is changed by both T2 and T1: commit them by hand');
+  });
+
+  test('refuses legacy pending commits without a Reviewer-approved manifest', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const spec = readSpec(join(root, SPEC));
+    writeProgress(join(root, SPEC), {
+      ...spec.progress!,
+      pending_commits: [{ task: 'T2', subject: 'register the skills list command', files: ['src/b.ts'] }],
+    });
+    expect(commitPending(pending(root)).error).toMatch(/no Reviewer-approved change manifest/);
+  });
+
+  test('refuses any changed file that was not in the approved manifest', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    writeFileSync(join(root, 'unreviewed.txt'), 'extra change\n');
+    expect(commitPending(pending(root)).error).toMatch(/working tree differs from the Reviewer-approved manifest: unreviewed.txt/);
+  });
+
+  test('refuses a file whose contents changed after the Reviewer passed', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    writeFileSync(join(root, 'src/b.ts'), 'export const changedAfterPass = true;\n');
+    expect(commitPending(pending(root)).error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
+  });
+
+  test('refuses unreviewed spec documents that would otherwise be staged with the ledger', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    writeFileSync(join(root, SPEC, 'design-note.md'), 'human-authored change\n');
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: design-note.md/);
   });
 });

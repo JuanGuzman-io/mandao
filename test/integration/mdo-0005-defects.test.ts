@@ -9,7 +9,7 @@ import { readConfig, writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { readRecommendations, resolveWorkspaceModels } from '../../src/models/load.js';
 import { configSchema } from '../../src/schemas/index.js';
-import { commitPending } from '../../src/scripts/commits.js';
+import { changeManifest, commitPending } from '../../src/scripts/commits.js';
 import { agentIdentity, claimedModels, identityNotes } from '../../src/scripts/identity.js';
 import { reviewCell } from '../../src/scripts/quick-log.js';
 import { readSpec } from '../../src/scripts/spec.js';
@@ -96,6 +96,7 @@ describe('#1 and #5: identity comes from agent files and models.yml, never from 
     const leader = resolveWorkspaceModels(root, readConfig(root), readRecommendations()).claude!.leader!;
     expect(spec.progress!.current!.model).toBe(`${leader.model}${leader.effort ? ` (${leader.effort})` : ''}`);
     // A model name where an agent is expected is refused: there is no agent file by that name.
+    await run(root, 'review-pack', 'MDO-0001', 'T2');
     await expect(
       run(
         root,
@@ -203,34 +204,32 @@ describe('#2: the commit type is the task kind, checked against the real diff', 
 
   test('mandao run commit refuses a kind the diff contradicts and commits a test-only task as ✅ test', async () => {
     const root = repo();
-    const tasksFile = join(root, SPEC, 'tasks.md');
-    writeFileSync(
-      tasksFile,
-      readFileSync(tasksFile, 'utf8').replace(
-        'files: [src/cli/extensions.ts, src/cli/skills.ts]',
-        'kind: feat\nfiles: [test/skills.test.ts]',
-      ),
-    );
     mkdirSync(join(root, 'test'), { recursive: true });
     writeFileSync(join(root, 'test/skills.test.ts'), 'test("x", () => {});\n');
     const cfg = configSchema.parse(readConfig(root));
-    const input = () => {
+    const input = (kind: 'feat' | 'test') => {
       const spec = readSpec(join(root, SPEC));
       return {
         repo: root,
         specDir: spec.dir,
         config: cfg,
         story: spec.story!,
-        tasks: spec.tasks,
+        tasks: spec.tasks.map((task) => (task.id === 'T2' ? { ...task, kind, files: ['test/skills.test.ts'] } : task)),
         progress: {
           ...spec.progress!,
-          pending_commits: [{ task: 'T2', subject: 'pin the skills list output', files: ['test/skills.test.ts'] }],
+          pending_commits: [
+            {
+              task: 'T2',
+              subject: 'pin the skills list output',
+              files: ['test/skills.test.ts'],
+              manifest: changeManifest(root, spec.dir),
+            },
+          ],
         },
       };
     };
-    expect(commitPending(input()).error).toBe('T2: kind is feat but every changed file is a test: use test');
-    writeFileSync(tasksFile, readFileSync(tasksFile, 'utf8').replace('kind: feat', 'kind: test'));
-    expect(commitPending(input()).error).toBeUndefined();
+    expect(commitPending(input('feat')).error).toBe('T2: kind is feat but every changed file is a test: use test');
+    expect(commitPending(input('test')).error).toBeUndefined();
     expect(git(root, 'log', '-1', '--format=%s')).toBe('✅ test(test): pin the skills list output');
   });
 

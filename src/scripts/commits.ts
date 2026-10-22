@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
@@ -11,6 +12,40 @@ const git = (cwd: string, args: string[]) =>
 
 const FIELD = '\x1f';
 const RECORD = '\x1e';
+
+export interface ChangeManifestEntry {
+  path: string;
+  status: string;
+  sha256: string;
+}
+
+/** Hashes every changed path and records its porcelain status; deleted files use a stable sentinel hash. */
+export function changeManifest(repo: string, exclude?: string, omit: string[] = []): ChangeManifestEntry[] {
+  const status = git(repo, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
+  const skip = exclude ? relative(repo, exclude).replace(/\\/g, '/') : '';
+  const omitted = new Set(omit);
+  const entries = status.split('\0');
+  const out: ChangeManifestEntry[] = [];
+  for (let i = 0; i < entries.length; i++) {
+    const record = entries[i]!;
+    if (!record) continue;
+    const state = record.slice(0, 2);
+    const path = record.slice(3);
+    if (state[0] === 'R' || state[0] === 'C') i++;
+    if (omitted.has(path) || (skip && (path === skip || path.startsWith(`${skip}/`)))) continue;
+    const full = join(repo, path);
+    const sha256 = existsSync(full)
+      ? createHash('sha256').update(readFileSync(full)).digest('hex')
+      : createHash('sha256').update('mandao:deleted').digest('hex');
+    out.push({ path, status: state, sha256 });
+  }
+  return out.sort((a, b) => a.path.localeCompare(b.path));
+}
+
+/** A stable representation included in the exact material presented to the Reviewer. */
+export function renderChangeManifest(manifest: ChangeManifestEntry[]): string {
+  return JSON.stringify(manifest, null, 2);
+}
 
 /**
  * Commits on the current branch that carry `Refs: <spec id>`, keyed by their `Mandao-Task` trailer. Trailers
@@ -112,6 +147,34 @@ function overlap(entries: Progress['pending_commits']): string | undefined {
   return undefined;
 }
 
+/** Only script-owned spec records may ride with a task commit; human spec edits need review. */
+function scriptLedgerPath(path: string): boolean {
+  const logDirs = ['reviews/', 'mutations/', 'gates/', 'premises/'];
+  const logFiles = [
+    'state.yml',
+    'execution.md',
+    'progress.yml',
+    'reviews.md',
+    'gates.md',
+    'premises.md',
+    'costs.yml',
+    'approvals.yml',
+    'session-cuts.md',
+    'full-runs.md',
+    'discrepancies.md',
+    '.integrity.json',
+  ];
+  return (
+    ['execution.md', 'progress.yml', 'costs.yml', 'full-runs.md', 'session-cuts.md', 'discrepancies.md', '.integrity.json'].includes(
+      path,
+    ) ||
+    ['state.yml', 'approvals.yml', '.integrity.json'].includes(path) ||
+    (path.startsWith('_log/') &&
+      (logFiles.includes(path.slice('_log/'.length)) || logDirs.some((prefix) => path.startsWith(`_log/${prefix}`)))) ||
+    logDirs.some((prefix) => path.startsWith(prefix))
+  );
+}
+
 /**
  * Commits every pending task, one commit each with its trailers, in order. The entry leaves progress.yml
  * in the same commit, along with the spec folder's bookkeeping; a failed commit puts the entry back.
@@ -120,12 +183,16 @@ function overlap(entries: Progress['pending_commits']): string | undefined {
 export function commitPending(input: PendingInput): CommitRun {
   const queue = [...input.progress.pending_commits];
   const run: CommitRun = { committed: [], pending: queue.map((e) => e.task) };
+  if (!queue.length) return run;
   const clash = overlap(queue);
   if (clash) return { ...run, error: clash };
   const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
   if (input.protectedBranches?.includes(branch)) {
     return { ...run, error: `${branch} is a protected branch: Mandao never commits there. Commit from the spec's branch and worktree` };
   }
+  const manifest = validatePendingManifest(input, queue);
+  if (manifest.error) return { ...run, error: manifest.error };
+  const specChanges = manifest.specChanges;
   let progress = input.progress;
   for (const entry of queue) {
     const task = input.tasks.find((t) => t.id === entry.task);
@@ -135,7 +202,7 @@ export function commitPending(input: PendingInput): CommitRun {
     const next = { ...progress, pending_commits: progress.pending_commits.filter((e) => e !== entry) };
     writeProgress(input.specDir, next);
     try {
-      git(input.repo, ['add', '--', ...entry.files, relative(input.repo, input.specDir) || '.']);
+      git(input.repo, ['add', '--', ...entry.files, ...specChanges]);
       git(input.repo, ['commit', '-q', '-m', [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n')]);
     } catch (e) {
       writeProgress(input.specDir, progress);
@@ -147,6 +214,44 @@ export function commitPending(input: PendingInput): CommitRun {
     run.pending = run.pending.filter((t) => t !== entry.task);
   }
   return run;
+}
+
+function validatePendingManifest(input: PendingInput, queue: Progress['pending_commits']): { error?: string; specChanges: string[] } {
+  if (queue.some((entry) => !entry.manifest?.length))
+    return {
+      error: 'a pending task has no Reviewer-approved change manifest; review the exact changes again before committing',
+      specChanges: [],
+    };
+  for (const entry of queue) {
+    const paths = [...(entry.manifest ?? [])].map((item) => item.path).sort();
+    if (JSON.stringify([...entry.files].sort()) !== JSON.stringify(paths))
+      return { error: `${entry.task} pending paths differ from its approved manifest`, specChanges: [] };
+  }
+  const approved = queue.flatMap((entry) => entry.manifest ?? []).sort((a, b) => a.path.localeCompare(b.path));
+  const approvedPaths = new Set<string>();
+  for (const item of approved) {
+    if (approvedPaths.has(item.path)) return { error: `${item.path} appears in more than one approved manifest`, specChanges: [] };
+    approvedPaths.add(item.path);
+  }
+  const specPrefix = `${relative(input.repo, input.specDir).replace(/\\/g, '/')}/`;
+  const allCurrent = changeManifest(input.repo);
+  const specChanges = allCurrent.filter((item) => item.path.startsWith(specPrefix));
+  const unapprovedSpec = specChanges.map((item) => item.path.slice(specPrefix.length)).filter((path) => !scriptLedgerPath(path));
+  if (unapprovedSpec.length)
+    return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
+  const current = allCurrent.filter((item) => !item.path.startsWith(specPrefix));
+  if (JSON.stringify(current) !== JSON.stringify(approved)) {
+    const expected = new Map(approved.map((item) => [item.path, item]));
+    const actual = new Map(current.map((item) => [item.path, item]));
+    const changed = [...new Set([...expected.keys(), ...actual.keys()])]
+      .filter((path) => JSON.stringify(expected.get(path)) !== JSON.stringify(actual.get(path)))
+      .sort();
+    return {
+      error: `working tree differs from the Reviewer-approved manifest: ${changed.join(', ') || 'manifest mismatch'}; review again before committing`,
+      specChanges: [],
+    };
+  }
+  return { specChanges: specChanges.map((item) => item.path) };
 }
 
 /** Passed, committed and pending tasks of a spec, resolved from the log, git trailers and progress.yml. */

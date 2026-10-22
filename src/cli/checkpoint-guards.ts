@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Config } from '../schemas/index.js';
-import { repoRoot } from '../scripts/commits.js';
+import { type ChangeManifestEntry, changeManifest, repoRoot } from '../scripts/commits.js';
 import { testsWithoutRed } from '../scripts/red.js';
 import { parseVerdict } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
@@ -33,6 +33,27 @@ function readReview(source: string): string {
   return readFileSync(source, 'utf8');
 }
 
+/** Reads the manifest from the exact review pack when one was generated for this attempt. */
+function manifestFromPack(spec: SpecFolder, task: string, attempt: number): ChangeManifestEntry[] | undefined {
+  const name = `${task}-${attempt}-pack.md`;
+  const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);
+  if (!existsSync(file)) return undefined;
+  const text = readFileSync(file, 'utf8');
+  const block =
+    /^## Mandao change manifest\s+Exact changed paths, working-tree statuses, and SHA-256 content hashes reviewed below:\s+```json\s+([\s\S]*?)\s+```/m.exec(
+      text,
+    );
+  if (!block) throw new Error(`${file} has no valid Mandao change manifest; regenerate the review pack`);
+  try {
+    const parsed = JSON.parse(block[1]!) as ChangeManifestEntry[];
+    if (!Array.isArray(parsed) || parsed.some((item) => !item.path || !item.status || !item.sha256))
+      throw new Error('invalid manifest entries');
+    return parsed;
+  } catch (error) {
+    throw new Error(`${file} has an invalid Mandao change manifest: ${(error as Error).message}`);
+  }
+}
+
 /**
  * A Reviewer's verdict is recorded with its whole answer (`--review`), kept in `_log/reviews/` (version 2:
  * one `## Tn — attempt k` section of `_log/reviews.md`). The script
@@ -42,9 +63,9 @@ function readReview(source: string): string {
 export function checkReview(
   spec: SpecFolder,
   o: { task?: string; verdict?: string; reviewer?: string; review?: string },
-): string | undefined {
+): { note?: string; manifest?: ChangeManifestEntry[] } {
   const reviewed = o.verdict === 'PASS' || (o.verdict === 'FAIL' && o.reviewer);
-  if (!reviewed || !o.task) return undefined;
+  if (!reviewed || !o.task) return {};
   if (!o.review) throw new Error(`--verdict ${o.verdict} needs --review <file|-> with the Reviewer's whole answer`);
   const text = readReview(o.review);
   const said = parseVerdict(text);
@@ -57,7 +78,28 @@ export function checkReview(
   const attempt = taskAttempt(spec.execution, o.task);
   if (specLogInCache(spec.dir)) writeLogSection(spec.dir, 'reviews.md', `${o.task} — attempt ${attempt}`, text);
   else writeText(join(logPath(spec.dir, 'reviews'), `${o.task}-${attempt}-review.md`), text);
-  return undefined;
+  if (o.verdict !== 'PASS') return {};
+  return { manifest: approvedReviewManifest(spec, o.task, attempt) };
+}
+
+function approvedReviewManifest(spec: SpecFolder, task: string, attempt: number): ChangeManifestEntry[] {
+  const manifest = manifestFromPack(spec, task, attempt);
+  if (!manifest)
+    throw new Error(
+      `${task}: no matching review pack manifest; run \`mandao run review-pack ${spec.name} ${task}\` and have the Reviewer use it`,
+    );
+  const current = changeManifest(repoRoot(spec.dir), spec.dir);
+  if (JSON.stringify(current) !== JSON.stringify(manifest)) {
+    const expected = new Map(manifest.map((item) => [item.path, item]));
+    const actual = new Map(current.map((item) => [item.path, item]));
+    const changed = [...new Set([...expected.keys(), ...actual.keys()])]
+      .filter((path) => JSON.stringify(expected.get(path)) !== JSON.stringify(actual.get(path)))
+      .sort();
+    throw new Error(
+      `working tree changed after the review pack was generated (${changed.join(', ')}); regenerate the pack and review again`,
+    );
+  }
+  return manifest;
 }
 
 /**

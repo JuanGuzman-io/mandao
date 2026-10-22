@@ -33,6 +33,7 @@ describe('verifyPlan', () => {
       deferred_to_ci: [{ task: 'T1', tests: ['e2e'], reason: 'low memory' }],
       red_tests: [],
       pending_commits: [],
+      approved_manifests: [],
     };
     const plan = verifyPlan({ ...base(), progress });
     expect(plan.missingRed).toEqual(['T1', 'T2']);

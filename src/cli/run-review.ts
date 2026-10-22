@@ -3,8 +3,8 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import type { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import { appendExecutionRow } from '../scripts/checkpoint.js';
-import { repoRoot } from '../scripts/commits.js';
+import { appendExecutionRow, writeProgress } from '../scripts/checkpoint.js';
+import { changeManifest, renderChangeManifest, repoRoot } from '../scripts/commits.js';
 import { type Identity, identityCell } from '../scripts/identity.js';
 import { isReviewProcess, REVIEW_PROCESSES, reviewDiff, reviewerInstructions, reviewPrompt, runReview } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
@@ -67,21 +67,17 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
   const reviewer = resolveWorkspaceModels(ctx.root(), config, readRecommendations())[opts.via]?.reviewer;
   if (!reviewer) throw new Error(`No reviewer model for ${opts.via}: run \`mandao models\``);
   for (const f of [opts.gates, opts.brief]) if (!existsSync(f)) throw new Error(`${f} does not exist`);
+  const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
   const prompt = reviewPrompt(
     reviewerInstructions(ctx.root(), opts.via),
     JSON.parse(readFileSync(opts.brief, 'utf8')),
-    reviewDiff(repoRoot(spec.dir), spec.dir),
+    `Mandao change manifest (exact paths, statuses, and content hashes under review):\n${renderChangeManifest(manifest)}\n\n${reviewDiff(repoRoot(spec.dir), spec.dir)}`,
     readFileSync(opts.gates, 'utf8'),
   );
   const r = runReview(opts.via, ctx.root(), reviewer, prompt);
   const file = keepReview(spec, task, opts.via, r.output);
   const rel = relative(ctx.root(), file);
-  // A PASS with an open high-severity security finding is recorded as a FAIL (MDO-0008).
-  const structured = parseReviewFindings(r.output).success;
-  const blockers = r.verdict === 'PASS' && structured ? securityBlockers(r.output) : [];
-  const issue = !structured ? 'missing or invalid Findings (JSON) payload' : blockers[0];
-  const verdict = r.verdict ? (issue ? 'FAIL' : r.verdict) : undefined;
-  if (verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, r.identity, verdict, rel, issue));
+  const { verdict, structured, blockers } = recordReviewVerdict(spec, task, r.verdict, r.output, r.identity, rel, manifest);
   return {
     verdict: verdict ?? null,
     ...(blockers.length ? { securityBlockers: blockers } : {}),
@@ -91,6 +87,34 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
     exitCode: r.exitCode,
     recorded: Boolean(verdict),
   };
+}
+
+function recordReviewVerdict(
+  spec: SpecFolder,
+  task: string,
+  proposed: ReturnType<typeof runReview>['verdict'],
+  output: string,
+  identity: Identity,
+  reviewPath: string,
+  manifest: ReturnType<typeof changeManifest>,
+) {
+  const structured = parseReviewFindings(output).success;
+  const blockers = proposed === 'PASS' && structured ? securityBlockers(output) : [];
+  const issue = !structured ? 'missing or invalid Findings (JSON) payload' : blockers[0];
+  const verdict = proposed ? (issue ? 'FAIL' : proposed) : undefined;
+  if (verdict === 'PASS' && !spec.progress) throw new Error(`${spec.name} has no progress record to persist the approved change manifest`);
+  if (verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, identity, verdict, reviewPath, issue));
+  if (verdict === 'PASS' && spec.progress) {
+    const attempt = taskAttempt(spec.execution, task);
+    writeProgress(spec.dir, {
+      ...spec.progress,
+      approved_manifests: [
+        ...spec.progress.approved_manifests.filter((item) => item.task !== task || item.attempt !== attempt),
+        { task, attempt, files: manifest },
+      ],
+    });
+  }
+  return { verdict, structured, blockers, issue };
 }
 
 /** `mandao run review --via <harness>`: a review in another harness, as a read-only process (ADR 0021). */
