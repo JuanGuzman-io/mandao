@@ -906,6 +906,18 @@ measurement limitation. Diagram drift compares module paths and contract IDs, ne
 and link or transferred to the backlog with an owner. Delivery target and PR URL must land in the same
 PR before merge; subsequent release state is derived read-only from git, with no post-merge record commit.
 
+**Version notes (ADR 0054).** `mandao run version-notes <version> [--write]` builds a version's notes with
+no model: the "For the PO" text (v2) or legacy `release-notes.md` (v1) of every closed spec referenced by the
+Refs trailers (`commits.trailers.refs`, default `Refs`) of the commits since the previous version tag, all of it read
+at the range end with `git show` (never the working tree), copied verbatim
+and grouped by type, with headings from a per-language template (core's copy when sync has not installed
+one). `--write` produces `<paths.releases>/v<version>.md` (default `docs/releases`); it never commits, tags
+or publishes. **Proposed, for the maintainer:** three records share the work without repeating each other:
+the changesets `CHANGELOG.md` (npm package versions, technical), `docs/CHANGELOG.md` (index of closed specs,
+one line each, no prose) and the version notes (PO notes for the closed specs referenced by the version's
+commits, never hand-edited). The notes would link to the index instead of repeating it, and the version's
+changeset entry would link to its notes.
+
 ### 18.2 Publication
 
 - Target comes from `sources.yml`: tracker MCP publication is a comment or linked document on the

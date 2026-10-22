@@ -37,12 +37,14 @@ scope, product behavior, security or irreversible actions.
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | complete; PR #14 merged (`774ccfd`) |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | complete; PR #15 merged (`7cb5a68`) |
-| [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | implementation in PR #16; no new spec |
+| [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | complete; PR #16 merged (`fcbc813`) |
 | [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
 | [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
-| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | agreed, pending phase plan approval |
-| [11 — User commit conventions](#phase-11--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
+| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | implementation in PR #17 |
+| [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | agreed; pending phase plan approval |
+| [12 — User commit conventions](#phase-12--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
+| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
 ## Phase 0 — Documentation and backlog
@@ -310,6 +312,31 @@ Several subagents run tasks at the same time.
 6. **Measurement:** Kaizen compares total time and cost with and without parallelism. The goal is
    less time, not less cost; a cost increase is reported.
 
+## Phase 13 — UI mocks before implementation
+
+**Agreed (maintainer, 2026-10-22), pending phase plan approval.** Today no command proposes anything
+visual: `story.md` only links existing designs under `## UX references`, and a spec that touches a
+front end goes from requirements to tasks with nothing the PO can see.
+
+1. **Only on acceptance.** `story` or `specify` suggests a mock when the implementation touches a
+   front-end or mobile project and the story has no UX references. If the user declines, the flow goes
+   on without a mock and loads nothing extra. The design skills load only when the user accepts: for
+   the mock, and later for implementing those tasks. Candidates, to vet before they enter
+   `core/catalog/skills.yml` (license, pinned version, contents, harnesses; until then `UNVERIFIED` and
+   `vetted: false`): [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills) and
+   [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill).
+2. **Claude Design.** The phase plan verifies in the official documentation how it integrates with
+   Claude Code: whether a session can invoke it, or only open it separately and bring the result back as
+   a link or export. Nothing assumes it can be called from the session. Other harnesses produce a static
+   HTML mock.
+3. **Start from what exists.** With a connected Figma, or a design system or tokens in `ux.md`, the mock
+   starts from them; it never invents a new style on top of an existing product.
+4. **The mock goes into the brief.** Once approved with the design, the mock enters the Implementer
+   brief of the front-end or mobile tasks as a visual reference, and the Reviewer of those tasks checks
+   against it.
+5. **Location.** A `mockups/` folder inside the spec, conditional on content (only when there was a
+   mock) and added to the layout manifest.
+
 ## Migrate MDO-0008 to MDO-0010 to layout v2
 
 Taken out of MDO-0011 before implement (MDO-0011 C-5). It runs once layout v2 has been proven on a
@@ -388,7 +415,28 @@ Acceptance criteria: a command generates a version's release notes by collecting
 section of every spec merged since the previous tag, using `language.business`. Keep per-spec close
 summaries and changelog lines as the sources; do not restore the v1 per-spec release artifact layout.
 
-## Phase 11 — User commit conventions
+Approved plan (maintainer, 2026-10-22): a deterministic script, no model and no `/mandao-release`
+command. `mandao run version-notes <version> [--from <tag>] [--to <ref>] [--write] [--force]` prints the
+notes; `--write` writes `docs/releases/v<version>.md` (semver only, so it never looks like a spec ID).
+When that file exists, `--write` warns and shows the diff, and overwrites only with `--force`. Headings
+come from a template per language (at least `en` and `es`); each spec's "For the PO" is copied verbatim,
+grouped by type. It never commits, tags or publishes; the maintainer reviews and commits. ADR 0054
+proposes how the changesets CHANGELOG, `docs/CHANGELOG.md` and the version notes divide the record.
+
+## Phase 11 — Beta preparation
+
+**Agreed, pending phase plan approval.**
+
+1. README and docs match what phases 0–10 implemented: Archify required (no recommended fallback),
+   delivery with confirmed push and PR, `/clear` instead of a new session, deliveries inside a spec,
+   research in specify, the real status of each command and harness, and a CI badge.
+2. Text for the repository's About: a short description and topics, for the maintainer to set.
+3. A trial on a project that is not Mandao: a small front and back example repo in a temporary
+   folder, through `init` → `constitution` → a real lite spec → delivery; report what fails.
+4. Publication readiness: version `0.1.0-beta.0`, CHANGELOG, `npm pack --dry-run` with the file list for
+   review, and the tarball smoke test across the operating-system matrix. The maintainer publishes.
+
+## Phase 12 — User commit conventions
 
 Mandao adapts to the commit policy already used by the user's repository instead of imposing its own.
 
@@ -396,8 +444,9 @@ Mandao adapts to the commit policy already used by the user's repository instead
   configuration when present, plus recent commit subjects (for example, Conventional Commits with or
   without emoji, or a tracker ID prefix). Existing commitlint configuration takes precedence over
   inferred history and is respected rather than replaced.
-- **Emoji are optional:** `commits.emoji` accepts `true | false`. When no emoji convention is
-  detected, new projects default to `false`; existing projects that use emoji retain that choice.
+- **Emoji are optional, on by default:** `commits.emoji` accepts `true | false` and defaults to `true`
+  (maintainer, 2026-10-22). A detected convention wins: a repository whose commitlint or recent history
+  uses no emoji gets `false`; one that uses emoji keeps `true`.
 - **Hooks are user-owned:** Mandao never installs or modifies commit hooks without explicit
   confirmation. If an existing commitlint is present, generated commit messages and `commit-msg`
   follow its rules; Mandao must not silently weaken, replace or bypass it.
