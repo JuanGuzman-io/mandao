@@ -37,7 +37,7 @@ scope, product behavior, security or irreversible actions.
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | complete; PR #14 merged (`774ccfd`) |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | complete; PR #15 merged (`7cb5a68`) |
-| [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | plan approved; in progress on `perf/phase-9a`; no new spec |
+| [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | implementation in PR #16; no new spec |
 | [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
 | [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
