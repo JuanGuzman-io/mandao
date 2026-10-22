@@ -44,6 +44,7 @@ import {
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { registerReleaseStatus } from './release-status.js';
 
 const readIf = (f: string) => (existsSync(f) ? readFileSync(f, 'utf8') : undefined);
 const summaryOf = (spec: SpecFolder) => parseCloseSummary(readIf(join(spec.dir, 'close-summary.md')), spec.name);
@@ -304,19 +305,7 @@ function registerSummary(run: Command, ctx: CliContext) {
     });
 }
 
-function registerReleaseStatus(run: Command, ctx: CliContext) {
-  run
-    .command('release-status <spec>')
-    .description('Each AC as met, partial or pending, from tasks, commits by trailer and verify-report.md')
-    .action((ref: string) => {
-      const config = readConfig(ctx.root());
-      const spec = readSpec(findSpec(ctx.root(), config, ref));
-      if (!spec.story) throw new Error(`${spec.name} needs story.md`);
-      const committed = commitState(spec, config.commits.trailers).committed;
-      const verify = verifyResults(readIf(join(spec.dir, 'verify-report.md')));
-      json({ criteria: acStatus(spec.story, spec.tasks, spec.execution, committed, verify), language: config.language });
-    });
-
+function registerImpacts(run: Command, ctx: CliContext) {
   run
     .command('impacts <spec>')
     .description('Constitution and product changes design.md proposed, for close to apply with approval')
@@ -333,6 +322,7 @@ export function registerClose(run: Command, ctx: CliContext) {
   registerKaizen(run, ctx);
   registerSummary(run, ctx);
   registerReleaseStatus(run, ctx);
+  registerImpacts(run, ctx);
   registerPublish(run, ctx);
   registerPrPlan(run, ctx);
 }

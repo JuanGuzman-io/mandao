@@ -21,6 +21,7 @@ describe('config', () => {
     });
     expect(cfg.spec.branch).toBe('{prefix}{id}-{slug}');
     expect(cfg.branching).toEqual({ model: 'feature-branch' });
+    expect(cfg.delivery).toEqual({ pre_push: 'impacted' });
     expect(cfg.commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);
     expect(cfg.commits.max_subject_length).toBe(72);
   });

@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { packageInfo } from '../util/package-root.js';
 import { registerApprove } from './approve.js';
 import type { CliContext } from './context.js';
+import { registerDeliver } from './deliver.js';
 import { registerExtensions } from './extensions.js';
 import { registerHook } from './hook.js';
 import { registerModels } from './models-command.js';
@@ -28,6 +29,7 @@ export function buildProgram(cwd: () => string = () => process.cwd()): Command {
   registerApprove(program, ctx);
   registerStart(program, ctx);
   registerWorktree(program, ctx);
+  registerDeliver(program, ctx);
   registerHook(program, ctx);
   return program;
 }

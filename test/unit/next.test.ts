@@ -101,7 +101,7 @@ describe('nextStep: later stages (S-1.5)', () => {
     expect(pending.recommended.command).toContain('mandao run commit');
     expect(pending.recommended.command).toContain('MDO-0001');
 
-    expect(nextStep(done, {}).recommended.command).toBe('/mandao-verify');
+    expect(nextStep(done, {})).toMatchObject({ recommended: { command: '/mandao-verify' }, autoContinue: true });
 
     const verified = spec({ depth: 'standard', story: 'verified', tasks: 'done' }).spec;
     expect(nextStep(verified, {}).recommended.command).toBe('/mandao-close');

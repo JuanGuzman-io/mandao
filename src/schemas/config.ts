@@ -165,6 +165,8 @@ export const configSchema = z
     kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
     /** What `close` does with a spec's worktree after merge (ADR 0037). */
     worktrees: z.object({ cleanup: z.enum(['ask', 'auto-after-merge', 'never']).default('ask') }).prefault({}),
+    /** Gates before push: local impacted checks by default; full suite only by explicit project choice. */
+    delivery: z.object({ pre_push: z.enum(['impacted', 'full', 'none']).default('impacted') }).prefault({}),
     /** Cost cap per spec in USD (ADR 0036): a warning at 80%, a confirmation to go on at 100%. */
     budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** Session cuts (ADR 0038): inside implement the Leader stops to suggest one only above this saving (USD). */
