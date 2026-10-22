@@ -1,4 +1,5 @@
 import { isTestFile } from '../scripts/impact.js';
+import { splitDeliveries } from './deliveries.js';
 import type { ExecutionRow } from './execution.js';
 import type { DesignFinding } from './principles.js';
 import type { Progress } from './progress.js';
@@ -25,6 +26,8 @@ export interface VerifyPlan {
   /** What keeps the spec from `verified`. Empty means verify may conclude. */
   blockers: string[];
   securityScans: { project: string; secrets: string; sast: string; pendingCi: boolean }[];
+  /** Present on a partial plan (`--delivery n`): what it covers. `clear` is true when only the partial-plan blocker is left. */
+  scope?: { delivery: number; ac: string[]; tasks: string[]; clear: boolean };
 }
 
 interface ProjectRef {
@@ -63,6 +66,44 @@ function suites(projects: ProjectRef[], tasks: Task[], changed: string[], story:
   return out;
 }
 
+/** Tasks with declared tests and no RED row (or no MUTANT row for a characterization task). */
+function tasksMissingRed(tasks: Task[], execution: ExecutionRow[]): string[] {
+  return tasks
+    .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none')
+    .filter((t) => {
+      const own = execution.filter((r) => r.task === t.id);
+      return (
+        !own.some((r) => r.verdict === (t.characterization ? 'MUTANT' : 'RED')) &&
+        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'MUTANT')) &&
+        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'TEST_REVIEWED'))
+      );
+    })
+    .map((t) => t.id);
+}
+
+/**
+ * The plan's scope (MDO-0013). With a delivery n: its tasks feed the suites and the not-done checks, but only what
+ * belongs to LATER deliveries is dropped from findings and deferred runs; delivery n and the earlier ones stay.
+ */
+function scopeTo(all: Task[], delivery: number | undefined) {
+  const none = { tasks: all, scope: undefined, later: (_ref: string) => false, laterAc: [] as string[] };
+  if (delivery === undefined) return none;
+  if (!all.some((t) => t.delivery !== undefined))
+    throw new Error('a delivery-scoped plan needs a spec with deliveries: no task declares one');
+  const deliveries = splitDeliveries(all);
+  const own = deliveries.find((d) => d.number === delivery);
+  if (!own) throw new Error(`delivery ${delivery} does not exist: the spec has ${deliveries.map((d) => d.number).join(', ')}`);
+  const after = deliveries.filter((d) => d.number > own.number);
+  const laterAc = after.flatMap((d) => d.ac);
+  const laterTasks = new Set(after.flatMap((d) => d.tasks));
+  return {
+    tasks: all.filter((t) => own.tasks.includes(t.id)),
+    scope: { delivery: own.number, ac: own.ac, tasks: own.tasks },
+    later: (ref: string) => laterTasks.has(ref) || laterAc.includes(ref.split('/')[0]!),
+    laterAc,
+  };
+}
+
 /**
  * What verify must run and what blocks `verified` (design §16): every task done, every structural trace
  * finding that matters resolved, every passed task committed, deferred runs confirmed by CI.
@@ -80,21 +121,15 @@ export function verifyPlan(input: {
   designFindings?: DesignFinding[];
   securityCoverage?: ProjectSecurityCoverage[];
   securityGapsApproved?: boolean;
+  /** Scope the plan to one delivery (MDO-0013): a partial check that can never verify the spec. */
+  delivery?: number;
 }): VerifyPlan {
-  const { tasks, execution } = input;
-  const findings = trace(input.story, input.requirements, tasks, input.commits, input.designFindings).findings;
-  const missingRed = tasks
-    .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none')
-    .filter((t) => {
-      const own = execution.filter((r) => r.task === t.id);
-      return (
-        !own.some((r) => r.verdict === (t.characterization ? 'MUTANT' : 'RED')) &&
-        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'MUTANT')) &&
-        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'TEST_REVIEWED'))
-      );
-    })
-    .map((t) => t.id);
-  const deferred = input.progress?.deferred_to_ci ?? [];
+  const { execution } = input;
+  const all = input.tasks;
+  const { tasks, scope, later, laterAc } = scopeTo(all, input.delivery);
+  const findings = trace(input.story, input.requirements, all, input.commits, input.designFindings).findings.filter((f) => !later(f.ref));
+  const missingRed = tasksMissingRed(tasks, execution);
+  const deferred = (input.progress?.deferred_to_ci ?? []).filter((d) => !later(d.task));
   const securityTasks = tasks.filter((task) => task.risk_tags.includes('security'));
   const coverageRows = [...(input.securityCoverage ?? [])];
   for (const project of new Set(securityTasks.map((task) => task.project))) {
@@ -128,7 +163,7 @@ export function verifyPlan(input: {
       pendingCi: pendingCi && !input.securityGapsApproved && !input.ciConfirmed,
     };
   });
-  const blockers = [
+  const checks = [
     ...tasks.filter((t) => !t.done).map((t) => `${t.id} is not done`),
     ...findings.filter((f) => BLOCKING.has(f.type)).map((f) => `${f.type} ${f.ref}: ${f.message}`),
     ...(deferred.length && !input.ciConfirmed
@@ -141,5 +176,19 @@ export function verifyPlan(input: {
       ? findings.filter((f) => f.type === 'SECURITY_CI_PENDING').map((f) => `SECURITY_CI_PENDING ${f.ref}: ${f.message}`)
       : []),
   ];
-  return { suites: suites(input.projects, tasks, input.changed, input.story), missingRed, deferred, findings, blockers, securityScans };
+  const partial = scope
+    ? [
+        `partial plan: delivery ${scope.delivery} only; a partial plan cannot verify the spec (AC of later deliveries: ${laterAc.join(', ') || 'none'})`,
+      ]
+    : [];
+  const blockers = [...partial, ...checks];
+  return {
+    suites: suites(input.projects, tasks, input.changed, input.story),
+    missingRed,
+    deferred,
+    findings,
+    blockers,
+    securityScans,
+    ...(scope ? { scope: { ...scope, clear: checks.length === 0 } } : {}),
+  };
 }

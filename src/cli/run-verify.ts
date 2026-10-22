@@ -35,7 +35,11 @@ export function registerVerify(run: Command, ctx: CliContext) {
     .command('verify-plan <spec>')
     .description('What verify runs (suites per project, e2e flows by AC) and what blocks verified')
     .option('--ci-confirmed', 'CI passed every DEFERRED_TO_CI run')
-    .action((ref: string, opts: { ciConfirmed?: boolean }) => {
+    .option('--delivery <n>', 'Plan only this delivery: its AC and tasks. A partial check that never verifies the spec')
+    .action((ref: string, opts: { ciConfirmed?: boolean; delivery?: string }) => {
+      const delivery = opts.delivery === undefined ? undefined : Number(opts.delivery);
+      if (delivery !== undefined && !(Number.isInteger(delivery) && delivery > 0))
+        throw new Error(`--delivery needs a positive integer, got "${opts.delivery}"`);
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       if (!spec.story || !spec.requirements) throw new Error(`${spec.name} needs story.md and requirements.md`);
@@ -79,6 +83,7 @@ export function registerVerify(run: Command, ctx: CliContext) {
           })) as Parameters<typeof verifyPlan>[0]['securityCoverage'],
           securityGapsApproved,
           ciConfirmed: Boolean(opts.ciConfirmed),
+          ...(delivery !== undefined ? { delivery } : {}),
         }),
         issues: spec.issues,
         // Untagged security mentions from the reviews: not blocking, listed in the report (MDO-0008).
