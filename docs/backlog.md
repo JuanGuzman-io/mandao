@@ -44,6 +44,7 @@ scope, product behavior, security or irreversible actions.
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | plan approved; in progress on `perf/phase-10` |
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | agreed; pending phase plan approval |
 | [12 — User commit conventions](#phase-12--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
+| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
 ## Phase 0 — Documentation and backlog
@@ -311,6 +312,31 @@ Several subagents run tasks at the same time.
 6. **Measurement:** Kaizen compares total time and cost with and without parallelism. The goal is
    less time, not less cost; a cost increase is reported.
 
+## Phase 13 — UI mocks before implementation
+
+**Agreed (maintainer, 2026-10-22), pending phase plan approval.** Today no command proposes anything
+visual: `story.md` only links existing designs under `## UX references`, and a spec that touches a
+front end goes from requirements to tasks with nothing the PO can see.
+
+1. **Only on acceptance.** `story` or `specify` suggests a mock when the implementation touches a
+   front-end or mobile project and the story has no UX references. If the user declines, the flow goes
+   on without a mock and loads nothing extra. The design skills load only when the user accepts: for
+   the mock, and later for implementing those tasks. Candidates, to vet before they enter
+   `core/catalog/skills.yml` (license, pinned version, contents, harnesses; until then `UNVERIFIED` and
+   `vetted: false`): [elayadesign/ai-design-skills](https://github.com/elayadesign/ai-design-skills) and
+   [Leonxlnx/taste-skill](https://github.com/Leonxlnx/taste-skill).
+2. **Claude Design.** The phase plan verifies in the official documentation how it integrates with
+   Claude Code: whether a session can invoke it, or only open it separately and bring the result back as
+   a link or export. Nothing assumes it can be called from the session. Other harnesses produce a static
+   HTML mock.
+3. **Start from what exists.** With a connected Figma, or a design system or tokens in `ux.md`, the mock
+   starts from them; it never invents a new style on top of an existing product.
+4. **The mock goes into the brief.** Once approved with the design, the mock enters the Implementer
+   brief of the front-end or mobile tasks as a visual reference, and the Reviewer of those tasks checks
+   against it.
+5. **Location.** A `mockups/` folder inside the spec, conditional on content (only when there was a
+   mock) and added to the layout manifest.
+
 ## Migrate MDO-0008 to MDO-0010 to layout v2
 
 Taken out of MDO-0011 before implement (MDO-0011 C-5). It runs once layout v2 has been proven on a
@@ -418,8 +444,9 @@ Mandao adapts to the commit policy already used by the user's repository instead
   configuration when present, plus recent commit subjects (for example, Conventional Commits with or
   without emoji, or a tracker ID prefix). Existing commitlint configuration takes precedence over
   inferred history and is respected rather than replaced.
-- **Emoji are optional:** `commits.emoji` accepts `true | false`. When no emoji convention is
-  detected, new projects default to `false`; existing projects that use emoji retain that choice.
+- **Emoji are optional, on by default:** `commits.emoji` accepts `true | false` and defaults to `true`
+  (maintainer, 2026-10-22). A detected convention wins: a repository whose commitlint or recent history
+  uses no emoji gets `false`; one that uses emoji keeps `true`.
 - **Hooks are user-owned:** Mandao never installs or modifies commit hooks without explicit
   confirmation. If an existing commitlint is present, generated commit messages and `commit-msg`
   follow its rules; Mandao must not silently weaken, replace or bypass it.
