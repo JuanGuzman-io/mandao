@@ -369,6 +369,7 @@ Utilities: `quick`, `resume`; `research`, `perf` and `audit` are **planned**. Th
 - Tracker resolution: §11.
 - Marks unknowns as `[NEEDS CLARIFICATION]`.
 - **DECIDED (ADR 0022, implemented in 2b) — diagram for approval.** `specify` generates with Archify the diagram of the proposed flow, **derived from `design.md`** (never drawn by hand), its type chosen with the table in §18.3. Mandatory at standard/full depth for a new flow, several projects, a new service/integration, an LLM pipeline, a data change or a state machine; optional at lite. At most 2–3 diagrams per spec (ADR 0034). It is part of the design approval: the PO or lead approves looking at it. With a tracker MCP it is attached as PNG to the story after confirmation. Archify is required unless the user explicitly configures Mermaid (§18.3). When `design.md` changes, the diagram is regenerated.
+- **DECIDED (Phase 3b, ADR 0047) — principles gate:** constitutions declare approved `DP-*` principles; architecture choice precedes framework conventions, which precede generic principles. A design (or lite `spec.md`) declares `writes_data` and has a deterministic one-row-per-principle gate. Data writes, explicit or inferred from `data-model.md` / `data` / `migration` tasks, require ACID details and a task-declared partial-failure test. `layout`, `trace` and `verify` enforce this. Existing constitutions are not rewritten: `doctor` reports missing principles as info and `constitution` proposes them in active mode.
 
 ### 10.4 clarify
 
@@ -712,6 +713,7 @@ Separation of roles: **skills teach** (generic knowledge), **the constitution de
 ### 16.1 Unit tests (risk-based)
 
 Declared per task in `tasks.md`.
+- **Phase 3b (ADR 0047):** v2 layouts deterministically validate principle applicability and data-write declarations; partial-failure tests for writes are declared in task metadata and block verify when missing.
 - **Always tested:** business rules, validations, calculations, authz, state transitions, mappers/parsers with logic, `BUT must NOT` / `AND MUST` edge cases, bug regressions.
 - **Not tested:** DTOs, types, config, DI wiring, generated code, purely visual components, pass-throughs, trivial getters.
 - Each scenario is proven at the **cheapest level that demonstrates it**. No coverage-percentage chasing. Missing mandatory tests are blocking; unnecessary tests are flagged as noise.

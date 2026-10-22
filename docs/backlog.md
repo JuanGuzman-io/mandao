@@ -32,7 +32,7 @@ scope, product behavior, security or irreversible actions.
 | [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
 | [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | agreed, pending phase plan approval |
-| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | in progress; plan approved |
+| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
@@ -136,6 +136,14 @@ SOLID as a reference inside the `software-architect` skill, and does not cover A
    simpler alternative was rejected.
 6. **The Reviewer** checks only the principles the design declared as applying: unjustified
    violations block; design suggestions outside them are advisory.
+
+**Deterministic validation:** `layout` and `trace` fail when a version 2 design (or lite `spec.md`)
+omits `writes_data: yes | no`, the principle-check table, or exactly one complete row per declared
+`DP-*` principle. `writes_data` is effectively `yes` when `data-model.md` exists or any task has the
+`data` or `migration` risk tag; an explicit `no` then conflicts and fails validation. An effective
+`yes` requires an ACID table row and at least one task-declared `partial_failure_tests` entry.
+`doctor` reports missing principles as `info`; `/mandao-constitution` proposes them in active mode,
+but never adds them without approval.
 
 ## Phase 4 — Repetition and autonomy
 
