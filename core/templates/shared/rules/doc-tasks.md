@@ -21,5 +21,7 @@ Applies the principles in `spec-docs.md`.
     `test_levels` (`unit | e2e | eval | none` per scenario), `evidence` (`tdd | mutation | none`),
     `risk_tags`, `partial_failure_tests` (test names for ACID partial-failure coverage), `decisions`
     (linked `D<n>` ids), `depends_on`, `parallel_safe`, `verify`.
+- Use the `security` risk tag when a task changes a security boundary, credential handling, scanning,
+  authorization or a vulnerability remediation.
 - The title is the result, never a file path. Concrete test names are chosen by whoever writes the
   tests; the declared level per scenario is what the Reviewer checks.

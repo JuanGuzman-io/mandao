@@ -19,7 +19,7 @@ Applies the principles in `spec-docs.md`.
 - When writes are declared or inferred, the `Data writes (ACID)` table names grouped writes, the
   stack transaction/tool, compensation across systems and concurrency/isolation. Every multi-write
   operation has a partial-failure test declared in a task.
-- **Risks and risk tags:** `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
+- **Risks and risk tags:** `auth`, `security`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
 - **Constitution / Product / Module Docs Impact:** proposals only; close applies them with approval.
 - **Diagram:** written by `mandao run diagram --stamp` from this design; regenerated when it changes.

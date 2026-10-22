@@ -1,5 +1,19 @@
 export type GitProvider = 'github' | 'other';
 
+/** True when a PR check name or workflow identifies secret scanning or SAST. */
+export function hasSecurityCheck(checks: unknown): boolean {
+  if (!Array.isArray(checks)) return false;
+  return checks.some((check) => {
+    if (!check || typeof check !== 'object') return false;
+    const row = check as { name?: unknown; workflow?: unknown };
+    return [row.name, row.workflow].some(
+      (value) =>
+        typeof value === 'string' &&
+        /secret|gitleaks|trufflehog|detect-secrets|ggshield|semgrep|\bsast\b|codeql|sonar|snyk|security/i.test(value),
+    );
+  });
+}
+
 /** Branch names from `git ls-remote --heads`, excluding the `refs/heads/` transport prefix. */
 export function parseRemoteBranches(output: string): string[] {
   return [

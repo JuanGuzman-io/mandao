@@ -7,7 +7,13 @@ import { parse as parseYaml } from 'yaml';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
 import { branchingFor } from '../scripts/branching.js';
-import { canDeleteMergedBranch, manualPullRequestUrl, parseRemoteBranches, providerForRemote } from '../scripts/delivery.js';
+import {
+  canDeleteMergedBranch,
+  hasSecurityCheck,
+  manualPullRequestUrl,
+  parseRemoteBranches,
+  providerForRemote,
+} from '../scripts/delivery.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { findSpec, mainCheckout, readSpec } from '../scripts/spec.js';
 import { STATE_FILE } from '../scripts/spec-log.js';
@@ -167,6 +173,11 @@ async function mergeWithGithub(
   console.log(`PR: ${prUrl}`);
   if (scope !== 'all') return;
   command(worktree, 'gh', ['pr', 'checks', '--watch', branch]);
+  const checkRows = JSON.parse(command(worktree, 'gh', ['pr', 'checks', branch, '--json', 'name,workflow']));
+  if (!hasSecurityCheck(checkRows))
+    console.log(
+      'Warning: no identifiable secret-scanning or SAST check is reported for this PR; review its security coverage before merge.',
+    );
   command(worktree, 'gh', ['pr', 'merge', branch, '--merge']);
   console.log(`Merged into ${target}.`);
   if (start.lane === 'hotfix') console.log(`Hotfix back-merge reminder: ${branching.hotfix.merge_to.join(', ')}.`);

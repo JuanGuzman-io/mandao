@@ -14,6 +14,7 @@ import { registerCost } from './run-cost.js';
 import { registerLeader } from './run-leader.js';
 import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
+import { registerSecurityScanning } from './run-security-scanning.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 import { registerTelemetry } from './run-telemetry.js';
 
@@ -28,6 +29,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerCost(run, ctx);
   registerArchify(run, ctx);
   registerTelemetry(run, ctx);
+  registerSecurityScanning(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

@@ -19,6 +19,7 @@ import type { SpecFolder } from './spec.js';
 /** Risk tags → review lenses (rules/review.md). */
 export const LENSES: Record<RiskTag, string[]> = {
   auth: ['security'],
+  security: ['security'],
   input: ['security'],
   pii: ['security', 'data'],
   payments: ['security'],

@@ -21,6 +21,7 @@ import { skillFindings } from './doctor-skills.js';
 import { branchingFindings, pendingCommitFindings } from './doctor-specs.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
+import { collectSecurityScanning } from './security-scanning.js';
 import { buildProject } from './sync.js';
 import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
@@ -84,6 +85,38 @@ function workspaceFindings(root: string, config: Config): Finding[] {
     }
   }
   return [...out, ...pendingCommitFindings(root, config), ...branchingFindings(root, config)];
+}
+
+/** Reports verified, absent and unverified security-scan coverage without treating unknown as failure. */
+export function securityScanningFindings(root: string, config: Config): Finding[] {
+  try {
+    return collectSecurityScanning(root, config).flatMap((scan) =>
+      (['secrets', 'sast'] as const).map((kind) => {
+        const detected = scan.detected[kind];
+        const recorded = scan.recorded[kind];
+        const stale = (['local', 'ci', 'provider'] as const).flatMap((place) =>
+          recorded[place].filter((name) => !detected[place].includes(name)).map((name) => `${place}:${name}`),
+        );
+        const evidence = [
+          ...(['local', 'ci', 'provider'] as const).flatMap((place) => detected[place].map((name) => `${place}:${name}`)),
+          ...(['local', 'ci', 'provider'] as const).flatMap((place) => recorded.declared[place].map((name) => `declared ${place}:${name}`)),
+        ];
+        return {
+          level: stale.length ? 'warn' : 'info',
+          message: `project "${scan.project}": ${kind} scanning is ${scan.state[kind]}${evidence.length ? ` (${evidence.join(', ')})` : ''}${detected.unknown.length ? `; unknown: ${detected.unknown.join(', ')}` : ''}${stale.length ? `; recorded evidence not redetected: ${stale.join(', ')}` : ''}`,
+          ...(stale.length ? { fix: 'review the security_scanning record in infrastructure.md with constitution' } : {}),
+        } satisfies Finding;
+      }),
+    );
+  } catch (error) {
+    return [
+      {
+        level: 'error',
+        message: `security scanning record is invalid: ${(error as Error).message}`,
+        fix: 'review security_scanning frontmatter in infrastructure.md',
+      },
+    ];
+  }
 }
 
 function sourcesFindings(root: string): Finding[] {
@@ -160,6 +193,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   findings.push(...sourcesFindings(root));
 
   findings.push(...workspaceFindings(root, config));
+  findings.push(...securityScanningFindings(root, config));
   findings.push(...constitutionPrincipleFindings(root, config));
 
   const lockForTools = readLock(join(root, LOCK_FILE));

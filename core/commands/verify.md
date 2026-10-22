@@ -26,7 +26,7 @@ templates:
   - rules/doc-quickstart.md
   - rules/budget.md
   - rules/telemetry.md
-scripts: [where, next, verify-plan, tests, build, status, trace, commit-spec, event]
+scripts: [where, next, verify-plan, security-scanning, tests, build, status, trace, commit-spec, event]
 ---
 
 # /mandao-verify
@@ -53,6 +53,17 @@ You verify that what was built is what the spec asked for, with evidence. Write 
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
 3. If `blockers` lists open tasks or uncommitted work, stop: verify comes after `/mandao-implement`.
+4. Run `{{script:security-scanning}}` and read each project's `security_scanning` record and
+   `verify-plan` security status. Run configured
+   local `secrets` and `sast` gates. If coverage exists only in CI, report it as pending PR CI and do
+   not claim that it passed. If a task has the `security` risk tag and neither type has verified
+   coverage, stop until the person records `mandao approve <spec> security-gaps --reason <why>`.
+   Offer either a confirmed local-tool installation (with an OS-specific command) or a quick that
+   adds the scan to CI. A declared scanner is labeled declared, not detected; unknown is not none.
+   For each security-tagged task, require an executed PASS in its `_log/gates/` receipt for the
+   applicable local scanner; if absent, run `{{mandao}} run gates <spec> <task>` and include its output
+   in Evidence. A configured or installed scanner without an executed PASS is never a scan PASS.
+   After PR CI reports green, rerun `verify-plan --ci-confirmed` to discharge CI-only scan findings.
 
 ## 2. Run, one Tester per suite
 

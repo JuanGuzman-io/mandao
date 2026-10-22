@@ -34,8 +34,8 @@ scope, product behavior, security or irreversible actions.
 | [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | complete; PR #11 merged (`075cd2a`) |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
-| [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | in progress on `perf/phase-6`; plan approved; no new spec |
-| [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
+| [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
+| [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | in progress on `perf/phase-7`; plan approved; no new spec |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | agreed, pending phase plan approval; no new spec |
 | [9 — Large specs and parallel tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 and MDO-0014 | phases 2–6 | agreed, pending phase plan approval; no new specs |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | agreed, pending phase plan approval |
@@ -339,15 +339,16 @@ Rules the commands state as prose become checks a script enforces.
 
 **Phase 7; depends on phase 6 delivery.**
 
-- **`constitution` detects scanning in the project's CI** (GitHub Actions, GitLab CI and others):
-  secret scanning and SAST. It records the result in `infrastructure.md` as
-  `security_scanning: local | ci | none`, and `doctor` checks it again.
+- **`constitution` detects scanning independently by type and location** (local, CI and provider):
+  secrets and SAST may each have multiple scanners, only one type, or none. `infrastructure.md`
+  records discovered evidence separately from user declarations; unverifiable sources are `unknown`,
+  never `none`. If `gh` is available for GitHub, the read-only API is attempted.
 - **verify follows what exists:**
   - local tools available → they run;
   - no local tools, but the CI scans → "pending: PR CI", and delivery merges only with the CI green;
-  - neither → reported; tasks with a security tag require `mandao approve <spec> security-gaps`,
-    offering to install the tools (the command for the operating system, confirmed) or a quick that
-    adds scanning to the CI.
+  - neither verified locally nor remotely → tasks with a `security` tag require a reasoned
+    `mandao approve <spec> security-gaps --reason <why>`, offering a confirmed local install command
+    for the user's OS or a quick that adds scanning to the CI.
 - **Before merging, delivery reads the PR's real checks** and warns when none is a security check.
 - **A scan that ran nowhere is never reported as PASS.**
 

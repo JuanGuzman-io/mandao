@@ -29,7 +29,7 @@ change to production behavior means it is not characterization → FAIL. Each re
 
 | Tags | Lens |
 |---|---|
-| `auth`, `input`, `pii`, `payments`, `public-api`, `infra` | security |
+| `auth`, `security`, `input`, `pii`, `payments`, `public-api`, `infra` | security |
 | `perf` | performance |
 | `data`, `migration`, `pii` | data |
 | `ui` | accessibility |

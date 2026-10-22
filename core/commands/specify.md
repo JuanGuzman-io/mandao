@@ -152,7 +152,7 @@ From `{{template:spec/design.md}}`:
   `{{script:resources}}` when it builds or tests); otherwise it is `UNVERIFIED`.
 - Decisions first, each with why and the alternatives rejected; changes per project and module, and an
   **exemplar file** per change.
-- Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
+- Risk tags per change: `auth`, `security`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
 - **Principle check:** declare `writes_data: yes | no`; include exactly one line for every `DP-*`
   principle in the applicable constitution, with applicability and how it applies or why not. For

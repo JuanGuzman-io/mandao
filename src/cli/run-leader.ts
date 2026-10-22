@@ -12,11 +12,13 @@ import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { reviewDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
+import { securityGateCommand } from '../scripts/security-gates.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import { measureGate } from '../scripts/telemetry.js';
 import { LOOP_BRAKE_LIMIT, type LoopState, loopState, observeLoop, type Task, timeline } from '../spec/index.js';
+import { onPath } from '../util/which.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
@@ -36,12 +38,13 @@ function gateCommand(
   project: ReturnType<typeof loadSpec>['config']['projects'][number],
   changed: string[],
   workers: number,
+  task: Task,
 ) {
   if (gate === 'test') {
     const impact = impactFor(ctx, project, changed);
     return impact.command ? fillCommand(impact.command, impact.files, workers) : undefined;
   }
-  return project.gates[gate as keyof typeof project.gates];
+  return securityGateCommand(gate, project.gates[gate as keyof typeof project.gates], task.risk_tags.includes('security'), onPath);
 }
 
 const inProject = (cmd: string, path: string) => `${path === '.' ? '' : `cd ${JSON.stringify(path)} && `}${cmd} 2>&1`;
@@ -73,7 +76,7 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
       results.push({ gate, status: 'SKIPPED', reason: 'no dependency change' });
       continue;
     }
-    const command = gateCommand(ctx, gate, project, changed, workers);
+    const command = gateCommand(ctx, gate, project, changed, workers, task);
     if (!command) {
       notConfigured.push(gate);
       continue;

@@ -39,6 +39,7 @@ No approval step of its own.
 - `mandao run where`
 - `mandao run next`
 - `mandao run verify-plan`
+- `mandao run security-scanning`
 - `mandao run tests`
 - `mandao run build`
 - `mandao run status`

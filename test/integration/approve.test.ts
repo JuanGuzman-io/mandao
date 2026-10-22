@@ -146,8 +146,29 @@ describe('mandao approve: no model session', () => {
     expect(status(root, 'story.md')).toBe('draft');
   });
 
+  test('security-gaps approval requires and records its reason without changing spec documents', async () => {
+    const root = repo();
+    await expect(approve(root, 'MDO-0001', 'security-gaps')).rejects.toThrow(/needs --reason/);
+    const result = await approve(
+      root,
+      'MDO-0001',
+      'security-gaps',
+      '--reason',
+      'CI has no security scanners and release scope cannot wait',
+    );
+    expect(result).toMatchObject({
+      approved: true,
+      step: 'security-gaps',
+      note: 'CI has no security scanners and release scope cannot wait',
+      statusChanged: [],
+    });
+    expect(parsed(root).at(-1)).toMatchObject({ step: 'security-gaps', note: 'CI has no security scanners and release scope cannot wait' });
+  });
+
   test('an unknown step is refused', async () => {
-    await expect(approve(repo(), 'MDO-0001', 'deploy')).rejects.toThrow(/step must be one of story, design, spec, tasks, close/);
+    await expect(approve(repo(), 'MDO-0001', 'deploy')).rejects.toThrow(
+      /step must be one of story, design, spec, tasks, close, budget, security-gaps/,
+    );
   });
 });
 
