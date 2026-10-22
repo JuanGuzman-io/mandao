@@ -51,7 +51,7 @@ constitution → story → specify → [clarify] → tasks → implement → ver
 1. **Constitution** — once per project. Maps the code, writes the technical rules and the product context, and picks the right skills for your stack.
 2. **Spec** — a story becomes requirements, a design (with a diagram you approve) and small tasks.
 3. **Implement** — a Leader hands each task to an Implementer; a Reviewer checks it; one commit per approved task. Never a push.
-4. **Close** — after `verify` checks every acceptance criterion, `close` writes release notes and feeds what was learned back into the constitution.
+4. **Close** — after `verify` checks every acceptance criterion, `close` writes the "For the PO" section of the close summary (`mandao run version-notes <version>` assembles them per version) and feeds what was learned back into the constitution.
 
 Every spec works in its own git worktree, so your main checkout stays clean.
 
