@@ -15,6 +15,7 @@ tools:
 # /mandao-implement
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Spec: ${input:spec:Spec folder or id} · task: ${input:task:Optional task id (default - the next eligible task)}
 

@@ -56,6 +56,7 @@ Yes: it stops for your approval.
 - `mandao run commit-spec`
 - `mandao run resources`
 - `mandao run premise`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

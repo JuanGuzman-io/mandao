@@ -19,7 +19,7 @@
 | `mandao run cost <spec>` | Spend per command and role, with its basis (billed or subscription equivalent); see [Cost](#cost) |
 | `mandao run layout <spec>` | Compare the spec folder with the layout of its version and depth ([spec anatomy](spec-anatomy.md)): prints `{ version, depth, stage, missing, unexpected, ok }` and exits 1 when `ok` is false. `run status <spec> closed` refuses a folder that does not match, naming these findings |
 | `mandao run status <spec>` | Without a target status: the spec's status and its `timeline`, the approvals merged by date among the execution rows. Read only: an approval never becomes an `execution.md` row. `run implement-summary` prints the same `timeline` |
-| `mandao run …` | Helper scripts the commands call, with compact JSON on stdout (`MANDAO_JSON=pretty` for people). `mandao run --help` lists them all: planning (`spec-new`, `trace`, `tasks`, `brief`), the Leader loop (`step`, `checkpoint`, `gates`, `review-pack`, `review`, `red`, `mutation`, `commit`, `implement-summary`), verify and close (`verify-plan`, `kaizen`, `impacts`, `publish-plan`, `pr-plan`), and tests under the resource budget (`impact`, `tests`, `build`, `resources`) |
+| `mandao run …` | Helper scripts the commands call, with compact JSON on stdout (`MANDAO_JSON=pretty` for people). `mandao run --help` lists them all: planning (`spec-new`, `trace`, `tasks`, `brief`), the Leader loop (`step`, `checkpoint`, `gates`, `review-pack`, `review`, `red`, `mutation`, `commit`, `implement-summary`), lifecycle measurement (`event`), verify and close (`verify-plan`, `kaizen`, `kaizen-compare`, `impacts`, `publish-plan`, `pr-plan`), and tests under the resource budget (`impact`, `tests`, `build`, `resources`) |
 
 ## Entering the spec worktree
 
@@ -96,6 +96,14 @@ nothing; `--shown` records a `shown` row in `approvals.yml` with the hash of eac
 
 Each command records what its session spent in the spec's `_log/costs.yml`; `mandao run cost <spec>`
 shows the total per command and role.
+
+`mandao run event <spec> <type>` records script-timestamped lifecycle events in
+`_log/execution.md`: command boundaries, classified user questions and answers, delegated-agent spans,
+and gate durations. `mandao run kaizen <spec>` reports complete durations by command and splits active,
+user-wait and agent-wait time. `mandao run kaizen-compare` includes per-spec timings and a corrected
+historical cost view grouped by billing basis and derived from cumulative session snapshots; it leaves `costs.yml` unchanged. Missing
+end events and unanswered questions are excluded rather than estimated. Gate time is a measured subset
+of active time, not an extra duration to add to the command total.
 
 - **How it is measured (Claude Code).**
   - Mandao reads the session's transcript, `~/.claude/projects/<folder>/<session>.jsonl` (or the same

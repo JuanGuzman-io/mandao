@@ -7,6 +7,7 @@ description: "Create or enrich a user story with enough business context: suffic
 # /mandao-story
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Input: the text the user wrote after the skill name
 

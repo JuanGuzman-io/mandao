@@ -28,13 +28,15 @@ templates:
   - close/kaizen.md
   - rules/doc-close.md
   - rules/budget.md
-scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec]
+  - rules/telemetry.md
+scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec, event]
 approval: required
 ---
 
 # /mandao-close
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Spec: {{arg:spec}}
 

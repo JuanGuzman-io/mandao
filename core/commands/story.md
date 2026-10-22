@@ -14,14 +14,15 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
 capabilities: [read, search, edit, shell, mcp]
-templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md]
-scripts: [next, spec-new, trace]
+templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md]
+scripts: [next, spec-new, trace, event]
 approval: required
 ---
 
 # /mandao-story
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Input: {{args}}
 

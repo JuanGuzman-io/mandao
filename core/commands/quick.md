@@ -22,13 +22,15 @@ templates:
   - rules/review.md
   - rules/commits.md
   - rules/budget.md
-scripts: [cost, quick-check, spec-new, quick-log]
+  - rules/telemetry.md
+scripts: [cost, quick-check, spec-new, quick-log, event]
 approval: none
 ---
 
 # /mandao-quick
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Change: {{arg:change}}
 

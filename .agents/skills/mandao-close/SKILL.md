@@ -7,6 +7,7 @@ description: Kaizen, apply approved constitution and product impacts, sync AGENT
 # /mandao-close
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Spec: <spec>
 
