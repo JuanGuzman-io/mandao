@@ -143,6 +143,8 @@ export function cutMinSavings(config: Pick<Config, 'session' | 'budget'>): numbe
 export interface CutEstimateRow {
   at: string;
   task: string;
+  boundaryId?: string;
+  suggested?: boolean;
   /** The "Turns left" the rule assumed at that boundary. */
   turnsLeft: number;
 }
@@ -155,15 +157,15 @@ export function parseCutEstimates(text: string): CutEstimateRow[] {
       .split('|')
       .slice(1, -1)
       .map((c) => c.trim());
-    const [at = '', task = '', , , turns = ''] = cells;
+    const [at = '', task = '', , , turns = '', , , boundaryId = '', suggested = ''] = cells;
     const turnsLeft = Number(turns);
     if (cells.length < 5 || !task || Number.isNaN(Date.parse(at)) || turns === '' || !Number.isFinite(turnsLeft)) return [];
-    return [{ at, task, turnsLeft }];
+    return [{ at, task, turnsLeft, ...(boundaryId ? { boundaryId } : {}), ...(suggested === 'true' ? { suggested: true } : {}) }];
   });
 }
 
 const CUTS_HEADER =
-  '# Session cut estimates (ADR 0038)\n\n| At | Task | Context | Base | Turns left | Savings (USD) | Decision |\n|---|---|---|---|---|---|---|\n';
+  '# Session cut estimates (ADR 0038)\n\n| At | Task | Context | Base | Turns left | Savings (USD) | Decision | Boundary ID | Suggested |\n|---|---|---|---|---|---|---|---|---|\n';
 
 /**
  * Every boundary estimate goes to the `cut_estimates` section of `state.yml` (version 2, C-3) or to
@@ -171,25 +173,56 @@ const CUTS_HEADER =
  */
 export function recordCutEstimate(
   specDir: string,
-  row: { at: string; task: string; session: SessionContext; tasksLeft: number; advice: CutAdvice; decision: string },
-): void {
+  row: {
+    at: string;
+    task: string;
+    session: SessionContext;
+    tasksLeft: number;
+    advice: CutAdvice;
+    decision: string;
+    boundaryId?: string;
+    suggest?: boolean;
+  },
+): boolean {
   const turns = TURNS_PER_TASK * row.tasksLeft + TURNS_AFTER_TASKS;
   const base = row.session.first + RELOAD_TOKENS;
   if (specKeepsState(specDir)) {
-    const estimate = {
-      at: row.at,
-      task: row.task,
-      context: row.session.last,
-      base,
-      turns_left: turns,
-      savings: Math.round(row.advice.savings * 100) / 100,
-      decision: row.decision,
-    };
-    updateState(specDir, (s) => ({ ...s, cut_estimates: [...s.cut_estimates, estimate] }));
-    return;
+    let suggested = false;
+    updateState(specDir, (s) => {
+      const alreadySuggested = row.boundaryId !== undefined && s.cut_estimates.some((e) => e.boundary_id === row.boundaryId && e.suggested);
+      suggested = Boolean(row.suggest && !alreadySuggested);
+      const estimate = {
+        at: row.at,
+        task: row.task,
+        ...(row.boundaryId ? { boundary_id: row.boundaryId } : {}),
+        ...(suggested ? { suggested: true } : {}),
+        context: row.session.last,
+        base,
+        turns_left: turns,
+        savings: Math.round(row.advice.savings * 100) / 100,
+        decision: row.suggest && alreadySuggested ? 'go on: suggestion already shown at boundary' : row.decision,
+      };
+      return { ...s, cut_estimates: [...s.cut_estimates, estimate] };
+    });
+    return suggested;
   }
   const file = logPath(specDir, 'session-cuts.md');
   const before = existsSync(file) ? readFileSync(file, 'utf8') : CUTS_HEADER;
-  const cells = [row.at, row.task, row.session.last, base, turns, row.advice.savings.toFixed(2), row.decision];
+  const previous = parseCutEstimates(before);
+  const alreadySuggested = row.boundaryId !== undefined && previous.some((e) => e.boundaryId === row.boundaryId && e.suggested);
+  const suggested = Boolean(row.suggest && !alreadySuggested);
+  const decision = row.suggest && alreadySuggested ? 'go on: suggestion already shown at boundary' : row.decision;
+  const cells = [
+    row.at,
+    row.task,
+    row.session.last,
+    base,
+    turns,
+    row.advice.savings.toFixed(2),
+    decision,
+    row.boundaryId ?? '',
+    suggested ? 'true' : '',
+  ];
   writeText(file, `${before}| ${cells.join(' | ')} |\n`);
+  return suggested;
 }

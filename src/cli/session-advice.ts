@@ -60,9 +60,18 @@ export function stepCut(config: Config, spec: SpecFolder, id: string, harness: s
   const left = tasksLeft(spec);
   const advice = cutAdvice(s.context, left, s.price, now.getTime());
   const minSavings = cutMinSavings(config);
-  const stop = advice.cut && advice.savings >= minSavings;
-  const decision = stop ? 'stop: suggest a new session' : advice.cut ? `go on: below ${minSavings}` : 'stay';
-  recordCutEstimate(spec.dir, { at: now.toISOString(), task: id, session: s.context, tasksLeft: left, advice, decision });
+  const candidate = advice.cut && advice.savings >= minSavings;
+  const decision = candidate ? 'stop: suggest a new session' : advice.cut ? `go on: below ${minSavings}` : 'stay';
+  const stop = recordCutEstimate(spec.dir, {
+    at: now.toISOString(),
+    task: id,
+    session: s.context,
+    tasksLeft: left,
+    advice,
+    decision,
+    boundaryId: `implement:${id}`,
+    suggest: candidate,
+  });
   return { ...advice, stop, minSavings, ...(stop ? { advice: newSessionAdvice(harness, spec, 'implement') } : {}) };
 }
 
@@ -71,19 +80,22 @@ export function verifyCut(spec: SpecFolder, harness: string, now = new Date()) {
   const s = claudeSession(harness);
   if (!s) return undefined;
   const advice = cutAdvice(s.context, 0, s.price, now.getTime());
-  recordCut(spec, 'verify', s.context, advice, now);
+  const suggested = recordCut(spec, 'verify', s.context, advice, now);
   if (!advice.cut) return advice;
+  if (!suggested) return advice;
   const next = newSessionAdvice(harness, spec, 'verify');
   return { ...advice, command: next.fallback, advice: next };
 }
 
-function recordCut(spec: SpecFolder, task: string, session: SessionContext, advice: CutAdvice, now: Date) {
-  recordCutEstimate(spec.dir, {
+function recordCut(spec: SpecFolder, task: string, session: SessionContext, advice: CutAdvice, now: Date): boolean {
+  return recordCutEstimate(spec.dir, {
     at: now.toISOString(),
     task,
     session,
     tasksLeft: 0,
     advice,
     decision: advice.cut ? 'new session' : 'stay',
+    boundaryId: task === 'verify' ? 'verify' : `implement:${task}`,
+    suggest: advice.cut,
   });
 }
