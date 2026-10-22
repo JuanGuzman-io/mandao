@@ -172,7 +172,7 @@ export const configSchema = z
     budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** Session cuts (ADR 0038): inside implement the Leader stops to suggest one only above this saving (USD). */
     session: z.object({ cut_min_savings: z.number().nonnegative().optional() }).prefault({}),
-    /** Research evidence freshness and per-spec question budget (Phase 8). */
+    /** Research evidence freshness and per-spec dispatch budget (Phase 8). */
     research: researchConfigSchema,
     /** Diagram engine is an explicit project choice; Archify is required by default. */
     diagrams: z.object({ engine: z.enum(['archify', 'mermaid']).default('archify') }).prefault({}),

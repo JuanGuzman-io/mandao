@@ -45,7 +45,7 @@ function mcpCandidates(root: string, file: string): string[] {
   }
 }
 
-/** Reports only configured repository MCP search servers and documented native search capability. */
+/** Reports configured MCP search servers separately from conditional native capability. */
 export function researchToolCapabilities(root: string, harnesses: HarnessId[]) {
   const mcp = [...new Set(MCP_FILES.flatMap((file) => mcpCandidates(root, file)))];
   return harnesses.map((harness) => ({
@@ -53,6 +53,7 @@ export function researchToolCapabilities(root: string, harnesses: HarnessId[]) {
     native: NATIVE_SEARCH[harness],
     mcp,
     capability: NATIVE_SEARCH[harness] ? (mcp.length ? 'native + MCP' : 'native') : mcp.length ? 'MCP' : 'none',
+    verifiedSearchAvailable: mcp.length > 0,
   }));
 }
 

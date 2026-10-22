@@ -13,7 +13,7 @@ export interface ResearchValidationOptions {
   highPremiseIds?: string[];
   expiryMonths?: Partial<Record<ResearchTopicType, number>>;
   maxQuestions?: number;
-  /** Harness discovery says no native or configured MCP search tool is available. */
+  /** A configured search integration is available; possible native support is not proof. */
   webSearchAvailable?: boolean;
 }
 
@@ -153,14 +153,6 @@ function validateEntry(entry: ResearchEntry, options: ResearchValidationOptions,
 export function validateResearch(document: unknown, options: ResearchValidationOptions = {}): ResearchFinding[] {
   const findings: ResearchFinding[] = [];
   const entries = parseDocument(document, findings);
-  const maxQuestions = options.maxQuestions ?? 5;
-  if (entries.length > maxQuestions)
-    addFinding(
-      findings,
-      'RESEARCH_QUESTION_LIMIT',
-      'research.md',
-      `${entries.length} research entries exceed the configured limit of ${maxQuestions}`,
-    );
   const ids = new Set<string>();
   for (const entry of entries) {
     if (ids.has(entry.id)) addFinding(findings, 'RESEARCH_DUPLICATE_ID', entry.id, 'research entry IDs must be unique');
@@ -250,7 +242,7 @@ const TOPIC_TYPE_SET = new Set<string>([
   'other',
 ]);
 
-/** Counts unique NEEDS RESEARCH markers and enforces the budget before research is delegated. */
+/** Counts unique NEEDS RESEARCH markers and enforces the per-dispatch budget before delegation. */
 export function researchQuestions(markdowns: string[], maxQuestions: number, selected?: string[]): ResearchQuestionReport {
   const found = markdowns.flatMap((markdown) => withoutCode(markdown).split('\n').flatMap(parseResearchMarker));
   const unique = [

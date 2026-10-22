@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "631a2a461bbd7c6e1199381cac0c87a552ecddb15f76ddb26cae156a3e20ec2b"
+      "sha256": "99a3ef87be68683e315c7fe8b196a7785ca24dea25a370e0dc0bf0c90bd365be"
     },
     {
       "path": "core/commands/story.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "d195987bb7aabb93c97eb3ba7bbad3a194d3233116b92e33ed4bd216f2b60cd1"
+      "sha256": "765c92b5872a7a35fb278b95508fa5dd5adc073eb8243de567c8da3d61a0e8c7"
     },
     {
       "path": "src/schemas/common.ts",

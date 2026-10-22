@@ -91,8 +91,8 @@ The folder is `{{paths.specs}}/<ID>-<slug>/`. **Branch and worktree** (ADR 0015)
 `{{script:spec-new}} "<title>" --id <ID> --type <type> --harness <this harness> --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
 and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
-from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
-a missing base) before asking. This is the fallback when the session started in the main checkout
+from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues`
+before asking. This is the fallback when the session started in the main checkout
 (`mandao start` does it as a script, with the full setup of §14.5): after creating the worktree, move into it before any other step, because later commands refuse to work outside it:
 <!-- mandao:if harness=claude -->
 call `EnterWorktree` with the worktree path and continue in this conversation, without asking for a new session.
@@ -106,17 +106,17 @@ untracked in the current checkout) does not exist in the new worktree: move the 
 the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `{{template:rules/hotfix.md}}`. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
 session already runs in the worktree. If there is no `story.md`, write one from
-`{{template:spec/story.md}}` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the
-story blocks specify: stop and say so.
+`{{template:spec/story.md}}` with what the item says, marking gaps as `OPEN`. Critical `OPEN` blocks specify.
 
 When the story's `type` is not `story`, follow `{{template:rules/spec-types.md}}`.
 
 ## 2. Research
 
-Mark uncertain/version-specific questions `[NEEDS RESEARCH: type / topic] question`.
-Run `{{script:research}} <spec>` before dispatch; reuse only unexpired exact-topic evidence with `research.md#R<n>`.
-Resolve `needs_priority` by asking the PO to select up to `research.max_questions`. Follow
-`{{template:spec/research.md}}`; delegate independent questions and copy its §20 safety rule into each brief.
+Mark uncertain questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec>`;
+reuse exact-topic evidence only while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
+`research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
+Follow `{{template:spec/research.md}}`; create one subagent task for every uncovered question, parallelize
+independent tasks, and copy its §20 safety rule into each brief.
 
 ## 3. Depth
 
@@ -129,8 +129,6 @@ Resolve `needs_priority` by asking the PO to select up to `research.max_question
 Use `{{arg:depth}}`; propose a different depth if the risk clearly calls for it.
 
 **At lite depth** the whole spec is one session: follow `{{template:rules/doc-lite.md}}`.
-
-At lite, requirements and design both go into `spec.md`.
 
 ## 4. Impact analysis
 

@@ -125,7 +125,7 @@ describe('research evidence', () => {
     expect(matches.map((match) => match.source)).toEqual(['MDO-1/research.md#R1']);
   });
 
-  test('asks for prioritization above the configured per-spec question cap', () => {
+  test('asks for prioritization above the per-dispatch question cap', () => {
     const over = researchQuestions(
       [
         '[NEEDS RESEARCH: api / Auth.js sessions] What session API is supported?',
@@ -142,13 +142,20 @@ describe('research evidence', () => {
     });
   });
 
-  test('requires an entry for each marker and enforces the question limit', () => {
+  test('requires an entry for each marker and allows evidence to accumulate across dispatch batches', () => {
     const text = '[NEEDS RESEARCH: api / Auth.js sessions] Which session API is supported?';
     const findings = researchGateFindings([text], { schema_version: 1, entries: [] }, { maxQuestions: 1, today: '2026-10-22' });
     expect(findings).toContainEqual(expect.objectContaining({ code: 'RESEARCH_UNCOVERED', ref: 'Q1' }));
-    expect(
-      validateResearch({ schema_version: 1, entries: [entry(), entry({ id: 'R2', topic: 'other' })] }, { maxQuestions: 1 }),
-    ).toContainEqual(expect.objectContaining({ code: 'RESEARCH_QUESTION_LIMIT' }));
+    const markers = Array.from({ length: 6 }, (_, index) => `[NEEDS RESEARCH: framework / Topic ${index + 1}] Which version is supported?`);
+    const records = markers.map((_, index) =>
+      entry({ id: `R${index + 1}`, topic: `Topic ${index + 1}`, question: 'Which version is supported?' }),
+    );
+    expect(researchQuestions(markers, 5)).toMatchObject({ total: 6, needsPriority: true, dispatchable: [] });
+    expect(researchQuestions(markers, 5, ['Q6'])).toMatchObject({
+      needsPriority: false,
+      dispatchable: [{ id: 'Q6', topic: 'Topic 6' }],
+    });
+    expect(researchGateFindings(markers, { schema_version: 1, entries: records }, { maxQuestions: 5, today: '2026-10-22' })).toEqual([]);
   });
 
   test('research configuration has a bounded default and topic expiry defaults', () => {

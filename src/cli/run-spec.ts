@@ -134,7 +134,7 @@ function registerNext(run: Command, ctx: CliContext) {
     .action((ref: string, o: { shown?: boolean }) => {
       const { config, spec } = loadSpec(ctx, ref);
       if (o.shown) recordShown(spec);
-      json(nextFor(spec, config));
+      json(nextFor(ctx.root(), spec, config));
     });
 }
 

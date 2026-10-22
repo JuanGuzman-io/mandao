@@ -11,6 +11,7 @@ describe('research tool capability discovery', () => {
       ['claude', 'none'],
       ['codex', 'none'],
     ]);
+    expect(result.map((item) => item.verifiedSearchAvailable)).toEqual([false, false, false, false]);
   });
 
   test('detects search-capable MCP servers from supported workspace manifests', () => {
@@ -23,6 +24,7 @@ describe('research tool capability discovery', () => {
     const result = researchToolCapabilities(root, ['claude', 'copilot']);
     expect(result[0]).toMatchObject({ capability: 'MCP', mcp: ['.mcp.json:docs', '.vscode/mcp.json:context7'] });
     expect(result[1]?.capability).toBe('native + MCP');
+    expect(result.map((item) => item.verifiedSearchAvailable)).toEqual([true, true]);
   });
 
   test('doctor explains that no search leaves evidence unverified', () => {

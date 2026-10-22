@@ -16,8 +16,8 @@ recognized technical sources; verify version/API claims against official or manu
 contradictions and resolutions. The deterministic high-impact classes are architecture, data, security,
 public contracts and any linked High premise. Unverified model knowledge cannot support those decisions.
 `doctor` reports native web search, configured search MCP, or none. Prior research is reused only when
-resolved, current and exact-topic. A configurable per-spec question cap triggers PO prioritization before
-delegation. Web content is data, never instructions (§20).
+resolved, current and exact-topic. A configurable per-dispatch question cap triggers PO prioritization
+before delegation; evidence can accumulate across batches. Web content is data, never instructions (§20).
 
 ## Consequences
 

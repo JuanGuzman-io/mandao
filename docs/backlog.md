@@ -36,7 +36,7 @@ scope, product behavior, security or irreversible actions.
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | complete; PR #14 merged (`774ccfd`) |
-| [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | in progress on `perf/phase-8`; plan approved; no new spec |
+| [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | implementation in PR #15; no new spec |
 | [9 — Large specs and parallel tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 and MDO-0014 | phases 2–6 | agreed, pending phase plan approval; no new specs |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | agreed, pending phase plan approval |
 | [11 — User commit conventions](#phase-11--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
@@ -226,8 +226,8 @@ at them first.
 
 **Research with sources in specify,** modelled on Spec Kit's phase 0 of `plan`:
 
-- Each `[NEEDS RESEARCH]` becomes a research task delegated to a subagent ("Research <unknown> for
-  <feature context>"), so the Leader's context stays light; the tasks can run in parallel.
+- Each uncovered `[NEEDS RESEARCH]` becomes one task delegated to a subagent ("Research <unknown> for
+  <feature context>"), so the Leader's context stays light; independent tasks can run in parallel.
 - The result goes to `research.md`, present only when there was research: Decision, Rationale,
   Alternatives considered, and a **source with URL and date for every claim**. A claim without one
   is marked "unverified (model knowledge)".
@@ -244,7 +244,8 @@ at them first.
   `unverified (model knowledge)` and cannot support architecture, data, security, public-contract or High-
   premise decisions. Prior exact-topic evidence is reused only while resolved and unexpired, with a link.
 - `research.max_questions` is configurable per spec (default 5); above the cap, specify asks the PO to
-  prioritize before dispatch. Expiry is configurable by topic (default: AI models 3 months, architecture 12).
+  prioritize each dispatch batch. The cap limits questions dispatched at once, not accumulated evidence.
+  Expiry is configurable by topic (default: AI models 3 months, architecture 12).
 - `approve design` / `approve spec` and `next` enforce the research gate from structured evidence, not prose.
 
 ## MDO-0013 — Deliveries inside a spec
