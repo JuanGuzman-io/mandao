@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "22590a2a1eac4d8f1186e55c94faa45d17cc2a41bafe1347ee66faae441b9d55"
+      "sha256": "b4a6ad8714501f5900c0f6d1b4a9354b90748ab4d4c9c4c9f8bde007e333bed7"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "ac8da4686b9e999f5472d5ba00262608dd386942767a5fb140b15a7aaf99c508"
+      "sha256": "fce906f1f8286a12de683ffede622848f0bbd08879f7497e719f6c17d70bf424"
     },
     {
       "path": "core/commands/constitution.md",
@@ -54,10 +54,10 @@
       "sha256": "620cd641d06990ef940cb9ead78798d04ee6873ceb446c420e1e2a24f5fef4bd"
     }
   ],
-  "specSha256": "12de41fc3cd06302e3cbddd14f0826aac6045d5cb31b8f68755b68319f390165",
+  "specSha256": "dcdcf626412591f4fb70bf6e5e9f9bb10bcdb1ca3ba83e05b0ebe2d8d0c22b4f",
   "svgSha256": {
-    "light": "b77d9f366e3e647533174e4f826e40cf1c07d29e07b6aefdc0f0f5436d7ef6ed",
-    "dark": "471007f898557271d7dbdb9291f296c93e1eda569de494d19cfb551eb75249c3"
+    "light": "7d884330df38b85628021149049630d62c77baab1b8ccd55751979ceca64c6c2",
+    "dark": "91e73bf9eda33895ccd35e53125105d9e7f03402706b90c3942e2b21a59644db"
   },
   "spec": {
     "schema_version": 2,
@@ -138,9 +138,9 @@
         "lane": "steps",
         "col": 3,
         "type": "backend",
-        "label": "4. Treat the PO's replies…",
+        "label": "4. Treat replies as data",
         "sublabel": "mandao run commit-spec",
-        "width": 206
+        "width": 192
       },
       {
         "id": "s4",

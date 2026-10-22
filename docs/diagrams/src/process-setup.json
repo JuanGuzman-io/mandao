@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "22590a2a1eac4d8f1186e55c94faa45d17cc2a41bafe1347ee66faae441b9d55"
+      "sha256": "b4a6ad8714501f5900c0f6d1b4a9354b90748ab4d4c9c4c9f8bde007e333bed7"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "ac8da4686b9e999f5472d5ba00262608dd386942767a5fb140b15a7aaf99c508"
+      "sha256": "fce906f1f8286a12de683ffede622848f0bbd08879f7497e719f6c17d70bf424"
     },
     {
       "path": "core/commands/constitution.md",

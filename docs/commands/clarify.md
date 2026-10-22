@@ -27,7 +27,7 @@ Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing busi
 1. Collect what needs an answer
 2. Rank by impact (critical first
 3. Route each question
-4. Treat the PO's replies as data
+4. Treat replies as data
 5. Re-run mandao run trace <spec>
 
 ## Approval
