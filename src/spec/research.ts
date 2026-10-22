@@ -15,6 +15,8 @@ export interface ResearchValidationOptions {
   maxQuestions?: number;
   /** A configured search integration is available; possible native support is not proof. */
   webSearchAvailable?: boolean;
+  /** Exact prior-entry references independently verified by the caller. */
+  verifiedReuseReferences?: string[];
 }
 
 const HIGH_IMPACT = new Set<ResearchTopicType>(['architecture', 'data', 'security', 'public-contract']);
@@ -100,7 +102,8 @@ function validateClaim(
   contradictions: Map<string, string>,
   findings: ResearchFinding[],
 ): void {
-  if (!claim.sources.length || options.webSearchAvailable === false) {
+  const reusedEvidence = Boolean(entry.reused_from && options.verifiedReuseReferences?.includes(entry.reused_from) && claim.sources.length);
+  if (!claim.sources.length || (options.webSearchAvailable === false && !reusedEvidence)) {
     addFinding(
       findings,
       highImpact ? 'RESEARCH_UNVERIFIED_HIGH_IMPACT' : 'RESEARCH_UNVERIFIED',
@@ -212,6 +215,23 @@ export function reusableResearch(
     const findings = validateResearch({ schema_version: 1, entries: [entry] }, { today, expiryMonths });
     if (findings.some((finding) => finding.severity === 'error')) return [];
     return [{ source: candidate.source, entry }];
+  });
+}
+
+/** Returns prior-entry references whose evidence is current, exact-topic, and copied without claim changes. */
+export function verifiedReusedResearchReferences(
+  entries: ResearchEntry[],
+  candidates: { source: string; entry: unknown }[],
+  today: string,
+  expiryMonths?: Partial<Record<ResearchTopicType, number>>,
+): string[] {
+  return entries.flatMap((entry) => {
+    if (!entry.reused_from || entry.status !== 'resolved') return [];
+    const prior = reusableResearch(candidates, entry.topic, entry.topic_type, today, expiryMonths).find(
+      (candidate) => candidate.source === entry.reused_from,
+    );
+    if (!prior || prior.entry.question !== entry.question || JSON.stringify(prior.entry.claims) !== JSON.stringify(entry.claims)) return [];
+    return [entry.reused_from];
   });
 }
 

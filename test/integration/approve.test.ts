@@ -1,6 +1,6 @@
 // mandao-scans: none — lists only the temporary trees it creates.
 import { execFileSync } from 'node:child_process';
-import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { stringify as stringifyYaml } from 'yaml';
@@ -157,6 +157,49 @@ describe('mandao approve: no model session', () => {
       approved: false,
       problems: [expect.stringContaining('high-impact decisions cannot rely on model knowledge')],
     });
+  });
+
+  test('design approval accepts exact current evidence reused from another spec without active search', async () => {
+    const root = repo();
+    const marker = '[NEEDS RESEARCH: architecture / Auth boundary] Is the auth boundary adequate?';
+    const requirements = join(root, SPEC, 'requirements.md');
+    writeFileSync(requirements, `${readFileSync(requirements, 'utf8')}\n${marker}\n`);
+    const priorDir = 'specs/MDO-0002-auth-prior';
+    mkdirSync(join(root, priorDir), { recursive: true });
+    const priorFile = join(root, priorDir, 'research.md');
+    const record = {
+      id: 'R1',
+      topic: 'Auth boundary',
+      topic_type: 'architecture',
+      question: 'Is the auth boundary adequate?',
+      status: 'resolved',
+      decision: 'Keep authorization in the service layer.',
+      rationale: 'The app uses service-owned authorization.',
+      alternatives: ['Authorize in the route'],
+      premise_ids: [],
+      checked_on: '2026-10-22',
+      expires: '2027-10-22',
+      claims: [
+        {
+          id: 'C1',
+          key: 'authorization-layer',
+          kind: 'general',
+          value: 'service',
+          sources: [{ tier: 'official', value: 'service', url: 'https://docs.example/auth', checked_on: '2026-10-22' }],
+        },
+      ],
+      contradictions: [],
+    };
+    writeFileSync(priorFile, `---\n${stringifyYaml({ schema_version: 1, entries: [record] })}---\n`);
+    writeFileSync(
+      join(root, SPEC, 'research.md'),
+      `---\n${stringifyYaml({
+        schema_version: 1,
+        entries: [{ ...record, reused_from: `${priorDir}/research.md#R1` }],
+      })}---\n`,
+    );
+    const result = await approve(root, 'MDO-0001', 'design');
+    expect(result.approved, JSON.stringify(result)).toBe(true);
   });
 
   test('revocation records an append-only event, resets status, and makes the approval inactive', async () => {

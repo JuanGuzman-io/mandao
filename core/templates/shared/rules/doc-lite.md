@@ -25,7 +25,7 @@ The cost of a session is mostly writing and reading its context, so lite pays it
 2. Skip `/mandao-clarify` unless something is open: a `[NEEDS CLARIFICATION]`, an `OPEN` or a
    Consistency Check finding.
 3. Ask for **one** approval of story, spec and tasks together. The user may give it from the terminal
-   (`mandao approve <ID> spec`); approved in the session, set `status: approved` in each and commit with
+   (`mandao approve <ID> spec --harness <this harness>`); approved in the session, set `status: approved` in each and commit with
    `mandao run commit-spec <ID> specify`. Next: `/mandao-implement` in a **new session** (ADR 0038):
    `mandao approve` prints the command (`newSession`); staying here re-reads this context on every turn.
 

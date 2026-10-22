@@ -6,6 +6,7 @@ import { readConfig } from '../engine/files.js';
 import { researchToolCapabilities } from '../engine/research-tools.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
+import { verifiedReuseReferences } from '../scripts/research.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
 import {
@@ -62,6 +63,7 @@ function researchIssuesFor(
     maxQuestions: config.research.max_questions,
     expiryMonths: config.research.expires_months,
     webSearchAvailable: researchToolCapabilities(root, [harness], config.research.web_search_servers)[0]?.configuredWebSearchAvailable,
+    verifiedReuseReferences: verifiedReuseReferences(root, config, spec.dir, document),
   };
   return researchGateFindings(
     [spec.story?.raw, spec.requirements?.raw, design].filter((text): text is string => Boolean(text)),

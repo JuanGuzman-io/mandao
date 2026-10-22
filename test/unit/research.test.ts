@@ -1,14 +1,22 @@
 import { describe, expect, test } from 'vitest';
 import { configSchema } from '../../src/schemas/config.js';
+import type { ResearchEntry } from '../../src/schemas/research.js';
+import { researchDocumentSchema } from '../../src/schemas/research.js';
 import {
   highImpactResearch,
   researchGateFindings,
   researchQuestions,
   reusableResearch,
   validateResearch,
+  verifiedReusedResearchReferences,
 } from '../../src/spec/research.js';
 
-const source = (tier: string, value: string, url = `https://${tier}.example/docs`) => ({ tier, value, url, checked_on: '2026-10-01' });
+const source = (tier: ResearchEntry['claims'][number]['sources'][number]['tier'], value: string, url = `https://${tier}.example/docs`) => ({
+  tier,
+  value,
+  url,
+  checked_on: '2026-10-01',
+});
 const entry = (overrides: Record<string, unknown> = {}) => ({
   id: 'R1',
   topic: 'react-server-components',
@@ -55,8 +63,14 @@ describe('research evidence', () => {
     ).toContainEqual(expect.objectContaining({ code: 'RESEARCH_UNVERIFIED_HIGH_IMPACT', ref: 'R1' }));
   });
 
-  test('without a detected search tool, sourced model claims remain unverified and cannot justify high impact', () => {
-    const claim = { id: 'C1', key: 'architecture choice', kind: 'general', value: 'v2', sources: [source('official', 'v2')] };
+  test('without a detected search tool, sourced model claims remain unverified but valid reused evidence is accepted', () => {
+    const claim: ResearchEntry['claims'][number] = {
+      id: 'C1',
+      key: 'architecture choice',
+      kind: 'general',
+      value: 'v2',
+      sources: [source('official', 'v2')],
+    };
     expect(
       validateResearch(
         { schema_version: 1, entries: [entry({ topic_type: 'architecture', claims: [claim] })] },
@@ -66,6 +80,39 @@ describe('research evidence', () => {
         },
       ),
     ).toContainEqual(expect.objectContaining({ code: 'RESEARCH_UNVERIFIED_HIGH_IMPACT' }));
+    const reused = researchDocumentSchema.parse({
+      schema_version: 1,
+      entries: [
+        entry({
+          topic: 'Auth boundary',
+          topic_type: 'architecture',
+          question: 'Is the auth boundary adequate?',
+          expires: '2027-10-01',
+          reused_from: 'specs/MDO-0001-auth/research.md#R1',
+          claims: [claim],
+        }),
+      ],
+    }).entries[0]!;
+    const prior = { ...reused, reused_from: undefined };
+    const candidates = [{ source: 'specs/MDO-0001-auth/research.md#R1', entry: prior }];
+    const validRefs = verifiedReusedResearchReferences([reused], candidates, '2026-10-22');
+    expect(validRefs).toEqual(['specs/MDO-0001-auth/research.md#R1']);
+    expect(
+      validateResearch(
+        { schema_version: 1, entries: [reused] },
+        { today: '2026-10-22', webSearchAvailable: false, verifiedReuseReferences: validRefs },
+      ),
+    ).toEqual([]);
+    expect(verifiedReusedResearchReferences([{ ...reused, claims: [{ ...claim, value: 'invented' }] }], candidates, '2026-10-22')).toEqual(
+      [],
+    );
+    expect(
+      researchGateFindings(
+        ['[NEEDS RESEARCH: architecture / Auth boundary] Is the auth boundary adequate?'],
+        { schema_version: 1, entries: [reused] },
+        { today: '2026-10-22', webSearchAvailable: false, verifiedReuseReferences: validRefs },
+      ),
+    ).toEqual([]);
   });
 
   test('enforces official source priority and a recorded contradiction when sources disagree', () => {

@@ -18,12 +18,15 @@ after multiple batches.
   file with its harness. Native search remains conditional and does not count as configured availability.
 - This declaration proves repository configuration, not runtime health. The agent must still use the tool
   and cite the sources it actually consulted.
+- Current, resolved, exact-topic evidence reused from an earlier spec remains valid without a search MCP
+  in the active harness; the entry must retain its sources and set `reused_from`.
 - `research.max_questions` limits each dispatch batch only. Evidence may accumulate across batches, and the
   gate still requires a matching record for every `[NEEDS RESEARCH]` marker.
 - Specify creates one delegated research task per uncovered question; independent tasks may run in parallel.
 
 ## Consequences
 
-High-impact claims remain blocked when no search MCP is explicitly declared and present in the repository
-configuration. Large research sets can be completed in prioritized batches without invalidating earlier
-evidence; bad IDs and over-limit selections return no dispatchable tasks.
+New high-impact claims remain blocked when no search MCP is explicitly declared and present in the
+repository configuration. Valid reused evidence keeps its original sources and expiry. Large research sets
+can be completed in prioritized batches without invalidating earlier evidence; bad IDs and over-limit
+selections return no dispatchable tasks.
