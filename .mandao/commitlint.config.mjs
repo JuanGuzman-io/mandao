@@ -61,7 +61,7 @@ export default {
           const header = parsed.header ?? '';
           const withoutEmoji = parsed.emoji ? header.slice(parsed.emoji.length + 1) : header;
           const length = [...withoutEmoji].length;
-          return [length <= MAX, `header is ${length} characters without the emoji; the limit is ${MAX}`];
+          return [length <= MAX, `header is ${length} characters${parsed.emoji ? ' without the emoji' : ''}; the limit is ${MAX}`];
         },
       },
     },

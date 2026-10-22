@@ -31,7 +31,7 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "786a57c4fcba6339ed8071a836c5d892bfa7c039a6a9be871a38c8738899ab23"
+      "sha256": "9788b50d3751698e60e3119ded24f99c793625478ed786a98f1e622d2a1fec78"
     },
     {
       "path": "core/commands/resume.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "450a63f9756e27507912552a625bf49853392c17c6d941dea19ae74ecec0467a"
+      "sha256": "e522156a1f4f0a17add86cdc9d32cdd6f5989c57010a8a5710b8178a75c1514a"
     },
     {
       "path": "src/schemas/common.ts",
