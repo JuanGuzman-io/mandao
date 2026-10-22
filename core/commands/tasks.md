@@ -87,8 +87,8 @@ open version 1 spec it warns and does not convert it; the migration goes through
 7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues and no cycles;
    `{{script:trace}} {{arg:spec}}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
 8. **Approve:** show the overview and the first eligible task, then record what was shown with
-   `{{script:next}} {{arg:spec}} --shown`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs
+   `{{script:next}} {{arg:spec}} --shown --harness <this harness>`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks --harness <this harness>`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs
    `{{mandao}} approve --by-running /mandao-implement --harness <this harness> {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: `{{script:next}} {{arg:spec}}` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.
+   available yet. Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.

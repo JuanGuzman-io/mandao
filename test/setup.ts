@@ -1,4 +1,5 @@
-import { afterAll } from 'vitest';
-import { removeTrees } from './helpers.js';
+import { afterEach, aroundEach } from 'vitest';
+import { removeTrees, testTreeScope } from './helpers.js';
 
-afterAll(removeTrees);
+aroundEach((runTest, { task }) => testTreeScope.run(task.id, runTest));
+afterEach(({ task }) => removeTrees(task.id));

@@ -1,20 +1,18 @@
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { makeTree } from '../helpers.js';
+import { beforeEach, describe, expect, test } from 'vitest';
+import { makeTree, makeTreeAt } from '../helpers.js';
 
-// Process-level proof (MDO-0005 D1): the real entry point, built once, run as a separate process.
+// Process-level proof (MDO-0005 D1): the real entry point, built per test and run as a separate process.
 // The bundle lives inside the repository so packageInfo() finds core/ (P5).
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const cache = join(root, 'node_modules', '.cache');
 let outDir = '';
 
-beforeAll(async () => {
-  mkdirSync(cache, { recursive: true });
-  outDir = mkdtempSync(join(cache, 'mandao-cli-'));
+beforeEach(async () => {
+  outDir = makeTreeAt(cache, 'mandao-cli-', {});
   // Same entry, format, target and platform as tsup.config.ts.
   await build({
     entry: { cli: join(root, 'src/cli/index.ts') },
@@ -26,10 +24,6 @@ beforeAll(async () => {
     silent: true,
   });
 }, 20_000);
-
-afterAll(() => {
-  if (outDir) rmSync(outDir, { recursive: true, force: true });
-});
 
 const config = 'schema_version: 1\nworkspace: single\nprojects:\n  - name: a\n    path: .\nharnesses: [claude]\n';
 const brokenYaml = 'schema_version: 1\nworkspace: [unclosed\n  : :\n';

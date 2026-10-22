@@ -66,4 +66,4 @@ From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}` a
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
-to post the approved AC back as a comment (only after confirmation). Next: `{{script:next}} <ID>` names the command that follows from the spec's state; give it.
+to post the approved AC back as a comment (only after confirmation). Next: `{{script:next}} <ID> --harness <this harness>` names the command that follows; give it.

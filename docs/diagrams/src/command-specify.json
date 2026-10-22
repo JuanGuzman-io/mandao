@@ -7,7 +7,7 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "b4a6ad8714501f5900c0f6d1b4a9354b90748ab4d4c9c4c9f8bde007e333bed7"
+      "sha256": "010cda61c65b9ad105524f8aabb76b2e5a3a1c538b1430923664abf5aebbba8b"
     },
     {
       "path": "core/commands/close.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "c9c03bf1513905c59bc880ba9b8b59b3fa6f2727cba0b3cdc9dc2a314202be17"
+      "sha256": "2ba0be5fe92df5f7e5856b8847a9454076f745815a3b1067bdea994f3d93b176"
     },
     {
       "path": "core/commands/init.md",
@@ -39,25 +39,25 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "5e2eebbb880caa9dfa2d16eda9b4c31e267ac57b3ce2a0fd5dd755cf7eaa7835"
+      "sha256": "702731f724fd4179df3142ed98b26dfb8c0aa2d7d5ec821d1a823b77e68a2523"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "177782658852d8fd1d96acaf02298042276a75038ed6734c40747052af194c36"
+      "sha256": "c969bbd13ecce87b65ed141be63af810c06ac8804ffa33b92507f56326fbe6b6"
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "8f7582a12df6e11787b8d1b48e334b63b3a57a8a218c7112ce8cdf0e9d1674c4"
+      "sha256": "5bd432e38a79e3934af3c057a0d2f88b82088339adabe890c420e39143cf573b"
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "2b4c6794e341e93b744acdc7e2a83c0ed3da3d179f4085f75d75f26772a3a114"
+      "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
     }
   ],
-  "specSha256": "5ab623dd96fc991e9f9694400515ddeb6d68a97188803725a109c11bc421f0ae",
+  "specSha256": "a9465293343e67dacc1c72604fe88490493fcf2112f9d2216d10df8b97398226",
   "svgSha256": {
-    "light": "46b2e0c1080caf277e5459b8dbbbf2eda737681c8cf70e1f0e2ac223941c4f71",
-    "dark": "e42161b6bf6bbd15724186607aa253367f7ab60b58911b263616ec499bcc4892"
+    "light": "67ad96b177cf00bf99dc99ad914fd288172b439223c6b28f5ebc6d7df1367cc8",
+    "dark": "563ebf3bc52edd0bef1f65f3a79c380847c1426957cf0b7dfabd64f67565c33e"
   },
   "spec": {
     "schema_version": 2,
@@ -126,23 +126,24 @@
         "lane": "steps",
         "col": 1,
         "type": "backend",
-        "label": "2. Depth",
-        "width": 132
+        "label": "2. Research",
+        "sublabel": "mandao run research",
+        "width": 157
       },
       {
         "id": "s2",
         "lane": "steps",
         "col": 2,
         "type": "backend",
-        "label": "3. Impact analysis",
-        "width": 150
+        "label": "3. Depth",
+        "width": 132
       },
       {
         "id": "s3",
         "lane": "steps",
         "col": 3,
         "type": "backend",
-        "label": "4. requirements.md",
+        "label": "4. Impact analysis",
         "width": 150
       },
       {
@@ -150,24 +151,24 @@
         "lane": "steps-2",
         "col": 0,
         "type": "backend",
-        "label": "5. design.md",
-        "sublabel": "mandao run premise +1",
-        "width": 171
+        "label": "5. requirements.md",
+        "width": 150
       },
       {
         "id": "s5",
         "lane": "steps-2",
         "col": 1,
         "type": "backend",
-        "label": "5b. quickstart.md",
-        "width": 143
+        "label": "6. design.md",
+        "sublabel": "mandao run premise +1",
+        "width": 171
       },
       {
         "id": "s6",
         "lane": "steps-2",
         "col": 2,
         "type": "backend",
-        "label": "5c. data-model.md",
+        "label": "5b. quickstart.md",
         "width": 143
       },
       {
@@ -175,25 +176,33 @@
         "lane": "steps-2",
         "col": 3,
         "type": "backend",
-        "label": "6. Consistency Check",
-        "sublabel": "mandao run trace",
-        "width": 164
+        "label": "5c. data-model.md",
+        "width": 143
       },
       {
         "id": "s8",
         "lane": "steps-3",
         "col": 0,
-        "type": "security",
-        "label": "7. Diagram for approval",
-        "sublabel": "mandao run diagram",
-        "width": 185
+        "type": "backend",
+        "label": "7. Consistency Check",
+        "sublabel": "mandao run trace",
+        "width": 164
       },
       {
         "id": "s9",
         "lane": "steps-3",
         "col": 1,
+        "type": "security",
+        "label": "8. Diagram for approval",
+        "sublabel": "mandao run diagram",
+        "width": 185
+      },
+      {
+        "id": "s10",
+        "lane": "steps-3",
+        "col": 2,
         "type": "backend",
-        "label": "8. Close",
+        "label": "9. Close",
         "sublabel": "mandao run commit-spec +1",
         "width": 199
       },
@@ -226,8 +235,8 @@
         "lane": "writes",
         "col": 3,
         "type": "database",
-        "label": "specs/<ID>/quickstart.md",
-        "width": 192
+        "label": "specs/<ID>/research.md",
+        "width": 178
       }
     ],
     "edges": [
@@ -277,9 +286,14 @@
         "to": "s9"
       },
       {
-        "id": "s9-writes",
+        "id": "s9-s10",
         "from": "s9",
-        "to": "w1",
+        "to": "s10"
+      },
+      {
+        "id": "s10-writes",
+        "from": "s10",
+        "to": "w2",
         "label": "writes",
         "variant": "dashed"
       }

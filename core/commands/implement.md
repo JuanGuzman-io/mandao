@@ -187,7 +187,7 @@ block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `{{script:next}} {{arg:spec}}` names the command that follows from the spec's state. When it returns
+Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows. When it returns
 `autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
 return control to the user with verification merely suggested. Report the implementation and verify
 results together. If the implementation summary has `session.cut: true`, start the recommended fresh

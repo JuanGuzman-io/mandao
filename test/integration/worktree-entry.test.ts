@@ -1,11 +1,11 @@
 // mandao-scans: none — lists only the temporary workspace it syncs into.
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { makeTree, removeTrees } from '../helpers.js';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { makeTree, makeTreeAt } from '../helpers.js';
 
 // MDO-0010 S-2.1 and S-2.2 end to end: `mandao sync` run as a process, all five harnesses.
 const root = fileURLToPath(new URL('../..', import.meta.url));
@@ -27,9 +27,11 @@ function walk(dir: string): string[] {
   return readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(join(dir, e.name)) : [join(dir, e.name)]));
 }
 
-beforeAll(async () => {
-  mkdirSync(cache, { recursive: true });
-  outDir = join(cache, `mandao-entry-${process.pid}`);
+beforeEach(async () => {
+  outDir = makeTreeAt(cache, 'mandao-entry-', {});
+  ws = makeTree({
+    '.mandao/config.yml': `schema_version: 1\nworkspace: single\nprojects:\n  - name: a\n    path: .\nharnesses: [${HARNESSES.join(', ')}]\n`,
+  });
   await build({
     entry: { cli: join(root, 'src/cli/index.ts') },
     format: ['esm'],
@@ -38,9 +40,6 @@ beforeAll(async () => {
     outDir,
     config: false,
     silent: true,
-  });
-  ws = makeTree({
-    '.mandao/config.yml': `schema_version: 1\nworkspace: single\nprojects:\n  - name: a\n    path: .\nharnesses: [${HARNESSES.join(', ')}]\n`,
   });
   const r = spawnSync(process.execPath, [join(outDir, 'cli.js'), 'sync'], {
     cwd: ws,
@@ -51,9 +50,9 @@ beforeAll(async () => {
   expect(r.status, r.stderr).toBe(0);
 }, 90_000);
 
-afterAll(() => {
-  if (outDir) rmSync(outDir, { recursive: true, force: true });
-  removeTrees();
+afterEach(() => {
+  outDir = '';
+  ws = '';
 });
 
 const commandFiles = (h: (typeof HARNESSES)[number], id: string) =>

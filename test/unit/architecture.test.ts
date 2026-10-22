@@ -2,7 +2,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { expect, test } from 'vitest';
-import { findClimbs, findProcessExits, findRawGitInits, withoutAllowed } from '../guards.js';
+import { findClimbs, findProcessExits, findRawGitInits } from '../guards.js';
 
 const files = (dir: string): string[] =>
   readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? files(join(dir, e.name)) : [join(dir, e.name)]));
@@ -18,17 +18,33 @@ test('only src/writer writes to the filesystem', () => {
   expect(offenders.map((f) => relative(root, f))).toEqual([]);
 });
 
-/** MDO-0006 D4: temporary folders come from makeTree, so test/setup.ts removes them after each file. */
+/** Temporary workspaces are unique to each test and removed by the hook for that test ID. */
 test('only test/helpers.ts creates temporary folders', () => {
   const root = join(import.meta.dirname, '../..');
-  // doctor-process.test.ts creates its folder under node_modules/.cache/ and removes it in its own afterAll (D4).
-  const ALLOWED = ['test/integration/doctor-process.test.ts'];
   const offenders = files(join(root, 'test'))
     .map((f) => relative(root, f))
     .filter((f) => f !== 'test/unit/architecture.test.ts' && f !== 'test/helpers.ts')
-    .filter((f) => !ALLOWED.includes(f))
     .filter((f) => /\bmkdtemp(Sync)?\b|\btmpdir\b/.test(readFileSync(join(root, f), 'utf8')));
   expect(offenders).toEqual([]);
+});
+
+test('temporary workspaces are deleted by their exact test owner', () => {
+  const root = join(import.meta.dirname, '../..');
+  const helper = readFileSync(join(root, 'test/helpers.ts'), 'utf8');
+  const setup = readFileSync(join(root, 'test/setup.ts'), 'utf8');
+  expect(helper).toContain('new AsyncLocalStorage<string>()');
+  expect(helper).toContain('new Map<string, Set<string>>()');
+  expect(helper).toContain("return makeTreeAt(tmpdir(), 'mandao-test-', files)");
+  expect(helper).toMatch(/mkdtempSync\(join\(parent, prefix\)\)/);
+  expect(helper).toMatch(/for \(const dir of trees\.get\(owner\) \?\? \[\]\) rmSync\(dir, \{ recursive: true, force: true \}\)/);
+  expect(helper).not.toMatch(/readdirSync|glob|mandao-test-\*/);
+  expect(setup).toContain('aroundEach((runTest, { task }) => testTreeScope.run(task.id, runTest))');
+  expect(setup).toContain('afterEach(({ task }) => removeTrees(task.id))');
+  const testCode = files(join(root, 'test'))
+    .filter((f) => f.endsWith('.ts') && relative(root, f) !== 'test/helpers.ts')
+    .map((f) => readFileSync(f, 'utf8'))
+    .join('\n');
+  expect(testCode).not.toMatch(/afterAll\(removeTrees\)|afterEach\(removeTrees\)/);
 });
 
 /**
@@ -37,18 +53,10 @@ test('only test/helpers.ts creates temporary folders', () => {
  */
 test('no test climbs out of its work folder', () => {
   const root = join(import.meta.dirname, '../..');
-  const ALLOWED = [
-    {
-      file: 'test/unit/helpers.test.ts',
-      call: 'dirname(makeTree({}))',
-      // MDO-0006 S-2.1 needs a look-alike folder next to a workspace and removes it in its own finally.
-      why: 'look-alike folder next to a workspace, removed in the same test',
-    },
-  ];
   const offenders = files(join(root, 'test'))
     .filter((f) => f.endsWith('.ts'))
     .map((f) => relative(root, f))
-    .flatMap((f) => withoutAllowed(f, findClimbs(f, readFileSync(join(root, f), 'utf8')), ALLOWED).map((c) => `${f}:${c.line} ${c.text}`));
+    .flatMap((f) => findClimbs(f, readFileSync(join(root, f), 'utf8')).map((c) => `${f}:${c.line} ${c.text}`));
   expect(offenders).toEqual([]);
 });
 
@@ -79,4 +87,6 @@ test('test repos configure local Git identity and test scripts use process.exitC
   );
   expect(rawGit).toEqual([]);
   expect(processExits).toEqual([]);
+  expect(helper).toContain("['config', '--local', 'gc.auto', '0']");
+  expect(helper).toContain("['config', '--local', 'maintenance.auto', 'false']");
 });

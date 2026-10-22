@@ -1,10 +1,10 @@
 import { mkdirSync, readFileSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import type { Finding } from '../../src/engine/doctor.js';
 import { cacheFindings } from '../../src/engine/doctor-cache.js';
 import type { Probe } from '../../src/engine/tools.js';
-import { makeTree, removeTrees } from '../helpers.js';
+import { makeTree } from '../helpers.js';
 
 // MDO-0008 T1 (AC-1): doctor reports the Claude Code prompt-cache TTL and its source (D1).
 // ASSUMPTION: cacheFindings(root, home, env, probe) is the unit under test, pure over its inputs.
@@ -15,8 +15,6 @@ beforeEach(() => {
   root = makeTree({});
   home = makeTree({});
 });
-afterEach(removeTrees);
-
 const current: Probe = () => '2.1.250 (Claude Code)';
 const put = (file: string, content: string) => {
   mkdirSync(dirname(file), { recursive: true });

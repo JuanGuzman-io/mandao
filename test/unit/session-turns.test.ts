@@ -1,9 +1,7 @@
 import { join } from 'node:path';
-import { afterAll, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { measureSessions } from '../../src/scripts/session-turns.js';
-import { makeTree, removeTrees } from '../helpers.js';
-
-afterAll(removeTrees);
+import { makeTree } from '../helpers.js';
 
 /**
  * API under test (MDO-0008 T2, D2 and D3), as the tests below fix it:

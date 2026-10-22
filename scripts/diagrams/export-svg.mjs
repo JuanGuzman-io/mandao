@@ -42,7 +42,9 @@ export function exportSvgs(htmlPath) {
     const m = /<pre id="mandao-export">([\s\S]*?)<\/pre>/.exec(dom);
     if (!m) throw new Error(`no SVG came back from ${htmlPath}`);
     const text = m[1].replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-    return JSON.parse(text);
+    const svgs = JSON.parse(text);
+    // Archify emits harmless trailing spaces in CSS blocks; normalize them so generated artifacts pass diff checks.
+    return Object.fromEntries(Object.entries(svgs).map(([theme, svg]) => [theme, svg.replace(/[ \t]+\r?$/gm, '')]));
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

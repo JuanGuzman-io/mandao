@@ -19,6 +19,7 @@ export * from './premises.js';
 export * from './progress.js';
 export * from './release.js';
 export * from './requirements.js';
+export * from './research.js';
 export * from './review-findings.js';
 export * from './state.js';
 export * from './story.js';

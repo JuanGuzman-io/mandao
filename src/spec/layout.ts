@@ -33,6 +33,7 @@ export const CONDITIONALS: { file: string; when: string }[] = [
   { file: 'quickstart.md', when: 'the spec has behavior a user or PO can see' },
   { file: 'data-model.md', when: 'the spec changes data' },
   { file: 'contract/', when: 'the spec spans several projects' },
+  { file: 'research.md', when: 'the spec contains NEEDS RESEARCH questions' },
 ];
 
 /** What each file is for, rendered in `docs/spec-anatomy.md`. */
@@ -47,6 +48,7 @@ export const FILE_PURPOSE: Record<string, string> = {
   'quickstart.md': 'How a PO checks the behavior by hand',
   'data-model.md': 'The data the spec changes',
   'contract/': 'The contract between projects',
+  'research.md': 'Dated evidence and decisions for research questions',
   'state.yml': 'Start request, baseline, progress, approvals and session-cut estimates',
   'execution.md': 'One row per execution event',
   'reviews.md': 'Verdict and findings per task and attempt',

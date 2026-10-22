@@ -3,8 +3,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
+import { researchToolCapabilities } from '../engine/research-tools.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
+import { verifiedReuseReferences } from '../scripts/research.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
 import {
@@ -19,7 +21,9 @@ import {
   nextStep,
   openItems,
   parseCloseSummary,
+  parsePremises,
   planTasks,
+  researchGateFindings,
   taskLayoutIssues,
   withStatus,
 } from '../spec/index.js';
@@ -43,13 +47,46 @@ function approver(cwd: string, by?: string): string {
   return process.env.USER ?? process.env.USERNAME ?? 'unknown';
 }
 
+function researchIssuesFor(
+  root: string,
+  spec: SpecFolder,
+  config: ReturnType<typeof readConfig>,
+  harness: ReturnType<typeof harnessOption>,
+): string[] {
+  const file = join(spec.dir, 'research.md');
+  const document = existsSync(file) ? frontmatterOf(readFileSync(file, 'utf8')).data : { schema_version: 1, entries: [] };
+  const design = spec.design ?? '';
+  const options = {
+    highPremiseIds: parsePremises(design)
+      .filter((premise) => premise.impact === 'High')
+      .map((premise) => premise.id),
+    maxQuestions: config.research.max_questions,
+    expiryMonths: config.research.expires_months,
+    webSearchAvailable: researchToolCapabilities(root, [harness], config.research.web_search_servers)[0]?.configuredWebSearchAvailable,
+    verifiedReuseReferences: verifiedReuseReferences(root, config, spec.dir, document),
+  };
+  return researchGateFindings(
+    [spec.story?.raw, spec.requirements?.raw, design].filter((text): text is string => Boolean(text)),
+    document,
+    options,
+  )
+    .filter((finding) => finding.severity === 'error')
+    .map((finding) => `${finding.ref}: ${finding.message}`);
+}
+
 /** What must be true before a step can be approved: the same gates the commands apply. */
-function blockers(spec: SpecFolder, step: ApprovalStep): string[] {
+function blockers(
+  root: string,
+  spec: SpecFolder,
+  step: ApprovalStep,
+  config: ReturnType<typeof readConfig>,
+  harness: ReturnType<typeof harnessOption>,
+): string[] {
   const open = openItems(spec).criticalOpen.map((q) => `critical OPEN: ${q}`);
   if (step === 'story') return spec.story ? open : ['story.md is missing'];
   if (step === 'design' || step === 'spec') {
     if (!spec.requirements) return [`${step === 'spec' ? LITE_DOC : 'requirements.md'} is missing`];
-    return [...open, ...specPremiseFindings(spec.dir).map((f) => f.message)];
+    return [...open, ...specPremiseFindings(spec.dir).map((f) => f.message), ...researchIssuesFor(root, spec, config, harness)];
   }
   if (step === 'tasks') {
     if (!spec.tasks.length) return [...open, 'no tasks to approve'];
@@ -70,8 +107,8 @@ function stepDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
   // Design approval confirms the story too, even when a previous story approval already changed its status.
   const story = spec.story ? [own('story.md')] : [];
   if (step === 'story') return [own('story.md')];
-  if (step === 'design') return [...story, docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design')];
-  if (step === 'spec') return [...story, own(LITE_DOC), ...(existsSync(own('tasks.md')) ? [own('tasks.md')] : [])];
+  if (step === 'design') return [...story, docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design'), own('research.md')];
+  if (step === 'spec') return [...story, own(LITE_DOC), own('research.md'), ...(existsSync(own('tasks.md')) ? [own('tasks.md')] : [])];
   if (step === 'tasks') return [docPath(spec.dir, 'tasks')];
   return [];
 }
@@ -111,7 +148,7 @@ function budgetTo(to: string | undefined): number | 'none' {
   return n;
 }
 
-const APPROVABLE = ['story.md', 'requirements.md', 'design.md', 'spec.md'];
+const APPROVABLE = ['story.md', 'requirements.md', 'design.md', 'spec.md', 'research.md'];
 
 /** The hash of each approvable document the spec has, by file name. tasks.md is left out: its checkboxes change as tasks pass. */
 export function currentHashes(dir: string, only?: string[]): Record<string, string> {
@@ -162,12 +199,18 @@ function deliveryOf(spec: SpecFolder, config: ReturnType<typeof readConfig>): Ne
 }
 
 /** The next step from the spec's state and its facts: pending commits, approvals, the documents' hashes, the verify verdict and, once closed, the delivery. */
-export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>) {
+export function nextFor(
+  root: string,
+  spec: SpecFolder,
+  config: ReturnType<typeof readConfig>,
+  harness: ReturnType<typeof harnessOption> = 'claude',
+) {
   const tasks = join(spec.dir, 'tasks.md');
   const tasksStatus = existsSync(tasks) ? frontmatterOf(readFileSync(tasks, 'utf8')).data.status : undefined;
   const report = join(spec.dir, 'verify-report.md');
   const verdict = existsSync(report) ? frontmatterOf(readFileSync(report, 'utf8')).data.verdict : undefined;
   const delivery = spec.story?.meta.status === 'closed' ? deliveryOf(spec, config) : undefined;
+  const researchIssues = researchIssuesFor(root, spec, config, harness);
   return nextStep(spec, {
     ...(typeof tasksStatus === 'string' ? { tasksStatus } : {}),
     ...(typeof verdict === 'string' ? { verifyVerdict: verdict } : {}),
@@ -175,6 +218,7 @@ export function nextFor(spec: SpecFolder, config: ReturnType<typeof readConfig>)
     pendingCommits: commitState(spec, config.commits.trailers).pending,
     approvals: readApprovals(spec),
     hashes: currentHashes(spec.dir),
+    ...(researchIssues.length ? { researchIssues } : {}),
   });
 }
 
@@ -284,9 +328,15 @@ function resetApprovalDocuments(spec: SpecFolder, step: ApprovalStep): string[] 
 }
 
 /** Executes a regular approval after all of its blockers and change prompts have passed. */
-function approveStep(config: ReturnType<typeof readConfig>, spec: SpecFolder, step: ApprovalStep, options: ApproveOptions): void {
+function approveStep(
+  root: string,
+  config: ReturnType<typeof readConfig>,
+  spec: SpecFolder,
+  step: ApprovalStep,
+  options: ApproveOptions,
+): void {
   const harness = harnessOption(options.harness);
-  const problems = blockers(spec, step);
+  const problems = blockers(root, spec, step, config, harness);
   if (problems.length) {
     json({ approved: false, step, problems });
     process.exitCode = 1;
@@ -302,7 +352,7 @@ function approveStep(config: ReturnType<typeof readConfig>, spec: SpecFolder, st
   const record = recordApproval(spec, step, options, docs);
   const commit = commitApproval(config, spec, step);
   const newSession = step === 'spec' || step === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
-  const next = nextFor(readSpec(spec.dir), config);
+  const next = nextFor(root, readSpec(spec.dir), config, harness);
   json({
     ...(options.byRunning ? { result: 'go' } : {}),
     approved: true,
@@ -337,6 +387,6 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const s = step as ApprovalStep;
       if (s === 'security-gaps' && !o.reason?.trim()) throw new Error('security-gaps approval needs --reason <why>');
       if (approvalEvent(spec, config, s, o)) return;
-      approveStep(config, spec, s, o);
+      approveStep(ctx.root(), config, spec, s, o);
     });
 }

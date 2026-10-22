@@ -57,3 +57,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0048](0048-script-enforced-loop-and-approval-safety.md) | Script-enforced loop, test and approval safety | Accepted |
 | [0049](0049-confirmed-delivery-and-release-status.md) | Confirmed, provider-neutral delivery and Git-derived release status | Accepted (Phase 6) |
 | [0050](0050-security-scan-evidence-and-gates.md) | Per-type security-scan evidence and verification gates | Accepted (Phase 7) |
+| [0051](0051-sourced-research-gates.md) | Sourced research evidence, reuse and high-impact gates | Accepted (Phase 8) |

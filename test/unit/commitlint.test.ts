@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { beforeAll, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vitest';
 import { branchIdPattern, commitlintConfig } from '../../src/commits/commitlint.js';
 import { configSchema } from '../../src/schemas/index.js';
 import { makeTree } from '../helpers.js';
@@ -29,7 +29,7 @@ function parse(message: string) {
 }
 const check = (rule: string, message: string) => cfg.plugins[0]!.rules[rule]!(parse(message));
 
-beforeAll(async () => {
+beforeEach(async () => {
   process.env.MANDAO_SPEC_ID = 'PROJ-123';
   const config = configSchema.parse({
     schema_version: 1,

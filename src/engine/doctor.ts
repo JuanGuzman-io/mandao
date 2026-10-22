@@ -21,6 +21,7 @@ import { skillFindings } from './doctor-skills.js';
 import { branchingFindings, pendingCommitFindings } from './doctor-specs.js';
 import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, readSources, SOURCES_FILE } from './files.js';
 import { globalLockFile, home } from './global.js';
+import { researchToolFindings } from './research-tools.js';
 import { collectSecurityScanning } from './security-scanning.js';
 import { buildProject } from './sync.js';
 import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
@@ -145,6 +146,7 @@ function catalogFindings(root: string, config: Config, skills: { id: string }[],
   const catalog = readCatalog();
   const pinned = skills.map((s) => s.id);
   return [
+    ...researchToolFindings(root, config.harnesses, config.research.web_search_servers),
     ...skillFindings({ catalog, pinned, harnesses: config.harnesses, root, home: home() }),
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...pinned])], probe),
   ];

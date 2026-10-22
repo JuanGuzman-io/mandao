@@ -1,23 +1,20 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, describe, expect, it } from 'vitest';
-import { makeTree, removeTrees } from '../helpers.js';
+import { describe, expect, it } from 'vitest';
+import { makeTree } from '../helpers.js';
 
-const moduleTree = makeTree({});
+let firstTestTree = '';
 
-afterAll(() => {
-  // S-3.1: still there, with what the tests wrote, when the file's own last hook runs.
-  expect(existsSync(moduleTree)).toBe(true);
-  expect(readFileSync(join(moduleTree, 'written.txt'), 'utf8')).toBe('first');
-});
-
-describe('module-level workspace', () => {
-  it('S-3.2: first test writes into it', () => {
-    expect(typeof removeTrees).toBe('function');
-    writeFileSync(join(moduleTree, 'written.txt'), 'first');
+describe('per-test temporary folders', () => {
+  it('creates a folder owned by the first test', () => {
+    firstTestTree = makeTree({ 'written.txt': 'first' });
+    expect(readFileSync(join(firstTestTree, 'written.txt'), 'utf8')).toBe('first');
   });
 
-  it('S-3.2: second test finds it intact', () => {
-    expect(readFileSync(join(moduleTree, 'written.txt'), 'utf8')).toBe('first');
+  it('gets a fresh folder after the previous test cleanup', () => {
+    const secondTestTree = makeTree({ 'written.txt': 'second' });
+    expect(secondTestTree).not.toBe(firstTestTree);
+    expect(existsSync(firstTestTree)).toBe(false);
+    expect(readFileSync(join(secondTestTree, 'written.txt'), 'utf8')).toBe('second');
   });
 });

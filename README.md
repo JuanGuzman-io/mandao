@@ -29,6 +29,7 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 
 - **Specs your PO can read.** Stories with acceptance criteria, traced to requirements, tasks, tests and commits. Every spec folder follows one fixed layout per depth: see [spec anatomy](docs/spec-anatomy.md).
 - **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't.
+- **Research with a paper trail.** Unfamiliar and version-bound choices use dated sources and reusable evidence; unverified model memory cannot justify high-impact decisions. Declare web-search MCP servers per harness in `research.web_search_servers`.
 - **Tests before code (TDD).** Write a failing test from the spec, make it pass, then refactor. Mandao requires recorded red evidence before implementation where TDD applies: the test demonstrates the missing behavior before the code addresses it, keeping implementation tied to the spec. [TDD in the task flow](#test-driven-development-tdd).
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
 - **Safer skill installs.** Catalog skill repositories require HTTPS; Git preserves your `GIT_SSH_COMMAND` and adds non-interactive mode only when no `BatchMode` setting is present.
