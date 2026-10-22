@@ -836,6 +836,12 @@ Archify is required for diagrams (§18.3). **DECIDED, pending Phase 4:** init of
 
 ### 17.2 Rules
 
+- **DECIDED (ADR 0043):** remote skill repository URLs use `https:` only. Catalog validation and the
+  runtime guard reject `http:`, `file:`, `ssh:` and `git:`. Skill copies preserve the user's
+  `GIT_SSH_COMMAND`, adding `BatchMode=yes` only when no explicit BatchMode setting exists; an unset
+  command uses `ssh -o BatchMode=yes`.
+  Skills with their own installer (such as Graphify) use that pinned installer rather than copying
+  an entire repository as a skill.
 - **One primary skill per technology** by default.
 - **Cap** of ~10 project skills on top of the bootstrap.
 - Third-party skills are **referenced, not vendored**, pinned with author, license and version.

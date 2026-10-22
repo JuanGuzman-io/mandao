@@ -10,8 +10,8 @@ type Outcome = Pick<SkillResult, 'status' | 'detail' | 'scripts'>;
 
 /** Script extensions left out by default (C-2, S-3.4). */
 const SCRIPT_EXTENSIONS = new Set(['.sh', '.bash', '.zsh', '.js', '.mjs', '.cjs', '.ts', '.py', '.rb', '.ps1', '.bat', '.cmd']);
-/** Transports a catalog `url` may use; anything else (e.g. `ext::`) is refused before git runs. */
-const ALLOWED_PROTOCOLS = new Set(['https:', 'http:', 'ssh:', 'git:', 'file:']);
+/** Only HTTPS catalog sources are allowed; local and alternate git transports are refused. */
+const ALLOWED_PROTOCOLS = new Set(['https:']);
 /** What a skill's scripts do beyond being third-party code, when known (P3). */
 const SCRIPT_NOTES: Record<string, string> = {
   brainstorming: "brainstorming's scripts start a local server.",
@@ -27,6 +27,14 @@ function isScript(rel: string, mode: number): boolean {
 /** How long one git call may take before the skill is reported pending, so a hung fetch never blocks init. */
 const GIT_TIMEOUT_MS = 120_000;
 
+/** Keeps the user's SSH command and adds non-interactive mode only when BatchMode is unspecified. */
+function gitSshCommand(configured = process.env.GIT_SSH_COMMAND): string {
+  const command = configured?.trim();
+  if (!command) return 'ssh -o BatchMode=yes';
+  if (/(?:^|\s)(?:-o\s*)?BatchMode\s*=\s*(?:yes|no)(?=\s|$)/i.test(command)) return command;
+  return `${command} -o BatchMode=yes`;
+}
+
 /** Runs git with an argument array (never a shell string), no prompts (terminal or ssh), a timeout, and no `ext::` transport. */
 function git(args: string[], cwd: string, input?: string) {
   return spawnSync('git', ['-c', 'protocol.ext.allow=never', ...args], {
@@ -35,7 +43,7 @@ function git(args: string[], cwd: string, input?: string) {
     encoding: 'utf8',
     stdio: ['pipe', 'pipe', 'pipe'],
     timeout: GIT_TIMEOUT_MS,
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: 'ssh -o BatchMode=yes' },
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: gitSshCommand() },
   });
 }
 

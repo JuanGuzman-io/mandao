@@ -49,3 +49,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0040](0040-approval-by-running-the-next-command.md) | Approval by running the next command, unless something is open | Accepted |
 | [0041](0041-spec-folder-layout-v2.md) | Spec folder layout version 2 | Accepted |
 | [0042](0042-phased-improvements-and-local-validation.md) | Phased improvements and local validation | Accepted |
+| [0043](0043-https-skill-sources-and-ssh-settings.md) | HTTPS skill sources and SSH settings | Accepted |

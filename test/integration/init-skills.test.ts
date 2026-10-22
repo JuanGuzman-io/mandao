@@ -11,7 +11,7 @@ import { commandSkills } from '../../src/skills/command-skills.js';
 import { makeTree, pkg } from '../helpers.js';
 
 // MDO-0009 T2: `init` offers the commands' skills and copies only what the person selects (FR-2, FR-3, FR-4).
-// Prompts are mocked like the budget question; the git source is a local tagged repository (file://).
+// Prompts are mocked like the budget question; Git rewrites its HTTPS fixture URL to a local tagged repository.
 
 const state = vi.hoisted(() => ({
   /** What the skills multiselect answers; the test sets it per case. */
@@ -100,10 +100,18 @@ function skillRepo() {
   git(dir, 'add', '-A');
   git(dir, 'commit', '--quiet', '-m', 'skills');
   git(dir, 'tag', 'v1.0.0');
-  return { url: `file://${dir}`, commit: git(dir, 'rev-parse', 'HEAD') };
+  return { url: 'https://fixture.invalid/skills.git', localUrl: `file://${dir}`, commit: git(dir, 'rev-parse', 'HEAD') };
 }
 
-let source: { url: string; commit: string } = { url: '', commit: '' };
+let source: { url: string; localUrl: string; commit: string } = { url: '', localUrl: '', commit: '' };
+
+function rewriteGitFixture() {
+  process.env.GIT_CONFIG_COUNT = '1';
+  process.env.GIT_CONFIG_KEY_0 = `url.${source.localUrl}.insteadOf`;
+  process.env.GIT_CONFIG_VALUE_0 = source.url;
+}
+
+let previousGitConfig: Record<string, string | undefined> = {};
 
 vi.mock('../../src/engine/catalog.js', async (importOriginal) => {
   const real = await importOriginal<typeof import('../../src/engine/catalog.js')>();
@@ -123,12 +131,16 @@ vi.mock('../../src/engine/catalog.js', async (importOriginal) => {
 let exit: MockInstance<typeof process.exit>;
 
 beforeEach(() => {
+  previousGitConfig = Object.fromEntries(
+    ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'].map((key) => [key, process.env[key]]),
+  );
   process.env.MANDAO_HOME = makeTree({});
   state.shown = [];
   state.atQuestion = undefined;
   state.runnerCalls = [];
   state.answer = [];
   source = skillRepo();
+  rewriteGitFixture();
   state.root = makeTree({ '.git/': '', 'package.json': pkg('shop') });
   vi.spyOn(console, 'log').mockImplementation((...args) => {
     state.shown.push(args.join(' '));
@@ -141,6 +153,10 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  for (const [key, value] of Object.entries(previousGitConfig)) {
+    if (value === undefined) delete process.env[key];
+    else process.env[key] = value;
+  }
 });
 
 const initOptions = {
@@ -269,7 +285,8 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
   });
 
   test('S-3.3/C1 and AC-3/C1: an accepted skill whose fetch fails does not fail init; it is reported pending and not pinned', async () => {
-    source = { url: 'file:///nonexistent/mandao-no-such-repository', commit: source.commit };
+    source = { ...source, localUrl: 'file:///nonexistent/mandao-no-such-repository' };
+    rewriteGitFixture();
     state.answer = ['brainstorming'];
     await expect(init(['claude', 'codex'])).resolves.toBeUndefined();
     expect(exit).not.toHaveBeenCalled();
