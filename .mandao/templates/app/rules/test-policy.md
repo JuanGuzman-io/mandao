@@ -29,7 +29,14 @@ Where the table says **Always**: red test first, derived from the scenario or cl
 code to pass it; then refactor within the task's scope. Where it says **Never**, TDD does not apply.
 
 - **Red evidence:** `mandao run red <spec> <Tn> <test files>` runs the tests and records
-  a `RED` row only if they fail. No red evidence on a task with mandatory tests → the Reviewer FAILs it.
+  a `RED` row only if they fail. If the first run passes, `run step` offers exactly two alternatives:
+  a killed `mandao run mutation … --for-first-pass` probe, or independent review with
+  `mandao run test-review <spec> <Tn> --reviewer mandao-reviewer --review <file>`. The review begins
+  `TEST REVIEW: PASS`, has an `## Assertions` section and names every inspected test file. Until one is
+  recorded, implementation cannot proceed; repeating the green red run is not useful evidence.
+- **Removed test cases:** removing a case recorded in the task's first test run requires
+  `--test-deletion-reason` at the report checkpoint. The Reviewer sees the cases and reason; a linter
+  limit is never a valid reason—split the test file instead.
 - **No weakening a red test.** Mandao remembers each red test's hash; a later change shows up as
   `red test changed` in `execution.md` and in the brief, and the Reviewer judges it.
 - **Tests by another agent:** for tasks with risk tags or tier strong, the Tester writes the red tests
@@ -73,6 +80,20 @@ The Reviewer and `verify` run only the tests a change impacts:
   of those folders changes. A test that lists only its own temporary folders says `mandao-scans: none`.
   The `scan-markers` gate fails a changed test that lists or globs folders without the comment.
 - **Full suite and critical smoke:** in CI; locally only with `--full`.
+
+## Temporary folders and machine-independent tests
+
+- Every test that needs a temporary workspace creates a unique folder with `mkdtemp` through
+  `test/helpers.ts`; folders belong to the current test ID, including folders created in its hooks.
+- A test may delete only folders registered to its own test ID. Cleanup uses each recorded absolute
+  folder path with recursive `force: true`, so an already absent folder is harmless. Never share a
+  temporary workspace across tests, delete a global collection of folders, or find cleanup targets by
+  prefix, glob, or directory scan.
+- Process-level fixtures also use a fresh `mkdtemp` folder per test and remove only that exact folder.
+- Temporary Git repositories set local `user.name` and `user.email`, and disable automatic garbage
+  collection and maintenance so Git cannot write into a repository while the test removes it. Test
+  scripts use `process.exitCode` instead of `process.exit()` so buffered output can flush.
+- `test/unit/architecture.test.ts` enforces these rules.
 
 ## Resource budget
 

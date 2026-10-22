@@ -17,12 +17,12 @@ Spec: $spec
 
 For each folder in `specs/` with a `story.md`, show: id, title, status, the task in progress
 and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_TO_CI`), commits pending
-(`pending_commits` in `progress.yml`), and the next mandao to run, plus the active worktrees (`mandao worktree list`). Stop there.
+(`pending_commits` in `progress.yml`), and the next mandao to run (with "delivery n of m" from `run next` or `run tasks` when the spec declares deliveries), plus the active worktrees (`mandao worktree list`). Stop there.
 
 ## With a spec id: continue
 
 1. **Place.** `node .mandao/bin/mandao.mjs run where $spec`. Outside the spec's worktree: stop and give the path.
-2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening,
+2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening (and "delivery n of m" from `run next` or `run tasks`, if any),
    in which harness and on which model, the open questions and the recorded next step.
 3. **Models.** Use `models.yml` for **this** harness: `node .mandao/bin/mandao.mjs run models --harness <this harness>`.
    Never assume the previous harness's models are available here.

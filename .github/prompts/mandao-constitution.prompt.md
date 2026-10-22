@@ -20,6 +20,14 @@ Build the foundation every other mandao relies on: how the system is built (tech
 owned by the tech lead) and what it does and for whom (product context, owned by the PO). Keep them in
 separate files: different people approve them.
 
+For a new or legacy constitution, propose stack-specific design principles in `standards.md` for user
+approval: stable `DP-*` IDs, concrete SRP/DIP rules (especially single responsibility and dependency
+inversion where required), ACID rules where relevant, and simplicity / anti-
+abstraction as the counterweight. Record architecture as an explicit team choice in `architecture.md`;
+never infer it from the framework. State precedence: chosen project architecture, then documented
+framework conventions, then generic principles only where the first two are silent. In active mode,
+show this as a per-file proposal and do not add it unless the user approves.
+
 Follow `.mandao/templates/app/rules/context.md` throughout. Product context is written in
 `en`; the technical constitution in `en`. Headings, keywords and
 markers stay in English.
@@ -76,6 +84,12 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 - Name one **exemplar file** per kind of module (controller, service, component…) in `standards.md`.
 - Propose gate commands per project (format, lint, typecheck, test, secrets, audit, sast, metrics)
   from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`.
+- Inspect local security gates and every project CI definition for secret scanners and SAST. Run
+  `node .mandao/bin/mandao.mjs run security-scanning` for deterministic detection and, when a GitHub remote and `gh` are
+  available, read-only provider API evidence. Present each result as detected, user-declared or
+  unknown; never turn a missing file, unavailable tool or denied API request into `none`. Put the
+  approved per-type result in `security_scanning` frontmatter of `infrastructure.md`, keeping
+  `secrets` and `sast` separate and preserving user declarations as declarations.
 - A project inherits from the workspace. A contradiction is a `CONFLICT`, never a silent override.
 - **Branching model** (ADR 0023): `node .mandao/bin/mandao.mjs run branching` reports the model in force and what the existing
   branches suggest (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` →

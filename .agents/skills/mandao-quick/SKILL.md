@@ -78,3 +78,6 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
 
    The commit lists the code files, `specs/quick/quick-log.md` and `specs/quick/_log/costs.yml`.
 4. Report: what changed, gates run, review result, commit hash.
+5. Deliver through the same grouped, confirmed flow as a spec: `mandao deliver quick/<slug>` (the slug
+   from `mandao start --quick`). A manual-provider path pushes and prints PR steps; without verifiable CI,
+   merge remains with the user.

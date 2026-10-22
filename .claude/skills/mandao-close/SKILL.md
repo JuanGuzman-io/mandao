@@ -68,8 +68,10 @@ item in the technical notes.
 
 `node .mandao/bin/mandao.mjs run diagram-drift $spec` derives `diagrams/implemented.graph.json` from the spec's commits.
 Add contract nodes you can confirm with evidence (a route, a schema, an event name). Render the built
-diagram from it (Archify; Mermaid without it) next to the approved one. Every added or missing node or
-edge is drift and goes, explained, into the technical notes; a relabelled box is not drift.
+diagram from it through `mandao run archify` when `diagrams.engine: archify`; use Mermaid only when
+`diagrams.engine: mermaid` is explicitly configured. If the selected renderer is missing, stop and
+report how to install or configure it. Render next to the approved diagram. Every added or missing node
+or edge is drift and goes, explained, into the technical notes; a relabelled box is not drift.
 
 ## 5. Documents
 
@@ -104,6 +106,13 @@ a field with `—`: leave it out.
   until the user confirms it.
 - Environments: only as CI or the tracker reports them —
   `node .mandao/bin/mandao.mjs run close-summary $spec --env <name> --source ci|tracker`. Promotion is never automated.
+
+After close commits its record, run `mandao deliver $spec`. It asks in one grouped confirmation for
+the PR destination and the delivery level (everything, push and PR only, or nothing). The worktree's
+recorded start branch is the default; other remote branches from `branching` are offered only when they
+exist. Never push directly to a protected destination. Without GitHub CLI, push and give the manual PR
+link/steps; CI is “not verifiable” and merge stays with the user. Before any merge, the selected target
+and PR URL must be committed in `close-summary.md` and `docs/CHANGELOG.md` on this PR.
 
 ## 7. Publish
 

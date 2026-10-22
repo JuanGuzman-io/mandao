@@ -11,6 +11,9 @@ owner: tech lead
 | Project | Language | Frameworks (versions) | Style-defining libraries |
 |---|---|---|---|
 
+## Chosen architecture
+<!-- Name the architecture the team chose; do not infer it from a framework. -->
+
 ## Layers and allowed dependencies
 
 ## Module boundaries

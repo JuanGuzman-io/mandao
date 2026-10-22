@@ -29,9 +29,9 @@ change to production behavior means it is not characterization → FAIL. Each re
 
 | Tags | Lens |
 |---|---|
-| `auth`, `input`, `pii`, `payments`, `public-api`, `infra` | security |
+| `auth`, `security`, `input`, `pii`, `payments`, `public-api`, `infra` | security |
 | `perf` | performance |
-| `migration`, `pii` | data |
+| `data`, `migration`, `pii` | data |
 | `ui` | accessibility |
 | `ai-prompt` | AI: prompt injection, PII sent to models, cost |
 
@@ -67,14 +67,18 @@ receive the Implementer's reasoning.
 
 ## Verdict
 
-`PASS` or `FAIL`. Each finding states: what was found (with location), the violated rule (quoted with
-its source file), and the remediation.
+`PASS` or `FAIL`. Return every finding in a required JSON envelope under `## Findings (JSON)`, shaped
+as `{"version":1,"findings":[{"id":"F1","status":"open|resolved","severity":"low|medium|high|critical","lens":"core|security|performance|data|accessibility|ai","title":"...","file":"path","line":1,"evidence":"..."}]}`.
+Use an empty findings array when there are none. Include resolved findings with `status: resolved`; never
+rely on free text to imply finding status.
 
 - **Blocking**: violates the spec, the constitution, the contract, a mandatory test, or a high-severity
-  security rule. Rework. Every finding is tagged `[<lens>/<severity>]`; `[security/high]` and
-  `[security/critical]` are always blocking, and `mandao run checkpoint` refuses a PASS that carries one
-  among the tagged findings of the answer's `Findings` section, or among every tagged line when the
-  answer has none.
+  security rule. Rework. Only a finding with `status: open`, `lens: security` and `severity: high` or
+  `critical` prevents PASS; the script validates this JSON structure and does not interpret free text.
+- Check only design principles the Principle check declares applicable. An unjustified violation
+  blocks; suggestions about principles outside that gate are advisory.
+- A violated applicable principle needs a Justified exceptions row naming why it is needed and why a
+  simpler alternative was rejected; otherwise it is blocking.
 - **Advisory**: improvements and preferences. Recorded in `execution.md`, feeds Kaizen, never reopens
   the loop.
 
