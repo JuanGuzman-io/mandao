@@ -154,6 +154,9 @@ From `{{template:spec/design.md}}`:
   **exemplar file** per change.
 - Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
+- **Principle check:** declare `writes_data: yes | no`; include exactly one line for every `DP-*`
+  principle in the applicable constitution, with applicability and how it applies or why not. For
+  data writes, add the complete ACID table and ensure a task declares a partial-failure test.
 - `Constitution Impact`, `Product Impact` and `Module Docs Impact`: record, never apply. Only
   `/mandao-close` applies them.
 <!-- mandao:if multiProject -->

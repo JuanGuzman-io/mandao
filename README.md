@@ -252,6 +252,11 @@ and severity, so the security gate blocks only open high or critical security fi
 repeated context while keeping TDD, deterministic gates and the independent Reviewer in place. See
 [ADR 0045](docs/decisions/0045-structured-review-context.md).
 
+Designs also carry a deterministic principles gate: the Reviewer enforces only approved principles
+marked applicable, while data writes require declared ACID handling and a task-level partial-failure
+test. Existing constitutions are never rewritten automatically; `doctor` reports when principles are
+not yet declared. See [ADR 0047](docs/decisions/0047-gated-design-principles-and-data-write-validation.md).
+
 From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao doctor`, `mandao models`.
 
 CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cli.md](docs/cli.md).

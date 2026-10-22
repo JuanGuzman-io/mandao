@@ -36,6 +36,7 @@ export const taskFieldsSchema = z
     test_levels: z.record(z.string().regex(SCENARIO_ID), z.enum(TEST_LEVELS)).optional(),
     evidence: z.enum(EVIDENCE).optional(),
     risk_tags: z.array(riskTag).default([]),
+    partial_failure_tests: z.array(z.string().trim().min(1)).default([]),
     depends_on: z.array(z.string().regex(TASK_ID)).default([]),
     parallel_safe: z.boolean().default(false),
     verify: z.string().optional(),

@@ -19,6 +19,7 @@ Applies the principles in `spec-docs.md`.
   - **Notes** (only when needed): a visible exception, e.g. "no TDD red: mutation evidence".
   - The YAML block, no prose: `project`, `kind`, `tier`, `files`, `exemplar`, `ac`, `scenarios`,
     `test_levels` (`unit | e2e | eval | none` per scenario), `evidence` (`tdd | mutation | none`),
-    `risk_tags`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`, `verify`.
+    `risk_tags`, `partial_failure_tests` (test names for ACID partial-failure coverage), `decisions`
+    (linked `D<n>` ids), `depends_on`, `parallel_safe`, `verify`.
 - The title is the result, never a file path. Concrete test names are chosen by whoever writes the
   tests; the declared level per scenario is what the Reviewer checks.

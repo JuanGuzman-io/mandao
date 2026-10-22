@@ -29,10 +29,18 @@ let out: string[] = [];
 export const ledger = `---
 schema_version: 1
 spec: MDO-0001-skills-list
+depth: standard
 status: draft
+writes_data: no
 ---
 
 # Design — skills list
+
+## Principle check
+
+| ID | Applies? | Application or reason not applicable |
+|---|---|---|
+| none | n/a | No principles are declared. |
 
 ## Premise Ledger
 
@@ -74,6 +82,10 @@ export function repo(version: 1 | 2) {
   const dir = join(root, SPEC);
   const story = readFileSync(join(dir, 'story.md'), 'utf8').replace(/^schema_version: 1$/m, `schema_version: ${version}`);
   writeFileSync(join(dir, 'story.md'), story);
+  if (version === 2) {
+    const requirements = readFileSync(join(dir, 'requirements.md'), 'utf8').replace(/^depth: lite$/m, 'depth: standard');
+    writeFileSync(join(dir, 'requirements.md'), requirements);
+  }
   writeFileSync(join(dir, 'design.md'), ledger);
   mkdirSync(join(dir, '_log'));
   for (const f of ['execution.md', 'progress.yml']) renameSync(join(dir, f), join(dir, '_log', f));

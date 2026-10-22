@@ -18,6 +18,9 @@ reviewed from what it invoked. Build your checklist from `{{paths.constitution}}
 Check, in order:
 
 1. Spec conformance clause by clause (`BUT it must NOT` / `AND IT MUST`) and the contract on both sides.
+   Enforce only principles the design's Principle check declares applicable; unjustified violations
+   block, while suggestions outside that gate are advisory. An applicable violation needs a justified
+   exception naming why it is needed and why a simpler alternative was rejected.
 2. Test policy: mandatory tests present and meaningful; unnecessary tests flagged as noise.
 3. The `AGENTS.md` of each touched module reflects the change.
 4. Clean code: blocking only for glossary-contradicting names, duplicated business logic,

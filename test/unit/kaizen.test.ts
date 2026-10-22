@@ -9,6 +9,7 @@ const task = (id: string, tests = true): Task =>
     tier: 'standard',
     files: [],
     risk_tags: [],
+    partial_failure_tests: [],
     ac: [],
     scenarios: [],
     decisions: [],

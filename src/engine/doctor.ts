@@ -13,6 +13,7 @@ import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
 import { archifyScript } from './archify.js';
 import { readCatalog } from './catalog.js';
+import { constitutionPrincipleFindings } from './constitution-principles.js';
 import { cacheFindings } from './doctor-cache.js';
 import { harnessFindings } from './doctor-harness.js';
 import { modelFindings } from './doctor-models.js';
@@ -159,6 +160,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   findings.push(...sourcesFindings(root));
 
   findings.push(...workspaceFindings(root, config));
+  findings.push(...constitutionPrincipleFindings(root, config));
 
   const lockForTools = readLock(join(root, LOCK_FILE));
   let build: ReturnType<typeof buildProject>;

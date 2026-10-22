@@ -56,6 +56,22 @@ describe('core content', () => {
     expect(close).toMatch(/use Mermaid only when\s+`diagrams\.engine: mermaid` is explicitly configured/);
   });
 
+  test.each(PROFILES)('Phase 3b principle and data-write rules render for %s', (profile) => {
+    const config = configSchema.parse({
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'a', path: '.', profile }],
+      harnesses: Object.keys(ADAPTERS),
+    });
+    const { files } = buildOutputs(config, {}, layers, '0.0.0', 'project');
+    const content = files.map((file) => file.content).join('\n');
+    expect(content).toContain('writes_data: <yes|no>');
+    expect(content).toContain('Principle check');
+    expect(content).toContain('Data writes (ACID)');
+    expect(content).toContain('partial_failure_tests');
+    expect(content).toContain('stable `DP-*` IDs');
+  });
+
   test('ships every command in the flow, with stubs declared as such', () => {
     const layers = loadLayers(process.cwd(), []).filter((l) => l.kind === 'core');
     const config = configSchema.parse({

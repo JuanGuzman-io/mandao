@@ -45,4 +45,14 @@ describe('verifyPlan', () => {
     const plan = verifyPlan({ ...base(), commits: { passed: ['T1'], committed: new Set(), pending: [] } });
     expect(plan.blockers.some((b) => b.startsWith('UNCOMMITTED T1'))).toBe(true);
   });
+
+  test('principle and data-write validation findings block verified', () => {
+    const findings = [
+      { type: 'PRINCIPLE_GATE' as const, ref: 'DP-SIMPLE', message: 'missing gate row' },
+      { type: 'DATA_WRITE' as const, ref: 'partial_failure_tests', message: 'missing partial-failure evidence' },
+    ];
+    const plan = verifyPlan({ ...base(), designFindings: findings });
+    expect(plan.blockers).toContain('PRINCIPLE_GATE DP-SIMPLE: missing gate row');
+    expect(plan.blockers).toContain('DATA_WRITE partial_failure_tests: missing partial-failure evidence');
+  });
 });

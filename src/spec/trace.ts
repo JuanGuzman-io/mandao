@@ -1,3 +1,4 @@
+import type { DesignFinding } from './principles.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
 import type { Task } from './tasks.js';
@@ -11,7 +12,9 @@ export type TraceFindingType =
   | 'E2E_MISSING'
   | 'UNCOMMITTED'
   /** A High premise with neither a recorded run nor the UNVERIFIED marker (ADR 0033). */
-  | 'PREMISE_UNPROVEN';
+  | 'PREMISE_UNPROVEN'
+  | 'PRINCIPLE_GATE'
+  | 'DATA_WRITE';
 
 export interface TraceFinding {
   type: TraceFindingType;
@@ -99,8 +102,14 @@ function referenceFindings(reqs: Requirements, tasks: Task[], known: Set<string>
  * covered when something cites it exactly — a gap is never discharged by citing another reference.
  * Semantic findings (CONTRADICTION, RULE, PREMISE, CONTRACT) stay with the agent.
  */
-export function trace(story: Story, reqs: Requirements, tasks: Task[] = [], commits?: CommitState): Trace {
-  const findings: TraceFinding[] = commits ? commitFindings(commits) : [];
+export function trace(
+  story: Story,
+  reqs: Requirements,
+  tasks: Task[] = [],
+  commits?: CommitState,
+  designChecks: DesignFinding[] = [],
+): Trace {
+  const findings: TraceFinding[] = [...(commits ? commitFindings(commits) : []), ...designChecks];
   const refs = storyRefs(story);
   const known = new Set(refs.map((r) => r.ref));
   const scenarios = scenarioRefs(reqs);

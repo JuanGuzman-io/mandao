@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import { ADAPTERS } from '../adapters/index.js';
+import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
 import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
@@ -66,17 +67,6 @@ function registerPlanning(run: Command, ctx: CliContext) {
     });
 
   run
-    .command('trace <spec>')
-    .description('AC → FR → scenario → task → test matrix and structural findings')
-    .action((ref: string) => {
-      const { spec } = loadSpec(ctx, ref);
-      if (!spec.story || !spec.requirements) return json({ issues: [...spec.issues, 'trace needs story.md and requirements.md'] });
-      const { config } = loadSpec(ctx, ref);
-      const t = trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers));
-      json({ ...t, findings: [...t.findings, ...specPremiseFindings(spec.dir)], issues: spec.issues });
-    });
-
-  run
     .command('tasks <spec>')
     .description('Validate tasks.md, compute waves and the next eligible task; --index prints the generated Overview')
     .option('--index', 'print the Overview generated from the task details')
@@ -102,6 +92,36 @@ function registerPlanning(run: Command, ctx: CliContext) {
           ...taskLayoutIssues(raw, spec.tasks, spec.story, { inline: tasksFile.endsWith(LITE_DOC) }),
         ],
       });
+    });
+}
+
+function registerTrace(run: Command, ctx: CliContext) {
+  run
+    .command('trace <spec>')
+    .description('AC → FR → scenario → task → test matrix and structural findings')
+    .action((ref: string) => {
+      const { config, spec } = loadSpec(ctx, ref);
+      if (!spec.story || !spec.requirements) return json({ issues: [...spec.issues, 'trace needs story.md and requirements.md'] });
+      const layout = readLayout(
+        spec.dir,
+        principlesForProjects(
+          ctx.root(),
+          config,
+          spec.tasks.map((task) => task.project),
+        ),
+      );
+      const designChecks = layout.designFindings;
+      const result = trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers), designChecks);
+      json({
+        ...result,
+        findings: [...result.findings, ...specPremiseFindings(spec.dir)],
+        issues: [
+          ...spec.issues,
+          ...layout.missing.map((f) => `layout: missing ${f}`),
+          ...layout.unexpected.map((f) => `layout: unexpected ${f}`),
+        ],
+      });
+      if (designChecks.length) process.exitCode = 1;
     });
 }
 
@@ -163,9 +183,9 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
 }
 
 /** Close refuses a folder that does not match its layout; an unreadable version is a problem too. */
-function closeLayoutProblems(dir: string): string[] {
+function closeLayoutProblems(dir: string, principleIds: string[]): string[] {
   try {
-    return layoutProblems(readLayout(dir));
+    return layoutProblems(readLayout(dir, principleIds));
   } catch (e) {
     return [`layout: ${(e as Error).message}`];
   }
@@ -180,12 +200,22 @@ function registerState(run: Command, ctx: CliContext) {
     )
     .option('--ci-confirmed', 'CI passed every DEFERRED_TO_CI run')
     .action((ref: string, to: string | undefined, opts: { ciConfirmed?: boolean }) => {
-      const { spec } = loadSpec(ctx, ref);
+      const { config, spec } = loadSpec(ctx, ref);
       const from = spec.story?.meta.status ?? 'draft';
       // Read only: the approvals stay in their log and are merged here, never written into execution.md (C-1).
       if (to === undefined) return json({ status: from, timeline: timeline(spec.execution, readApprovalLog(spec.dir)) });
       const problems = checkTransition(from, to, spec.progress, Boolean(opts.ciConfirmed));
-      if (to === 'closed') problems.push(...closeLayoutProblems(spec.dir));
+      if (to === 'closed')
+        problems.push(
+          ...closeLayoutProblems(
+            spec.dir,
+            principlesForProjects(
+              ctx.root(),
+              config,
+              spec.tasks.map((task) => task.project),
+            ),
+          ),
+        );
       json({ from, to, allowed: problems.length === 0, problems });
       if (problems.length) process.exitCode = 1;
     });
@@ -194,8 +224,15 @@ function registerState(run: Command, ctx: CliContext) {
     .command('layout <spec>')
     .description('Compare the spec folder with the layout of its version and depth (missing, unexpected)')
     .action((ref: string) => {
-      const { spec } = loadSpec(ctx, ref);
-      const found = readLayout(spec.dir);
+      const { config, spec } = loadSpec(ctx, ref);
+      const found = readLayout(
+        spec.dir,
+        principlesForProjects(
+          ctx.root(),
+          config,
+          spec.tasks.map((task) => task.project),
+        ),
+      );
       json({ ...found });
       if (!found.ok) process.exitCode = 1;
     });
@@ -327,6 +364,7 @@ function registerBuild(run: Command, ctx: CliContext) {
 /** Read-only spec scripts: JSON on stdout for the commands to read. */
 export function registerSpecScripts(run: Command, ctx: CliContext) {
   registerPlanning(run, ctx);
+  registerTrace(run, ctx);
   registerTaskScripts(run, ctx);
   registerState(run, ctx);
   registerVerify(run, ctx);

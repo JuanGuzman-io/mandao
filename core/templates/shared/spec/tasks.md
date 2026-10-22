@@ -27,6 +27,7 @@ exemplar: path/to/similar.ts
 ac: [AC-1, AC-1/C1]
 scenarios: [S-1.1, S-1.1/C1]
 test_levels: { S-1.1: unit, S-1.1/C1: unit }
+partial_failure_tests: []
 evidence: tdd
 risk_tags: []
 decisions: []
