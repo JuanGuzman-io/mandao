@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "2ba0be5fe92df5f7e5856b8847a9454076f745815a3b1067bdea994f3d93b176"
+      "sha256": "9687404d53b4e5a7ba4881939a0a3a09efbd2ff6dcf6a4627469a0858c9c1a03"
     },
     {
       "path": "core/commands/init.md",
@@ -35,29 +35,29 @@
     },
     {
       "path": "core/commands/resume.md",
-      "sha256": "196a1e1a70b4df2cf523b96e61259674e6b36d159a6efef1007f8f50dad0b4e3"
+      "sha256": "af3f149b4856107eb8a4f7b0e08b6d3dec06614db419920e4ec4d60e98464a8c"
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "702731f724fd4179df3142ed98b26dfb8c0aa2d7d5ec821d1a823b77e68a2523"
+      "sha256": "dac76a26174261999fda61788d55d21775c4571d5bb7a33462785ddceff1037b"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "c969bbd13ecce87b65ed141be63af810c06ac8804ffa33b92507f56326fbe6b6"
+      "sha256": "1aa0df73a766f90b260fab74738ae50bb93a45bec9f4778ba5fa5fb711da2062"
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "5bd432e38a79e3934af3c057a0d2f88b82088339adabe890c420e39143cf573b"
+      "sha256": "bc1ec1a2ce9089eeb8c413de7287c5aa70274234f751699be7f52429435e9335"
     },
     {
       "path": "core/commands/verify.md",
       "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
     }
   ],
-  "specSha256": "40cac50afb061932f3f45141ce061beb0a583edd8034713127494318e21aad4b",
+  "specSha256": "c33af928ba2ca96224dc6a69cf0257997ea4c5ab1e570fd831f82e446d650f94",
   "svgSha256": {
-    "light": "21977c76fd5a08834cec23de89e2ef8cb8919d4c7c3e9bbf13a7221962234432",
-    "dark": "fd760603c66ab292193a652f7f132e054f04bc835cca3fb94fbb93756fec6ca3"
+    "light": "f848cbb4fc6505fa9bf79a72d0104f76c2f0eb0b41e1a0adbce62f8485087ebe",
+    "dark": "eb731dc89f206d88dd8a2b189d9656ead0a19998aec7f6cff01f9e9295622fce"
   },
   "spec": {
     "schema_version": 2,
@@ -118,7 +118,7 @@
         "col": 1,
         "type": "backend",
         "label": "1. For each task",
-        "sublabel": "mandao run tasks +10",
+        "sublabel": "mandao run tasks +12",
         "width": 164
       },
       {

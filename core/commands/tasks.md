@@ -61,7 +61,8 @@ open version 1 spec it warns and does not convert it; the migration goes through
      `{{template:rules/test-policy.md}}` requires; concrete test names are chosen by whoever writes them;
    - `partial_failure_tests`: concrete test names for partial-failure behavior when the design declares or implies data writes;
    - `evidence`: `tdd`, `mutation` (it only pins down existing behavior) or `none`;
-   - `verify`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`.
+   - `verify`, `decisions` (linked `D<n>` ids), `depends_on`, `parallel_safe`;
+   - `delivery` (a number, optional): the delivery the task belongs to, see step 2b.
    A task's **Done when** lists every entry point, list item and clause of the FRs it serves; include a
    rejected option only as an observable must-not when it adds a behavior constraint. Rationale and
    alternatives stay in `design.md` and are included in the Implementer brief for linked decisions.
@@ -71,12 +72,17 @@ open version 1 spec it warns and does not convert it; the migration goes through
    the path stays inside its root.
    The module `AGENTS.md` (and its `CLAUDE.md` pointer) is part of every task's definition of done; do
    not list it.
+2b. **Deliveries** (ADR 0053). Big specs split the execution, not the spec. Separate specs follow principle 8 of
+   `{{template:rules/spec-docs.md}}`. When `{{script:tasks}} {{arg:spec}}` reports `proposeDeliveries.propose`, propose
+   grouping the tasks by delivery with its reasons (task count or files above the limits), grouped by AC
+   and never by technical layer; state that criterion and let the user decide. The proposal applies only while no task declares
+   `delivery`. If they accept, give every task a `delivery: n`, numbered 1..n; each delivery meets its AC end to end and depends only on earlier ones.
 3. **Premises that a run can prove:** a High premise in `design.md` still `UNVERIFIED` whose proof is a
    command goes into the **Done when** of the first task that can run it (recorded with
    `mandao run premise`), so a false premise fails in implement, not in verify. A search never counts as
    proof.
 4. **Write `## Overview`:** `{{script:tasks}} {{arg:spec}} --index --write` generates it from the details,
-   grouped by acceptance criterion, with a checkpoint per group. Never edit it by hand.
+   grouped by acceptance criterion (by `### Delivery n — AC…` when tasks declare `delivery`), with a checkpoint per group. Never edit it by hand.
 <!-- mandao:if multiProject -->
 5. **Order across projects:** contract → back and front in parallel against a mock → integration → e2e.
 <!-- mandao:endif -->
@@ -84,7 +90,7 @@ open version 1 spec it warns and does not convert it; the migration goes through
 6. **Slices:** in each touched repository write `{{paths.specs}}/<ID>/spec-ref.md` (link and summary),
    that repository's tasks and the contract, on the same branch name.
 <!-- mandao:endif -->
-7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues and no cycles;
+7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues, no cycles and no delivery issue (they are reported inside `issues`);
    `{{script:trace}} {{arg:spec}}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
 8. **Approve:** show the overview and the first eligible task, then record what was shown with
    `{{script:next}} {{arg:spec}} --shown --harness <this harness>`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks --harness <this harness>`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs

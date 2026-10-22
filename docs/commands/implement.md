@@ -54,6 +54,7 @@ No approval step of its own.
 - `mandao run test-review`
 - `mandao run commit`
 - `mandao run pr-plan`
+- `mandao run verify-plan`
 - `mandao run mutation`
 - `mandao run implement-summary`
 - `mandao run event`

@@ -61,6 +61,7 @@ From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}` a
   touches a flow in `critical-flows.md`.
 - GIVEN / WHEN / THEN bullets; edges as `**BUT it must NOT** … (C1)` and `**AND IT MUST** … (C2)`,
   with explicit clause ids. Keywords and ids stay in English; the text is in `{{language.business}}`.
+- Separate specs only by principle 8 of `{{template:rules/spec-docs.md}}`; the user decides.
 - `sources:` lists every source with its date. `status: draft`.
 
 ## 4. Approve

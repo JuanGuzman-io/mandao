@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md]
-scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, mutation, implement-summary, event]
+scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -60,7 +60,12 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 ## 1. For each task
 
 Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (stop if it reports
-`blocked`). Then repeat until the task is done, halted or pivoted. **One call per step:**
+`blocked`); `next` comes from the current delivery. When `delivery.checkpoint` (in `{{script:next}}` or
+`{{script:tasks}}`) reports a delivery boundary, run `{{script:verify-plan}} {{arg:spec}} --delivery <n>`,
+run its suites and report. The checkpoint passes when `scope.clear` is true: `blockers` always holds the
+permanent "partial plan" line, so it is never empty. When `clear` is false, rework what the other
+blockers name before the next delivery starts. Then recommend a new session before the next
+delivery. The partial plan never verifies the spec; the final verify covers every AC. Then repeat until the task is done, halted or pivoted. **One call per step:**
 `{{script:step}} {{arg:spec}} <Tn> --harness <this harness> [checkpoint options]` writes the checkpoint
 (when you pass any), returns the next action from `loop`, and adds the brief when the action delegates
 work. The mechanical parts (gates, the review input, the final report) are scripts too: run them, read
@@ -185,7 +190,7 @@ deferred tests and advisories, read from the log and git): tasks done, FAILs and
 provider independence, deferred tests, commits, and every `securityMentions` entry verbatim: they did not
 block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
-stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
+stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
 Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows. When it returns
 `autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not

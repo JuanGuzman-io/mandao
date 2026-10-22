@@ -56,6 +56,7 @@ session: { cut_min_savings: 1 } # ADR 0038: mid-implement stop only above this U
 size_limits:                   # ADR 0028: measured on the real diff only, never estimated; projects override
   quick: { max_files: 3, max_changed_lines: 100 }   # quick post-check (git diff --numstat)
   pr:    { max_files: 25, max_changed_lines: 400 }  # pr-plan proposes splitting above these
+deliveries: { propose_above_tasks: 8 }  # ADR 0053: tasks proposes deliveries inside a spec above this many tasks
 resources:                     # ADR 0013 / 0024; projects[].resources overrides any key
   max_workers: auto            # half the cores
   priority: low

@@ -23,6 +23,8 @@ templates are skeletons and this file says what goes in each section.
 6. **Machine files in `_log/`**: `progress.yml`, `execution.md`, `reviews/`, `mutations/`. People read
    the spec root; scripts read the log.
 7. **Cut words, not facts.** No boilerplate ("This document describes…"), no restating the frontmatter.
+8. **Separate specs** only when the parts have value on their own, ship independently and have
+   independent AC; one PO story or dependent AC is one spec. Say the criterion; the user decides.
 
 ## The documents
 
