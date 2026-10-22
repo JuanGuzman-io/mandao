@@ -56,6 +56,13 @@ describe('core content', () => {
     expect(close).toMatch(/use Mermaid only when\s+`diagrams\.engine: mermaid` is explicitly configured/);
   });
 
+  test('Reviewer treats linter-driven test deletion as blocking and asks for a split', () => {
+    const reviewer = readFileSync('core/personas/reviewer.md', 'utf8');
+    const policy = readFileSync('core/templates/shared/rules/test-policy.md', 'utf8');
+    expect(reviewer).toMatch(/Removing cases to satisfy\s+a linter's file\/function limit is a blocking FAIL/);
+    expect(policy).toMatch(/a linter\s+limit is never a valid reason—split the test file instead/);
+  });
+
   test.each(PROFILES)('Phase 3b principle and data-write rules render for %s', (profile) => {
     const config = configSchema.parse({
       schema_version: 1,

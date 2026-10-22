@@ -5,11 +5,11 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
-import { testNames } from '../../src/scripts/red.js';
+import { testNames, testsWithoutRed } from '../../src/scripts/red.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { logPath } from '../../src/scripts/spec-log.js';
 import { securityBlockers, specBudget } from '../../src/spec/index.js';
-import { makeTree, pkg, reviewFile } from '../helpers.js';
+import { initTestRepo, makeTree, pkg, reviewFile } from '../helpers.js';
 
 // MDO-0008: five rules the Leader broke while the text asked for them; now the scripts refuse.
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
@@ -33,7 +33,7 @@ afterEach(() => {
 /** A repo whose test command exits 1: every `run red` is red. */
 function workspace(budget?: number) {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'test/a.test.ts': "test('lists pinned skills', () => {});\n" }));
-  git(root, 'init', '-q');
+  initTestRepo(root, '-q');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
@@ -82,6 +82,8 @@ describe('red first, rework included', () => {
     await checkpoint(root, '--verdict', 'REPORTED');
     await checkpoint(root, '--verdict', 'FAIL', ...reviewer, '--reason', 'edge case untested', '--review', reviewFile('FAIL'));
     writeFileSync(join(root, 'test/a.test.ts'), "test('lists pinned skills', () => {});\ntest('prints the add hint', () => {});\n");
+    const progress = readSpec(join(root, SPEC)).progress;
+    expect(testsWithoutRed(root, progress, 'T2', [], ['src/unrelated.ts'])).toEqual([]);
     await expect(checkpoint(root, '--verdict', 'REPORTED')).rejects.toThrow(/no red run: test\/a\.test\.ts: "prints the add hint"/);
     await run(root, 'run', 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
     await checkpoint(root, '--verdict', 'REPORTED');
@@ -98,6 +100,22 @@ describe('red first, rework included', () => {
     expect(testNames("test('a', () => {});\nit.only(\"b\", x);\ndescribe('c', () => {});\n")).toEqual(['a', 'b']);
     expect(testNames('def test_one():\n    pass\nasync def test_two():\n')).toEqual(['test_one', 'test_two']);
     expect(testNames('func TestRun(t *testing.T) {}\n')).toEqual(['TestRun']);
+  });
+});
+
+describe('removed test cases require a recorded reason', () => {
+  test('checkpoint blocks unexplained deletions and the review pack exposes the reason and removed cases', async () => {
+    const root = workspace();
+    await run(root, 'run', 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
+    writeFileSync(join(root, 'test/a.test.ts'), 'export const helper = true;\n');
+    await expect(checkpoint(root, '--verdict', 'REPORTED')).rejects.toThrow(/deleted test cases need --test-deletion-reason/);
+    await checkpoint(root, '--verdict', 'REPORTED', '--test-deletion-reason', 'scenario is covered by the replacement contract test');
+    expect(rows(root).at(-1)?.notes).toContain('test deletion: scenario is covered by the replacement contract test');
+    const pack = await run(root, 'run', 'review-pack', 'MDO-0001', 'T2');
+    const body = readFileSync(join(root, pack.pack), 'utf8');
+    expect(body).toContain('## Removed test cases');
+    expect(body).toContain('scenario is covered by the replacement contract test');
+    expect(body).toContain('lists pinned skills');
   });
 });
 

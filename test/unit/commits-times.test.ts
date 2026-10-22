@@ -3,7 +3,7 @@ import { realpathSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { configSchema } from '../../src/schemas/index.js';
 import { taskCommitTimes } from '../../src/scripts/commits.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const config = configSchema.parse({
   schema_version: 1,
@@ -29,7 +29,7 @@ function commitAt(root: string, date: string, subject: string, trailers: string[
 describe('task commit times from trailers (MDO-0008 D2)', () => {
   test('each task of the spec gets the author times of its commits, in ms; other specs are left out', () => {
     const root = realpathSync(makeTree({ 'README.md': 'x\n' }));
-    git(root, 'init', '-q', '-b', 'main');
+    initTestRepo(root, '-q', '-b', 'main');
     const t1a = '2026-01-05T10:01:00Z';
     const t1b = '2026-01-05T10:03:00Z';
     const t2 = '2026-01-05T10:05:00Z';

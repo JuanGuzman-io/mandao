@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
 import { catalogSchema, lockSchema } from '../../src/schemas/index.js';
 import { installSkills, pinSkills, shellRunner } from '../../src/skills/install.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 // MDO-0009 T2, review attempt 1: a failure while copying must not throw (AC-3/C1, S-3.3/C1), and a folder that
 // merely exists must not be pinned with the catalog commit unverified (S-2.2, FR-2, D3).
@@ -22,7 +22,7 @@ function skillRepo() {
     'skills/brainstorming/SKILL.md': '---\nname: brainstorming\n---\nUpstream body\n',
     'skills/brainstorming/guide.md': 'a document',
   });
-  git(dir, 'init', '--quiet', '--initial-branch=main');
+  initTestRepo(dir, '--quiet', '--initial-branch=main');
   git(dir, 'config', 'uploadpack.allowFilter', 'true');
   git(dir, 'add', '-A');
   git(dir, 'commit', '--quiet', '-m', 'v7');

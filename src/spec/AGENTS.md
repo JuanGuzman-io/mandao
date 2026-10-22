@@ -4,6 +4,11 @@ Purpose: parse and evaluate spec state, task dependencies, evidence, traceabilit
 The CLI and scripts gather inputs; writer helpers own persistence.
 
 - Copy `loop.ts` for decision logic. Return structured actions; keep side effects in scripts/CLI.
+- `loop.ts` offers `choose-test-evidence` after a recorded `TESTS_PASS`; only a killed first-pass mutation
+  or independent `TEST_REVIEWED` event releases implementation. Three unchanged task/action recommendations
+  are halted by the CLI using the `loop_brake` progress observation; an execution or approval row resets it.
+- Approval history is append-only. `activeApprovals` excludes rows targeted by a revocation/annulment event;
+  `shown` rows remain snapshots, not approvals. Keep `specBudget` and `nextStep` on the effective view.
 - RED evidence gates TDD; characterization uses mutation evidence. No new implementation step until
   the required evidence exists (`loop.ts`, `test/integration/tdd.test.ts`).
 - Two FAILs escalate a tier; three at strong halt. Do not lower reviewer effort or silently discard

@@ -18,7 +18,7 @@ import { parse as parseYaml } from 'yaml';
 import { buildProgram } from '../src/cli/program.js';
 import { writeYaml } from '../src/engine/files.js';
 import { syncProject } from '../src/engine/sync.js';
-import { makeTree, pkg } from './helpers.js';
+import { initTestRepo, makeTree, pkg } from './helpers.js';
 
 const fixture = join(import.meta.dirname, 'fixtures/spec/MDO-0001-skills-list');
 export const SPEC = 'specs/MDO-0001-skills-list';
@@ -67,7 +67,7 @@ export const REVIEW_PASS = 'VERDICT: PASS\n\n## Findings (JSON)\n\n```json\n{"ve
 /** The fixture as a spec of layout `version`, on its spec branch, committed. */
 export function repo(version: 1 | 2) {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'src/cli/skills.ts': 'export const a = 1;\n' }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   git(root, 'config', 'user.name', 'Ana PO');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,

@@ -31,9 +31,10 @@ export function excerpt(output: string | undefined, lines = EXCERPT_LINES): stri
 export function gateResult(gate: string, run: TestRun): GateResult {
   if (run.status === 'DEFERRED_TO_CI' || run.status === 'QUEUE_TIMEOUT') return { gate, status: 'DEFERRED', reason: run.reason };
   if (run.status === 'TIMEOUT') return { gate, status: 'TIMEOUT', reason: run.reason, excerpt: excerpt(run.output) };
+  // Exit status is authoritative: a successful wrapper may legitimately print a missing-tool string.
+  if (run.status === 'PASS') return { gate, status: 'PASS', exitCode: 0 };
   const missing = run.exitCode === 127 || /command not found|not recognized as an internal/i.test(run.output ?? '');
   if (missing) return { gate, status: 'NOT_INSTALLED', exitCode: run.exitCode ?? 127 };
-  if (run.status === 'PASS') return { gate, status: 'PASS', exitCode: 0 };
   return { gate, status: 'FAIL', ...(run.exitCode !== undefined ? { exitCode: run.exitCode } : {}), excerpt: excerpt(run.output) };
 }
 

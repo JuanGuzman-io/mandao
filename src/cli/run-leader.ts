@@ -3,10 +3,12 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import type { Config } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
+import { writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, changeManifest, commitState, renderChangeManifest, repoRoot } from '../scripts/commits.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
+import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { reviewDiff } from '../scripts/review.js';
 import { runTests } from '../scripts/run-tests.js';
@@ -14,41 +16,20 @@ import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import { measureGate } from '../scripts/telemetry.js';
-import {
-  type ExecutionRow,
-  type LoopState,
-  loopState,
-  NOTE_FLAGS,
-  securityMentions,
-  type Task,
-  taskAttempt,
-  timeline,
-} from '../spec/index.js';
+import { LOOP_BRAKE_LIMIT, type LoopState, loopState, observeLoop, type Task, timeline } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
+import { implementSummary } from './implement-summary.js';
 import { json } from './json.js';
+import { currentAttempt, taskOf } from './leader-utils.js';
 import { type CheckpointOptions, withCheckpointOptions, writeCheckpoint } from './run-ledger.js';
 import { stepCut, verifyCut } from './session-advice.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor } from './spec-context.js';
 
-/**
- * Leader scripts (cost-conscious design): the mechanical part of a Leader step runs here and returns only
- * what the Leader decides on. Full outputs stay in `_log/` (version 2: `.mandao/cache/<ID>/`) for the Reviewer and verify.
- */
-
 const DEP_MANIFEST =
   /(^|\/)(package\.json|pnpm-lock\.yaml|package-lock\.json|yarn\.lock|requirements[^/]*\.txt|pyproject\.toml|go\.mod|Cargo\.toml|pom\.xml|build\.gradle(\.kts)?|Gemfile|composer\.json)$/;
 
-const currentAttempt = (spec: SpecFolder, task: string) => taskAttempt(spec.execution, task);
-
-function taskOf(spec: SpecFolder, id: string): Task {
-  const task = spec.tasks.find((t) => t.id === id);
-  if (!task) throw new Error(`No ${id} in ${spec.name}`);
-  return task;
-}
-
-/** The project's command for one gate, run from the project path with stderr kept; undefined when not set. */
 function gateCommand(
   ctx: CliContext,
   gate: string,
@@ -159,7 +140,7 @@ const attemptTitle = (task: string, attempt: number) => `${task} — attempt ${a
 const gatesCacheFile = (spec: SpecFolder, task: string, attempt: number) => cachePath(spec.dir, 'gates', `${task}-${attempt}.md`);
 
 /** The gate results the Reviewer reads (verdict line and status table), and where the full output is. */
-function recordedGates(spec: SpecFolder, id: string, attempt: number): { table?: string; full: string } {
+export function recordedGates(spec: SpecFolder, id: string, attempt: number): { table?: string; full: string } {
   if (!specLogInCache(spec.dir)) {
     const file = join(logPath(spec.dir, 'gates'), `${id}-${attempt}.md`);
     const table = existsSync(file) ? readFileSync(file, 'utf8').split('\n## Output')[0]! : undefined;
@@ -214,10 +195,20 @@ function leaderStep(ctx: CliContext, ref: string, id: string, o: CheckpointOptio
   const harness = harnessOption(o.harness);
   const models = modelsFor(ctx, harness, task.project);
   const context = loopContext(ctx, spec, id, harness, task.project);
-  const loop = loopState(task, spec.execution, models, harness, context);
+  const recommendation = loopState(task, spec.execution, models, harness, context);
   const spend = specSpend(spec.dir, config.budget.per_spec);
+  const waitingBudget = spend.status === 'over' && NEEDS_BRIEF.includes(recommendation.action);
+  const observation = observeLoop(
+    spec.progress?.loop_brake,
+    id,
+    recommendation.action,
+    spec.execution.length,
+    readApprovalLog(spec.dir).length,
+  );
+  const loop = loopWithBrake(recommendation, observation.repeats, waitingBudget);
+  if (!waitingBudget) persistLoopObservation(spec, observation);
   // Past the cap with no authorization recorded: no delegation, and the request waits for a person.
-  if (spend.status === 'over' && NEEDS_BRIEF.includes(loop.action)) {
+  if (waitingBudget) {
     const id = spec.story?.meta.id ?? spec.name;
     const reason = `spent $${spend.total} of $${spend.budget}: a person authorizes more with \`mandao approve ${id} budget --to <usd>\``;
     return { ...(checkpoint ? { checkpoint: { written: true } } : {}), loop: { ...loop, action: 'await-budget', reason }, spend };
@@ -234,129 +225,131 @@ function leaderStep(ctx: CliContext, ref: string, id: string, o: CheckpointOptio
   };
 }
 
-function registerReviewPack(run: Command, ctx: CliContext) {
-  run
-    .command('review-pack <spec> <task>')
-    .description(
-      'Write what the Reviewer reads (brief, gate results, diff) to one file in _log/reviews/ (version 2: .mandao/cache/<ID>/); prints its path',
-    )
-    .option('--harness <id>', 'harness running the Leader', 'claude')
-    .action((ref: string, id: string, o: { harness?: string }) => {
-      const { config, spec } = loadSpec(ctx, ref);
-      const task = taskOf(spec, id);
-      const harness = harnessOption(o.harness);
-      const attempt = currentAttempt(spec, id);
-      const recorded = recordedGates(spec, id, attempt);
-      const gates = recorded.table ?? 'No gate results recorded for this attempt: run `mandao run gates` first.';
-      const brief = composeBrief(
-        ctx.root(),
-        config,
-        spec,
-        task,
-        modelsFor(ctx, harness, task.project),
-        harness,
-        1,
-        loopContext(ctx, spec, id, harness, task.project),
-      );
-      const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
-      const pack = [
-        `# Review pack — ${id}, attempt ${attempt}`,
-        '',
-        'Review exactly this task. The Leader already ran the gates and the impacted tests; their full output is in',
-        `\`${recorded.full}\`.`,
-        '',
-        '## Brief',
-        '',
-        '```json',
-        JSON.stringify(brief, null, 2),
-        '```',
-        '',
-        '## Mandao change manifest',
-        '',
-        'Exact changed paths, working-tree statuses, and SHA-256 content hashes reviewed below:',
-        '',
-        '```json',
-        renderChangeManifest(manifest),
-        '```',
-        '',
-        gates.replace(/^# /m, '## '),
-        '',
-        '## Diff',
-        '',
-        '```diff',
-        reviewDiff(repoRoot(spec.dir), spec.dir),
-        '```',
-        '',
-      ].join('\n');
-      // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
-      const name = `${id}-${attempt}-pack.md`;
-      const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);
-      writeText(file, pack);
-      json({
-        pack: relative(ctx.root(), file).split('\\').join('/'),
-        bytes: Buffer.byteLength(pack),
-        gatesRecorded: recorded.table !== undefined,
-      });
-    });
-}
-
-/** What `/mandao-implement` reports at the end, built from the log and git instead of the Leader's memory. */
-export function implementSummary(spec: SpecFolder, committed: Set<string>, pending: string[]) {
-  const tasks = spec.tasks.map((t) => {
-    const rows = spec.execution.filter((r) => r.task === t.id);
-    const last = rows.filter((r) => r.verdict !== 'STARTED').at(-1);
-    const fails = rows.filter((r) => r.verdict === 'FAIL');
-    const flags = [...new Set(rows.flatMap((r) => Object.values(NOTE_FLAGS).filter((f) => r.notes.includes(f))))];
-    return {
-      id: t.id,
-      title: t.title,
-      done: t.done,
-      attempts: Math.max(0, ...rows.map((r) => r.attempt)),
-      verdict: last?.verdict ?? 'not started',
-      fails: fails.map((r) => r.notes.match(/FAIL: ([^;]+)/)?.[1] ?? 'reason not recorded'),
-      tier: rows.at(-1)?.tier ?? t.tier,
-      implementer: [...rows].reverse().find((r) => r.implementer !== '—')?.implementer ?? '—',
-      reviewer: [...rows].reverse().find((r) => r.reviewer !== '—')?.reviewer ?? '—',
-      committed: committed.has(t.id),
-      flags,
-    };
-  });
-  const advisories = countAdvisories(readLog(spec), spec.execution);
+function loopWithBrake(recommendation: LoopState, repeats: number, waitingBudget: boolean): LoopState {
+  if (repeats < LOOP_BRAKE_LIMIT || waitingBudget) return recommendation;
   return {
-    spec: spec.name,
-    tasks,
-    totals: {
-      tasks: tasks.length,
-      done: tasks.filter((t) => t.done).length,
-      committed: tasks.filter((t) => t.committed).length,
-      fails: tasks.reduce((n, t) => n + t.fails.length, 0),
-    },
-    pendingCommits: pending,
-    deferredToCi: spec.progress?.deferred_to_ci ?? [],
-    advisories,
-    // Not blocking, but a person reads them (MDO-0008).
-    securityMentions: securityMentions(spec.execution),
+    ...recommendation,
+    action: 'halt',
+    reason: `same action ${recommendation.action} returned ${repeats} times without execution-log progress`,
   };
 }
 
-/**
- * Advisories in the log's `## Advisories` section plus those reviewers left in row notes
- * (`Advisories: (1) … (2) …`), which is where MDO-0007 put them all.
- */
-export function countAdvisories(log: string, rows: ExecutionRow[]): number {
-  const section = (/## Advisories\n([\s\S]*?)(\n## |$)/.exec(log)?.[1] ?? '').split('\n').filter((l) => /^\s*[-*] /.test(l)).length;
-  const inNotes = rows.reduce((n, r) => {
-    const text = /\badvisor(?:y|ies)\s*:\s*(.*)$/i.exec(r.notes)?.[1];
-    if (text === undefined) return n;
-    return n + Math.max(1, text.match(/\(\d+\)/g)?.length ?? 0);
-  }, 0);
-  return section + inNotes;
+function persistLoopObservation(spec: SpecFolder, observation: NonNullable<SpecFolder['progress']>['loop_brake']) {
+  writeProgress(spec.dir, {
+    ...(spec.progress ?? { schema_version: 1 as const, spec: spec.name, updated_at: '', current: null }),
+    updated_at: new Date().toISOString(),
+    loop_brake: observation,
+  });
 }
 
-const readLog = (spec: SpecFolder) => {
-  const file = logPath(spec.dir, 'execution.md');
-  return existsSync(file) ? readFileSync(file, 'utf8') : '';
-};
+function registerReviewPack(run: Command, ctx: CliContext) {
+  run
+    .command('review-pack <spec> <task>')
+    .description('Write the brief, gates and diff the Reviewer reads; print the pack path')
+    .option('--harness <id>', 'harness running the Leader', 'claude')
+    .action((ref: string, id: string, o: { harness?: string }) => {
+      json(createReviewPack(ctx, ref, id, o.harness));
+    });
+}
+
+function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHarness?: string) {
+  const { config, spec } = loadSpec(ctx, ref);
+  const task = taskOf(spec, id);
+  const harness = harnessOption(requestedHarness);
+  const attempt = currentAttempt(spec, id);
+  const recorded = recordedGates(spec, id, attempt);
+  const gates = recorded.table ?? 'No gate results recorded for this attempt: run `mandao run gates` first.';
+  const brief = composeBrief(
+    ctx.root(),
+    config,
+    spec,
+    task,
+    modelsFor(ctx, harness, task.project),
+    harness,
+    1,
+    loopContext(ctx, spec, id, harness, task.project),
+  );
+  const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
+  const removedTests = deletedTests(repoRoot(spec.dir), spec.progress, id);
+  const deletionReason = [...spec.execution]
+    .reverse()
+    .find((row) => row.task === id && row.notes.includes('test deletion:'))
+    ?.notes.match(/(?:^|; )test deletion: ([^;]+)/)?.[1];
+  const pack = reviewPackContent(
+    id,
+    attempt,
+    recorded.full,
+    brief,
+    manifest,
+    removedTests,
+    deletionReason,
+    gates,
+    reviewDiff(repoRoot(spec.dir), spec.dir),
+  );
+  // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
+  const name = `${id}-${attempt}-pack.md`;
+  const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);
+  writeText(file, pack);
+  return {
+    pack: relative(ctx.root(), file).split('\\').join('/'),
+    bytes: Buffer.byteLength(pack),
+    gatesRecorded: recorded.table !== undefined,
+  };
+}
+
+function reviewPackContent(
+  id: string,
+  attempt: number,
+  full: string,
+  brief: unknown,
+  manifest: ReturnType<typeof changeManifest>,
+  removedTests: ReturnType<typeof deletedTests>,
+  deletionReason: string | undefined,
+  gates: string,
+  diff: string,
+): string {
+  return [
+    `# Review pack — ${id}, attempt ${attempt}`,
+    '',
+    'Review exactly this task. The Leader already ran the gates and the impacted tests; their full output is in',
+    `\`${full}\`.`,
+    '',
+    '## Brief',
+    '',
+    '```json',
+    JSON.stringify(brief, null, 2),
+    '```',
+    '',
+    '## Mandao change manifest',
+    '',
+    'Exact changed paths, working-tree statuses, and SHA-256 content hashes reviewed below:',
+    '',
+    '```json',
+    renderChangeManifest(manifest),
+    '```',
+    '',
+    ...(removedTests.length
+      ? [
+          '## Removed test cases',
+          '',
+          `Reason recorded by the Leader: ${deletionReason ?? 'missing; block review and request one'}`,
+          '',
+          '```json',
+          JSON.stringify(removedTests, null, 2),
+          '```',
+          '',
+        ]
+      : []),
+    gates.replace(/^# /m, '## '),
+    '',
+    '## Diff',
+    '',
+    '```diff',
+    diff,
+    '```',
+    '',
+  ].join('\n');
+}
 
 function registerImplementSummary(run: Command, ctx: CliContext) {
   run

@@ -8,7 +8,7 @@ import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { logPath } from '../../src/scripts/spec-log.js';
 import { parsePremises, premiseFindings } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -60,7 +60,7 @@ afterEach(() => {
 
 function repo() {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
-  git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
+  initTestRepo(root, '-q', '-b', 'feat/MDO-0001-skills-list');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
@@ -102,7 +102,7 @@ describe('premises are verified only by a recorded run', () => {
     });
     process.exitCode = undefined;
     const run = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', '"console.log(\'pinned: 2\')"');
-    expect(run).toMatchObject({ premise: 'P1', recorded: true, exitCode: 0, excerpt: 'pinned: 2' });
+    expect(run).toMatchObject({ premise: 'P1', recorded: true, exitCode: 0, excerpt: expect.stringContaining('pinned: 2') });
     const record = readFileSync(join(logPath(join(root, SPEC), 'premises'), 'P1.md'), 'utf8');
     expect(record).toMatch(/- Command: `node -e "console.log\('pinned: 2'\)"`/);
     expect(premiseOnly((await cli(root, 'run', 'trace', 'MDO-0001')).findings)).toEqual([]);

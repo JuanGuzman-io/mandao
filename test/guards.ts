@@ -6,6 +6,63 @@ export interface Climb {
   text: string;
 }
 
+function isProcessExit(expression: ts.Expression): boolean {
+  if (ts.isPropertyAccessExpression(expression)) {
+    return ts.isIdentifier(expression.expression) && expression.expression.text === 'process' && expression.name.text === 'exit';
+  }
+  return (
+    ts.isElementAccessExpression(expression) &&
+    ts.isIdentifier(expression.expression) &&
+    expression.expression.text === 'process' &&
+    !!expression.argumentExpression &&
+    ts.isStringLiteral(expression.argumentExpression) &&
+    expression.argumentExpression.text === 'exit'
+  );
+}
+
+/** A direct process.exit call can truncate buffered test output or conceal cleanup. */
+export function findProcessExits(file: string, source: string): Climb[] {
+  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const found: Climb[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && isProcessExit(node.expression)) {
+      found.push({ line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, text: node.getText(sf) });
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+/** Direct `git init` calls in test code bypass the shared local-identity setup. */
+export function findRawGitInits(file: string, source: string): Climb[] {
+  const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true);
+  const found: Climb[] = [];
+  const visit = (node: ts.Node): void => {
+    if (ts.isCallExpression(node) && isGitInit(node))
+      found.push({ line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1, text: node.getText(sf) });
+    ts.forEachChild(node, visit);
+  };
+  visit(sf);
+  return found;
+}
+
+function isGitInit(node: ts.CallExpression): boolean {
+  const name = ts.isIdentifier(node.expression) ? node.expression.text : '';
+  const first = node.arguments[0];
+  const isGit = name === 'git';
+  const isExecGit =
+    ['execFileSync', 'execFile', 'spawnSync', 'spawn'].includes(name) && !!first && ts.isStringLiteral(first) && first.text === 'git';
+  const isShellGit =
+    ['execSync', 'exec', 'spawnSync', 'spawn'].includes(name) && !!first && ts.isStringLiteral(first) && /^git\s+init\b/.test(first.text);
+  const isInit = (arg: ts.Expression | undefined): boolean => {
+    if (!arg) return false;
+    if (ts.isStringLiteral(arg)) return arg.text === 'init';
+    return ts.isArrayLiteralExpression(arg) && !!arg.elements[0] && ts.isStringLiteral(arg.elements[0]) && arg.elements[0].text === 'init';
+  };
+  return (isGit && (isInit(first) || isInit(node.arguments[1]))) || isShellGit || (isExecGit && isInit(node.arguments[1]));
+}
+
 const PATH_MODULES = new Set(['node:path', 'path']);
 
 /** Builds a one-file program so the checker resolves identifiers by scope without touching the disk. */

@@ -1,9 +1,18 @@
+import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 /** Folders created by `makeTree` in this test file's worker; removed by `removeTrees`. */
 export const trees = new Set<string>();
+
+/** Initializes isolated test repos with local identity so commits never depend on the developer machine. */
+export function initTestRepo(root: string, ...args: string[]): void {
+  const options = { cwd: root, stdio: 'ignore' as const };
+  execFileSync('git', ['init', ...args], options);
+  execFileSync('git', ['config', '--local', 'user.name', 'Mandao Test'], options);
+  execFileSync('git', ['config', '--local', 'user.email', 'mandao-test@example.invalid'], options);
+}
 
 /** Creates a temp directory from a `{ 'path/file': content }` map. A trailing `/` creates an empty dir. */
 export function makeTree(files: Record<string, string>): string {

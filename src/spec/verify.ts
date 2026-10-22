@@ -76,7 +76,14 @@ export function verifyPlan(input: {
   const findings = trace(input.story, input.requirements, tasks, input.commits, input.designFindings).findings;
   const missingRed = tasks
     .filter((t) => t.tests.unit.length + t.tests.e2e.length > 0 && t.evidence !== 'none')
-    .filter((t) => !execution.some((r) => r.task === t.id && r.verdict === (t.characterization ? 'MUTANT' : 'RED')))
+    .filter((t) => {
+      const own = execution.filter((r) => r.task === t.id);
+      return (
+        !own.some((r) => r.verdict === (t.characterization ? 'MUTANT' : 'RED')) &&
+        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'MUTANT')) &&
+        !(own.some((r) => r.verdict === 'TESTS_PASS') && own.some((r) => r.verdict === 'TEST_REVIEWED'))
+      );
+    })
     .map((t) => t.id);
   const deferred = input.progress?.deferred_to_ci ?? [];
   const blockers = [

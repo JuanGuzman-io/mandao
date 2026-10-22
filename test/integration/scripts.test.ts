@@ -9,7 +9,7 @@ import { runTests } from '../../src/scripts/run-tests.js';
 import { checkTransition, nextLocalId, proposeSpec, readSpec, whereAmI } from '../../src/scripts/spec.js';
 import { parseExecution } from '../../src/spec/index.js';
 import { releaseLock, tryLock } from '../../src/writer/lock.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const config = configSchema.parse({
@@ -23,7 +23,7 @@ const git = (cwd: string, ...args: string[]) =>
 
 function repoWithSpec() {
   const root = realpathSync(join(makeTree({ 'repo/README.md': 'x' }), 'repo'));
-  git(root, 'init', '-q', '-b', 'main');
+  initTestRepo(root, '-q', '-b', 'main');
   git(root, '-c', 'user.email=t@t', '-c', 'user.name=t', 'commit', '-qm', 'init', '--allow-empty');
   cpSync(fixture, join(root, 'specs/MDO-0001-skills-list'), { recursive: true });
   return root;

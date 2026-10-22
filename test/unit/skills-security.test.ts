@@ -18,7 +18,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 
 import { catalogSchema } from '../../src/schemas/index.js';
 import { installSkills, type Runner, shellRunner } from '../../src/skills/install.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const meta = { version: '1.0.0', author: 'a', license: 'MIT', vetted: true, binding: 'stack', phases: ['implement'], description: 'x' };
 const url = 'https://fixture.invalid/skill.git';
@@ -58,7 +58,7 @@ function localRepo() {
   const dir = makeTree({ 'skills/brainstorming/SKILL.md': '---\n---\n' });
   const git = (...args: string[]) =>
     execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], { cwd: dir });
-  git('init', '--quiet', '--initial-branch=main');
+  initTestRepo(dir, '--quiet', '--initial-branch=main');
   git('config', 'uploadpack.allowFilter', 'true');
   git('add', '-A');
   git('commit', '--quiet', '-m', 'fixture');

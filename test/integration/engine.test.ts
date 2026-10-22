@@ -6,7 +6,7 @@ import { modelFindings } from '../../src/engine/doctor-models.js';
 import { readConfig, readLock, writeYaml } from '../../src/engine/files.js';
 import { syncGlobal, syncProject } from '../../src/engine/sync.js';
 import { readRecommendations } from '../../src/models/load.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 function workspace() {
   const root = makeTree({ '.git/': '', 'package.json': pkg('shop'), 'AGENTS.md': '# House rules\n' });
@@ -169,10 +169,9 @@ test('syncGlobal installs only /mandao-init under the user folders', () => {
 
 describe('collectDiff', () => {
   test('works in a repository without commits and counts untracked files', async () => {
-    const { execFileSync } = await import('node:child_process');
     const { collectDiff } = await import('../../src/scripts/quick-check.js');
     const root = makeTree({ 'src/a.ts': 'one\ntwo\n', 'package.json': pkg('x', { zod: '^4' }) });
-    execFileSync('git', ['init', '-q'], { cwd: root });
+    initTestRepo(root, '-q');
     const diff = collectDiff(root, 'HEAD');
     expect(diff.files.map((f) => f.path).sort()).toEqual(['package.json', 'src/a.ts']);
     expect(diff.manifests).toEqual([{ path: 'package.json', before: undefined, after: pkg('x', { zod: '^4' }) }]);

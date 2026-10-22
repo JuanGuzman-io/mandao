@@ -15,7 +15,7 @@ import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { specLogInCache } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
 import { budgetFor } from './budget.js';
-import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst } from './checkpoint-guards.js';
+import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst, requireTestDeletionReason } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerClose } from './run-close.js';
@@ -23,6 +23,7 @@ import { registerDiagram } from './run-diagram.js';
 import { registerMutation } from './run-mutation.js';
 import { registerRed } from './run-red.js';
 import { registerReview } from './run-review.js';
+import { registerTestReview } from './run-test-review.js';
 
 function loadSpec(ctx: CliContext, ref: string) {
   const config = readConfig(ctx.root());
@@ -49,6 +50,7 @@ export interface CheckpointOptions {
   deferred?: string;
   pendingCommit?: string;
   review?: string;
+  testDeletionReason?: string;
 }
 
 /** `--deferred "a, b|low memory"` → one deferred_to_ci entry for the task. */
@@ -86,6 +88,7 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
     ...(implementer && reviewer && implementer.harness !== reviewer.harness ? [NOTE_FLAGS.providerIndependence] : []),
     ...redNotes(spec, o),
     ...(o.reason ? [`${o.verdict === 'FAIL' ? 'FAIL' : 'reason'}: ${o.reason}`] : []),
+    ...(o.testDeletionReason ? [`test deletion: ${o.testDeletionReason}`] : []),
     ...(o.notes ? [o.notes] : []),
   ];
   return {
@@ -137,6 +140,7 @@ function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions)
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
   requireRedFirst(spec, o.task, o.verdict);
+  requireTestDeletionReason(spec, o.task, o.verdict, o.testDeletionReason);
   const review = checkReview(spec, o);
   const reviewNote = review.note;
   const pending = pendingEntry(spec, o, review.manifest);
@@ -197,6 +201,7 @@ export function withCheckpointOptions(cmd: Command): Command {
     .option('--claimed-reviewer <model>', 'model the reviewer said it was (a mismatch is flagged)')
     .option('--notes <text>', 'notes for the row (advisories, deferred tests…)', '')
     .option('--reason <text>', 'why the Reviewer failed the task: its first blocking finding (required with FAIL)')
+    .option('--test-deletion-reason <text>', 'why test cases were removed; recorded for the Reviewer')
     .option(
       '--review <file|->',
       "with a Reviewer's PASS or FAIL: its whole answer (a file, or - for stdin), checked and kept in _log/reviews/ (version 2: a section of _log/reviews.md)",
@@ -351,6 +356,7 @@ export function registerLedger(run: Command, ctx: CliContext) {
   registerCommit(run, ctx);
   registerCommitSpec(run, ctx);
   registerReview(run, ctx, loadSpec);
+  registerTestReview(run, ctx);
   registerRed(run, ctx);
   registerMutation(run, ctx);
   registerDiagram(run, ctx);

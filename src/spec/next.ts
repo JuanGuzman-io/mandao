@@ -1,4 +1,4 @@
-import type { Approval } from './approvals.js';
+import { type Approval, activeApprovals } from './approvals.js';
 import { blockingMarkers, withoutCode, withoutFences } from './markdown.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
@@ -105,7 +105,7 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
   if (item) return rec('/mandao-clarify', `${open.criticalOpen.length ? 'critical OPEN' : 'open item'}: ${item}`);
   const draft = draftStep(spec, lite, facts.tasksStatus);
   if (draft) return rec(approve(id, draft), `the ${draft === 'story' ? 'story' : 'spec'} is still draft`, '/mandao-clarify');
-  const approvals = (facts.approvals ?? []).filter((a) => a.step !== 'shown');
+  const approvals = activeApprovals(facts.approvals ?? []).filter((a) => a.step !== 'shown');
   const changed = changedSince(approvals, facts.hashes ?? {});
   if (!changed.length) return undefined;
   return rec(approve(id, lite ? 'spec' : 'design'), `${changed.join(', ')} changed after its approval`, '/mandao-clarify');

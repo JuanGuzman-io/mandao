@@ -11,8 +11,8 @@ import { writeProgress } from '../../src/scripts/checkpoint.js';
 import { changeManifest } from '../../src/scripts/commits.js';
 import { redCheck } from '../../src/scripts/red.js';
 import { readSpec } from '../../src/scripts/spec.js';
-import { type ExecutionRow, loopState } from '../../src/spec/index.js';
-import { makeTree, pkg } from '../helpers.js';
+import { type ExecutionRow, loopState, observeLoop } from '../../src/spec/index.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const SPEC = 'specs/MDO-0001-skills-list';
@@ -82,6 +82,30 @@ describe('loop with TDD (ADR 0022)', () => {
     expect(loopState(tested, [row('STARTED'), row('RED'), row('REPORTED')], models, 'claude').notes).not.toContain('no red evidence');
   });
 
+  test('a first passing run offers mutation evidence or an independent test review', () => {
+    expect(loopState(tested, [row('TESTS_PASS')], models, 'claude')).toMatchObject({
+      action: 'choose-test-evidence',
+      evidenceOptions: ['mutation', 'review-test'],
+      reason: expect.stringMatching(/pass before implementation/),
+    });
+    expect(loopState(tested, [row('TESTS_PASS'), row('MUTANT')], models, 'claude')).toMatchObject({
+      action: 'resume-implementation',
+      tdd: { evidence: 'mutation', red: true },
+    });
+    expect(loopState(tested, [row('TESTS_PASS'), row('TEST_REVIEWED')], models, 'claude')).toMatchObject({
+      action: 'implement',
+      tdd: { evidence: 'review', red: true },
+    });
+  });
+
+  test('loop brake counts repeated actions only while the execution log is unchanged', () => {
+    const first = observeLoop(undefined, 'T1', 'implement', 4);
+    const second = observeLoop(first, 'T1', 'implement', 4);
+    expect(observeLoop(second, 'T1', 'implement', 4).repeats).toBe(3);
+    expect(observeLoop(second, 'T1', 'implement', 5).repeats).toBe(1);
+    expect(observeLoop(second, 'T1', 'review', 4).repeats).toBe(1);
+  });
+
   test('only a failing run is red evidence', () => {
     expect(redCheck('FAIL', 1)).toEqual({ red: true });
     expect(redCheck('PASS', 0).problem).toMatch(/pass before any implementation/);
@@ -104,7 +128,7 @@ describe('mandao run red', () => {
   /** A repo whose test command exits with $RED (1 by default): red unless told otherwise. */
   function workspace() {
     const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'test/a.test.ts': 'expect(1).toBe(2)\n' }));
-    git(root, 'init', '-q');
+    initTestRepo(root, '-q');
     writeYaml(join(root, '.mandao/config.yml'), {
       schema_version: 1,
       workspace: 'single',
@@ -145,6 +169,16 @@ describe('mandao run red', () => {
     expect(readSpec(join(root, SPEC)).execution.at(-1)!.notes).toBe('red test changed: test/a.test.ts');
     // The checkpoint keeps the red tests recorded, so the next step still sees the change.
     expect(readSpec(join(root, SPEC)).progress!.red_tests.map((r) => r.task)).toEqual(['T2']);
+  });
+
+  test('run step halts after the same recommendation three times without new execution evidence', async () => {
+    const root = workspace();
+    await run(root, 'step', 'MDO-0001', 'T2');
+    await run(root, 'step', 'MDO-0001', 'T2');
+    await run(root, 'step', 'MDO-0001', 'T2');
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({
+      loop: { action: 'halt', reason: expect.stringMatching(/same action write-red-tests returned 3 times/) },
+    });
   });
 
   test('mandao run diagram stamps explicitly configured Mermaid into design.md and reports it stale after an edit', async () => {
@@ -211,7 +245,7 @@ describe('mandao run red', () => {
     ).rejects.toThrow(/needs --task and a PASS/);
   });
 
-  test('tests that already pass are not red evidence: nothing is recorded', async () => {
+  test('tests that pass on their first run record the choice instead of failing the red command', async () => {
     const root = workspace();
     vi.stubEnv('RED', '0');
     try {
@@ -219,10 +253,25 @@ describe('mandao run red', () => {
     } finally {
       vi.unstubAllEnvs();
     }
-    expect(JSON.parse(out.at(-1)!)).toMatchObject({ red: false, problem: expect.stringMatching(/pass before any implementation/) });
-    expect(process.exitCode).toBe(1);
-    process.exitCode = undefined;
-    expect(readFileSync(join(root, SPEC, 'execution.md'), 'utf8')).not.toContain('| RED |');
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ red: false, firstRunPassed: true, options: ['mutation', 'review-test'] });
+    expect(process.exitCode).toBeUndefined();
+    expect(readFileSync(join(root, SPEC, 'execution.md'), 'utf8')).toContain('| TESTS_PASS |');
+    expect(readSpec(join(root, SPEC)).progress!.red_tests[0]!.files[0]!.tests).toEqual([]);
+  });
+
+  test('independent test review is recorded and releases the implementation step', async () => {
+    const root = workspace();
+    vi.stubEnv('RED', '0');
+    try {
+      await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
+    } finally {
+      vi.unstubAllEnvs();
+    }
+    writeFileSync(join(root, 'test-review.md'), 'TEST REVIEW: PASS\n\n## Assertions\n- `test/a.test.ts` covers the stated scenario.\n');
+    await run(root, 'test-review', 'MDO-0001', 'T2', '--reviewer', 'mandao-reviewer', '--review', join(root, 'test-review.md'));
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ recorded: true, verdict: 'TEST_REVIEWED' });
+    await run(root, 'step', 'MDO-0001', 'T2');
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ loop: { action: 'implement', tdd: { evidence: 'review', red: true } } });
   });
 });
 

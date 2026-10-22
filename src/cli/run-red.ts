@@ -7,7 +7,7 @@ import { repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell } from '../scripts/identity.js';
 import { detectRunner, fillCommand, projectDir, RUNNER_COMMANDS } from '../scripts/impact.js';
 import { redCheck, redFile } from '../scripts/red.js';
-import { runTests } from '../scripts/run-tests.js';
+import { runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type Task, taskAttempt, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
@@ -48,6 +48,38 @@ export function routedWriter(
 
 type RedTests = NonNullable<SpecFolder['progress']>['red_tests'];
 
+function recordFirstPass(
+  root: string,
+  config: ReturnType<typeof readConfig>,
+  spec: SpecFolder,
+  task: Task,
+  id: string,
+  tests: string[],
+  result: TestRun,
+  options: RedOptions,
+) {
+  const writer = routedWriter(root, config, spec, task, options.harness ?? 'claude', options.self);
+  const files = tests.map((path) => redFile(repoRoot(spec.dir), path));
+  appendExecutionRow(spec.dir, spec.name, {
+    date: new Date().toISOString().slice(0, 10),
+    task: id,
+    attempt: taskAttempt(spec.execution, id),
+    tier: rowTier(spec, id),
+    harness: writer.harness,
+    implementer: identityCell(writer),
+    reviewer: '—',
+    verdict: 'TESTS_PASS',
+    notes: `tests passed before implementation: ${tests.join(', ')}`,
+  });
+  const progress = spec.progress ?? { schema_version: 1 as const, spec: spec.name, updated_at: '', current: null };
+  writeProgress(spec.dir, {
+    ...progress,
+    updated_at: new Date().toISOString(),
+    red_tests: mergeRed(spec.progress?.red_tests ?? [], id, files),
+  });
+  json({ red: false, firstRunPassed: true, options: ['mutation', 'review-test'], run: result });
+}
+
 /** A new red run adds to the task's record: files keep the names of every red run that saw them. */
 function mergeRed(all: RedTests, task: string, files: RedTests[number]['files']): RedTests {
   const before = all.find((r) => r.task === task)?.files ?? [];
@@ -82,6 +114,10 @@ export function registerRed(run: Command, ctx: CliContext) {
       const result = await runTests(root, `${id} red`, command, budget);
       const check = redCheck(result.status, result.exitCode);
       if (!check.red) {
+        if (result.status === 'PASS') {
+          recordFirstPass(root, config, spec, task, id, tests, result, o);
+          return;
+        }
         json({ red: false, problem: check.problem, run: result });
         process.exitCode = 1;
         return;

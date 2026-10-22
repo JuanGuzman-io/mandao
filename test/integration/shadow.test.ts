@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { runDoctor } from '../../src/engine/doctor.js';
-import { makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg } from '../helpers.js';
 
 const git = (cwd: string, ...args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 const probe = (cmd: string) => (cmd.startsWith('npm view mandao@') ? '0.1.0\n' : undefined);
@@ -25,7 +25,7 @@ describe('init --shadow (ADR 0030)', () => {
   test("the team's tracked files stay byte-identical and nothing shows in git status", async () => {
     const team = '# Team rules\n\nOur own agent rules.\n';
     const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'AGENTS.md': team, '.gitignore': 'node_modules/\n' }));
-    git(root, 'init', '-q');
+    initTestRepo(root, '-q');
     git(root, 'add', '.');
     git(root, 'commit', '-qm', 'team');
     await run(root, 'init', '--yes', '--harness', 'claude', '--shadow');

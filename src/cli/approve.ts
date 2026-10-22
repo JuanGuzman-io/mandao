@@ -11,6 +11,7 @@ import {
   APPROVAL_STEPS,
   type Approval,
   type ApprovalStep,
+  activeApprovals,
   changedSince,
   docHash,
   frontmatterOf,
@@ -65,7 +66,8 @@ function documentsFor(spec: SpecFolder, step: ApprovalStep): string[] {
 
 function stepDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
   const own = (f: string) => join(spec.dir, f);
-  const story = spec.story?.meta.status === 'draft' ? [own('story.md')] : [];
+  // Design approval confirms the story too, even when a previous story approval already changed its status.
+  const story = spec.story ? [own('story.md')] : [];
   if (step === 'story') return [own('story.md')];
   if (step === 'design') return [...story, docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design')];
   if (step === 'spec') return [...story, own(LITE_DOC), ...(existsSync(own('tasks.md')) ? [own('tasks.md')] : [])];
@@ -96,6 +98,9 @@ interface ApproveOptions {
   byRunning?: string;
   words?: string;
   harness?: string;
+  revoke?: boolean;
+  annul?: string;
+  reason?: string;
 }
 
 function budgetTo(to: string | undefined): number | 'none' {
@@ -190,7 +195,7 @@ function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions,
 function questionBefore(spec: SpecFolder): string | undefined {
   const item = openItems(spec).ask[0];
   if (item) return `open item: ${item}`;
-  const shown = readApprovals(spec).filter((a) => a.step === 'shown');
+  const shown = activeApprovals(readApprovals(spec)).filter((a) => a.step === 'shown');
   const changed = changedSince(shown.slice(-1), currentHashes(spec.dir));
   return changed.length ? `${changed.join(', ')} changed after the summary was shown` : undefined;
 }
@@ -211,6 +216,94 @@ function commitApproval(config: ReturnType<typeof readConfig>, spec: SpecFolder,
   });
 }
 
+/** A status-reverting revocation gets its own small docs commit; history rows themselves are never removed. */
+function commitRevocation(config: ReturnType<typeof readConfig>, spec: SpecFolder, step: ApprovalStep) {
+  const id = spec.story?.meta.id ?? spec.name;
+  const scope = config.projects.length > 1 ? 'specs' : (spec.story?.meta.projects[0] ?? config.projects[0]!.name);
+  return commitSpecDocs({
+    repo: repoRoot(spec.dir),
+    specDir: spec.dir,
+    header: `${config.commits.emoji.docs} docs(${scope}): revoke ${id} ${step} approval`,
+    specId: id,
+    config,
+    protectedBranches: branchingFor(config).protected,
+  });
+}
+
+/** Applies a reasoned revoke/annul event without editing approval history. */
+function revokeApproval(spec: SpecFolder, config: ReturnType<typeof readConfig>, step: ApprovalStep, options: ApproveOptions): void {
+  const history = readApprovals(spec);
+  const target = activeApprovals(history)
+    .filter((row) => row.step === step)
+    .at(-1);
+  if (!target) throw new Error(`there is no active ${step} approval to revoke`);
+  appendApproval(spec, { step: 'revocation', target_at: target.at, target_step: step, note: options.reason }, options.by);
+  const statusChanged = resetApprovalDocuments(spec, step);
+  const commit = statusChanged.length ? commitRevocation(config, spec, step) : undefined;
+  json({ revoked: true, step, target: target.at, reason: options.reason, statusChanged, ...(commit ? { commit } : {}) });
+}
+
+function annulApproval(spec: SpecFolder, config: ReturnType<typeof readConfig>, options: ApproveOptions): void {
+  const history = readApprovals(spec);
+  const target = history.find((row) => row.at === options.annul && !['revocation', 'annulment'].includes(row.step));
+  if (!target) throw new Error(`no approval-log row exists at ${options.annul}`);
+  const record = appendApproval(spec, { step: 'annulment', target_at: target.at, note: options.reason }, options.by);
+  const targetStep = (APPROVAL_STEPS as readonly string[]).includes(target.step) ? (target.step as ApprovalStep) : undefined;
+  const statusChanged = targetStep ? resetApprovalDocuments(spec, targetStep) : [];
+  const commit = targetStep && statusChanged.length ? commitRevocation(config, spec, targetStep) : undefined;
+  json({ annulled: true, target: target.at, record, statusChanged, ...(commit ? { commit } : {}) });
+}
+
+function approvalEvent(spec: SpecFolder, config: ReturnType<typeof readConfig>, step: ApprovalStep, options: ApproveOptions): boolean {
+  if (!options.revoke && !options.annul) return false;
+  if (!options.reason?.trim()) throw new Error('revocation or annulment needs --reason');
+  if (options.revoke) revokeApproval(spec, config, step, options);
+  else annulApproval(spec, config, options);
+  return true;
+}
+
+/** Returns approvable documents to draft after their approval has been revoked or annulled. */
+function resetApprovalDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
+  return documentsFor(spec, step).flatMap((file) => {
+    const text = readFileSync(file, 'utf8');
+    const next = withStatus(text, 'draft');
+    if (next === text) return [];
+    writeText(file, next);
+    return [file.slice(spec.dir.length + 1)];
+  });
+}
+
+/** Executes a regular approval after all of its blockers and change prompts have passed. */
+function approveStep(config: ReturnType<typeof readConfig>, spec: SpecFolder, step: ApprovalStep, options: ApproveOptions): void {
+  const harness = harnessOption(options.harness);
+  const problems = blockers(spec, step);
+  if (problems.length) {
+    json({ approved: false, step, problems });
+    process.exitCode = 1;
+    return;
+  }
+  const question = options.byRunning ? questionBefore(spec) : undefined;
+  if (question) {
+    json({ result: 'ask', approved: false, step, reason: question });
+    return;
+  }
+  const docs = documentsFor(spec, step).map((f) => f.slice(spec.dir.length + 1));
+  const statusChanged = approveDocuments(spec, step);
+  const record = recordApproval(spec, step, options, docs);
+  const commit = commitApproval(config, spec, step);
+  const newSession = step === 'spec' || step === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
+  const next = nextFor(readSpec(spec.dir), config);
+  json({
+    ...(options.byRunning ? { result: 'go' } : {}),
+    approved: true,
+    ...record,
+    statusChanged,
+    ...(commit ? { commit } : {}),
+    next,
+    ...newSession,
+  });
+}
+
 export function registerApprove(program: Command, ctx: CliContext) {
   program
     .command('approve <spec> <step>')
@@ -219,42 +312,20 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .option('--to <usd|none>', 'budget: the total this spec may spend, or none to remove its cap')
     .option('--by <name>', 'who approves (default: git user.name)')
     .option('--note <text>', 'a note kept with the approval')
+    .option('--revoke', 'revoke the latest active approval for <step>')
+    .option('--annul <at>', 'append an event annulling the approval-log row with this timestamp')
+    .option('--reason <text>', 'required reason for revoking or annulling an approval')
     .option('--by-running <command>', 'approve because the person ran this command; asks first when something is open or changed')
     .option('--words <text>', 'with --by-running: what the person wrote next to the command, recorded verbatim')
     .option('--harness <id>', 'the harness running this session (default: claude)')
     .action((ref: string, step: string, o: ApproveOptions) => {
-      if (!(APPROVAL_STEPS as readonly string[]).includes(step)) throw new Error(`step must be one of ${APPROVAL_STEPS.join(', ')}`);
-      const s = step as ApprovalStep;
-      const harness = harnessOption(o.harness); // before anything is approved
+      if (o.revoke && o.annul) throw new Error('--revoke and --annul are mutually exclusive');
+      if (!o.annul && !(APPROVAL_STEPS as readonly string[]).includes(step))
+        throw new Error(`step must be one of ${APPROVAL_STEPS.join(', ')}`);
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
-      const problems = blockers(spec, s);
-      if (problems.length) {
-        json({ approved: false, step: s, problems });
-        process.exitCode = 1;
-        return;
-      }
-      const question = o.byRunning ? questionBefore(spec) : undefined;
-      if (question) {
-        json({ result: 'ask', approved: false, step: s, reason: question });
-        return;
-      }
-      const docs = documentsFor(spec, s).map((f) => f.slice(spec.dir.length + 1));
-      const statusChanged = approveDocuments(spec, s);
-      const record = recordApproval(spec, s, o, docs);
-      const commit = commitApproval(config, spec, s);
-      // A natural boundary with a human pause, and the most turns still ahead: implement starts in a new
-      // session from the checkpoint instead of re-reading the specify context (ADR 0038).
-      const newSession = s === 'spec' || s === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
-      const next = nextFor(readSpec(spec.dir), config);
-      json({
-        ...(o.byRunning ? { result: 'go' } : {}),
-        approved: true,
-        ...record,
-        statusChanged,
-        ...(commit ? { commit } : {}),
-        next,
-        ...newSession,
-      });
+      const s = step as ApprovalStep;
+      if (approvalEvent(spec, config, s, o)) return;
+      approveStep(config, spec, s, o);
     });
 }
