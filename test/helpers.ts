@@ -32,7 +32,7 @@ export function makeTree(files: Record<string, string>): string {
 
 /** Removes every folder `makeTree` registered, then clears the registry. Never selects by name. */
 export function removeTrees(): void {
-  for (const dir of trees) rmSync(dir, { recursive: true, force: true });
+  for (const dir of trees) rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
   trees.clear();
 }
 
