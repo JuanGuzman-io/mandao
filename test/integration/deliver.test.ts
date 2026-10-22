@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { readSpec } from '../../src/scripts/spec.js';
-import { makeTree } from '../helpers.js';
+import { initTestRepo, makeTree } from '../helpers.js';
 
 const promptState = vi.hoisted(() => ({ groups: 0, target: 'main', scope: 'push-pr' }));
 vi.mock('@clack/prompts', () => ({
@@ -42,16 +42,14 @@ function repo(provider: 'other' | 'github' = 'other') {
       '# Changelog\n\nOne line per closed spec, newest last.\n\n| Spec | Title | Type | Closed | Folder |\n|---|---|---|---|---|\n',
     'source.txt': 'base\n',
   });
-  git(root, 'init', '-q', '-b', 'main');
-  git(root, 'config', '--local', 'user.name', 'Mandao Test');
-  git(root, 'config', '--local', 'user.email', 'mandao-test@example.invalid');
+  initTestRepo(root, '-q', '-b', 'main');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'base');
   git(root, 'checkout', '-qb', 'feat/MDO-0009-delivery');
   writeFileSync(join(root, 'source.txt'), 'feature\n');
   git(root, 'commit', '-am', 'implement delivery\n\nRefs: MDO-0009\nMandao-Task: T1');
   const remote = makeTree({});
-  git(remote, 'init', '--bare', '-q');
+  initTestRepo(remote, '--bare', '-q');
   const remoteUrl = provider === 'github' ? 'https://github.com/org/repo.git' : remote;
   git(root, 'remote', 'add', 'origin', remoteUrl);
   if (provider === 'github') git(root, 'config', '--local', `url.${remote}.insteadOf`, remoteUrl);
@@ -67,16 +65,14 @@ function quickRepo() {
     'specs/quick/quick-log.md': '# Quick log\n\n| Date | Name | Project | Files | Lines | Gates | Review | Commit |\n',
     'source.txt': 'base\n',
   });
-  git(root, 'init', '-q', '-b', 'main');
-  git(root, 'config', '--local', 'user.name', 'Mandao Test');
-  git(root, 'config', '--local', 'user.email', 'mandao-test@example.invalid');
+  initTestRepo(root, '-q', '-b', 'main');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'base');
   git(root, 'checkout', '-qb', 'feat/quick-fix-typo');
   writeFileSync(join(root, 'source.txt'), 'typo fixed\n');
   git(root, 'commit', '-qam', 'quick fix');
   const remote = makeTree({});
-  git(remote, 'init', '--bare', '-q');
+  initTestRepo(remote, '--bare', '-q');
   git(root, 'remote', 'add', 'origin', remote);
   git(root, 'push', '-q', 'origin', 'main', 'feat/quick-fix-typo');
   return { root, remote };
