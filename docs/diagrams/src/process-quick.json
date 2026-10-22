@@ -39,7 +39,7 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "1d38d88730774a3629eea2e9d4a45ae198b3776898a8be2621f177d0aefd405b"
+      "sha256": "702731f724fd4179df3142ed98b26dfb8c0aa2d7d5ec821d1a823b77e68a2523"
     },
     {
       "path": "core/commands/story.md",
@@ -47,7 +47,7 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "fe1a669f46d8cd9eeb7626891893ebfbbf78c244a64c0a835d06bc4446b77c15"
+      "sha256": "5bd432e38a79e3934af3c057a0d2f88b82088339adabe890c420e39143cf573b"
     },
     {
       "path": "core/commands/verify.md",

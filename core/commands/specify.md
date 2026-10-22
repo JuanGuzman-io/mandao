@@ -77,9 +77,9 @@ in the output which skill was missing.
 
 ## 1. Resolve the spec
 
-1. **From `mandao start`** (the default): the session runs in the spec's worktree and
+1. **From `mandao start`** (the default): session runs in its worktree and
    the `start` section of `{{paths.specs}}/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the
-   branch and worktree already exist and are set up, so skip the worktree step below.
+   branch/worktree exist; skip the worktree step below.
 2. **From a story**: if `{{arg:ref}}` names a folder in `{{paths.specs}}/` with `story.md`, inherit its
    frontmatter (tracker, type, id, projects). Ask nothing.
 3. **From an argument**: a tracker id or URL. The tracker comes from `.mandao/sources.yml`, which wins
@@ -204,7 +204,7 @@ and `{{template:rules/consistency-check.md}}` for the semantic part, over story,
 - `[NEEDS CLARIFICATION]` items or findings → recommend {{command:clarify}}, listed by impact; a critical
   one blocks {{command:tasks}}.
 - Otherwise ask for approval of requirements and design, showing the diagram when there is one. The user
-  may approve from the terminal instead (`mandao approve {{arg:ref}} design`): the status,
+  may approve from the terminal instead (`mandao approve {{arg:ref}} design --harness <this harness>`): the status,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `{{script:commit-spec}} {{arg:ref}} specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
