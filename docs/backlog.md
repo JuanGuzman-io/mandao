@@ -31,6 +31,7 @@ scope, product behavior, security or irreversible actions.
 | [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
 | [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
+| [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | agreed, pending phase plan approval |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | in progress; plan approved |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
@@ -102,6 +103,39 @@ Acceptance criteria:
   instructions in `core/commands/tasks.md` and `doc-tasks.md`.
 - Reviewer findings have `status: open | resolved` and severity. The security guard blocks only
   open high/critical findings, never a regex over free text.
+
+## Phase 3b — Gated design principles
+
+**Agreed, pending phase plan approval. Modelled on Spec Kit.**
+
+**Origin:** Spec Kit uses neither SOLID nor ACID, but its plan goes through a "Constitution Check"
+with concrete questions and justifies exceptions in a "Complexity Tracking" table; its articles VII
+and VIII (simplicity and anti-abstraction) stop unnecessary abstractions. AKILI-SPECS only mentions
+SOLID as a reference inside the `software-architect` skill, and does not cover ACID.
+
+1. **Principles in the constitution:** a section with the concrete version for the project's stack:
+   SOLID (especially single responsibility and dependency inversion, and where they are required),
+   ACID (which operations need a transaction, compensation across systems, isolation under
+   concurrency) and **simplicity / anti-abstraction as the counterweight** (use the framework
+   directly; no "just in case" abstractions; no interface with a single implementation without a
+   reason). `constitution` proposes it from the detected stack and the user approves it.
+2. **Precedence:** (1) the architecture the project declared in `architecture.md` (for example,
+   hexagonal on NestJS); (2) the framework's conventions, taken from the stack skill (for example,
+   modules, providers and dependency injection in Nest); (3) generic principles (SOLID) only where 1
+   and 2 say nothing. The framework is never wrapped in custom abstractions that duplicate what it
+   already solves. `constitution` records the chosen architecture and does not infer it from the
+   framework (NestJS is modular with DI by default; hexagonal is a team decision).
+3. **Principles gate in the design** (or in the spec, in lite): the model states in one line per
+   principle whether it applies and how, or why not (for example, "SOLID/DIP: solved by Nest's DI
+   per architecture.md").
+4. **ACID is framework-independent:** when the spec writes data, it always declares which writes go
+   together, the transaction with the stack's tool (for example, Prisma's `$transaction`), the
+   compensation when it crosses systems (for example, database + auth provider), concurrency
+   handling, and a partial-failure test for every multi-write operation.
+5. **Justified exceptions** in a table: which principle is violated, why it is needed, and why the
+   simpler alternative was rejected.
+6. **The Reviewer** checks only the principles the design declared as applying: unjustified
+   violations block; design suggestions outside them are advisory.
 
 ## Phase 4 — Repetition and autonomy
 
