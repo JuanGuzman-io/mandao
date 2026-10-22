@@ -1,25 +1,14 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
-import { afterEach, describe, expect, test } from 'vitest';
+import { writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { describe, expect, test } from 'vitest';
 import { reviewDiff } from '../../src/scripts/review.js';
 import { sha256 } from '../../src/util/hash.js';
-
-const roots: string[] = [];
-afterEach(() => {
-  for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
-});
+import { makeTree } from '../helpers.js';
 
 function repo(files: Record<string, string>) {
-  const root = mkdtempSync(join(tmpdir(), 'mandao-review-diff-'));
-  roots.push(root);
-  for (const [path, content] of Object.entries(files)) {
-    const full = join(root, path);
-    mkdirSync(dirname(full), { recursive: true });
-    writeFileSync(full, content);
-  }
+  const root = makeTree(files);
   const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'ignore' });
   git('init', '-q');
   git('config', 'user.name', 'Mandao Test');

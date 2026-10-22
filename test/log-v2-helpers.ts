@@ -52,8 +52,9 @@ status: draft
 /** A gate that fails with 10,000 lines: odd lines name the task's file, even lines another file. */
 export const NOISY_GATE = `node -e "for(let i=1;i<=10000;i++)console.log((i%2?'src/cli/skills.ts(':'src/other/noise.ts(')+i+'): error TS'+i);process.exitCode=1"`;
 export const OTHER_LAST = 'src/other/noise.ts(10000): error TS10000';
-export const REVIEW_FAIL = 'VERDICT: FAIL\n\n## Blocking findings\n\n- B1: `skills ls` is not registered as an alias.\n';
-export const REVIEW_PASS = 'VERDICT: PASS\n\nThe alias is registered.\n';
+export const REVIEW_FAIL =
+  'VERDICT: FAIL\n\n## Findings (JSON)\n\n```json\n{"version":1,"findings":[{"id":"B1","status":"open","severity":"medium","lens":"core","title":"skills ls is not registered as an alias.","file":"src/cli/skills.ts","line":1,"evidence":"The alias is not registered."}]}\n```\n\n## Blocking findings\n\n- B1: `skills ls` is not registered as an alias.\n';
+export const REVIEW_PASS = 'VERDICT: PASS\n\n## Findings (JSON)\n\n```json\n{"version":1,"findings":[]}\n```\n\nThe alias is registered.\n';
 
 /** The fixture as a spec of layout `version`, on its spec branch, committed. */
 export function repo(version: 1 | 2) {
