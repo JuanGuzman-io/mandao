@@ -29,9 +29,10 @@ scope, product behavior, security or irreversible actions.
 |---|---|---|---|
 | [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
 | [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
-| [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | implemented; pending PR CI and merge |
-| [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | agreed, pending phase plan approval |
-| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | agreed, pending phase plan approval |
+| [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
+| [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
+| [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | agreed, pending phase plan approval |
+| [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | in progress; plan approved |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
@@ -84,7 +85,7 @@ Acceptance criteria:
 
 ## Phase 3 — Context and rework
 
-**Implemented; pending PR CI and merge.** See [ADR 0045](decisions/0045-structured-review-context.md).
+**Complete:** PR #9 merged into `main` (`c315d3c`). See [ADR 0045](decisions/0045-structured-review-context.md).
 
 - [x] Reviewer diff uses canonical changed files; verified generated harness files and diagram SVGs
   have hash/origin receipts, with full-diff fallback on provenance mismatch.
@@ -103,35 +104,68 @@ Acceptance criteria:
 - Reviewer findings have `status: open | resolved` and severity. The security guard blocks only
   open high/critical findings, never a regex over free text.
 
+## Phase 3b — Gated design principles
+
+**Agreed, pending phase plan approval. Modelled on Spec Kit.**
+
+**Origin:** Spec Kit uses neither SOLID nor ACID, but its plan goes through a "Constitution Check"
+with concrete questions and justifies exceptions in a "Complexity Tracking" table; its articles VII
+and VIII (simplicity and anti-abstraction) stop unnecessary abstractions. AKILI-SPECS only mentions
+SOLID as a reference inside the `software-architect` skill, and does not cover ACID.
+
+1. **Principles in the constitution:** a section with the concrete version for the project's stack:
+   SOLID (especially single responsibility and dependency inversion, and where they are required),
+   ACID (which operations need a transaction, compensation across systems, isolation under
+   concurrency) and **simplicity / anti-abstraction as the counterweight** (use the framework
+   directly; no "just in case" abstractions; no interface with a single implementation without a
+   reason). `constitution` proposes it from the detected stack and the user approves it.
+2. **Precedence:** (1) the architecture the project declared in `architecture.md` (for example,
+   hexagonal on NestJS); (2) the framework's conventions, taken from the stack skill (for example,
+   modules, providers and dependency injection in Nest); (3) generic principles (SOLID) only where 1
+   and 2 say nothing. The framework is never wrapped in custom abstractions that duplicate what it
+   already solves. `constitution` records the chosen architecture and does not infer it from the
+   framework (NestJS is modular with DI by default; hexagonal is a team decision).
+3. **Principles gate in the design** (or in the spec, in lite): the model states in one line per
+   principle whether it applies and how, or why not (for example, "SOLID/DIP: solved by Nest's DI
+   per architecture.md").
+4. **ACID is framework-independent:** when the spec writes data, it always declares which writes go
+   together, the transaction with the stack's tool (for example, Prisma's `$transaction`), the
+   compensation when it crosses systems (for example, database + auth provider), concurrency
+   handling, and a partial-failure test for every multi-write operation.
+5. **Justified exceptions** in a table: which principle is violated, why it is needed, and why the
+   simpler alternative was rejected.
+6. **The Reviewer** checks only the principles the design declared as applying: unjustified
+   violations block; design suggestions outside them are advisory.
+
 ## Phase 4 — Repetition and autonomy
 
 Acceptance criteria:
 
-- Gate receipts are reused by Implementer, Leader, pre-commit and verify only when the code tree,
+- [x] Gate receipts are reused by Implementer, Leader, pre-commit and verify only when the code tree,
   configuration, selected tests and tool versions are unchanged; invalidation is exact.
-- Session-cut suggestions persist a boundary ID and appear only once per boundary.
-- All users' commands let the agent resolve and record reversible technical questions covered by
+- [x] Session-cut suggestions persist a boundary ID and appear only once per boundary.
+- [x] All users' commands let the agent resolve and record reversible technical questions covered by
   the constitution. Product, scope, security and external actions still reach the user.
-- `run commit` uses the reviewed, approved change manifest rather than just task file declarations.
+- [x] `run commit` uses the reviewed, approved change manifest rather than just task file declarations.
   Undeclared and unreviewed changes stop the commit; no non-building state is committed. This
   supersedes the older task-list-only implementation proposal, preserving its safety requirement.
-- Implement [launcher version](#launcher-version), including the old-global/new-lock regression.
-- `init` installs missing Archify with confirmation and a pinned version; a Mandao script invokes it
+- [x] Implement [launcher version](#launcher-version), including the old-global/new-lock regression.
+- [x] `init` installs missing Archify with confirmation and a pinned version; a Mandao script invokes it
   for every harness. Without it, `doctor` errors and required diagram steps stop with instructions,
   unless the user explicitly configures `diagrams.engine: mermaid`.
 
 ## Launcher version
 
-**Phase 4; agreed, not yet implemented.**
+**Phase 4; implemented (ADR 0046).**
 
 `.mandao/bin/mandao.mjs` compares the version of the `mandao` it is about to run (local, global or
 `npx`) with the one pinned in `mandao.lock`.
 
 - On a mismatch it runs the pinned version (`npx mandao@<lock version>`); when it cannot, it warns
-  and records the mismatch.
-- `mandao doctor` reports the mismatch too.
+  and reports the mismatch.
+- `mandao doctor` reports runner resolution and version problems.
 - In the Mandao repository (dogfooding) it prefers the worktree's own build.
-- A test reproduces the case: an old global install, a newer lock.
+- A regression covers an old global install and a newer lock.
 
 ## MDO-0012 — Delivery and research
 

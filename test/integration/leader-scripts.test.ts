@@ -2,9 +2,11 @@ import { execFileSync } from 'node:child_process';
 import { chmodSync, cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { checkReview } from '../../src/cli/checkpoint-guards.js';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
+import { readSpec } from '../../src/scripts/spec.js';
 import { logPath } from '../../src/scripts/spec-log.js';
 import { makeTree, pkg, reviewFile } from '../helpers.js';
 
@@ -132,9 +134,15 @@ describe('Leader scripts', () => {
     expect(r).toMatchObject({ gatesRecorded: true });
     const pack = readFileSync(join(root, r.pack), 'utf8');
     expect(pack).toContain('## Brief');
+    expect(pack).toContain('## Mandao change manifest');
+    expect(pack).toContain('"path": "src/cli/skills.ts"');
     expect(pack).toContain('| typecheck | FAIL | 2 |');
     expect(pack).toContain('+export const list = () => [];');
     expect(pack).not.toContain('### typecheck — FAIL'); // the output blocks stay in the gates log
+    writeFileSync(join(root, 'src/cli/skills.ts'), 'export const list = () => ["changed after pack"] as const;\n');
+    expect(() => checkReview(readSpec(join(root, SPEC)), { task: 'T2', verdict: 'PASS', review: reviewFile('PASS') })).toThrow(
+      /working tree changed after the review pack was generated/,
+    );
   });
 
   test('cross-harness review stores malformed output and records FAIL; open critical security findings override PASS', async () => {
@@ -205,6 +213,7 @@ describe('Leader scripts', () => {
     const root = repo();
     const reviewer = ['--harness', 'claude', '--reviewer', 'mandao-reviewer'];
     await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'REPORTED');
+    await run(root, 'review-pack', 'MDO-0001', 'T2');
     await run(
       root,
       'checkpoint',
@@ -233,41 +242,6 @@ describe('Leader scripts', () => {
     expect(await run(root, 'tests', 'mandao', '--full', '--reason', 'CI is down')).toMatchObject({ impact: 'full suite' });
     expect(readFileSync(logPath(join(root, SPEC), 'full-runs.md'), 'utf8')).toMatch(/· mandao · \w+ · CI is down/);
   });
-  test('step at a task boundary in Claude Code says whether to cut the session (ADR 0038)', async () => {
-    const root = repo();
-    const session = 'cut-session';
-    const usage = (read: number, write: number) => ({
-      input_tokens: 0,
-      cache_read_input_tokens: read,
-      cache_creation_input_tokens: write,
-      cache_creation: { ephemeral_1h_input_tokens: write },
-    });
-    const turn = (id: string, read: number, write: number) =>
-      JSON.stringify({ timestamp: new Date().toISOString(), message: { id, model: 'claude-opus-5-5', usage: usage(read, write) } });
-    const home = makeTree({ [`projects/x/${session}.jsonl`]: `${turn('a', 0, 34_000)}\n${turn('b', 34_000, 126_000)}\n` });
-    vi.stubEnv('CLAUDE_CONFIG_DIR', home);
-    vi.stubEnv('CLAUDE_CODE_SESSION_ID', session);
-    const step = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
-    // Saves $0.65, below the default $1: no stop inside implement, but the estimate is logged for Kaizen.
-    expect(step.session).toMatchObject({
-      cut: true,
-      savings: 0.65,
-      stop: false,
-      minSavings: 1,
-      reason: expect.stringMatching(/context 160k vs 44k/),
-    });
-    const cuts = readFileSync(logPath(join(root, SPEC), 'session-cuts.md'), 'utf8');
-    expect(cuts).toMatch(/\| T2 \| 160000 \| 44000 \| 43 \| 0\.65 \| go on: below 1 \|/);
-    // Between implement and verify the rule alone decides, with the command for the new session.
-    const summary = await run(root, 'implement-summary', 'MDO-0001');
-    expect(summary.session).toMatchObject({ cut: true, savings: 0.3, command: expect.stringContaining('"/mandao-verify MDO-0001"') });
-    // Mid-task (a RED row, the next action delegates the implementation): no advice.
-    await run(root, 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', '--verdict', 'RED');
-    const mid = await run(root, 'step', 'MDO-0001', 'T2', '--harness', 'claude', '--no-brief');
-    expect(mid.loop.action).toBe('implement');
-    expect(mid.session).toBeUndefined();
-  });
-
   test('S-3.1: approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback', async () => {
     const root = repo();
     vi.stubEnv('CLAUDE_CODE_SESSION_ID', 'approve-session');

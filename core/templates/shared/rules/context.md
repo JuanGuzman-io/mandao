@@ -64,6 +64,12 @@ frontmatter of the spec documents. Only a human approval moves `draft` to `appro
 
 ## Human in the loop
 
-Ask for approval before: writing to the constitution, publishing outside the repository, installing
-anything, and any step a command marks as an approval gate. Bundle questions; never ask more than
-the command allows.
+For reversible technical choices, decide from the project's constitution and accepted ADRs. If they
+do not settle the choice, choose the least risky option that satisfies the requirements and record
+the rationale and rejected alternatives in the relevant design or decision record. Do not turn a
+technical choice into a user approval gate.
+
+Ask the user about product behavior, scope, security, or external actions. Ask for approval before
+writing to the constitution, publishing outside the repository, installing anything, or taking an
+action a command marks as an approval gate. Budget and publication decisions remain with the user.
+Bundle questions; never ask more than the command allows.

@@ -94,6 +94,7 @@ describe('branching in a repository', () => {
         deferred_to_ci: [],
         red_tests: [],
         pending_commits: [{ task: 'T1', subject: 's', files: [] }],
+        approved_manifests: [],
       },
       protectedBranches: ['main'],
     });

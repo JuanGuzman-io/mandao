@@ -11,6 +11,7 @@ import { packageInfo } from '../util/package-root.js';
 import { onPath } from '../util/which.js';
 import { isRepo } from '../workspace/detect.js';
 import { planChanges } from '../writer/plan.js';
+import { archifyScript } from './archify.js';
 import { readCatalog } from './catalog.js';
 import { cacheFindings } from './doctor-cache.js';
 import { harnessFindings } from './doctor-harness.js';
@@ -33,10 +34,7 @@ export interface Finding {
 const MIN_NODE = '22.18.0';
 
 /** Optional tools: Mandao works without them, with lower confidence. */
-const OPTIONAL_TOOLS = [
-  { name: 'graphify', fallback: 'repository mapping falls back to grep/glob; reports lower their confidence' },
-  { name: 'archify', fallback: 'diagrams fall back to Mermaid' },
-];
+const OPTIONAL_TOOLS = [{ name: 'graphify', fallback: 'repository mapping falls back to grep/glob; reports lower their confidence' }];
 
 function hasSkill(root: string, name: string): boolean {
   return [join(root, '.claude', 'skills', name), join(home(), '.claude', 'skills', name)].some((p) => existsSync(p));
@@ -115,6 +113,17 @@ function catalogFindings(root: string, config: Config, skills: { id: string }[],
   return [
     ...skillFindings({ catalog, pinned, harnesses: config.harnesses, root, home: home() }),
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...pinned])], probe),
+  ];
+}
+
+function diagramFindings(root: string, config: Config): Finding[] {
+  if (config.diagrams.engine !== 'archify' || archifyScript(root, home())) return [];
+  return [
+    {
+      level: 'error',
+      message: 'Archify is required for diagrams but is not installed',
+      fix: 'run `mandao init` interactively and confirm the pinned Archify install, or set diagrams.engine: mermaid in .mandao/config.yml',
+    },
   ];
 }
 
@@ -222,6 +231,8 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
     if (!onPath(tool.name) && !hasSkill(root, tool.name))
       findings.push({ level: 'info', message: `${tool.name} not found: ${tool.fallback}` });
   }
+
+  findings.push(...diagramFindings(root, config));
 
   const overrides = join(root, '.mandao', 'overrides');
   if (existsSync(overrides) && readdirSync(overrides).some((f) => f !== 'README.md')) {

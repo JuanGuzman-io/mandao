@@ -49,8 +49,10 @@ const run = async (root: string, ...args: string[]) => {
   await buildProgram(() => root).parseAsync(['node', 'mandao', ...args]);
   return JSON.parse(out.at(-1)!);
 };
-const checkpoint = (root: string, ...args: string[]) =>
-  run(root, 'run', 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', ...args);
+const checkpoint = async (root: string, ...args: string[]) => {
+  if (args.some((arg, i) => arg === '--verdict' && args[i + 1] === 'PASS')) await run(root, 'run', 'review-pack', 'MDO-0001', 'T2');
+  return run(root, 'run', 'checkpoint', 'MDO-0001', '--task', 'T2', '--harness', 'claude', ...args);
+};
 const rows = (root: string) => readSpec(join(root, SPEC)).execution.filter((r) => r.task === 'T2');
 const reviewer = ['--reviewer', 'mandao-reviewer'];
 
@@ -100,6 +102,13 @@ describe('red first, rework included', () => {
 });
 
 describe('structured Reviewer findings guard', () => {
+  test('a PASS without the matching script-generated review manifest is refused', async () => {
+    const root = workspace();
+    await expect(
+      run(root, 'run', 'checkpoint', 'MDO-0001', '--task', 'T2', '--verdict', 'PASS', ...reviewer, '--review', reviewFile('PASS')),
+    ).rejects.toThrow(/no matching review pack manifest.*run `mandao run review-pack/);
+  });
+
   test('requires a valid payload, refuses open security blockers, and preserves the whole answer', async () => {
     const root = workspace();
     const pass = (findings: string) => checkpoint(root, '--verdict', 'PASS', ...reviewer, '--review', reviewFile('PASS', findings));

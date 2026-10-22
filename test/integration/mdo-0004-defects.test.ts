@@ -16,7 +16,7 @@ const SPEC = 'specs/MDO-0001-skills-list';
 const config = configSchema.parse({
   schema_version: 1,
   workspace: 'single',
-  projects: [{ name: 'shop', path: '.' }],
+  projects: [{ name: 'shop', path: '.', gates: { build: 'node -e "process.exit(0)"' } }],
   harnesses: ['claude'],
 });
 const git = (cwd: string, ...args: string[]) =>
@@ -39,7 +39,7 @@ function repo() {
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
-    projects: [{ name: 'shop', path: '.' }],
+    projects: [{ name: 'shop', path: '.', gates: { build: 'node -e "process.exit(0)"' } }],
     harnesses: ['claude'],
   });
   cpSync(fixture, join(root, SPEC), { recursive: true });
@@ -49,7 +49,7 @@ function repo() {
 }
 
 describe('defects found by MDO-0004', () => {
-  test('#1 a queued commit takes only the files its task declares', async () => {
+  test('#1 a queued commit records the exact Reviewer-approved paths', async () => {
     const root = repo();
     mkdirSync(join(root, 'src/cli'), { recursive: true });
     writeFileSync(join(root, 'src/cli/extensions.ts'), 'export {};\n'); // declared by T2
@@ -59,18 +59,27 @@ describe('defects found by MDO-0004', () => {
       file,
       readFileSync(file, 'utf8').replace(/(\| STARTED \| \|\n)/, '$1| d | T2 | 1 | standard | claude | x | y | PASS | |\n'),
     );
-    await buildProgram(() => root).parseAsync([
-      'node',
-      'mandao',
-      'run',
+    const run = (...args: string[]) => buildProgram(() => root).parseAsync(['node', 'mandao', 'run', ...args]);
+    await run('review-pack', 'MDO-0001', 'T2');
+    const review = join(makeTree({}), 'review.txt');
+    writeFileSync(review, 'VERDICT: PASS\n\n## Findings (JSON)\n\n```json\n{"version":1,"findings":[]}\n```\n');
+    await run(
       'checkpoint',
       'MDO-0001',
       '--task',
       'T2',
       '--pending-commit',
       'register the command',
-    ]);
-    expect(readSpec(join(root, SPEC)).progress!.pending_commits[0]!.files).toEqual(['src/cli/extensions.ts']);
+      '--verdict',
+      'PASS',
+      '--reviewer',
+      'self',
+      '--implementer',
+      'self',
+      '--review',
+      review,
+    );
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits[0]!.files).toEqual(['src/cli/extensions.ts', 'src/other-task.ts']);
   });
 
   test('#2 the size of a PR leaves out what is not code', () => {

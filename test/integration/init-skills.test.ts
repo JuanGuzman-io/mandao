@@ -60,6 +60,8 @@ vi.mock('@clack/prompts', () => {
   };
 });
 
+vi.mock('../../src/cli/init-archify.js', () => ({ offerArchify: async () => {} }));
+
 vi.mock('../../src/skills/install.js', async (importOriginal) => {
   const real = await importOriginal<typeof import('../../src/skills/install.js')>();
   return {

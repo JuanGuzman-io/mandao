@@ -52,7 +52,7 @@ export function runnerFindings(root: string, lockVersion: string | undefined, pr
   const launcher = join(root, LAUNCHER_PATH);
   if (!existsSync(launcher)) return [{ level: 'error', message: `${LAUNCHER_PATH} is missing`, fix: 'run `mandao sync`' }];
   const printed = printLauncher(root, launcher);
-  let choice: { source: string; command?: string; runner?: string } | undefined;
+  let choice: { source: string; command?: string; runner?: string; mismatch?: { source: string; version: string } } | undefined;
   try {
     choice = printed ? JSON.parse(printed) : undefined;
   } catch {
@@ -69,10 +69,20 @@ export function runnerFindings(root: string, lockVersion: string | undefined, pr
       },
     ];
   }
-  if (choice.source !== 'npx') return [{ level: 'ok', message: `runner: ${choice.source} Mandao (${choice.command})` }];
+  const mismatch = choice.mismatch
+    ? [
+        {
+          level: 'warn' as const,
+          message: `${choice.mismatch.source} Mandao ${choice.mismatch.version} does not match project lock ${lockVersion ?? 'unknown'}`,
+          fix: 'update the global/local Mandao install, or let the launcher use the pinned npx version',
+        },
+      ]
+    : [];
+  if (choice.source !== 'npx') return [...mismatch, { level: 'ok', message: `runner: ${choice.source} Mandao (${choice.command})` }];
   const version = lockVersion ?? 'latest';
-  if (probe(`npm view mandao@${version} version`)?.trim()) return [{ level: 'ok', message: `runner: npx mandao@${version}` }];
+  if (probe(`npm view mandao@${version} version`)?.trim()) return [...mismatch, { level: 'ok', message: `runner: npx mandao@${version}` }];
   return [
+    ...mismatch,
     {
       level: 'warn',
       message: `the launcher falls back to npx, but mandao@${version} could not be found on the npm registry`,

@@ -3,10 +3,12 @@ import { cpSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
-import { writeYaml } from '../../src/engine/files.js';
+import { readConfig, writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
 import { resolveModels } from '../../src/models/resolve.js';
 import { recommendationsSchema } from '../../src/schemas/index.js';
+import { writeProgress } from '../../src/scripts/checkpoint.js';
+import { changeManifest } from '../../src/scripts/commits.js';
 import { redCheck } from '../../src/scripts/red.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { type ExecutionRow, loopState } from '../../src/spec/index.js';
@@ -108,6 +110,7 @@ describe('mandao run red', () => {
       workspace: 'single',
       projects: [{ name: 'shop', path: '.', tests: { impacted: 'node -e "process.exit(Number(process.env.RED ?? 1))" {files}' } }],
       harnesses: ['claude'],
+      diagrams: { engine: 'mermaid' },
     });
     syncProject(root);
     cpSync(fixture, join(root, SPEC), { recursive: true });
@@ -144,7 +147,7 @@ describe('mandao run red', () => {
     expect(readSpec(join(root, SPEC)).progress!.red_tests.map((r) => r.task)).toEqual(['T2']);
   });
 
-  test('mandao run diagram stamps a Mermaid fallback into design.md and reports it stale after an edit', async () => {
+  test('mandao run diagram stamps explicitly configured Mermaid into design.md and reports it stale after an edit', async () => {
     const root = workspace();
     const design = join(root, SPEC, 'design.md');
     writeFileSync(
@@ -162,6 +165,15 @@ describe('mandao run red', () => {
     await expect(run(root, 'diagram', 'MDO-0001', '--stamp', '--tool', 'archify', '--type', 'workflow')).rejects.toThrow(/needs --file/);
   });
 
+  test('a required Archify diagram step stops with install instructions when Archify is missing', async () => {
+    const root = workspace();
+    const config = readConfig(root);
+    writeYaml(join(root, '.mandao/config.yml'), { ...config, diagrams: { engine: 'archify' } });
+    const design = join(root, SPEC, 'design.md');
+    writeFileSync(design, '---\nschema_version: 1\nspec: MDO-0001-skills-list\ndepth: standard\nprojects: [shop]\n---\n\n# Design\n');
+    await expect(run(root, 'diagram', 'MDO-0001')).rejects.toThrow(/Archify is required.*mandao init/);
+  });
+
   test('a PASS written by review --via can be queued for commit without recording it again', async () => {
     const root = workspace();
     git(root, 'add', '.');
@@ -170,6 +182,12 @@ describe('mandao run red', () => {
     const file = join(root, SPEC, 'execution.md');
     writeFileSync(file, readFileSync(file, 'utf8').replace(/(\| STARTED \| \|\n)/, `$1${pass}\n`));
     writeFileSync(join(root, 'test/a.test.ts'), 'expect(1).toBe(1)\n');
+    const dir = join(root, SPEC);
+    const spec = readSpec(dir);
+    writeProgress(dir, {
+      ...spec.progress!,
+      approved_manifests: [{ task: 'T2', attempt: 1, files: changeManifest(root, dir) }],
+    });
     await run(
       root,
       'checkpoint',

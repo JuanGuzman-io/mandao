@@ -39,11 +39,13 @@ In every diagram: new elements highlighted, modified ones marked, unchanged ones
   (close checks they exist, never that they changed). A node's `id` is the **module path**
   (`src/billing`) or the **contract identifier** (`POST /api/tokens`, `event:user.created`), never its
   label: `close` compares diagrams by id, so renaming a box is not drift.
-- Render it with the Archify skill when it is available, into `diagrams/proposed.html` (plus a PNG
-  export), then record it:
+- When `diagrams.engine` is `archify`, render it with Archify through `mandao run archify` into
+  `diagrams/proposed.html` (plus a PNG export), then record it:
   `mandao run diagram <ID> --stamp --tool archify --type <type> --file diagrams/proposed.html --graph diagrams/proposed.graph.json`.
-  Without Archify, write Mermaid to a file and stamp with `--tool mermaid --mermaid <file>` and the same
-  `--graph`.
+  If Archify is missing, stop and ask the user to install it through interactive `mandao init` or
+  explicitly configure `diagrams.engine: mermaid`; never switch renderers automatically. When Mermaid
+  is explicitly configured, write it to a file and stamp with `--tool mermaid --mermaid <file>` and the
+  same `--graph`.
 - The stamp records which design it came from. Whenever the design changes, `mandao run diagram`
   reports `stale: true`: regenerate it before asking for approval.
 - With a tracker MCP, offer to attach the PNG to the story, only after the user confirms.

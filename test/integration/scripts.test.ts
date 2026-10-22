@@ -66,6 +66,7 @@ describe('spec proposal and status', () => {
       deferred_to_ci: [{ task: 'T2', tests: ['e2e'], reason: 'low memory' }],
       red_tests: [],
       pending_commits: [],
+      approved_manifests: [],
     };
     expect(checkTransition('in-progress', 'verified', progress, false)[0]).toMatch(/deferred to CI \(T2\)/);
     expect(checkTransition('in-progress', 'verified', progress, true)).toEqual([]);

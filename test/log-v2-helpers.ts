@@ -64,7 +64,7 @@ export function repo(version: 1 | 2) {
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
-    projects: [{ name: 'mandao', path: '.', gates: { typecheck: NOISY_GATE } }],
+    projects: [{ name: 'mandao', path: '.', gates: { typecheck: NOISY_GATE, build: 'node -e "process.exit(0)"' } }],
     harnesses: ['claude'],
     // The gate must run wherever the suite runs: a busy CI runner would otherwise defer it, with no output.
     resources: { min_free_memory_mb: 0 },
@@ -106,7 +106,7 @@ export async function history(root: string) {
     writeFileSync(join(root, 'src/cli/skills.ts'), `export const a = ${attempt + 1};\n`);
     await run(root, 'gates', 'MDO-0001', 'T2');
     await run(root, 'review-pack', 'MDO-0001', 'T2');
-    const review = join(root, `review-${attempt}.txt`);
+    const review = join(makeTree({}), `review-${attempt}.txt`);
     writeFileSync(review, attempt === 1 ? REVIEW_FAIL : REVIEW_PASS);
     const verdict =
       attempt === 1

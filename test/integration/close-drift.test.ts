@@ -18,7 +18,8 @@ function commit(root: string, file: string, message: string, date: string) {
 describe('diagram-drift by spec depth (MDO-0011 AC-6)', () => {
   useLogEnv();
   const SPEC = 'specs/MDO-0001-skills-list';
-  const CONFIG = 'schema_version: 1\nworkspace: single\nprojects: [{ name: p, path: . }]\nharnesses: [claude]\n';
+  const CONFIG =
+    'schema_version: 1\nworkspace: single\nprojects: [{ name: p, path: . }]\nharnesses: [claude]\ndiagrams: { engine: mermaid }\n';
   const PROPOSED = {
     schema_version: 1,
     nodes: [

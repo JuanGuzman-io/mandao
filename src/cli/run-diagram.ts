@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
+import { archifyScript } from '../engine/archify.js';
 import { readConfig } from '../engine/files.js';
+import { home } from '../engine/global.js';
 import { repoRoot, taskCommits } from '../scripts/commits.js';
 import { graphFile, isTestFile, readGraph } from '../scripts/impact.js';
 import { findSpec, readLayout, readSpec } from '../scripts/spec.js';
@@ -80,7 +82,7 @@ function currentGraphHash(dir: string, design: string): string | undefined {
 }
 
 /** design.md with the diagram just generated stamped in, after checking the options. */
-function stamped(dir: string, design: string, o: DiagramOptions): string {
+function stamped(root: string, engine: 'archify' | 'mermaid', dir: string, design: string, o: DiagramOptions): string {
   const tool = checked<DiagramTool>(o.tool, DIAGRAM_TOOLS, 'tool');
   const type = checked<DiagramType>(o.type, DIAGRAM_TYPES, 'type');
   const graph = o.graph
@@ -88,9 +90,16 @@ function stamped(dir: string, design: string, o: DiagramOptions): string {
     : {};
   if (tool === 'mermaid') {
     if (!o.mermaid) throw new Error('--tool mermaid needs --mermaid <file>');
+    if (tool !== engine) throw new Error(`diagram tool must match diagrams.engine: ${engine} in .mandao/config.yml`);
     return stampDiagram(design, { type, tool, file: 'inline', ...graph }, readFileSync(o.mermaid, 'utf8'));
   }
   if (!o.file || !existsSync(join(dir, o.file))) throw new Error('--tool archify needs --file, an existing file in the spec folder');
+  if (tool !== engine) throw new Error(`diagram tool must match diagrams.engine: ${engine} in .mandao/config.yml`);
+  if (!archifyScript(root, home()))
+    throw new Error(
+      'Archify is required for diagrams but is not installed; run `mandao init` and confirm its pinned install, ' +
+        'or configure diagrams.engine: mermaid',
+    );
   return stampDiagram(design, { type, tool, file: o.file, ...graph });
 }
 
@@ -139,12 +148,20 @@ export function registerDiagram(run: Command, ctx: CliContext) {
       'structured source, relative to the spec folder (diagrams/proposed.graph.json): ids are module paths or contract ids',
     )
     .action((ref: string, o: DiagramOptions) => {
-      const dir = findSpec(ctx.root(), readConfig(ctx.root()), ref);
+      const config = readConfig(ctx.root());
+      const dir = findSpec(ctx.root(), config, ref);
       const file = docPath(dir, 'design');
       if (!existsSync(file)) throw new Error(`${file} does not exist: specify writes it first`);
       let design = readFileSync(file, 'utf8');
+      const before = diagramState(design);
+      if (!o.stamp && before.required !== 'optional' && config.diagrams.engine === 'archify' && !archifyScript(ctx.root(), home())) {
+        throw new Error(
+          'Archify is required for this diagram step but is not installed; run `mandao init` and confirm its pinned install, ' +
+            'or configure diagrams.engine: mermaid',
+        );
+      }
       if (o.stamp) {
-        design = stamped(dir, design, o);
+        design = stamped(ctx.root(), config.diagrams.engine, dir, design, o);
         writeText(file, design);
       }
       json(diagramState(design, currentGraphHash(dir, design)));

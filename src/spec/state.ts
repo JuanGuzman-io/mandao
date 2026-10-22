@@ -28,6 +28,10 @@ export const baselineSchema = z.object({
 export const cutEstimateSchema = z.object({
   at: z.string().min(1),
   task: z.string().min(1),
+  /** Stable identity of the task or workflow boundary; absent on historical estimates. */
+  boundary_id: z.string().min(1).optional(),
+  /** True only for the first cut suggestion emitted at this boundary. */
+  suggested: z.boolean().optional(),
   context: z.number(),
   base: z.number(),
   /** The "Turns left" the rule assumed at that boundary. */

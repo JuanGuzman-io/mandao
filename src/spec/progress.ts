@@ -41,7 +41,24 @@ export const progressSchema = z.object({
     )
     .default([]),
   pending_commits: z
-    .array(z.object({ task: z.string().regex(/^T\d+$/), subject: z.string().min(1), files: z.array(z.string()).default([]) }))
+    .array(
+      z.object({
+        task: z.string().regex(/^T\d+$/),
+        subject: z.string().min(1),
+        files: z.array(z.string()).default([]),
+        manifest: z.array(z.object({ path: z.string(), status: z.string(), sha256: z.string() })).optional(),
+      }),
+    )
+    .default([]),
+  /** Exact working-tree change manifests approved by a Reviewer, keyed to that task's attempt. */
+  approved_manifests: z
+    .array(
+      z.object({
+        task: z.string().regex(/^T\d+$/),
+        attempt: z.number().int().positive(),
+        files: z.array(z.object({ path: z.string(), status: z.string(), sha256: z.string() })),
+      }),
+    )
     .default([]),
 });
 export type Progress = z.infer<typeof progressSchema>;

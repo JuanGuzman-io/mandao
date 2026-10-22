@@ -15,6 +15,7 @@ function workspace() {
     workspace: 'single',
     projects: [{ name: 'shop', path: '.', profile: 'app' }],
     harnesses: ['claude', 'copilot'],
+    diagrams: { engine: 'mermaid' },
   });
   writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: { claude: { reviewer: 'opus' } } });
   return root;
@@ -89,6 +90,19 @@ describe('syncProject', () => {
 });
 
 describe('doctor', () => {
+  test('requires Archify unless Mermaid is explicitly selected', () => {
+    const root = workspace();
+    syncProject(root);
+    const config = readConfig(root);
+    writeYaml(join(root, '.mandao/config.yml'), { ...config, diagrams: { engine: 'archify' } });
+    const missing = runDoctor(root, { probe }).find((finding) => finding.message.includes('Archify is required'));
+    expect(missing).toMatchObject({ level: 'error', fix: expect.stringContaining('diagrams.engine: mermaid') });
+
+    mkdirSync(join(root, '.claude/skills/archify/bin'), { recursive: true });
+    writeFileSync(join(root, '.claude/skills/archify/bin/archify.mjs'), '');
+    expect(runDoctor(root, { probe }).some((finding) => finding.message.includes('Archify is required'))).toBe(false);
+  });
+
   test('clean after sync; reports drift and config changes', () => {
     const root = workspace();
     syncProject(root);

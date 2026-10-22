@@ -3,15 +3,18 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import type { HarnessId } from '../schemas/index.js';
+import type { Config, HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
-import { changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
+import { type ChangeManifestEntry, changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
+import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
+import { runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { specLogInCache } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
+import { budgetFor } from './budget.js';
 import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -98,8 +101,8 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
   };
 }
 
-/** A PASS queued for its commit: the task's changed files now, minus those queued before it. */
-function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending_commits'] {
+/** A PASS queued for its commit: only paths in the Reviewer-approved manifest are eligible. */
+function pendingEntry(spec: SpecFolder, o: CheckpointOptions, approved?: ChangeManifestEntry[]): Progress['pending_commits'] {
   if (!o.pendingCommit) return [];
   const passing = (v: string | undefined) => v === 'PASS' || v === 'DEFERRED_TO_CI';
   // The PASS may be this checkpoint's, or already written by `mandao run review --via` (ADR 0021).
@@ -107,12 +110,11 @@ function pendingEntry(spec: SpecFolder, o: CheckpointOptions): Progress['pending
   if (!o.task || (!passing(o.verdict) && !(o.verdict === undefined && passing(lastVerdict)))) {
     throw new Error('--pending-commit needs --task and a PASS: give --verdict PASS, or record it first with `mandao run review`');
   }
-  const queued = new Set(spec.progress?.pending_commits.flatMap((p) => p.files) ?? []);
-  // Only the files the task declares: another task's work in progress must not ride along (MDO-0004).
-  const declared = spec.tasks.find((t) => t.id === o.task)?.files ?? [];
-  const mine = (f: string) => !declared.length || declared.includes(f);
-  const files = changedFiles(repoRoot(spec.dir), spec.dir).filter((f) => !queued.has(f) && mine(f));
-  return [{ task: o.task, subject: o.pendingCommit, files }];
+  const manifest =
+    approved ??
+    spec.progress?.approved_manifests.find((m) => m.task === o.task && m.attempt === taskAttempt(spec.execution, o.task))?.files;
+  if (!manifest) throw new Error(`${o.task}: no Reviewer-approved change manifest; review and approve this exact change set first`);
+  return [{ task: o.task, subject: o.pendingCommit, files: manifest.map((f) => f.path), manifest }];
 }
 
 /** The Leader's model from models.yml for the harness, never the model's own account of itself (ADR 0021). */
@@ -135,15 +137,16 @@ function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions)
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
   requireRedFirst(spec, o.task, o.verdict);
-  const reviewNote = checkReview(spec, o);
-  const pending = pendingEntry(spec, o);
+  const review = checkReview(spec, o);
+  const reviewNote = review.note;
+  const pending = pendingEntry(spec, o, review.manifest);
   for (const p of pending) checkPendingSubject(readConfig(ctx.root()), spec, p.task, p.subject, p.files);
-  return { pending, reviewNote };
+  return { pending, reviewNote, manifest: review.manifest };
 }
 
 export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
-  const { pending, reviewNote } = checkedPending(ctx, spec, o);
+  const { pending, reviewNote, manifest } = checkedPending(ctx, spec, o);
   const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim());
   const notes = [o.notes, reviewNote, edited].filter(Boolean).join('; ');
   if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, { ...o, notes }, now));
@@ -160,6 +163,12 @@ export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: Checkpoint
     // Red tests stay recorded across checkpoints: they are what a later change is compared with (ADR 0022).
     red_tests: spec.progress?.red_tests ?? [],
     pending_commits: [...(spec.progress?.pending_commits ?? []), ...pending],
+    approved_manifests: [
+      ...(spec.progress?.approved_manifests ?? []).filter(
+        (m) => !manifest || m.task !== o.task || !o.task || m.attempt !== taskAttempt(spec.execution, o.task),
+      ),
+      ...(manifest && o.task ? [{ task: o.task, attempt: taskAttempt(spec.execution, o.task), files: manifest }] : []),
+    ],
   });
   return {
     written: true,
@@ -294,9 +303,10 @@ function registerCommit(run: Command, ctx: CliContext) {
     .command('commit <spec>')
     .description('Commit the tasks that passed review and wait for their commit, one commit per task (never pushes)')
     .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
-    .action((ref: string, opts: { trailer?: string[] }) => {
+    .action(async (ref: string, opts: { trailer?: string[] }) => {
       const { config, spec } = loadSpec(ctx, ref);
       if (!spec.story || !spec.progress) throw new Error(`${spec.name} needs story.md and progress.yml`);
+      await requirePreCommitBuilds(ctx, config, spec);
       const result = commitPending({
         repo: repoRoot(spec.dir),
         specDir: spec.dir,
@@ -310,6 +320,29 @@ function registerCommit(run: Command, ctx: CliContext) {
       json(result);
       if (result.error) process.exitCode = 1;
     });
+}
+
+async function requirePreCommitBuilds(ctx: CliContext, config: Config, spec: SpecFolder): Promise<void> {
+  if (!spec.progress?.pending_commits.length) return;
+  const projects = config.projects.filter((project) => project.gates.build);
+  if (!projects.length) throw new Error('run commit needs at least one configured build gate');
+  for (const project of projects) {
+    const budget = budgetFor(ctx.root(), config, project, 'build', `${project.name} pre-commit build`, false, spec.dir);
+    const result = await runWithGateReceipt(
+      {
+        root: ctx.root(),
+        project: project.name,
+        gate: 'build',
+        command: project.gates.build!,
+        configuration: config,
+        selectedTests: [],
+        budget,
+        projectRoot: join(ctx.root(), project.path),
+      },
+      () => runTests(ctx.root(), `${project.name} build`, project.gates.build!, budget),
+    );
+    if (result.status !== 'PASS') throw new Error(`${project.name} build is ${result.status}: ${result.reason ?? 'commit refused'}`);
+  }
 }
 
 /** Scripts that write the ledger (checkpoint), commit (commit) or launch a reviewer (review): ADR 0021. */

@@ -51,3 +51,5 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0042](0042-phased-improvements-and-local-validation.md) | Phased improvements and local validation | Accepted |
 | [0043](0043-https-skill-sources-and-ssh-settings.md) | HTTPS skill sources and SSH settings | Accepted |
 | [0044](0044-script-owned-lifecycle-measurement.md) | Script-owned lifecycle measurement | Accepted |
+| [0045](0045-structured-review-context.md) | Structured review context and findings | Accepted |
+| [0046](0046-exact-gate-receipts-and-autonomous-execution.md) | Exact gate receipts and autonomous execution | Accepted |

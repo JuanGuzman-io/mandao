@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Command } from 'commander';
 import { ADAPTERS } from '../adapters/index.js';
 import { readConfig } from '../engine/files.js';
@@ -6,6 +7,7 @@ import { branchingFor, branchNames, currentBranch, detectBranching } from '../sc
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
 import { activeSpecDir, recordFullRun } from '../scripts/forced.js';
+import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
@@ -269,7 +271,20 @@ async function runTestsCommand(ctx: CliContext, name: string, files: string[], o
   const impact = impactFor(ctx, project, files);
   const template = opts.full ? project.gates.test : impact.command;
   const command = template ? fillCommand(template, opts.full ? [] : impact.files, Math.max(1, budget.workers)) : undefined;
-  const result = await runTests(ctx.root(), `${name} tests`, command, budget, Number(opts.queueWait) * 1000);
+  const result = await runWithGateReceipt(
+    {
+      root: ctx.root(),
+      project: name,
+      gate: opts.full ? 'test-full' : 'test',
+      command: command ?? '',
+      configuration: config,
+      selectedTests: opts.full ? [] : impact.files,
+      budget,
+      projectRoot: project.path === '.' ? ctx.root() : join(ctx.root(), project.path),
+      force: opts.force,
+    },
+    () => runTests(ctx.root(), `${name} tests`, command, budget, Number(opts.queueWait) * 1000),
+  );
   if (!opts.full) return { ...result, impact: impact.source };
   const record = { at: new Date().toISOString(), project: name, reason: opts.reason?.trim() ?? '', status: result.status };
   recordFullRun(ctx.root(), record, activeSpecDir(ctx.root(), config));
@@ -290,7 +305,20 @@ function registerBuild(run: Command, ctx: CliContext) {
       const project = projectNamed(ctx, name);
       if (!project.gates.build) throw new Error(`project "${name}" has no gates.build in .mandao/config.yml`);
       const budget = budgetFor(ctx.root(), config, project, 'build', `${name} build`, opts.force);
-      const result = await runTests(ctx.root(), `${name} build`, project.gates.build, budget);
+      const result = await runWithGateReceipt(
+        {
+          root: ctx.root(),
+          project: name,
+          gate: 'build',
+          command: project.gates.build,
+          configuration: config,
+          selectedTests: [],
+          budget,
+          projectRoot: project.path === '.' ? ctx.root() : join(ctx.root(), project.path),
+          force: opts.force,
+        },
+        () => runTests(ctx.root(), `${name} build`, project.gates.build, budget),
+      );
       json({ ...result, status: result.status === 'DEFERRED_TO_CI' ? 'DEFERRED' : result.status });
       if (result.status !== 'PASS') process.exitCode = 1;
     });

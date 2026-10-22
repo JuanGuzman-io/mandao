@@ -97,8 +97,10 @@ item in the technical notes.
 
 `{{script:diagram-drift}} {{arg:spec}}` derives `diagrams/implemented.graph.json` from the spec's commits.
 Add contract nodes you can confirm with evidence (a route, a schema, an event name). Render the built
-diagram from it (Archify; Mermaid without it) next to the approved one. Every added or missing node or
-edge is drift and goes, explained, into the technical notes; a relabelled box is not drift.
+diagram from it through `mandao run archify` when `diagrams.engine: archify`; use Mermaid only when
+`diagrams.engine: mermaid` is explicitly configured. If the selected renderer is missing, stop and
+report how to install or configure it. Render next to the approved diagram. Every added or missing node
+or edge is drift and goes, explained, into the technical notes; a relabelled box is not drift.
 
 ## 5. Documents
 

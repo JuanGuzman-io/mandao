@@ -9,6 +9,7 @@ import { analyzeDiff, collectDiff, type FileStat, type ManifestChange, sizeLimit
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { isHarness, resolveForCli } from './models.js';
+import { registerArchify } from './run-archify.js';
 import { registerCost } from './run-cost.js';
 import { registerLeader } from './run-leader.js';
 import { registerPremise } from './run-premise.js';
@@ -25,6 +26,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerLeader(run, ctx);
   registerPremise(run, ctx);
   registerCost(run, ctx);
+  registerArchify(run, ctx);
   registerTelemetry(run, ctx);
   run
     .command('quick-check')

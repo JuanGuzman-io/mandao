@@ -183,6 +183,36 @@ describe('T3 writers: a version 2 spec keeps its logs in state.yml, a version 1 
     const measured = measureSessions({ specDir, commitTimes: new Map(), home: join(root, 'no-home') });
     expect(measured.estimates).toEqual([{ at: '2026-10-20T20:00:00.000Z', task: 'T2', estimated: 43, actual: undefined }]);
   });
+
+  test('a version 2 session-cut boundary is persisted and can be suggested only once', () => {
+    const root = makeTree({
+      'spec/story.md': '---\nschema_version: 2\nid: MDO-0001\n---\n# X\n',
+      'spec/_log/costs.yml': 'costs: []\n',
+    });
+    const specDir = join(root, 'spec');
+    const now = Date.parse('2026-10-20T21:00:00Z');
+    const opus = { input: 4, cache_write_5m: 5, cache_write_1h: 8, cache_read: 0.2, output: 20 };
+    const session = { model: 'claude-opus-5-5', first: 33_865, last: 125_542, lastAt: now - 60_000, ttl: '1h' as const };
+    const row = {
+      at: '2026-10-20T20:00:00.000Z',
+      task: 'T2',
+      session,
+      tasksLeft: 1,
+      advice: cutAdvice(session, 1, opus, now),
+      decision: 'stop: suggest a new session',
+      boundaryId: 'implement:T2',
+      suggest: true,
+    };
+    expect(recordCutEstimate(specDir, row)).toBe(true);
+    expect(recordCutEstimate(specDir, { ...row, at: '2026-10-20T20:01:00.000Z' })).toBe(false);
+    const estimates = parseYaml(readFileSync(join(specDir, '_log/state.yml'), 'utf8')).cut_estimates as {
+      boundary_id?: string;
+      suggested?: boolean;
+    }[];
+    expect(estimates).toHaveLength(2);
+    expect(estimates[0]).toMatchObject({ boundary_id: 'implement:T2', suggested: true });
+    expect(estimates[1]).toMatchObject({ boundary_id: 'implement:T2', decision: 'go on: suggestion already shown at boundary' });
+  });
 });
 
 describe('T3 readers: next and approve read the hashes and shown rows from state.yml on version 2', () => {
