@@ -39,6 +39,7 @@ scope, product behavior, security or irreversible actions.
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | agreed, pending phase plan approval; no new spec |
 | [9 — Large specs and parallel tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 and MDO-0014 | phases 2–6 | agreed, pending phase plan approval; no new specs |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | agreed, pending phase plan approval |
+| [11 — User commit conventions](#phase-11--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
 ## Phase 0 — Documentation and backlog
@@ -357,3 +358,23 @@ Rules the commands state as prose become checks a script enforces.
 Acceptance criteria: a command generates a version's release notes by collecting the "For the PO"
 section of every spec merged since the previous tag, using `language.business`. Keep per-spec close
 summaries and changelog lines as the sources; do not restore the v1 per-spec release artifact layout.
+
+## Phase 11 — User commit conventions
+
+Mandao adapts to the commit policy already used by the user's repository instead of imposing its own.
+
+- **`init` detects and adopts the existing convention:** inspect commitlint or another repository
+  configuration when present, plus recent commit subjects (for example, Conventional Commits with or
+  without emoji, or a tracker ID prefix). Existing commitlint configuration takes precedence over
+  inferred history and is respected rather than replaced.
+- **Emoji are optional:** `commits.emoji` accepts `true | false`. When no emoji convention is
+  detected, new projects default to `false`; existing projects that use emoji retain that choice.
+- **Hooks are user-owned:** Mandao never installs or modifies commit hooks without explicit
+  confirmation. If an existing commitlint is present, generated commit messages and `commit-msg`
+  follow its rules; Mandao must not silently weaken, replace or bypass it.
+- **Generated messages conform:** every message assembled by `commit-msg` follows the configured
+  convention, including tracker-prefix placement, optional emoji, type/scope and trailers where
+  applicable, so the user's CI does not reject Mandao-created commits.
+- **Tests:** conventional format with and without emoji, tracker ID prefix, existing commitlint
+  discovery/respect, generated message conformance, and refusal to install or modify hooks before
+  confirmation.
