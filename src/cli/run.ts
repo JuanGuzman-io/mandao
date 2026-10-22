@@ -14,6 +14,7 @@ import { registerLeader } from './run-leader.js';
 import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
+import { registerTelemetry } from './run-telemetry.js';
 
 /** run quick-check, run models, run fingerprint: JSON on stdout for the commands to read. */
 export function registerRun(program: Command, ctx: CliContext) {
@@ -24,6 +25,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerLeader(run, ctx);
   registerPremise(run, ctx);
   registerCost(run, ctx);
+  registerTelemetry(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

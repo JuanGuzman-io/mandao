@@ -74,7 +74,7 @@ describe('logs.level: what close does with the cache', () => {
 describe('S-3.3: every reader gives the same answer on both versions of one history', () => {
   /** Normalised so the two trees compare: their roots, timestamps and short hashes differ. */
   const norm = (value: unknown, root: string) =>
-    JSON.stringify(value)
+    JSON.stringify(value, (key, item) => (['activeMs', 'userWaitMs', 'agentWaitMs', 'gateMs'].includes(key) ? '<duration>' : item))
       .split(root)
       .join('<root>')
       .replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z/g, '<at>')

@@ -11,6 +11,7 @@ import { runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
+import { measureGate } from '../scripts/telemetry.js';
 import {
   type ExecutionRow,
   type LoopState,
@@ -96,7 +97,9 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
     }
     const kind = gate === 'build' ? 'build' : 'unit';
     const budget = budgetFor(ctx.root(), config, project, kind, `${task.id} ${gate}`, force, spec.dir);
-    const run = await runTests(ctx.root(), `${task.id} ${gate}`, inProject(command, project.path), budget, undefined, { keepOutput: true });
+    const run = await measureGate(spec.dir, spec.name, gate, () =>
+      runTests(ctx.root(), `${task.id} ${gate}`, inProject(command, project.path), budget, undefined, { keepOutput: true }),
+    );
     results.push(gateResult(gate, run));
     if (run.output) outputs[gate] = run.output;
   }
