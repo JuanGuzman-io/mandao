@@ -41,9 +41,9 @@ scope, product behavior, security or irreversible actions.
 | [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
 | [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
-| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | implementation in PR #17 |
-| [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | agreed; pending phase plan approval |
-| [12 — User commit conventions](#phase-12--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
+| [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | complete; PR #17 merged (`5d00295`) |
+| [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | plan approved; in progress on `perf/phase-11` |
+| [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | agreed (reduced scope); pending phase plan approval |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
@@ -425,34 +425,33 @@ proposes how the changesets CHANGELOG, `docs/CHANGELOG.md` and the version notes
 
 ## Phase 11 — Beta preparation
 
-**Agreed, pending phase plan approval.**
+**Plan approved (maintainer, 2026-10-22); runs after phase 10, not in parallel.**
 
 1. README and docs match what phases 0–10 implemented: Archify required (no recommended fallback),
    delivery with confirmed push and PR, `/clear` instead of a new session, deliveries inside a spec,
    research in specify, the real status of each command and harness, and a CI badge.
 2. Text for the repository's About: a short description and topics, for the maintainer to set.
-3. A trial on a project that is not Mandao: a small front and back example repo in a temporary
-   folder, through `init` → `constitution` → a real lite spec → delivery; report what fails.
+3. A trial on a project that is not Mandao, run by the agent in its own session acting as the harness:
+   a new small monorepo in a temporary folder (a back-end API with a database and a front end that uses
+   it). Mandao is installed from the `npm pack` tarball, not the checkout. Mandao's commands are what is
+   tested: `init` → `constitution` → a real lite spec that writes data and touches front and back →
+   implement → verify → close → delivery, with no GitHub remote (a local bare remote) to test that case
+   too. Small defects are fixed in this phase with their test; large ones go to this backlog, shown to
+   the maintainer before deciding. Report the trial's cost and duration with the phase 2 measurement.
 4. Publication readiness: version `0.1.0-beta.0`, CHANGELOG, `npm pack --dry-run` with the file list for
    review, and the tarball smoke test across the operating-system matrix. The maintainer publishes.
 
-## Phase 12 — User commit conventions
+## Phase 12 — Commitlint conflict check
 
-Mandao adapts to the commit policy already used by the user's repository instead of imposing its own.
+**Reduced scope (maintainer, 2026-10-22).** Mandao keeps its own commit standard (Conventional Commits
+with emoji and trailers) and does not infer conventions from the repository's history.
 
-- **`init` detects and adopts the existing convention:** inspect commitlint or another repository
-  configuration when present, plus recent commit subjects (for example, Conventional Commits with or
-  without emoji, or a tracker ID prefix). Existing commitlint configuration takes precedence over
-  inferred history and is respected rather than replaced.
-- **Emoji are optional, on by default:** `commits.emoji` accepts `true | false` and defaults to `true`
-  (maintainer, 2026-10-22). A detected convention wins: a repository whose commitlint or recent history
-  uses no emoji gets `false`; one that uses emoji keeps `true`.
-- **Hooks are user-owned:** Mandao never installs or modifies commit hooks without explicit
-  confirmation. If an existing commitlint is present, generated commit messages and `commit-msg`
-  follow its rules; Mandao must not silently weaken, replace or bypass it.
-- **Generated messages conform:** every message assembled by `commit-msg` follows the configured
-  convention, including tracker-prefix placement, optional emoji, type/scope and trailers where
-  applicable, so the user's CI does not reject Mandao-created commits.
-- **Tests:** conventional format with and without emoji, tracker ID prefix, existing commitlint
-  discovery/respect, generated message conformance, and refusal to install or modify hooks before
-  confirmation.
+1. **`doctor` detects a project commitlint** and warns when it could reject Mandao's format, suggesting
+   `commits.emoji: false` when the conflict is the emoji. Today `commits.emoji` is a map of emoji per
+   type; accepting `false` (plain Conventional Commits) is part of this phase.
+2. **Commit hooks are never installed or modified without confirmation.** Verified on 2026-10-22: in a
+   user project Mandao installs no git hook. `sync` writes `.mandao/commitlint.config.mjs` only as a
+   config the project may extend, and `doctor` only suggests `graphify hook install` as text.
+   `scripts/install-hooks.mjs` runs from `prepare` in Mandao's own repository for contributors; it is
+   not in the published package (`files`: `dist`, `core`) and never replaces a hook that is not Mandao's.
+   This phase adds a test that pins it.
