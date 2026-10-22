@@ -18,6 +18,7 @@ import { registerResearch } from './run-research.js';
 import { registerSecurityScanning } from './run-security-scanning.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
 import { registerTelemetry } from './run-telemetry.js';
+import { registerVersionNotes } from './run-version-notes.js';
 
 /** run quick-check, run models, run fingerprint: JSON on stdout for the commands to read. */
 export function registerRun(program: Command, ctx: CliContext) {
@@ -32,6 +33,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerArchify(run, ctx);
   registerTelemetry(run, ctx);
   registerSecurityScanning(run, ctx);
+  registerVersionNotes(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

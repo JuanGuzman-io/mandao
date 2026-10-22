@@ -30,3 +30,4 @@ export * from './telemetry.js';
 export * from './timeline.js';
 export * from './trace.js';
 export * from './verify.js';
+export * from './version-notes.js';

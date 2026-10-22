@@ -581,6 +581,18 @@ files:
     ownership: owned
     hash: sha256-bPROcN1v+BGUwY+wN3opZASPXgpZpytxaKZCyrtARuo=
     scope: project
+  - path: .mandao/templates/app/release/version-notes.en.md
+    harness: mandao
+    from: template:shared/release/version-notes.en.md
+    ownership: owned
+    hash: sha256-DABq6UB6KbH23LBgYAdLsJk3Hvl53a3wg3NugcIcA+w=
+    scope: project
+  - path: .mandao/templates/app/release/version-notes.es.md
+    harness: mandao
+    from: template:shared/release/version-notes.es.md
+    ownership: owned
+    hash: sha256-nepUpqO3TV3ERhdq/wDndoKOIVmzrIFmsvrT3bTNSXc=
+    scope: project
   - path: .mandao/templates/app/rules/budget.md
     harness: mandao
     from: template:shared/rules/budget.md
