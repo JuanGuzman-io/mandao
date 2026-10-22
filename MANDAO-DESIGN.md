@@ -618,8 +618,9 @@ One story = **one spec, one development**, even across projects.
 
 - **DECIDED (ADR 0023, implemented in 2b; release association implemented with close in iteration 3) — branching adapts to the team.** `branching.model` picks a preset — `trunk` (base and PR on `main`, short-lived branches, warning past `max_branch_age_days` with a suggestion to split the spec, stack PRs or use a feature flag), `feature-branch` (base and PR on `main`), `gitflow` (base and PR on `develop`; hotfix from `main` merged into `main` and `develop`; `release/` branches made by the team, which `close` can associate with the spec), `env-branches` (base and PR on `test`; promotion `test → staging → main`; hotfix from `main` with back-merge to `staging` and `test`). Fields, each with the preset default and overridable: `model`, `base`, `promotion`, `production`, `prefixes` (`feature`, `fix`, `hotfix`, `release`), `hotfix` (`from`, `merge_to`), `protected`, `max_branch_age_days` (trunk). Per-project override in polyrepo, otherwise inherited. `constitution` detects the model (`develop` or `release/*` → gitflow; `test`/`staging` → env-branches; only `main` → asks trunk or feature-branch), always confirms it and documents it in `infrastructure.md`.
 - `implement` never creates branches: it checks that it runs inside the spec's worktree and, if not, warns and shows the path.
-- The PR targets `base`; Mandao never commits or pushes to a `protected` branch. Deferred tests require CI confirmation before `verified`. **Current behavior:** promotion is not automated; Mandao records the environment reached when CI or a tracker MCP reports it. Confirmed progressive delivery is pending Phase 6.
-- Commits are local and need no confirmation after the Reviewer's PASS. **Current behavior:** Mandao never pushes. **DECIDED, pending Phase 6:** one explicit delivery choice authorizes all / push and PR only / nothing; all includes merge only after green PR CI, using a merge commit, then cleanup. Target follows `branching`; progressive promotion always requires confirmation. No direct push to protected branches.
+- The PR destination is always selected inside one grouped delivery confirmation: recorded worktree start branch by default, existing configured branches, or a typed existing remote branch. A mismatch with `branching` is shown. Hotfix defaults to `hotfix.from` and reminds the operator of `hotfix.merge_to` after merge. Protected destinations are PR targets only; source pushes are refused for protected branches.
+- **DECIDED (ADR 0049), Phase 6:** one grouped delivery choice authorizes everything / push and PR only / nothing. `everything` creates the PR, waits for green CI and merges with a merge commit, then cleans up; a red or unobservable CI never merges. Without `gh` or on a non-GitHub remote, Mandao pushes and prints a manual PR URL/steps, reports CI as not verifiable and leaves merge to the user. Before merge the same PR records its target and PR URL in `close-summary.md` and `docs/CHANGELOG.md`. Pre-push gates default to impacted checks; `full` is opt-in and `none` explicit.
+- After merge, configured progressive promotion is a separate confirmed PR. Cleanup leaves a worktree with uncommitted or untracked files untouched and checks ancestry before deleting a branch. `release-status` derives target, PR and merge evidence from the summary and Git; it never claims a release without commit ancestry proof. Quick uses the same confirmation/push/PR flow. `implement` immediately chains `verify` when `next` returns `autoContinue: true`.
 - **DECIDED (ADR 0021) — commits by trailer, pending commits.** A task's commit is found in git by its `Refs` and `Mandao-Task` trailers; no hash is stored, so rebases and cherry-picks never break traceability, and the PASS row lands inside the task's own commit. When a harness cannot commit (the Codex sandbox keeps `.git` read-only), the task stays `PASS · pending-commit` in `_log/state.yml` (`progress` section; `progress.yml` in v1); `mandao run commit <spec>` — run by the Leader, the user or the next session, in any harness — makes one commit per pending task with its trailers. In Codex, `.codex/rules/mandao.rules` makes Codex ask the user before running that one command outside the sandbox (TUI, trusted project). `resume` and `doctor` show pending commits.
 - Polyrepo: the same branch name in every touched repo.
 
@@ -911,8 +912,8 @@ PR before merge; subsequent release state is derived read-only from git, with no
   `docs/releases/<ID>/`.
 - Preview the whole first payload (text and attachment sizes/hashes), then ask before every external
   publication. Store IDs and payload hash in `close-summary.md`; reruns update rather than duplicate.
-- Current release/environment association records CI/tracker evidence. The Phase 6 read-only git-derived
-  release status and progressive delivery replace this limitation only when implemented.
+- Environment association records CI/tracker evidence. Delivery status is read-only and Git-derived;
+  configured promotion opens a separate confirmed PR after each merge (ADR 0049).
 
 ### 18.3 Diagrams
 
@@ -1065,9 +1066,9 @@ Output: dated report with a score per lens, findings with severity, evidence and
 Raised in the gap sweep. **In this section, untagged items are OPEN**, overriding the document-wide default. Explicit DECIDED/implemented items identify resolved parts; remaining policy needs a decision and ADR before dependent work is built.
 
 ### 23.1 Lifecycle after code
-- **DECIDED, pending Phase 6:** PR delivery, target selection, green-CI merge and cleanup follow §14.5 and §24. Human review beyond the AI Reviewer remains **OPEN** where the project has not defined it.
+- **DECIDED (ADR 0049), implemented in Phase 6:** PR delivery, target selection, green-CI merge and cleanup follow §14.5 and §24. Human review beyond the AI Reviewer remains **OPEN** where the project has not defined it.
 - **Release and deploy:** feature flags, rollout, rollback plan and post-deploy verification remain **OPEN**. Release/environment recording exists (§18); Phase 6 adds confirmed progressive promotion and read-only git-derived release state, not permission for arbitrary deployment.
-- **DECIDED (ADR 0030), implemented — hotfix lane:** specify selects hotfix.from/prefix, records lane: hotfix, and close lists required back-merges. Automatic authorized delivery is pending Phase 6. A distinct lightweight postmortem format remains **OPEN**.
+- **DECIDED (ADR 0030, ADR 0049), implemented — hotfix lane:** specify selects hotfix.from/prefix, records lane: hotfix, and delivery reminds the operator of required back-merges. A distinct lightweight postmortem format remains **OPEN**.
 - **Research:** standalone research command is planned; its exact contract remains **OPEN**. **DECIDED, pending Phase 8:** version-dependent or unfamiliar design questions become delegated research with dated URLs; unresolved research blocks design approval, and unverified model knowledge cannot justify high-impact decisions.
 
 ### 23.2 Process governance
@@ -1154,7 +1155,7 @@ itself define the standalone planned research command.
   **Never run the full suite locally for this program; it runs only in PR CI.** Do not use
   `npm run check` locally while it includes the full suite. Test-created git repositories set local
   user.name/user.email; fixtures use process.exitCode when output may still be pending.
-- **Delivery policy, pending Phase 6:** `delivery.pre_push: impacted | full | none`, default `impacted`
+- **Delivery policy (ADR 0049):** `delivery.pre_push: impacted | full | none`, default `impacted`
   (lint, typecheck, build and impacted tests), respecting resource guards. `full` requires explicit
   project configuration; CI still runs the complete suite. Docker/act are optional.
 - Merge only with green PR CI, using a merge commit, never squash. Fix failing CI and push again.

@@ -11,7 +11,7 @@
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "fce906f1f8286a12de683ffede622848f0bbd08879f7497e719f6c17d70bf424"
+      "sha256": "4f1ef63c0eb1998693082bba854ddaec8b78c484c55876aa44aa399f39857202"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "ed499e903e46512efc5bfc41da9364d409f9d7a1146859d8d4e21997b9f43c98"
+      "sha256": "c9c03bf1513905c59bc880ba9b8b59b3fa6f2727cba0b3cdc9dc2a314202be17"
     },
     {
       "path": "core/commands/init.md",
@@ -31,7 +31,7 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "de8c4905699f6b05fa91dff38e669d37702d1217e55557ac158602b7f7ccc591"
+      "sha256": "786a57c4fcba6339ed8071a836c5d892bfa7c039a6a9be871a38c8738899ab23"
     },
     {
       "path": "core/commands/resume.md",

@@ -261,6 +261,10 @@ From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao do
 
 CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cli.md](docs/cli.md).
 
+After closing a spec—or recording a quick change—`mandao deliver` groups the destination and delivery
+choice in one confirmation. It only merges on verified green PR CI; without GitHub CLI it pushes and
+leaves PR/merge steps to the user. See [ADR 0049](docs/decisions/0049-confirmed-delivery-and-release-status.md).
+
 ---
 
 ## Docs

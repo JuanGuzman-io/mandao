@@ -136,6 +136,13 @@ a field with `—`: leave it out.
 - Environments: only as CI or the tracker reports them —
   `{{script:close-summary}} {{arg:spec}} --env <name> --source ci|tracker`. Promotion is never automated.
 
+After close commits its record, run `mandao deliver {{arg:spec}}`. It asks in one grouped confirmation for
+the PR destination and the delivery level (everything, push and PR only, or nothing). The worktree's
+recorded start branch is the default; other remote branches from `branching` are offered only when they
+exist. Never push directly to a protected destination. Without GitHub CLI, push and give the manual PR
+link/steps; CI is “not verifiable” and merge stays with the user. Before any merge, the selected target
+and PR URL must be committed in `close-summary.md` and `docs/CHANGELOG.md` on this PR.
+
 ## 7. Publish
 
 For each tracker target (e.g. `jira:PROJ-123`, from `.mandao/sources.yml`):

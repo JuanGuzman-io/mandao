@@ -34,7 +34,7 @@ scope, product behavior, security or irreversible actions.
 | [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | complete; PR #11 merged (`075cd2a`) |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
-| [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
+| [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | in progress on `perf/phase-6`; plan approved; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | agreed, pending phase plan approval; no new spec |
 | [9 — Large specs and parallel tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 and MDO-0014 | phases 2–6 | agreed, pending phase plan approval; no new specs |
