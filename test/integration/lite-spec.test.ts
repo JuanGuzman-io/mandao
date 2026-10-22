@@ -217,6 +217,17 @@ describe('lite version 2: tasks.md always (AC-1)', () => {
     expect(r).toMatchObject({ approved: true });
   });
 
+  test('approve tasks refuses a broken delivery split (MDO-0013)', async () => {
+    const delivered = (n: number) => task(`T${n}`, `Step ${n}`, 'AC-1', 'S-1.1').replace('kind: feat', `kind: feat\ndelivery: ${n}`);
+    const root = repoV2(delivered(1) + delivered(2));
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'base');
+    await run(root, 'tasks', 'MDO-0001', '--index', '--write');
+    const r = await approveTasks(root);
+    expect(r).toMatchObject({ approved: false });
+    expect(JSON.stringify(r)).toContain('delivery 1 meets no acceptance criterion end to end');
+  });
+
   test('S-1.2/C2: approve tasks with no tasks.md refuses, and never approves tasks written inline in spec.md', async () => {
     const inline = [1, 2, 3, 4].map((n) => task(`T${n}`, `Step ${n}`, 'AC-1', 'S-1.1')).join('');
     const root = repoV2('', inline);

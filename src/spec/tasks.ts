@@ -39,6 +39,8 @@ export const taskFieldsSchema = z
     partial_failure_tests: z.array(z.string().trim().min(1)).default([]),
     depends_on: z.array(z.string().regex(TASK_ID)).default([]),
     parallel_safe: z.boolean().default(false),
+    /** The delivery this task belongs to (MDO-0013); absent on every task, the spec is one delivery. */
+    delivery: z.number().int().positive().optional(),
     verify: z.string().optional(),
     tests: z.object({ unit: z.array(z.string()).default([]), e2e: z.array(z.string()).default([]) }).optional(),
     dod: z.array(z.string()).optional(),

@@ -281,3 +281,42 @@ describe('consistency-check.md and the code agree on when a row is resolved', ()
     expect(rule).toMatch(/Table rows are read by their cells; a backticked Type still counts/);
   });
 });
+
+describe('nextStep with deliveries (MDO-0013)', () => {
+  const split = (delivered: (id: string) => number) => {
+    const { spec: s } = spec({ depth: 'standard', tasks: 'left' });
+    return { ...s, tasks: s.tasks.map((t) => ({ ...t, delivery: delivered(t.id) })) };
+  };
+
+  test('at a delivery boundary implement names the partial verify of the finished delivery and the new one', () => {
+    const n = nextStep(
+      split((id) => (id === 'T1' ? 1 : 2)),
+      {},
+    );
+    expect(n.recommended.command).toBe('/mandao-implement');
+    expect(n.recommended.reason).toBe(
+      'delivery 1 of 2 is done: run `mandao run verify-plan MDO-0001 --delivery 1`, then start delivery 2 in a new session',
+    );
+    expect(n.delivery).toMatchObject({ current: 2, total: 2, checkpoint: 1 });
+  });
+
+  test('inside a delivery under way the reason says which one, with no checkpoint', () => {
+    const s = split(() => 2);
+    const first = { ...s.tasks[0]!, id: 'T0', ac: ['AC-9'], delivery: 1, done: true };
+    const n = nextStep({ ...s, tasks: [first, ...s.tasks] }, {});
+    expect(n.recommended.reason).toBe('delivery 2 of 2: tasks are left');
+    expect(n.delivery).toMatchObject({ current: 2, total: 2 });
+    expect(n.delivery).not.toHaveProperty('checkpoint');
+  });
+
+  test('one delivery, or none declared: nothing changes', () => {
+    const one = nextStep(
+      split(() => 1),
+      {},
+    );
+    expect(one.recommended.reason).toBe('tasks are left');
+    expect(one).not.toHaveProperty('delivery');
+    const { spec: plain } = spec({ depth: 'standard', tasks: 'left' });
+    expect(nextStep(plain, {})).not.toHaveProperty('delivery');
+  });
+});

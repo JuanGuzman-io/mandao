@@ -149,6 +149,29 @@ describe('planTasks', () => {
   });
 });
 
+describe('planTasks with deliveries (MDO-0013)', () => {
+  const base = parseTasks(read('tasks.md')).tasks[0]!;
+  const task = (id: string, delivery: number, extra: Partial<typeof base> = {}) => ({
+    ...base,
+    id,
+    delivery,
+    done: false,
+    files: [`src/${id}.ts`],
+    depends_on: [],
+    parallel_safe: true,
+    ...extra,
+  });
+
+  test('next comes from the first unfinished delivery, even when a later task is declared first and is free', () => {
+    const plan = planTasks([task('T1', 2), task('T2', 1), task('T3', 1)]);
+    expect(plan).toMatchObject({ next: 'T2', parallel: ['T3'] });
+  });
+
+  test('once a delivery is done, the next one starts', () => {
+    expect(planTasks([task('T1', 1, { done: true }), task('T2', 2)]).next).toBe('T2');
+  });
+});
+
 describe('planTasks.parallel', () => {
   const base = parseTasks(read('tasks.md')).tasks[0]!;
   const task = (id: string, files: string[], extra: Partial<typeof base> = {}) => ({

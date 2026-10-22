@@ -6,7 +6,7 @@ export interface TaskPlan {
   waves: string[][];
   /** Dependency cycles; a non-empty list makes the plan invalid. */
   cycles: string[][];
-  /** The next task to run: the first one in tasks.md order whose dependencies are done and that is not done. */
+  /** The next task to run: the first one in tasks.md order of the first unfinished delivery whose dependencies are done. */
   next?: string;
   /** Tasks that could run beside `next`: eligible, `parallel_safe`, in its wave, with files disjoint from it and each other. */
   parallel: string[];
@@ -82,7 +82,9 @@ export function planTasks(tasks: Task[], blockers: string[] = []): TaskPlan {
     for (const id of wave) placed.add(id);
   }
   const done = new Set(tasks.filter((t) => t.done).map((t) => t.id));
-  const eligible = tasks.filter((t) => !t.done && t.depends_on.every((d) => done.has(d)));
+  // Deliveries run in order (MDO-0013): only the first unfinished one offers work.
+  const current = Math.min(...tasks.filter((t) => !t.done).map((t) => t.delivery ?? 1));
+  const eligible = tasks.filter((t) => !t.done && (t.delivery ?? 1) === current && t.depends_on.every((d) => done.has(d)));
   const blocked = [...blockers.map((b) => `critical OPEN: ${b}`), ...cycles.map((c) => `dependency cycle: ${c.join(' → ')}`)];
   if (blocked.length) return { waves, cycles, parallel: [], blocked };
   const next = eligible[0];
