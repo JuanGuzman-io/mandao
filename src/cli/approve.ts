@@ -15,6 +15,7 @@ import {
   type ApprovalStep,
   activeApprovals,
   changedSince,
+  deliveryIssues,
   docHash,
   frontmatterOf,
   type NextFacts,
@@ -92,7 +93,8 @@ function blockers(
     if (!spec.tasks.length) return [...open, 'no tasks to approve'];
     const file = docPath(spec.dir, 'tasks');
     const layout = taskLayoutIssues(readFileSync(file, 'utf8'), spec.tasks, spec.story, { inline: file.endsWith(LITE_DOC) });
-    return [...open, ...planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`), ...layout, ...spec.issues];
+    const cycles = planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`);
+    return [...open, ...cycles, ...layout, ...spec.issues, ...deliveryIssues(spec.tasks)];
   }
   return [];
 }

@@ -1,4 +1,5 @@
 import { type Approval, activeApprovals } from './approvals.js';
+import { type DeliveryProgress, deliveryProgress } from './deliveries.js';
 import { blockingMarkers, withoutCode, withoutFences } from './markdown.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
@@ -37,6 +38,8 @@ export interface NextStep {
   options: string[];
   /** The agent should invoke this next command without returning control when the transition is safe. */
   autoContinue?: true;
+  /** "Delivery 2 of 3" while implement is recommended in a spec of several deliveries (MDO-0013). */
+  delivery?: DeliveryProgress;
 }
 
 /** A Consistency Check row: `| ID | Type | Finding | Severity | Owner | Status |`. Header and separator rows have no `critical`/`normal` severity. */
@@ -132,7 +135,16 @@ function stage(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep {
   if (facts.verifyVerdict === 'blocked')
     return rec('/mandao-implement', 'the verify failed: rework what it listed', '/mandao-verify', '/mandao-clarify');
   if (spec.tasks.length && spec.tasks.every((t) => t.done)) return rec('/mandao-verify', 'every task is done');
+  const progress = deliveryProgress(spec.tasks);
+  if (progress) return { ...rec('/mandao-implement', deliveryReason(id, progress), '/mandao-clarify'), delivery: progress };
   return rec('/mandao-implement', spec.tasks.length ? 'tasks are left' : 'the spec is approved', '/mandao-clarify');
+}
+
+/** A delivery boundary is a partial verify and a recommended session cut (MDO-0013). */
+function deliveryReason(id: string, p: DeliveryProgress): string {
+  if (p.checkpoint === undefined) return `delivery ${p.current} of ${p.total}: tasks are left`;
+  const verify = `\`mandao run verify-plan ${id} --delivery ${p.checkpoint}\``;
+  return `delivery ${p.checkpoint} of ${p.total} is done: run ${verify}, then start delivery ${p.current} in a new session`;
 }
 
 /** A closed spec has only its delivery left (push, PR, merge), read from git by the caller; naming it performs nothing (MDO-0012 does). */

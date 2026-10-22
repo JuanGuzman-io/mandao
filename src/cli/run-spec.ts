@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import { ADAPTERS } from '../adapters/index.js';
@@ -13,27 +12,15 @@ import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, proposeSpec, readLayout, whereAmI } from '../scripts/spec.js';
-import { docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
-import {
-  blockingMarkers,
-  commitMessage,
-  layoutProblems,
-  loopState,
-  planTasks,
-  TASK_KINDS,
-  taskIndex,
-  taskLayoutIssues,
-  timeline,
-  trace,
-  withIndex,
-} from '../spec/index.js';
-import { writeText } from '../writer/files.js';
+import { readApprovalLog } from '../scripts/spec-log.js';
+import { commitMessage, layoutProblems, loopState, timeline, trace } from '../spec/index.js';
 import { nextFor, recordShown } from './approve.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerLedger } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
+import { registerTasks } from './run-tasks.js';
 import { registerVerify } from './run-verify.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
 
@@ -65,34 +52,7 @@ function registerPlanning(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       json({ resolved: branchingFor(config, opts.project), detected: detectBranching(branchNames(ctx.root())) });
     });
-
-  run
-    .command('tasks <spec>')
-    .description('Validate tasks.md, compute waves and the next eligible task; --index prints the generated Overview')
-    .option('--index', 'print the Overview generated from the task details')
-    .option('--write', 'with --index: replace the Overview in tasks.md')
-    .action((ref: string, o: { index?: boolean; write?: boolean }) => {
-      const { spec } = loadSpec(ctx, ref);
-      if (o.index) {
-        const file = docPath(spec.dir, 'tasks');
-        if (o.write) writeText(file, withIndex(readFileSync(file, 'utf8'), spec.tasks, spec.story));
-        return json({ overview: taskIndex(spec.tasks, spec.story), written: Boolean(o.write) });
-      }
-      const markers = [spec.story?.raw, spec.requirements?.raw].filter(Boolean).map((t) => blockingMarkers(t!));
-      const tasksFile = docPath(spec.dir, 'tasks');
-      const raw = existsSync(tasksFile) ? readFileSync(tasksFile, 'utf8') : '';
-      json({
-        ...planTasks(
-          spec.tasks,
-          markers.flatMap((m) => m.criticalOpen),
-        ),
-        issues: [
-          ...spec.issues,
-          ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`),
-          ...taskLayoutIssues(raw, spec.tasks, spec.story, { inline: tasksFile.endsWith(LITE_DOC) }),
-        ],
-      });
-    });
+  registerTasks(run, ctx);
 }
 
 function registerTrace(run: Command, ctx: CliContext) {

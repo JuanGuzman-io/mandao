@@ -29,6 +29,17 @@ You verify that what was built is what the spec asked for, with evidence. Write 
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
 3. If `blockers` lists open tasks or uncommitted work, stop: verify comes after `/mandao-implement`.
+4. Run `node .mandao/bin/mandao.mjs run security-scanning` and read each project's `security_scanning` record and
+   `verify-plan` security status. Run configured
+   local `secrets` and `sast` gates. If coverage exists only in CI, report it as pending PR CI and do
+   not claim that it passed. If a task has the `security` risk tag and neither type has verified
+   coverage, stop until the person records `mandao approve <spec> security-gaps --reason <why>`.
+   Offer either a confirmed local-tool installation (with an OS-specific command) or a quick that
+   adds the scan to CI. A declared scanner is labeled declared, not detected; unknown is not none.
+   For each security-tagged task, require an executed PASS in its `_log/gates/` receipt for the
+   applicable local scanner; if absent, run `node .mandao/bin/mandao.mjs run gates <spec> <task>` and include its output
+   in Evidence. A configured or installed scanner without an executed PASS is never a scan PASS.
+   After PR CI reports green, rerun `verify-plan --ci-confirmed` to discharge CI-only scan findings.
 
 ## 2. Run, one Tester per suite
 
@@ -66,4 +77,4 @@ report.
 - Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id}` names the command that follows from the spec's state; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness <this harness>` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.

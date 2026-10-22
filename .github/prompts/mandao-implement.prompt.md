@@ -40,7 +40,12 @@ write production code yourself. Use `en` for notes; code and commits are English
 ## 1. For each task
 
 Pick the task: `${input:task:Optional task id (default - the next eligible task)}` or `next` from `node .mandao/bin/mandao.mjs run tasks ${input:spec:Spec folder or id}` (stop if it reports
-`blocked`). Then repeat until the task is done, halted or pivoted. **One call per step:**
+`blocked`); `next` comes from the current delivery. When `delivery.checkpoint` (in `node .mandao/bin/mandao.mjs run next` or
+`node .mandao/bin/mandao.mjs run tasks`) reports a delivery boundary, run `node .mandao/bin/mandao.mjs run verify-plan ${input:spec:Spec folder or id} --delivery <n>`,
+run its suites and report. The checkpoint passes when `scope.clear` is true: `blockers` always holds the
+permanent "partial plan" line, so it is never empty. When `clear` is false, rework what the other
+blockers name before the next delivery starts. Then recommend a new session before the next
+delivery. The partial plan never verifies the spec; the final verify covers every AC. Then repeat until the task is done, halted or pivoted. **One call per step:**
 `node .mandao/bin/mandao.mjs run step ${input:spec:Spec folder or id} <Tn> --harness <this harness> [checkpoint options]` writes the checkpoint
 (when you pass any), returns the next action from `loop`, and adds the brief when the action delegates
 work. The mechanical parts (gates, the review input, the final report) are scripts too: run them, read
@@ -74,6 +79,11 @@ their short JSON, and decide; never paste their full output into the conversatio
    An `evidence: mutation` task (`tdd.evidence: mutation` in `loop`) has no red step: its tests pin down existing
    behavior, and the Implementer proves each assertion with `node .mandao/bin/mandao.mjs run mutation` (rules/test-policy.md)
    before reporting.
+   If a new test passes on its first run, `step` returns `choose-test-evidence`: do not repeat the red
+   command. Choose one route from its `evidenceOptions`: a killed mutation with
+   `node .mandao/bin/mandao.mjs run mutation … --for-first-pass`, or an independent Reviewer test inspection recorded with
+   `node .mandao/bin/mandao.mjs run test-review … --reviewer <agent> --review <file>`. Both routes need script-owned evidence
+   before the implementation step is released.
    **Implement** in a fresh context with the implementer for the tier:
    the `mandao-implementer-<tier>` custom agent (or `mandao-implementer` in simple mode) as a subagent.
    Send only the brief. When it reports: checkpoint with `--phase awaiting-review --verdict REPORTED
@@ -99,9 +109,8 @@ their short JSON, and decide; never paste their full output into the conversatio
      If it fails (not logged in, no verdict), fall back to the next option and say why.
    - otherwise the `reviewer` agent `loop` names; checkpoint the verdict with `--reviewer <agent>` and
      the Reviewer's **whole answer** on stdin, `--review - <<'EOF'` … `EOF`. The script checks its
-     `VERDICT` line, refuses a PASS that carries a `[security/high]` or `[security/critical]` finding
-     (counting the tagged findings of the answer's `Findings` section, or every tagged line when it has
-     none), and keeps the answer in `_log/reviews/`.
+     `VERDICT` line and required `Findings (JSON)` schema, refuses a PASS that carries an open
+     high/critical security finding, and keeps the whole answer in `_log/reviews/`.
    With neither, review in your own context: `--reviewer self`, which the script records as `reduced
    independence`. The Reviewer never runs on a lower tier or effort than the Implementer.
 6. **Verdict:**
@@ -142,9 +151,11 @@ deferred tests and advisories, read from the log and git): tasks done, FAILs and
 provider independence, deferred tests, commits, and every `securityMentions` entry verbatim: they did not
 block, so the user must see them.
 Then `node .mandao/bin/mandao.mjs run pr-plan ${input:spec:Spec folder or id}` says how to deliver: one PR, one per repository (polyrepo), or
-stacked PRs along the task dependencies — decided by the structure and the **real** size of the commits
+stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id}` names the command that follows from the spec's state (and the others that
-can); give it. When the summary has `session.cut: true`, give the harness's new-conversation action first
-(its `command`): the next command starts in a fresh conversation (ADR 0038). If that conversation would not
-be inside the worktree, give first the step back into it.
+Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness <this harness>` names the command that follows. When it returns
+`autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
+return control to the user with verification merely suggested. Report the implementation and verify
+results together. If the implementation summary has `session.cut: true`, start the recommended fresh
+conversation first and continue with verify there, inside the worktree (ADR 0038). Any verification
+blocker or question that requires the user still pauses normally.

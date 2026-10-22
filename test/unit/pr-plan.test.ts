@@ -73,4 +73,40 @@ describe('PR plan from structure and the real diff (ADR 0028)', () => {
       reasons: ['900 lines changed (limit 400)', expect.stringMatching(/no dependency or project structure/)],
     });
   });
+
+  describe('deliveries (MDO-0013)', () => {
+    const big = new Map([
+      ['T1', size(300, 'a')],
+      ['T2', size(200, 'b')],
+      ['T3', size(100, 'c')],
+    ]);
+    const deliveries = [
+      { number: 1, tasks: ['T1', 'T2'], ac: ['AC-1'], done: true },
+      { number: 2, tasks: ['T3'], ac: ['AC-2'], done: true },
+    ];
+
+    test('over the limit with two deliveries: one PR per delivery, ahead of the waves', () => {
+      const plan = prPlan({ tasks, waves, sizes: big, limits, polyrepo: false, deliveries });
+      expect(plan.decision).toBe('stacked');
+      expect(plan.reasons).toEqual(['600 lines changed (limit 400)', 'split along 2 deliveries']);
+      expect(plan.prs.map((p) => [p.name, p.tasks, p.changedLines])).toEqual([
+        ['delivery 1', ['T1', 'T2'], 500],
+        ['delivery 2', ['T3'], 100],
+      ]);
+    });
+
+    test('within the limit: still one PR', () => {
+      const small = new Map([['T1', size(50, 'a')]]);
+      expect(prPlan({ tasks, waves, sizes: small, limits, polyrepo: false, deliveries }).decision).toBe('single');
+    });
+
+    test('one delivery: the waves remain the fallback', () => {
+      const plan = prPlan({ tasks, waves, sizes: big, limits, polyrepo: false, deliveries: [deliveries[0]!] });
+      expect(plan.prs.map((p) => p.name)).toEqual(['wave 1', 'wave 2', 'wave 3']);
+    });
+
+    test('polyrepo: per repository, deliveries do not apply', () => {
+      expect(prPlan({ tasks, waves, sizes: big, limits, polyrepo: true, deliveries }).decision).toBe('per-repo');
+    });
+  });
 });

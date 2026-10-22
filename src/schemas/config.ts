@@ -162,6 +162,8 @@ export const configSchema = z
     projects: z.array(project).min(1),
     /** Thresholds on the real diff: quick post-check and PR splitting (ADR 0028). */
     size_limits: sizeLimitsSchema.default({}),
+    /** `/mandao-tasks` proposes deliveries inside a spec past this many tasks (MDO-0013, ADR 0053). */
+    deliveries: z.object({ propose_above_tasks: z.number().int().positive().default(8) }).prefault({}),
     /** Kaizen (design §18.1): no TDD conclusion below this many specs per group (ADR 0026). */
     kaizen: z.object({ min_specs_per_group: z.number().int().positive().default(5) }).prefault({}),
     /** What `close` does with a spec's worktree after merge (ADR 0037). */

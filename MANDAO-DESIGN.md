@@ -385,6 +385,8 @@ optional **Notes**, and a YAML block without prose. `tasks.md` has a generated *
 acceptance criterion with checkpoints, then **Details** (ADR 0035). Every depth uses this file in layout
 v2, even one task; version 1 lite specs may keep their existing inline tasks.
 
+**Deliveries (DECIDED, ADR 0053).** Big specs split the execution, not the spec. A task may declare `delivery: n`; the Overview is grouped by `### Delivery n — AC…` with a checkpoint `mandao run verify-plan <spec> --delivery n` (a partial plan that never verifies the spec; the final verify covers every AC, one close per spec). `mandao run tasks` proposes deliveries past `deliveries.propose_above_tasks` (default 8) or when declared files exceed `size_limits.pr.max_files`, grouped by AC never by layer; the user decides, and only while no task declares `delivery` (numbering 1..n). Polyrepo per-repository PRs come before deliveries. Separate specs only when the parts have value on their own, ship independently and have independent AC. The boundary is derived, not persisted. **PROPOSED / backlog:** opening a stacked PR per delivery and tracker sub-tasks; parallel tasks (phase 9b) pending evidence.
+
 ````markdown
 ### [ ] T2 — Keep refresh tokens within the session policy
 
@@ -561,7 +563,7 @@ One story = **one spec, one development**, even across projects.
   ```
 - **One Leader per feature**; Implementers use the Skill Map, profile and commands of each task's project.
 - The Reviewer checks contract conformance on both sides. A contract change mid-way is a Pivot Record.
-- Delivery: one branch, one PR by default. **DECIDED (ADR 0028):** splitting is decided by the task dependency structure, the projects touched and the **real** size of the commits at the end (`mandao run pr-plan`, against `size_limits.pr`) — stacked PRs along the dependency waves, or per project — never by an estimate. Polyrepo: one PR per repo.
+- Delivery: one branch, one PR by default. **DECIDED (ADR 0028):** splitting is decided by the task dependency structure, the projects touched and the **real** size of the commits at the end (`mandao run pr-plan`, against `size_limits.pr`) — stacked PRs along the declared deliveries (ADR 0053), then the dependency waves, or per project — never by an estimate. Polyrepo: one PR per repo.
 
 ### 14.2 Roles
 
@@ -1135,7 +1137,8 @@ it records acceptance criteria, dependencies, status and the phase responsible f
 | 6 | Authorized delivery, green-CI merge, cleanup, git-derived release state, implement → verify |
 | 7 | Security gates based on actual local tools and the user's CI |
 | 8 | Delegated research with dated sources and unresolved-research approval gate |
-| 9 | AC-based deliveries, isolated task parallelism, integration queue and measurements |
+| 9a | AC-based deliveries inside a spec, partial verify per delivery, `pr-plan` cut by delivery (ADR 0053) |
+| 9b | Isolated task parallelism, integration queue and measurements; pending Kaizen evidence |
 | 10 | Version release notes from merged specs in business language |
 
 Migration of v1 MDO-0008–0010 remains outside these phases until layout v2 is proven on a real spec.

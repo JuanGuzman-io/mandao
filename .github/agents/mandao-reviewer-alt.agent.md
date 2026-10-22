@@ -21,7 +21,13 @@ reviewed from what it invoked. Build your checklist from `docs/constitution/stan
 Check, in order:
 
 1. Spec conformance clause by clause (`BUT it must NOT` / `AND IT MUST`) and the contract on both sides.
+   Enforce only principles the design's Principle check declares applicable; unjustified violations
+   block, while suggestions outside that gate are advisory. An applicable violation needs a justified
+   exception naming why it is needed and why a simpler alternative was rejected.
 2. Test policy: mandatory tests present and meaningful; unnecessary tests flagged as noise.
+   When the review pack lists removed test cases, inspect the recorded reason. Removing cases to satisfy
+   a linter's file/function limit is a blocking FAIL: split the test file instead. Missing or unrelated
+   reasons are also blocking until justified.
 3. The `AGENTS.md` of each touched module reflects the change.
 4. Clean code: blocking only for glossary-contradicting names, duplicated business logic,
    `architecture.md` violations, swallowed errors, magic numbers in business rules, and ignoring the
@@ -29,15 +35,16 @@ Check, in order:
 5. Lenses activated by the task's risk tags (security, performance, data, accessibility, AI).
 6. **TDD** (ADR 0022): when the brief's `loop.tdd.required` is true and the notes say `no red evidence`,
    FAIL. When `redTests.changed` lists files, judge each change: a red test weakened to pass is blocking.
+   If the first recorded test run passed, follow `loop.evidenceOptions`: accept mutation evidence for
+   existing behavior or independently review the test's assertions and record that review in your answer.
 7. **Module boundaries** (`architecture.md`): one responsibility per module, modules talk only through
    public contracts, no reaching into another module's internals. A violation is blocking.
 
-Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`. Put this attempt's findings under a
-`## Findings` heading. Start each finding's line with
-`[<lens>/<severity>]` (lens: core, security, performance, data, accessibility or ai; severity: low,
-medium, high or critical), then what and where, the violated rule quoted with its source file, blocking
-or advisory, and the remediation. A security finding of high or critical severity is always blocking:
-the verdict is FAIL, and the script refuses a PASS that carries one.
+Start your answer with `VERDICT: PASS` or `VERDICT: FAIL`, then include a required `## Findings (JSON)`
+heading and a fenced JSON object: `{"version":1,"findings":[{"id":"F1","status":"open|resolved","severity":"low|medium|high|critical","lens":"core|security|performance|data|accessibility|ai","title":"...","file":"path","line":1,"evidence":"..."}]}`.
+Use `"findings": []` when there are none. Include resolved findings with `status: resolved`; do not
+rely on free-form text to classify findings. A finding with `status: open`, `lens: security` and
+`severity: high` or `critical` makes the verdict FAIL.
 
 **Professional discipline** (ADR 0022):
 - Say no, or HALT, when something cannot be done well; never hand in something partial as done.

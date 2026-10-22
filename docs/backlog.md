@@ -36,8 +36,11 @@ scope, product behavior, security or irreversible actions.
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | complete; PR #14 merged (`774ccfd`) |
-| [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | implementation in PR #15; no new spec |
-| [9 — Large specs and parallel tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 and MDO-0014 | phases 2–6 | agreed, pending phase plan approval; no new specs |
+| [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | complete; PR #15 merged (`7cb5a68`) |
+| [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | implementation in PR #16; no new spec |
+| [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
+| [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
+| [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | agreed, pending phase plan approval |
 | [11 — User commit conventions](#phase-11--user-commit-conventions) | — | init and commit policy | agreed; pending phase plan approval |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
@@ -250,7 +253,13 @@ at them first.
 
 ## MDO-0013 — Deliveries inside a spec
 
-**Phase 9; historical spec proposal, executed in this phase without opening a spec.**
+**Phase 9a; historical spec proposal, executed in this phase without opening a spec.**
+
+Scope of phase 9a (maintainer decision, 2026-10-22): deliveries, the partial verify per delivery and
+`pr-plan` proposing the cut by delivery. Opening a stacked PR when each delivery closes and pushing
+deliveries or tasks to a tracker as sub-tasks are out of scope and stay in this backlog. Phase 9a
+also corrects `planTasks.parallel`: tasks in different waves or with overlapping `files` are never
+reported as parallel, although nothing runs them in parallel yet.
 
 Big specs split the execution, not the spec.
 
@@ -260,17 +269,27 @@ Big specs split the execution, not the spec.
    decides.
 2. **Deliveries in `tasks.md`:** tasks are grouped by delivery; each delivery declares the AC it
    meets end to end and depends only on earlier deliveries.
-   - At the end of a delivery: a checkpoint, a partial verify of its AC, and optionally its own PR
-     stacked on the previous one. `pr-plan` proposes the cut by delivery past the size thresholds.
+   - At the end of a delivery: a checkpoint and a partial verify of its AC. `pr-plan` proposes the
+     cut by delivery past the size thresholds. **Backlog:** opening that delivery's own PR, stacked
+     on the previous one, when the delivery closes (always confirmed).
    - The final verify covers every AC; one close per spec.
    - `next` and `resume` show "delivery 2 of 3". Delivery boundaries are recommended session cuts.
-   - With a tracker, deliveries (or tasks) can be pushed as sub-tasks of the story.
+   - **Backlog:** with a tracker, deliveries (or tasks) can be pushed as sub-tasks of the story;
+     tracker push does not exist yet.
 3. **When tasks proposes deliveries:** more than N tasks (configurable), or a PR foreseen above the
    threshold. Always grouped by AC, never by technical layer.
 
 ## MDO-0014 — Parallel tasks
 
-**Phase 9; historical spec proposal, executed in this phase without opening a spec.**
+**Phase 9b; pending evidence, outside the current program.** It resumes only if Kaizen, with the
+phase 2 measurement, shows that time spent by tasks waiting in sequence is a real bottleneck.
+
+Design points already identified, to keep when it resumes:
+
+- The spec's state (`state.yml` and the rest of `_log/`) is written only in the spec's worktree,
+  never from a sub-worktree.
+- A sub-worktree's commits carry no spec files: only the task's code and tests.
+- Integration into the spec's branch does not use cherry-pick.
 
 Several subagents run tasks at the same time.
 

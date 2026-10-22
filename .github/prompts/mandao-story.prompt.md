@@ -53,9 +53,10 @@ From `.mandao/templates/app/spec/story.md`, following `.mandao/templates/app/rul
   touches a flow in `critical-flows.md`.
 - GIVEN / WHEN / THEN bullets; edges as `**BUT it must NOT** … (C1)` and `**AND IT MUST** … (C2)`,
   with explicit clause ids. Keywords and ids stay in English; the text is in `en`.
+- Separate specs only by principle 8 of `.mandao/templates/app/rules/spec-docs.md`; the user decides.
 - `sources:` lists every source with its date. `status: draft`.
 
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
-to post the approved AC back as a comment (only after confirmation). Next: `node .mandao/bin/mandao.mjs run next <ID>` names the command that follows from the spec's state; give it.
+to post the approved AC back as a comment (only after confirmation). Next: `node .mandao/bin/mandao.mjs run next <ID> --harness <this harness>` names the command that follows; give it.

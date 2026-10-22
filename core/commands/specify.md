@@ -101,12 +101,12 @@ If `EnterWorktree` is refused or fails, print the `resume` field of the `spec-ne
 <!-- mandao:if !harness=claude -->
 print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
 <!-- mandao:endif -->
-Then go on. **A story written before the worktree existed** (by {{command:story}},
+Then go on. **A story written before the worktree** (by {{command:story}},
 untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
-the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `{{template:rules/hotfix.md}}`. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
+the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `{{template:rules/hotfix.md}}`. Write every artifact inside that worktree. Install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
 session already runs in the worktree. If there is no `story.md`, write one from
-`{{template:spec/story.md}}` with what the item says, marking gaps as `OPEN`. Critical `OPEN` blocks specify.
+`{{template:spec/story.md}}` with what the item says, marking gaps `OPEN` (critical ones block specify).
 
 When the story's `type` is not `story`, follow `{{template:rules/spec-types.md}}`.
 
@@ -126,7 +126,7 @@ independent tasks and include §20 safety rule in each brief.
 | `standard` | most features | + NFRs with numbers, all clauses | + decisions with alternatives, risk tags |
 | `full` | high risk, cross-cutting, new architecture | + exhaustive edge cases | + adversarial review of the design before approval |
 
-Use `{{arg:depth}}`; propose a different depth if the risk clearly calls for it.
+Use `{{arg:depth}}`; propose a different depth if the risk clearly calls for it. Separate specs: `spec-docs.md` principle 8.
 
 **At lite depth** the whole spec is one session: follow `{{template:rules/doc-lite.md}}`.
 

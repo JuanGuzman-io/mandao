@@ -1,9 +1,11 @@
+import { splitDeliveries } from './deliveries.js';
 import type { Story } from './story.js';
 import { LEGACY_TASK_FIELDS, type Task } from './tasks.js';
 
 /**
  * tasks.md in two layers (readability pass): `## Overview`, generated from the details and grouped by
- * acceptance criteria with a checkpoint per group, then `## Details`, one section per task.
+ * acceptance criteria with a checkpoint per group (inside one heading per delivery when the spec declares
+ * several, MDO-0013), then `## Details`, one section per task.
  */
 export const OVERVIEW = '## Overview';
 export const DETAILS = '## Details';
@@ -25,23 +27,41 @@ function checkpoint(group: Task[], acs: string[]): string {
     : `**Checkpoint:** review ${ids} against ${confirm} before the next group.`;
 }
 
-/** The Overview section's body, generated from the tasks: what `mandao run tasks --index` prints. */
-export function taskIndex(tasks: Task[], story?: Story): string {
+/** The blocks of one delivery's tasks, grouped by acceptance criterion; `level` is the heading depth. */
+function groupBlocks(tasks: Task[], story: Story | undefined, level: number): string[] {
   const groups = new Map<string, Task[]>();
   for (const t of tasks) {
     const key = topAcs(t).join(', ');
     groups.set(key, [...(groups.get(key) ?? []), t]);
   }
-  const blocks = [...groups].map(([key, group]) => {
+  return [...groups].map(([key, group]) => {
     const acs = key ? key.split(', ') : [];
     const lines = group.map((t) => {
       const tags = [acs.length ? `[${acs.join(', ')}]` : '', t.parallel_safe ? '[P]' : ''].filter(Boolean).join(' ');
       const file = t.files[0] ? ` — \`${t.files[0]}\`` : '';
       return `- [${t.done ? 'x' : ' '}] ${t.id} ${tags ? `${tags} ` : ''}${t.title}${file}`;
     });
-    return [`### ${key || 'No acceptance criterion'} — ${groupGoal(acs, story)}`, '', ...lines, '', checkpoint(group, acs)].join('\n');
+    const heading = `${'#'.repeat(level)} ${key || 'No acceptance criterion'} — ${groupGoal(acs, story)}`;
+    return [heading, '', ...lines, '', checkpoint(group, acs)].join('\n');
   });
-  return blocks.join('\n\n');
+}
+
+/** The Overview section's body, generated from the tasks: by delivery when there are several (MDO-0013), else by AC. */
+export function taskIndex(tasks: Task[], story?: Story): string {
+  const deliveries = splitDeliveries(tasks);
+  if (deliveries.length < 2) return groupBlocks(tasks, story, 3).join('\n\n');
+  return deliveries
+    .map((d, i) => {
+      const own = tasks.filter((t) => d.tasks.includes(t.id));
+      const following = deliveries[i + 1]?.number;
+      const next = following ? ` before delivery ${following}` : '';
+      return [
+        `### Delivery ${d.number} — ${d.ac.join(', ') || 'No acceptance criterion'}`,
+        ...groupBlocks(own, story, 4),
+        `**Delivery checkpoint:** run \`mandao run verify-plan <spec> --delivery ${d.number}\`${next}; it passes when \`scope.clear\` is true.`,
+      ].join('\n\n');
+    })
+    .join('\n\n');
 }
 
 /** The text of a `## ` section, without its heading, or undefined when the file has none. */

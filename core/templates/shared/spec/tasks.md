@@ -32,6 +32,7 @@ evidence: tdd
 risk_tags: []
 decisions: []
 depends_on: []
+# delivery: 1           # only when the spec is split into deliveries
 parallel_safe: false
 verify: <command>
 ```

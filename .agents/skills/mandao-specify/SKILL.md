@@ -27,9 +27,9 @@ in the output which skill was missing.
 
 ## 1. Resolve the spec
 
-1. **From `mandao start`** (the default): the session runs in the spec's worktree and
+1. **From `mandao start`** (the default): session runs in its worktree and
    the `start` section of `specs/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the
-   branch and worktree already exist and are set up, so skip the worktree step below.
+   branch/worktree exist; skip the worktree step below.
 2. **From a story**: if `<ref>` names a folder in `specs/` with `story.md`, inherit its
    frontmatter (tracker, type, id, projects). Ask nothing.
 3. **From an argument**: a tracker id or URL. The tracker comes from `.mandao/sources.yml`, which wins
@@ -41,21 +41,28 @@ The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
 `node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type> --harness <this harness> --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
 and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
-from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues` (e.g.
-a missing base) before asking. This is the fallback when the session started in the main checkout
+from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues`
+before asking. This is the fallback when the session started in the main checkout
 (`mandao start` does it as a script, with the full setup of §14.5): after creating the worktree, move into it before any other step, because later commands refuse to work outside it:
 print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
-Then go on. **A story written before the worktree existed** (by $mandao-story,
+Then go on. **A story written before the worktree** (by $mandao-story,
 untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
-the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact of the spec inside that worktree. Then install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
+the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact inside that worktree. Install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
 a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
 session already runs in the worktree. If there is no `story.md`, write one from
-`.mandao/templates/app/spec/story.md` with what the item says, marking gaps as `OPEN`. A critical `OPEN` in the
-story blocks specify: stop and say so.
+`.mandao/templates/app/spec/story.md` with what the item says, marking gaps `OPEN` (critical ones block specify).
 
 When the story's `type` is not `story`, follow `.mandao/templates/app/rules/spec-types.md`.
 
-## 2. Depth
+## 2. Research
+
+Mark uncertain questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness <this harness>`;
+reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
+`research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
+Follow `.mandao/templates/app/spec/research.md`; create one subagent task for every uncovered question, parallelize
+independent tasks and include §20 safety rule in each brief.
+
+## 3. Depth
 
 | Depth | Use for | Requirements | Design |
 |---|---|---|---|
@@ -63,19 +70,17 @@ When the story's `type` is not `story`, follow `.mandao/templates/app/rules/spec
 | `standard` | most features | + NFRs with numbers, all clauses | + decisions with alternatives, risk tags |
 | `full` | high risk, cross-cutting, new architecture | + exhaustive edge cases | + adversarial review of the design before approval |
 
-Use `<depth>`; propose a different depth if the risk clearly calls for it.
+Use `<depth>`; propose a different depth if the risk clearly calls for it. Separate specs: `spec-docs.md` principle 8.
 
 **At lite depth** the whole spec is one session: follow `.mandao/templates/app/rules/doc-lite.md`.
 
-Sections 4 and 5 describe the content; at lite it goes into `spec.md`.
-
-## 3. Impact analysis
+## 4. Impact analysis
 
 Use the graph (or search) to find the modules, contracts and tests each AC touches, per project.
 Read the `AGENTS.md` of each touched module and the relevant constitution documents, including
 `business-rules.md`, `glossary.md` and `critical-flows.md`.
 
-## 4. requirements.md
+## 5. requirements.md
 
 From `.mandao/templates/app/spec/requirements.md`:
 
@@ -85,7 +90,7 @@ From `.mandao/templates/app/spec/requirements.md`:
 - The **AC → FR matrix** covers every AC clause by clause.
 - Anything you cannot decide is `[NEEDS CLARIFICATION]` with the question and its owner.
 
-## 5. design.md
+## 6. design.md
 
 From `.mandao/templates/app/spec/design.md`:
 
@@ -94,8 +99,11 @@ From `.mandao/templates/app/spec/design.md`:
   `node .mandao/bin/mandao.mjs run resources` when it builds or tests); otherwise it is `UNVERIFIED`.
 - Decisions first, each with why and the alternatives rejected; changes per project and module, and an
   **exemplar file** per change.
-- Risk tags per change: `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
+- Risk tags per change: `auth`, `security`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`,
   `ai-prompt`, `ui`, `perf`.
+- **Principle check:** declare `writes_data: yes | no`; include exactly one line for every `DP-*`
+  principle in the applicable constitution, with applicability and how it applies or why not. For
+  data writes, add the complete ACID table and ensure a task declares a partial-failure test.
 - `Constitution Impact`, `Product Impact` and `Module Docs Impact`: record, never apply. Only
   `/mandao-close` applies them.
 
@@ -111,24 +119,24 @@ refactors or internal infrastructure.
 When the spec adds or changes entities, fields, relationships or states (never by how many tasks, requirements or scenarios there are), write `data-model.md` from
 `.mandao/templates/app/spec/data-model.md` following `.mandao/templates/app/rules/doc-data-model.md`.
 
-## 6. Consistency Check
+## 7. Consistency Check
 
 Run `node .mandao/bin/mandao.mjs run trace <ID>` for the structural part (GAP, ORPHAN, broken references, clause coverage)
 and `.mandao/templates/app/rules/consistency-check.md` for the semantic part, over story, requirements and design. Write the table in
 `requirements.md` even when it is empty.
 
-## 7. Diagram for approval
+## 8. Diagram for approval
 
 `node .mandao/bin/mandao.mjs run diagram <ID>` says whether the spec needs one. When it does, or the spec changes data, follow
 `.mandao/templates/app/rules/diagram.md`; otherwise skip this step.
 
-## 8. Close
+## 9. Close
 
 - `[NEEDS CLARIFICATION]` items or findings → recommend $mandao-clarify, listed by impact; a critical
   one blocks $mandao-tasks.
 - Otherwise ask for approval of requirements and design, showing the diagram when there is one. The user
-  may approve from the terminal instead (`mandao approve <ref> design`): the status,
+  may approve from the terminal instead (`mandao approve <ref> design --harness <this harness>`): the status,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `node .mandao/bin/mandao.mjs run commit-spec <ref> specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
-  `node .mandao/bin/mandao.mjs run next <ID> --shown` (it records what was shown) and give the command it names as the next mandao.
+  `node .mandao/bin/mandao.mjs run next <ID> --shown --harness <this harness>` (it records what was shown) and give the command it names as the next mandao.

@@ -125,3 +125,72 @@ describe('verifyPlan', () => {
     expect(plan.securityScans[0]).toMatchObject({ secrets: 'unknown', sast: 'unknown', pendingCi: false });
   });
 });
+
+describe('verifyPlan with a delivery', () => {
+  const split = () => {
+    const [t1, t2] = base().tasks;
+    return [
+      { ...t1!, delivery: 1 },
+      { ...t2!, delivery: 2 },
+    ];
+  };
+  const partial = (n: number, later: string) =>
+    `partial plan: delivery ${n} only; a partial plan cannot verify the spec (AC of later deliveries: ${later})`;
+
+  test('scopes the suites, tasks and evidence to the delivery; the partial-plan blocker keeps the spec unverifiable', () => {
+    const plan = verifyPlan({ ...base(), tasks: split(), delivery: 1 });
+    expect(plan.scope).toEqual({ delivery: 1, ac: ['AC-1'], tasks: ['T1'], clear: true });
+    expect(plan.missingRed).toEqual(['T1']);
+    expect(plan.blockers).toEqual([partial(1, 'AC-2')]);
+    expect(plan.findings.some((f) => f.ref === 'T2' || f.ref.startsWith('AC-2'))).toBe(false);
+  });
+
+  test('findings on the delivery own task or AC stay, block, and clear the scope', () => {
+    const [t1, t2] = split();
+    const broken = verifyPlan({ ...base(), tasks: [{ ...t1!, ac: ['AC-1', 'AC-9'] }, t2!], delivery: 1 });
+    expect(broken.blockers.some((b) => b.startsWith('BROKEN_REF T1'))).toBe(true);
+    expect(broken.scope?.clear).toBe(false);
+    const gap = verifyPlan({ ...base(), requirements: { ...base().requirements, requirements: [] }, tasks: split(), delivery: 1 });
+    expect(gap.blockers.some((b) => b.startsWith('GAP AC-1'))).toBe(true);
+    expect(gap.blockers.some((b) => b.startsWith('GAP AC-2'))).toBe(false);
+    expect(gap.scope?.clear).toBe(false);
+  });
+
+  test('delivery 2 keeps delivery 1 findings (uncommitted task, AC) and drops later deliveries', () => {
+    const [t1, t2] = split();
+    const tasks = [t1!, { ...t2!, done: true }, { ...t2!, id: 'T3', delivery: 3, ac: ['AC-3', 'AC-3/C1'], done: false }];
+    const commits = { passed: ['T1'], committed: new Set<string>(), pending: [] };
+    const plan = verifyPlan({ ...base(), tasks, commits, delivery: 2 });
+    expect(plan.blockers.some((b) => b.startsWith('UNCOMMITTED T1'))).toBe(true);
+    expect(plan.blockers.some((b) => b.includes('T3'))).toBe(false);
+    expect(plan.blockers[0]).toBe(partial(2, 'AC-3'));
+    expect(plan.scope).toMatchObject({ delivery: 2, tasks: ['T2'], clear: false });
+    const progress = {
+      schema_version: 1 as const,
+      spec: 'x',
+      updated_at: 'now',
+      current: null,
+      open_questions: [],
+      next_step: '',
+      deferred_to_ci: [
+        { task: 'T1', tests: ['e2e'], reason: 'r' },
+        { task: 'T3', tests: ['e2e'], reason: 'r' },
+      ],
+      red_tests: [],
+      pending_commits: [],
+      approved_manifests: [],
+    };
+    expect(verifyPlan({ ...base(), tasks, commits, progress, delivery: 2 }).deferred.map((d) => d.task)).toEqual(['T1']);
+  });
+
+  test('an unknown delivery, or a spec without deliveries, is an error', () => {
+    expect(() => verifyPlan({ ...base(), tasks: split(), delivery: 3 })).toThrow('delivery 3 does not exist: the spec has 1, 2');
+    expect(() => verifyPlan({ ...base(), delivery: 1 })).toThrow('needs a spec with deliveries');
+  });
+
+  test('without a delivery the plan has no scope and still reports every open task', () => {
+    const plan = verifyPlan({ ...base(), tasks: split() });
+    expect(plan.scope).toBeUndefined();
+    expect(plan.blockers).toContain('T2 is not done');
+  });
+});
