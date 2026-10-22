@@ -1,10 +1,12 @@
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-/** Folders created by `makeTree` in this test file's worker; removed by `removeTrees`. */
-export const trees = new Set<string>();
+/** Async test ownership keeps concurrent tests' temporary folders isolated. */
+export const testTreeScope = new AsyncLocalStorage<string>();
+const trees = new Map<string, Set<string>>();
 
 /** Initializes isolated test repos with local identity so commits never depend on the developer machine. */
 export function initTestRepo(root: string, ...args: string[]): void {
@@ -12,12 +14,24 @@ export function initTestRepo(root: string, ...args: string[]): void {
   execFileSync('git', ['init', ...args], options);
   execFileSync('git', ['config', '--local', 'user.name', 'Mandao Test'], options);
   execFileSync('git', ['config', '--local', 'user.email', 'mandao-test@example.invalid'], options);
+  execFileSync('git', ['config', '--local', 'gc.auto', '0'], options);
+  execFileSync('git', ['config', '--local', 'maintenance.auto', 'false'], options);
 }
 
 /** Creates a temp directory from a `{ 'path/file': content }` map. A trailing `/` creates an empty dir. */
 export function makeTree(files: Record<string, string>): string {
-  const root = mkdtempSync(join(tmpdir(), 'mandao-test-'));
-  trees.add(root);
+  return makeTreeAt(tmpdir(), 'mandao-test-', files);
+}
+
+/** Creates an isolated test-owned folder under a path where the child process can resolve repo dependencies. */
+export function makeTreeAt(parent: string, prefix: string, files: Record<string, string>): string {
+  const owner = testTreeScope.getStore();
+  if (!owner) throw new Error('makeTree must be called inside a test');
+  mkdirSync(parent, { recursive: true });
+  const root = mkdtempSync(join(parent, prefix));
+  const owned = trees.get(owner) ?? new Set<string>();
+  owned.add(root);
+  trees.set(owner, owned);
   for (const [path, content] of Object.entries(files)) {
     const full = join(root, path);
     if (path.endsWith('/')) {
@@ -30,10 +44,11 @@ export function makeTree(files: Record<string, string>): string {
   return root;
 }
 
-/** Removes every folder `makeTree` registered, then clears the registry. Never selects by name. */
-export function removeTrees(): void {
-  for (const dir of trees) rmSync(dir, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 });
-  trees.clear();
+/** Removes only folders registered to this test owner. Exact-path recursive force tolerates prior deletion. */
+export function removeTrees(owner = testTreeScope.getStore()): void {
+  if (!owner) throw new Error('removeTrees requires the current test owner');
+  for (const dir of trees.get(owner) ?? []) rmSync(dir, { recursive: true, force: true });
+  trees.delete(owner);
 }
 
 export const pkg = (name: string, deps: Record<string, string> = {}) => JSON.stringify({ name, dependencies: deps });

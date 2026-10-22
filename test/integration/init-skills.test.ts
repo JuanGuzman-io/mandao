@@ -3,12 +3,12 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'n
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, type MockInstance, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, type MockInstance, test, vi } from 'vitest';
 import { runInit } from '../../src/cli/init.js';
 import { readCatalog } from '../../src/engine/catalog.js';
 import { LOCK_FILE, readLock } from '../../src/engine/files.js';
 import { commandSkills } from '../../src/skills/command-skills.js';
-import { initTestRepo, makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, makeTreeAt, pkg } from '../helpers.js';
 
 // MDO-0009 T2: `init` offers the commands' skills and copies only what the person selects (FR-2, FR-3, FR-4).
 // Prompts are mocked like the budget question; Git rewrites its HTTPS fixture URL to a local tagged repository.
@@ -305,9 +305,8 @@ describe('init --yes as a process (FR-4)', () => {
   const cache = join(root, 'node_modules', '.cache');
   let outDir = '';
 
-  beforeAll(async () => {
-    mkdirSync(cache, { recursive: true });
-    outDir = join(cache, `mandao-init-skills-${process.pid}`);
+  beforeEach(async () => {
+    outDir = makeTreeAt(cache, 'mandao-init-skills-', {});
     // Same entry, format, target and platform as tsup.config.ts; the bundle sits in the repository so core/ is found.
     await build({
       entry: { cli: join(root, 'src/cli/index.ts') },
@@ -320,9 +319,8 @@ describe('init --yes as a process (FR-4)', () => {
     });
   }, 60_000);
 
-  afterAll(async () => {
-    const { rmSync } = await import('node:fs');
-    if (outDir) rmSync(outDir, { recursive: true, force: true });
+  afterEach(() => {
+    outDir = '';
   });
 
   /** Fake installers on PATH: each leaves a marker if anything runs it. */

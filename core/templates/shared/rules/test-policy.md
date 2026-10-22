@@ -81,6 +81,20 @@ The Reviewer and `verify` run only the tests a change impacts:
   The `scan-markers` gate fails a changed test that lists or globs folders without the comment.
 - **Full suite and critical smoke:** in CI; locally only with `--full`.
 
+## Temporary folders and machine-independent tests
+
+- Every test that needs a temporary workspace creates a unique folder with `mkdtemp` through
+  `test/helpers.ts`; folders belong to the current test ID, including folders created in its hooks.
+- A test may delete only folders registered to its own test ID. Cleanup uses each recorded absolute
+  folder path with recursive `force: true`, so an already absent folder is harmless. Never share a
+  temporary workspace across tests, delete a global collection of folders, or find cleanup targets by
+  prefix, glob, or directory scan.
+- Process-level fixtures also use a fresh `mkdtemp` folder per test and remove only that exact folder.
+- Temporary Git repositories set local `user.name` and `user.email`, and disable automatic garbage
+  collection and maintenance so Git cannot write into a repository while the test removes it. Test
+  scripts use `process.exitCode` instead of `process.exit()` so buffered output can flush.
+- `test/unit/architecture.test.ts` enforces these rules.
+
 ## Resource budget
 
 Before running tests, check cores, free RAM and load. Limit workers (default: half the cores) and

@@ -1,20 +1,25 @@
 import { spawnSync } from 'node:child_process';
-import { chmodSync, existsSync, mkdirSync, realpathSync, rmSync } from 'node:fs';
+import { chmodSync, existsSync, realpathSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { build } from 'tsup';
-import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { makeTree, removeTrees } from '../helpers.js';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
+import { makeTree, makeTreeAt } from '../helpers.js';
 
 // MDO-0010 P1: `mandao hook graph-guard` resolves its project from its working directory, so after
 // EnterWorktree it reads the worktree, not the main checkout. Real entry point, run as a process.
 const root = fileURLToPath(new URL('../..', import.meta.url));
 const cache = join(root, 'node_modules', '.cache');
 let outDir = '';
+let main = '';
+let worktree = '';
 
-beforeAll(async () => {
-  mkdirSync(cache, { recursive: true });
-  outDir = join(cache, `mandao-hook-${process.pid}`);
+beforeEach(async () => {
+  outDir = makeTreeAt(cache, 'mandao-hook-', {});
+  main = realpathSync(makeTree({ '.mandao/config.yml': 'schema_version: 1\n' }));
+  worktree = realpathSync(
+    makeTree({ '.claude/agents/mandao-reviewer.md': readOnlyRole, '.claude/agents/mandao-implementer-standard.md': shellRole }),
+  );
   await build({
     entry: { cli: join(root, 'src/cli/index.ts') },
     format: ['esm'],
@@ -26,9 +31,8 @@ beforeAll(async () => {
   });
 }, 20_000);
 
-afterAll(() => {
-  if (outDir) rmSync(outDir, { recursive: true, force: true });
-  removeTrees();
+afterEach(() => {
+  outDir = '';
 });
 
 const readOnlyRole = '---\nname: mandao-reviewer\ntools: Read, Grep, Glob\n---\n';
@@ -56,11 +60,6 @@ function guard(cwd: string, agent: string) {
 describe('P1: graph-guard reads the worktree it runs in', () => {
   // The main checkout holds no agent files; only the worktree does. A guard that read the main
   // checkout would not know the role and would keep the guard on.
-  const main = realpathSync(makeTree({ '.mandao/config.yml': 'schema_version: 1\n' }));
-  const worktree = realpathSync(
-    makeTree({ '.claude/agents/mandao-reviewer.md': readOnlyRole, '.claude/agents/mandao-implementer-standard.md': shellRole }),
-  );
-
   test('with a worktree as cwd, a read-only role defined only there skips the guard', () => {
     const r = guard(worktree, 'mandao-reviewer');
     expect(r.status).toBe(0);

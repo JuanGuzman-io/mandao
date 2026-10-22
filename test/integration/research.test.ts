@@ -1,9 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import { configSchema } from '../../src/schemas/config.js';
 import { researchContext } from '../../src/scripts/research.js';
-import { makeTree, removeTrees } from '../helpers.js';
+import { makeTree } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
 const entry = `- id: R1
@@ -26,8 +26,6 @@ const entry = `- id: R1
           checked_on: "2026-10-01"
           value: "v2"
 `;
-
-afterEach(removeTrees);
 
 describe('research context before delegation', () => {
   test('applies the configured cap and links only current, resolved matching prior evidence', () => {

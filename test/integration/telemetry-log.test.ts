@@ -1,10 +1,8 @@
-import { afterAll, describe, expect, test, vi } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { appendTelemetryEvent, measureGate, readTelemetryEvents } from '../../src/scripts/telemetry.js';
 import { summarizeTelemetry } from '../../src/spec/telemetry.js';
-import { makeTree, removeTrees } from '../helpers.js';
-
-afterAll(removeTrees);
+import { makeTree } from '../helpers.js';
 
 describe('script-owned telemetry log', () => {
   test('appends events to execution.md while preserving the task table', () => {
