@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
-import { toolVersionFindings } from '../../src/engine/tools.js';
+import { runnerFindings, toolVersionFindings } from '../../src/engine/tools.js';
 import { catalogSchema } from '../../src/schemas/index.js';
+import { makeTree } from '../helpers.js';
 
 const catalog = catalogSchema.parse({
   schema_version: 1,
@@ -39,6 +40,21 @@ test('stays quiet when the tool is current, newer or missing', () => {
   expect(toolVersionFindings(catalog, ['graphify'], () => 'graphify 0.9.92')).toEqual([]);
   expect(toolVersionFindings(catalog, ['graphify'], () => 'graphify 1.0.0')).toEqual([]);
   expect(toolVersionFindings(catalog, ['graphify'], () => undefined)).toEqual([]);
+});
+
+test('doctor reports when an installed Mandao version differs from the project lock', () => {
+  const root = makeTree({ '.mandao/bin/mandao.mjs': '' });
+  const findings = runnerFindings(
+    root,
+    '2.0.0',
+    () => '2.0.0',
+    () => JSON.stringify({ source: 'npx', mismatch: { source: 'global', version: '1.0.0' } }),
+  );
+  expect(findings).toContainEqual({
+    level: 'warn',
+    message: 'global Mandao 1.0.0 does not match project lock 2.0.0',
+    fix: 'update the global/local Mandao install, or let the launcher use the pinned npx version',
+  });
 });
 
 test('warns when the harness is outside the supported range (ADR 0025)', async () => {

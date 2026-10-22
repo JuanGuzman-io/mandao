@@ -2,7 +2,7 @@
 // dark SVG. Writes docs/diagrams/src/<name>.json (specification + derivedFrom) and <name>-{light,dark}.svg.
 // Also writes the generated pages (docs/process-map.md, docs/commands/). A diagram whose specification
 // did not change is not rendered again, so editing a command's wording needs no Archify; `--force` renders all.
-// `--only a,b` limits the run; `--archify <dir>` points at the Archify skill (default ~/.claude/skills/archify).
+// `--only a,b` limits the run; `--archify <dir>` points at the Archify skill (otherwise searched across harness folders).
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -19,7 +19,28 @@ const arg = (name) => {
   const i = process.argv.indexOf(name);
   return i > 0 ? process.argv[i + 1] : undefined;
 };
-const archify = join(arg('--archify') ?? join(homedir(), '.claude/skills/archify'), 'bin/archify.mjs');
+const archifyDirs = arg('--archify')
+  ? [arg('--archify')]
+  : [
+      join(root, '.claude/skills/archify'),
+      join(root, '.agents/skills/archify'),
+      join(root, '.github/skills/archify'),
+      join(root, '.copilot/skills/archify'),
+      join(root, '.config/opencode/skills/archify'),
+      join(root, '.gemini/antigravity/skills/archify'),
+      join(homedir(), '.claude/skills/archify'),
+      join(homedir(), '.agents/skills/archify'),
+      join(homedir(), '.github/skills/archify'),
+      join(homedir(), '.copilot/skills/archify'),
+      join(homedir(), '.config/opencode/skills/archify'),
+      join(homedir(), '.gemini/antigravity/skills/archify'),
+    ];
+const archify = archifyDirs.map((dir) => join(dir, 'bin/archify.mjs')).find(existsSync);
+if (!archify)
+  throw new Error(
+    'Archify 3.2.0 is required to rebuild diagrams. Run `mandao init` and confirm the pinned install, ' +
+      'or pass --archify <skill directory>.',
+  );
 const only = arg('--only')?.split(',');
 const out = join(root, 'docs/diagrams');
 mkdirSync(join(out, 'src'), { recursive: true });

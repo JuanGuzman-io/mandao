@@ -22,6 +22,7 @@ import {
   TIERS,
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
+import { offerArchify } from './init-archify.js';
 import { chooseBudget } from './init-budget.js';
 import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
@@ -356,6 +357,7 @@ export async function runInit(root: string, opts: InitOptions) {
   printChanges(result.changes);
   printWarnings(result.warnings);
   await offerSkills(root, harnesses, opts);
+  await offerArchify(root, harnesses, opts);
 
   const next = [...harnessSetupNotes(harnesses), 'Next: open your agent here and run /mandao-constitution.'].join('\n');
   interactive ? p.outro(next) : console.log(next);
