@@ -10,6 +10,7 @@ const task = (id: string, project: string, depends_on: string[] = []): Task =>
     risk_tags: [],
     ac: [],
     scenarios: [],
+    decisions: [],
     tests: { unit: [], e2e: [] },
     dod: [],
     depends_on,

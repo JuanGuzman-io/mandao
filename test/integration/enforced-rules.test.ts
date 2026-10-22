@@ -8,7 +8,7 @@ import { syncProject } from '../../src/engine/sync.js';
 import { testNames } from '../../src/scripts/red.js';
 import { readSpec } from '../../src/scripts/spec.js';
 import { logPath } from '../../src/scripts/spec-log.js';
-import { securityBlockers, specBudget, untaggedSecurityMentions } from '../../src/spec/index.js';
+import { securityBlockers, specBudget } from '../../src/spec/index.js';
 import { makeTree, pkg, reviewFile } from '../helpers.js';
 
 // MDO-0008: five rules the Leader broke while the text asked for them; now the scripts refuse.
@@ -99,95 +99,27 @@ describe('red first, rework included', () => {
   });
 });
 
-describe('a high-severity security finding blocks a PASS', () => {
-  test('the script refuses the PASS, checks the VERDICT line and keeps the answer', async () => {
+describe('structured Reviewer findings guard', () => {
+  test('requires a valid payload, refuses open security blockers, and preserves the whole answer', async () => {
     const root = workspace();
     const pass = (findings: string) => checkpoint(root, '--verdict', 'PASS', ...reviewer, '--review', reviewFile('PASS', findings));
     await expect(pass('- [security/high] src/x.ts:3 front matter is evaluated')).rejects.toThrow(/open high-severity security finding/);
-    // Untagged prose never blocks: the T1 rework answer mentioned the fixed finding and was refused twice.
-    await pass('The high-severity eval finding of attempt 3 is fixed: front matter goes through parseFrontmatter.');
     await expect(checkpoint(root, '--verdict', 'PASS', ...reviewer, '--review', reviewFile('FAIL'))).rejects.toThrow(
       /says VERDICT: FAIL, not PASS/,
     );
     await expect(checkpoint(root, '--verdict', 'PASS', ...reviewer)).rejects.toThrow(/needs --review/);
     await pass('- [core/high] a long function\n- [security/low] log line could be shorter');
-    expect(readFileSync(join(logPath(join(root, SPEC), 'reviews'), 'T2-1-review.md'), 'utf8')).toContain('[core/high]');
-    expect(rows(root).find((r) => r.verdict === 'PASS')?.notes).toMatch(/untagged security mention: The high-severity eval/);
-    // Not blocking, but a person sees them in the implement report and in verify.
-    const mention = { task: 'T2', attempt: 1, mentions: [expect.stringMatching(/^The high-severity eval finding/)] };
-    expect((await run(root, 'run', 'implement-summary', 'MDO-0001')).securityMentions).toEqual([mention]);
-    expect((await run(root, 'run', 'verify-plan', 'MDO-0001')).securityMentions).toEqual([mention]);
+    expect(readFileSync(join(root, SPEC, 'reviews/T2-1-review.md'), 'utf8')).toContain('[core/high]');
+    expect(rows(root).find((r) => r.verdict === 'PASS')?.notes).not.toContain('untagged security mention');
   });
 
-  test('tagged and untagged findings', () => {
-    expect(securityBlockers('- [security/critical] secret in log\n- [performance/high] slow loop\n- [core/high] eval naming')).toEqual([
-      '- [security/critical] secret in log',
-    ]);
-    expect(securityBlockers('A3 high: untrusted input reaches exec')).toEqual([]);
-    expect(untaggedSecurityMentions('A2 medium: credentials logged\nA3 high: untrusted input reaches exec\n- [core/high] eval')).toEqual([
-      'A3 high: untrusted input reaches exec',
-    ]);
-  });
-
-  // A rework PASS recapped the earlier attempt's finding as fixed and was refused: only this attempt's
-  // `Findings` section holds open findings.
-  const recap = '## Attempt-1 blocking findings\n**1. [security/high] Close could recursively delete the cache root. Fixed.**\n';
-
-  test('a resolved finding outside the Findings section does not block', () => {
-    expect(securityBlockers(`${recap}\n## Findings\n- [core/low] a long line\n`)).toEqual([]);
-  });
-
-  test('a finding inside the Findings section blocks, up to the next heading of its level', () => {
-    expect(securityBlockers(`${recap}\n## Findings\n### Blocking\n- [security/high] cache root deleted\n## Notes\nok\n`)).toEqual([
-      '- [security/high] cache root deleted',
-    ]);
-    expect(securityBlockers('# Review\n## Findings\n- [core/low] x\n## Earlier\n- [security/high] old, fixed\n')).toEqual([]);
-    expect(securityBlockers('## Findings\n### Findings\n- [core/low] x\n### Security\n- [security/high] y\n')).toEqual([
-      '- [security/high] y',
-    ]);
-  });
-
-  test('without a Findings heading every tagged line still blocks', () => {
-    expect(securityBlockers(recap)).toEqual(['**1. [security/high] Close could recursively delete the cache root. Fixed.**']);
-    // A heading quoted in a code block is not one: it cannot hide the finding.
-    expect(securityBlockers('```md\n## Findings\n```\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
-  });
-
-  test('indented code is not a heading', () => {
-    expect(securityBlockers('    ## Findings\n    - [core/low] y\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
-  });
-
-  test('a heading inside an HTML comment is not one', () => {
-    expect(securityBlockers('<!--\n## Findings\n-->\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
-  });
-
-  test('a fence closes only on its own character, at least as long', () => {
-    expect(securityBlockers('```\n~~~\n## Findings\n~~~\n```\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
-    expect(securityBlockers('````\n```\n## Findings\n```\n````\n## Notes\n- [security/high] x')).toEqual(['- [security/high] x']);
-  });
-
-  test('only a heading whose text is Findings scopes', () => {
-    for (const h of ['## Findings (attempt 1)', '**Findings**', 'Findings\n---']) {
-      expect(securityBlockers(`${recap}${h}\n- [core/low] y`)).toHaveLength(1);
-    }
-    expect(securityBlockers(`${recap}## findings:\n- [core/low] y`)).toEqual([]);
-  });
-
-  test('every Findings section counts', () => {
-    expect(securityBlockers('## Findings\n- [security/high] a\n## Notes\nok\n## Findings\n- [security/critical] b\n')).toEqual([
-      '- [security/high] a',
-      '- [security/critical] b',
-    ]);
-  });
-
-  test('a rework PASS recapping a fixed finding is accepted; one with an open finding is refused', async () => {
-    const root = workspace();
-    const pass = (findings: string) => checkpoint(root, '--verdict', 'PASS', ...reviewer, '--review', reviewFile('PASS', findings));
-    await expect(pass(`${recap}\n## Findings\n- [security/high] src/x.ts:3 cache root deleted\n`)).rejects.toThrow(
-      /open high-severity security finding/,
-    );
-    await pass(`${recap}\n## Findings\n- [core/low] a long line\n`);
-    expect(rows(root).at(-1)).toMatchObject({ verdict: 'PASS' });
+  test('only open high or critical security findings block; prose has no effect', () => {
+    const make = (status: string, severity: string, lens: string) =>
+      `## Findings (JSON)\n\`\`\`json\n${JSON.stringify({ version: 1, findings: [{ id: 'F1', status, severity, lens, title: 'issue', file: 'src/a.ts', line: 2, evidence: 'test' }] })}\n\`\`\``;
+    expect(securityBlockers(make('open', 'critical', 'security'))).toHaveLength(1);
+    expect(securityBlockers(make('resolved', 'critical', 'security'))).toEqual([]);
+    expect(securityBlockers(make('open', 'high', 'core'))).toEqual([]);
+    expect(securityBlockers(`security/high\n${make('open', 'low', 'core')}`)).toEqual([]);
   });
 });
 

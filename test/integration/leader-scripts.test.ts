@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -27,7 +27,7 @@ afterEach(() => {
   process.exitCode = undefined;
 });
 
-function repo() {
+function repo(harnesses = ['claude']) {
   const root = realpathSync(makeTree({ 'package.json': pkg('shop'), 'src/cli/skills.ts': 'export {};\n' }));
   git(root, 'init', '-q', '-b', 'feat/MDO-0001-skills-list');
   writeYaml(join(root, '.mandao/config.yml'), {
@@ -45,7 +45,7 @@ function repo() {
         tests: { impacted: 'node -e "process.exit(0)" {files}' },
       },
     ],
-    harnesses: ['claude'],
+    harnesses,
   });
   syncProject(root);
   cpSync(fixture, join(root, SPEC), { recursive: true });
@@ -135,6 +135,46 @@ describe('Leader scripts', () => {
     expect(pack).toContain('| typecheck | FAIL | 2 |');
     expect(pack).toContain('+export const list = () => [];');
     expect(pack).not.toContain('### typecheck — FAIL'); // the output blocks stay in the gates log
+  });
+
+  test('cross-harness review stores malformed output and records FAIL; open critical security findings override PASS', async () => {
+    const root = repo(['claude', 'codex']);
+    writeYaml(join(root, '.mandao/models.yml'), { schema_version: 1, mode: 'routed', harnesses: {} });
+    const bin = realpathSync(makeTree({ codex: '#!/bin/sh\ncat >/dev/null\nprintf "%s\\n" "$MOCK_REVIEW"\n' }));
+    chmodSync(join(bin, 'codex'), 0o755);
+    vi.stubEnv('PATH', `${bin}:${process.env.PATH}`);
+    vi.stubEnv('MOCK_REVIEW', 'VERDICT: PASS');
+    const gates = join(root, '.mandao/gates.md');
+    const brief = join(root, '.mandao/brief.json');
+    writeFileSync(gates, 'All gates pass.');
+    writeFileSync(brief, JSON.stringify({ task: 'T2' }));
+
+    const malformed = await run(root, 'review', 'MDO-0001', 'T2', '--via', 'codex', '--gates', gates, '--brief', brief);
+    expect(malformed).toMatchObject({ verdict: 'FAIL', recorded: true, reviewIssue: 'missing or invalid Findings (JSON) payload' });
+    expect(readFileSync(join(root, malformed.review), 'utf8')).toContain('VERDICT: PASS');
+    expect(readFileSync(join(root, SPEC, 'execution.md'), 'utf8')).toContain(
+      'FAIL: review rejected: missing or invalid Findings (JSON) payload',
+    );
+
+    const payload = {
+      version: 1,
+      findings: [
+        {
+          id: 'F1',
+          status: 'open',
+          severity: 'critical',
+          lens: 'security',
+          title: 'Unsafe shell input',
+          file: 'src/run.ts',
+          line: 1,
+          evidence: 'Input reaches exec.',
+        },
+      ],
+    };
+    vi.stubEnv('MOCK_REVIEW', `VERDICT: PASS\n\n## Findings (JSON)\n\n\`\`\`json\n${JSON.stringify(payload)}\n\`\`\``);
+    const blocked = await run(root, 'review', 'MDO-0001', 'T2', '--via', 'codex', '--gates', gates, '--brief', brief);
+    expect(blocked).toMatchObject({ verdict: 'FAIL', recorded: true, securityBlockers: ['F1: Unsafe shell input (src/run.ts:1)'] });
+    expect(readFileSync(join(root, blocked.review), 'utf8')).toContain('Unsafe shell input');
   });
 
   test('implement-summary: verdicts, FAIL reasons and identities from the log', async () => {

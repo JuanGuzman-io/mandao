@@ -1,6 +1,7 @@
 // `npm run diagrams:check`: fails when a source changed and a diagram or a generated page did not follow.
 // Needs no Archify, so it runs in CI and in the pre-commit hook. The fix is always `npm run diagrams`.
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { join, resolve } from 'node:path';
 import { ALL_DIAGRAMS, sources } from './derive.mjs';
 import { generatedDocs } from './docs.mjs';
@@ -26,8 +27,13 @@ for (const [name, derive] of Object.entries(ALL_DIAGRAMS)) {
   if (changed.length) problems.push(`${name}: derivedFrom changed (${changed.join(', ')})`);
   for (const theme of ['light', 'dark']) {
     const svg = join(root, 'docs/diagrams', `${name}-${theme}.svg`);
-    if (!existsSync(svg) || !readFileSync(svg, 'utf8').includes(`spec-sha256 ${committed.specSha256}`))
+    const present = existsSync(svg);
+    const content = present ? readFileSync(svg) : undefined;
+    const outputHash = content ? createHash('sha256').update(content).digest('hex') : undefined;
+    if (!present || !content.toString('utf8').includes(`spec-sha256 ${committed.specSha256}`))
       problems.push(`${name}: ${theme} SVG missing or not from its specification`);
+    if (!outputHash || committed.svgSha256?.[theme] !== outputHash)
+      problems.push(`${name}: ${theme} SVG hash does not match its source receipt`);
   }
 }
 

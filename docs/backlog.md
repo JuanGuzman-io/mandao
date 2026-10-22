@@ -65,7 +65,7 @@ latency improvement is claimed by this documentation phase.
 
 ## Phase 2 — Measurement
 
-**Implementation complete on `perf/measurement`; pending PR CI and merge.**
+**Complete:** PR #8 merged into `main` (`d17ba2c`).
 
 - [x] Script-stamped command, question/answer, agent and gate lifecycle events, with question classes.
 - [x] Kaizen reports active, user-wait and agent-wait timing by command and spec; incomplete intervals remain unknown.
@@ -83,6 +83,15 @@ Acceptance criteria:
 - Historical duplicate costs have a corrected view without modifying original logs.
 
 ## Phase 3 — Context and rework
+
+**Implemented; pending PR CI and merge.** See [ADR 0045](decisions/0045-structured-review-context.md).
+
+- [x] Reviewer diff uses canonical changed files; verified generated harness files and diagram SVGs
+  have hash/origin receipts, with full-diff fallback on provenance mismatch.
+- [x] Implementer brief includes task-linked decisions and rejected alternatives plus an AC/scenario ID
+  checklist; task rules no longer duplicate rationale.
+- [x] Reviewer findings use a validated status/severity schema; only open high/critical security
+  findings block PASS.
 
 Acceptance criteria:
 

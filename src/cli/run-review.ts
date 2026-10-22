@@ -6,10 +6,10 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { appendExecutionRow } from '../scripts/checkpoint.js';
 import { repoRoot } from '../scripts/commits.js';
 import { type Identity, identityCell } from '../scripts/identity.js';
-import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPrompt, runReview, taskDiff } from '../scripts/review.js';
+import { isReviewProcess, REVIEW_PROCESSES, reviewDiff, reviewerInstructions, reviewPrompt, runReview } from '../scripts/review.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
-import { type ExecutionRow, NOTE_FLAGS, securityBlockers, taskAttempt } from '../spec/index.js';
+import { type ExecutionRow, NOTE_FLAGS, parseReviewFindings, securityBlockers, taskAttempt } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -24,14 +24,14 @@ function reviewRow(
   identity: Identity,
   verdict: 'PASS' | 'FAIL',
   reviewFile: string,
-  securityBlocker?: string,
+  problem?: string,
 ): ExecutionRow {
   const own = spec.execution.filter((r) => r.task === task);
   const reported = [...own].reverse().find((r) => r.verdict === 'REPORTED');
   const notes = [
     ...(reported && reported.harness !== identity.harness ? [NOTE_FLAGS.providerIndependence] : []),
     `read-only ${identity.harness} process; review in ${reviewFile}`,
-    ...(securityBlocker ? [`FAIL: open high-severity security finding (PASS refused): ${securityBlocker}`] : []),
+    ...(problem ? [`FAIL: review rejected: ${problem}`] : []),
   ];
   return {
     date: new Date().toISOString().slice(0, 10),
@@ -70,19 +70,22 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
   const prompt = reviewPrompt(
     reviewerInstructions(ctx.root(), opts.via),
     JSON.parse(readFileSync(opts.brief, 'utf8')),
-    taskDiff(repoRoot(spec.dir), spec.dir),
+    reviewDiff(repoRoot(spec.dir), spec.dir),
     readFileSync(opts.gates, 'utf8'),
   );
   const r = runReview(opts.via, ctx.root(), reviewer, prompt);
   const file = keepReview(spec, task, opts.via, r.output);
   const rel = relative(ctx.root(), file);
   // A PASS with an open high-severity security finding is recorded as a FAIL (MDO-0008).
-  const blockers = r.verdict === 'PASS' ? securityBlockers(r.output) : [];
-  const verdict = blockers.length ? 'FAIL' : r.verdict;
-  if (verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, r.identity, verdict, rel, blockers[0]));
+  const structured = parseReviewFindings(r.output).success;
+  const blockers = r.verdict === 'PASS' && structured ? securityBlockers(r.output) : [];
+  const issue = !structured ? 'missing or invalid Findings (JSON) payload' : blockers[0];
+  const verdict = r.verdict ? (issue ? 'FAIL' : r.verdict) : undefined;
+  if (verdict) appendExecutionRow(spec.dir, spec.name, reviewRow(spec, task, r.identity, verdict, rel, issue));
   return {
     verdict: verdict ?? null,
     ...(blockers.length ? { securityBlockers: blockers } : {}),
+    ...(!structured ? { reviewIssue: 'missing or invalid Findings (JSON) payload' } : {}),
     reviewer: r.identity,
     review: rel,
     exitCode: r.exitCode,

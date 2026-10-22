@@ -242,6 +242,16 @@ Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
 | [`perf`](docs/commands/perf.md) | Measured performance work: before and after, every time | ⚪ planned |
 | [`audit`](docs/commands/audit.md) | Project health by lens: drift, security, quality… | ⚪ planned |
 
+### Why Mandao keeps review fast and structured
+
+The Reviewer gets the canonical changed-file diff. Verified generated harness copies and diagram SVGs
+arrive as hash-and-origin receipts; unverified files stay visible in full. Each task brief can link only
+the design decisions it needs, with their rationale and rejected alternatives, and carries an AC/scenario
+clause checklist. Reviewer findings use a validated JSON format with explicit `open`/`resolved` status
+and severity, so the security gate blocks only open high or critical security findings. This reduces
+repeated context while keeping TDD, deterministic gates and the independent Reviewer in place. See
+[ADR 0045](docs/decisions/0045-structured-review-context.md).
+
 From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao doctor`, `mandao models`.
 
 CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cli.md](docs/cli.md).

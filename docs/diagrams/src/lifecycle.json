@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "e4fb2355bc1dd53b4550c10aeda542d1bf25f7c641c9d2ce19d222fd7c664b1a"
+      "sha256": "fb2493a579b6421af72b576657fa84ef325aafefe3a2c30da25561a1400a903b"
     },
     {
       "path": "core/commands/init.md",
@@ -47,7 +47,7 @@
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "a44b33dd5eb916d0b87e96b508eaa599dd249aa938698eb684a4a0b7460e06c6"
+      "sha256": "0bda653ff32ad7b0473d1152bf026a71eeeea27791f1bca7eaaa585166364b46"
     },
     {
       "path": "core/commands/verify.md",
@@ -63,10 +63,14 @@
     },
     {
       "path": "src/scripts/spec.ts",
-      "sha256": "c11e8d2bdc53958a7e32675ff748b34dc9a5ceb22bc8375b327fc0f0120a3396"
+      "sha256": "e01c18b4cbcaa1b75543175a1a54d0bae9af5f4e6e5e59db13c4b86cc403386b"
     }
   ],
   "specSha256": "0205591777369dc1d74376fb27b2c1ac32c7ac384ca7095cdbeb1a9045f3d949",
+  "svgSha256": {
+    "light": "ccb468b6df7bb7b9bd25f81f83979d3527c34aacce3fbdfbefd14a6df80650ae",
+    "dark": "566fcf57e8c3b65c1824ef2d67787499913c6bad9be5febcf40064b2dfcdac11"
+  },
   "spec": {
     "schema_version": 3,
     "diagram_type": "lifecycle",

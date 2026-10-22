@@ -585,7 +585,7 @@ One story = **one spec, one development**, even across projects.
   - `mandao doctor` checks that every role has a model in each active harness and warns when a chosen model is not among the recommendations.
 - **Escalation:** 2 FAILs at a tier → retry one tier up → 3 FAILs at `strong` → HALT.
 - **DECIDED (ADR 0015) — Leader in the main session.** The Leader is the session that runs `/mandao-implement` (in Claude Code a subagent cannot start subagents). It runs on the session's model, so `implement` compares that model with `leader` in `models.yml` at start and warns on a mismatch without blocking. Same rule in Copilot.
-- The Implementer receives a **scoped brief from the graph** plus an **exemplar file** to mimic. Small models perform well with exact context.
+- The Implementer receives a **scoped brief from the graph** plus an **exemplar file** to mimic. The brief includes only task-linked design decisions (`decisions: [D<n>]`), their rationale and rejected alternatives, and a reference-only checklist of AC/scenario clause IDs (ADR 0045). Small models perform well with exact context.
 
 ### 14.4 Rules
 
@@ -663,11 +663,10 @@ session snapshots in a derived view; source logs are never rewritten. Incomplete
 
 ### 14.8 Rules enforced by scripts
 
-**DECIDED (ADR 0039), implemented:** attempts derive from prior FAIL rows, not agent input;
+**DECIDED (ADRs 0039, 0045), implemented:** attempts derive from prior FAIL rows, not agent input;
 checkpoints preserve the full Reviewer answer and enforce matching verdicts; scripts own evidence
-writes and integrity checks report manual edits. Tagged high/critical security findings block PASS.
-The current parser still uses tagged text/section heuristics. **Pending Phase 3:** structured severity
-and open/resolved status replace those heuristics, so only open high/critical security findings block.
+writes and integrity checks report manual edits. Reviewer output has a versioned JSON findings envelope;
+only open high/critical security findings block PASS. Free text is not interpreted by the guard.
 
 Current red enforcement compares names in declared/recorded test files, including rework. **Pending
 Phase 5:** restrict it to tests added/modified in the task diff, offer mutation evidence or test review
@@ -694,10 +693,11 @@ Separation of roles: **skills teach** (generic knowledge), **the constitution de
 - Risk tags (assigned in `tasks` from the graph and fixed rules): `auth`, `input`, `pii`, `payments`, `migration`, `public-api`, `infra`, `ai-prompt`, `ui`, `perf`.
 - `auth`, `payments`, `pii`, `migration` **never** go through quick.
 - The Reviewer receives only the diff, the brief and the rules of the active lenses.
+- **DECIDED (ADR 0045) — source diff and receipts:** owned generated harness copies become hash/origin receipts when the current hash matches the lock. Diagram SVGs become receipts only when source hashes, specification hash and generated marker agree. Any mismatch keeps the full generated-file diff.
 
 ### 15.2 Blocking vs advisory
 
-- **Blocking:** violates spec, constitution, contract, or a high-severity security finding → rework.
+- **Blocking:** violates spec, constitution, contract, or an open high/critical security finding → rework. The script validates the versioned structured finding status, lens and severity; prose is not guard input (ADR 0045).
 - **Advisory:** improvements and preferences → recorded in `execution.md`, feeds Kaizen, **never reopens the loop**.
 
 ### 15.3 Clean code

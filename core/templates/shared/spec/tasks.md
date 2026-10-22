@@ -29,6 +29,7 @@ scenarios: [S-1.1, S-1.1/C1]
 test_levels: { S-1.1: unit, S-1.1/C1: unit }
 evidence: tdd
 risk_tags: []
+decisions: []
 depends_on: []
 parallel_safe: false
 verify: <command>
