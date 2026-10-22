@@ -31,9 +31,9 @@ scope, product behavior, security or irreversible actions.
 | [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
 | [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
-| [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | agreed, pending phase plan approval |
+| [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | complete; PR #11 merged (`075cd2a`) |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
-| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
+| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | approved; in progress |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | agreed, pending phase plan approval; no new spec |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | agreed, pending phase plan approval |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | agreed, pending phase plan approval; no new spec |
@@ -303,36 +303,37 @@ and the [exposure audit](security/exposure-audit.md).
 
 ## Rules enforced by script
 
-**Phase 5, except cost recording (phase 2) and approved commit manifests (phase 4).**
+**Phase 5, except cost recording (phase 2) and approved commit manifests (phase 4). Plan approved; implementation in progress.**
 
 Rules the commands state as prose become checks a script enforces.
 
-- **Loop brake.** When `run step` returns the same action for the same task N times in a row
-  (default 3) with no progress in the log, it returns HALT with the reason and the options.
-- **A new test that passes on its first run.** `run step` stops asking for red and offers `mutation`
-  evidence (existing behavior) or a review of the test.
-- **`run commit` never drops files outside the task's list.** When the diff holds undeclared and unreviewed files it
-  stops until the approved manifest is updated; it never commits a state that does not build.
+- **Loop brake.** When `run step` returns the same action for the same task three times without a new
+  execution or approval row, it returns HALT with the reason and options. Progress resets the counter.
+- **A new test that passes on its first run.** `run red` records `TESTS_PASS`; `run step` offers exactly
+  two exits: a killed mutation probe (`run mutation --for-first-pass`) or independent Reviewer inspection
+  (`run test-review`). Neither repeats the same passing run.
 - **The test gate is not `NOT_INSTALLED` when the runner exits successfully.** A "command not found"
   in a test's output does not decide the gate's status.
-- **Deleting tests to meet a linter limit is a FAIL for the Reviewer;** the file is split instead.
-- **Close refuses an unresolved `ASSUMPTION` or `CONFLICT`.** Each one is marked resolved (with the
-  decision and the link) or moves to this backlog with an owner.
-- **`mandao approve` can revoke an approval and annul a log row.** Both record the reason
-  append-only; nothing is deleted.
-- **Decide where `.integrity.json` lives:** in git on every task, only at close, or outside git.
-- **Red first only for the tests the task added or changed.** The red-first guard (`testsWithoutRed`)
-  asks for red only for tests added or changed in the task's diff against the base, not for every test
-  in the declared files. A declared file the diff does not touch asks for nothing (MDO-0011 T4 pivot).
+- **Deleted test cases:** the checkpoint detects cases removed from the task's recorded test baseline and
+  requires `--test-deletion-reason`; the Reviewer blocks a linter-limit reason and requires splitting.
+- **Close refuses unresolved `ASSUMPTION` or `CONFLICT`.** Resolved lines/rows and code examples do not
+  block; unresolved items need a decision and recorded resolution before closure.
+- **`mandao approve` can revoke an approval and annul a log row.** Both append a reasoned event; a revoked
+  document approval returns its documents to draft. History is never deleted, and consumers ignore rows
+  targeted by active events.
+- **Integrity tracking policy:** v2 hashes stay outside git in `.mandao/cache/<ID>/integrity.json`;
+  legacy v1 stays at `_log/.integrity.json` and is not migrated or rewritten.
+- **Red first only for tests changed in the task diff.** `testsWithoutRed` checks added cases only in test
+  files touched by the current task diff; an untouched declared file asks for nothing (MDO-0011 T4 pivot).
 - **Each command records its cost before its last commit.** `run cost --record` runs before the
   command's final commit, so `costs.yml` and `.integrity.json` are not left modified after every step
   (seen after verify and close of MDO-0011).
-- **`approve design` clears what `next` reports.** It hashes every approvable document it confirms, including an already approved `story.md`, so
+- **`approve design` clears what `next` reports.** It hashes every approvable document it confirms, including an already-approved `story.md`, so
   "changed after its approval" can be cleared by the command `next` recommends (Kaizen MDO-0011 L3).
 
-- **Machine-independent test guard:** check local `user.name` and `user.email` in temporary git
-  repositories and prohibit `process.exit()` with pending output in test fixtures/scripts; use
-  `process.exitCode`.
+- **Machine-independent test guard:** all temporary Git repositories use the helper that sets local
+  `user.name` and `user.email`; an AST check rejects raw initializers. Test fixtures/scripts may not call
+  `process.exit()`; use `process.exitCode` so buffered output and cleanup complete.
 
 ## Security gates from the user's CI
 

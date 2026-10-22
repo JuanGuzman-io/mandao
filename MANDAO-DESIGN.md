@@ -669,12 +669,18 @@ checkpoints preserve the full Reviewer answer and enforce matching verdicts; scr
 writes and integrity checks report manual edits. Reviewer output has a versioned JSON findings envelope;
 only open high/critical security findings block PASS. Free text is not interpreted by the guard.
 
-Current red enforcement compares names in declared/recorded test files, including rework. **Pending
-Phase 5:** restrict it to tests added/modified in the task diff, offer mutation evidence or test review
-when the first run is green, and halt unchanged-action loops after the configured limit (default 3).
-Version 2 integrity hashes already live in the ignored local cache (§13); Phase 5 still records the
-explicit tracking policy, including legacy v1 handling. Approval revocation/annulment is also pending;
-logs remain append-only. TDD, independent review and meaningful gates stay required.
+**Implemented (ADR 0048):** red-first checks only changed test files and newly added cases; deleting a
+recorded case requires a reason in the checkpoint and Reviewer pack. A first green test run records
+`TESTS_PASS`; `run step` offers mutation evidence or an independent test review (`TEST_REVIEWED`) rather
+than repeating red. `run step` halts after three identical task/action recommendations without execution
+or approval-log progress. `approve design` hashes all confirmed documents, including an already-approved
+`story.md`. Approval revocation and annulment append reasoned events; consumers ignore targeted rows and
+revoking a document approval returns its status to draft. `close-summary --closed` refuses unresolved
+`ASSUMPTION` and `CONFLICT` markers. A static AST guard requires test repositories to use the local Git
+identity helper and rejects direct `process.exit()` calls in test code. Version 2 integrity stays in the
+ignored cache; version 1 keeps its historical `_log/.integrity.json` path without migration. A successful
+gate is PASS regardless of “command not found” text in its output. TDD, independent review and meaningful
+gates stay required.
 
 ## 15. Review model
 

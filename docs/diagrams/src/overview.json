@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "fb2493a579b6421af72b576657fa84ef325aafefe3a2c30da25561a1400a903b"
+      "sha256": "ed499e903e46512efc5bfc41da9364d409f9d7a1146859d8d4e21997b9f43c98"
     },
     {
       "path": "core/commands/init.md",
@@ -59,7 +59,7 @@
     },
     {
       "path": "src/spec/next.ts",
-      "sha256": "856ea3e70f1c3c99bb2ec416e8e80c0d319b600a8bdf4d040c730436ec0bedf8"
+      "sha256": "46b4dcdb08bcf5dd8f3fbd41e6a557b68d9967641cdb0c9930c428f4784a095c"
     }
   ],
   "specSha256": "9f4504b95eb79a49fc89d6863c13f8e7c841fee43bb6b8ffefdaf19837aa4014",

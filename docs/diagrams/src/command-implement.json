@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "fb2493a579b6421af72b576657fa84ef325aafefe3a2c30da25561a1400a903b"
+      "sha256": "ed499e903e46512efc5bfc41da9364d409f9d7a1146859d8d4e21997b9f43c98"
     },
     {
       "path": "core/commands/init.md",
@@ -54,10 +54,10 @@
       "sha256": "620cd641d06990ef940cb9ead78798d04ee6873ceb446c420e1e2a24f5fef4bd"
     }
   ],
-  "specSha256": "a9ad56e012bca26311f27cfade390a5856ba8280da5b13bec4375d1456704247",
+  "specSha256": "40cac50afb061932f3f45141ce061beb0a583edd8034713127494318e21aad4b",
   "svgSha256": {
-    "light": "cd30f3f4bea4f2f719356559891ba9216c411888625cf6f38197bd77bed39a40",
-    "dark": "b12f847fe200b14e95598554050f4885df322bdbbd6f19647e1565435a1fb43a"
+    "light": "21977c76fd5a08834cec23de89e2ef8cb8919d4c7c3e9bbf13a7221962234432",
+    "dark": "fd760603c66ab292193a652f7f132e054f04bc835cca3fb94fbb93756fec6ca3"
   },
   "spec": {
     "schema_version": 2,
@@ -118,8 +118,8 @@
         "col": 1,
         "type": "backend",
         "label": "1. For each task",
-        "sublabel": "mandao run tasks +9",
-        "width": 157
+        "sublabel": "mandao run tasks +10",
+        "width": 164
       },
       {
         "id": "s2",
