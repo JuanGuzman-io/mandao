@@ -47,13 +47,15 @@ templates:
   - rules/doc-quickstart.md
   - rules/doc-tasks.md
   - rules/budget.md
-scripts: [next, spec-new, trace, diagram, branching, commit-spec, resources, premise]
+  - rules/telemetry.md
+scripts: [next, spec-new, trace, diagram, branching, commit-spec, resources, premise, event]
 approval: required
 ---
 
 # /mandao-specify
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Arguments: {{args}}
 

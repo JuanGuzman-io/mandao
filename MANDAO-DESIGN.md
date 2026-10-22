@@ -655,9 +655,11 @@ Doctor diagnoses Claude cache TTL and its source; Mandao recommends 5m and never
 settings. Session cuts use measured cache/context costs and natural boundaries (ADR 0038), with the
 harness's in-place new-conversation action first and worktree re-entry when needed. Script estimates
 are recorded in v2 state.cut_estimates (legacy session-cuts.md). **Pending Phase 4:** persist a boundary
-ID so the same recommendation is not repeated. **Pending Phase 2:** script-owned timing and question
-events, distinct active/user/agent wait time, costs before the final commit and a corrected historical
-view that leaves original logs untouched.
+ID so the same recommendation is not repeated. **Implemented (ADR 0044):** the script records command,
+classified question/answer, agent and gate events in `execution.md`; Kaizen separates active, user-wait
+and agent-wait durations per command and spec. Gate duration is a subset of active time. Costs are
+recorded before the command's final commit. Historical duplicate costs are recalculated from cumulative
+session snapshots in a derived view; source logs are never rewritten. Incomplete spans remain unmeasured.
 
 ### 14.8 Rules enforced by scripts
 

@@ -42,6 +42,7 @@ No.
 - `mandao run quick-check`
 - `mandao run spec-new`
 - `mandao run quick-log`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

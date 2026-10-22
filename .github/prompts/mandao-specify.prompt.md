@@ -14,6 +14,7 @@ tools:
 # /mandao-specify
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Arguments: ref: ${input:ref:Spec folder, tracker id (PROJ-123) or item URL; empty to choose}, depth: ${input:depth:lite | standard | full (default - standard)}, hotfix: ${input:hotfix:--hotfix for a production fix - branch from branching.hotfix.from, merged back at close}
 

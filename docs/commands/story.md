@@ -38,6 +38,7 @@ Yes: it stops for your approval.
 - `mandao run next`
 - `mandao run spec-new`
 - `mandao run trace`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

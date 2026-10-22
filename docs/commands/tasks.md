@@ -45,6 +45,7 @@ Yes: it stops for your approval.
 - `mandao run trace`
 - `mandao run tasks`
 - `mandao run commit-spec`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

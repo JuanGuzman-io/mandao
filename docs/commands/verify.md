@@ -44,6 +44,7 @@ No approval step of its own.
 - `mandao run status`
 - `mandao run trace`
 - `mandao run commit-spec`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

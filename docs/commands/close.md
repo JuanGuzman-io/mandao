@@ -57,6 +57,7 @@ Yes: it stops for your approval.
 - `mandao run diagram-drift`
 - `mandao run publish-plan`
 - `mandao run commit-spec`
+- `mandao run event`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

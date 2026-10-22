@@ -29,7 +29,7 @@ scope, product behavior, security or irreversible actions.
 |---|---|---|---|
 | [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
 | [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
-| [2 — Measurement](#phase-2--measurement) | latency audit | phase 0 | agreed, pending phase plan approval |
+| [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | implemented; pending PR CI and merge |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | agreed, pending phase plan approval |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | agreed, pending phase plan approval |
 | [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | agreed, pending phase plan approval |
@@ -64,6 +64,13 @@ Evidence: [design reconciliation](audits/2026-10-design-reconciliation.md) and
 latency improvement is claimed by this documentation phase.
 
 ## Phase 2 — Measurement
+
+**Implementation complete on `perf/measurement`; pending PR CI and merge.**
+
+- [x] Script-stamped command, question/answer, agent and gate lifecycle events, with question classes.
+- [x] Kaizen reports active, user-wait and agent-wait timing by command and spec; incomplete intervals remain unknown.
+- [x] Cost instructions record before final/task commits, and historical duplicated snapshots have a corrected derived view.
+- [x] Added ADR 0044 and updated the design, README, CLI docs and generated command/diagram docs.
 
 Acceptance criteria:
 

@@ -15,14 +15,15 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
 capabilities: [read, edit, shell, mcp]
-templates: [rules/context.md, rules/consistency-check.md, rules/spec-docs.md, rules/doc-requirements.md, rules/budget.md]
-scripts: [next, trace, diagram, commit-spec]
+templates: [rules/context.md, rules/consistency-check.md, rules/spec-docs.md, rules/doc-requirements.md, rules/budget.md, rules/telemetry.md]
+scripts: [next, trace, diagram, commit-spec, event]
 approval: required
 ---
 
 # /mandao-clarify
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Spec: {{arg:spec}}
 

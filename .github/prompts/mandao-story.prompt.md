@@ -14,6 +14,7 @@ tools:
 # /mandao-story
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Input: ref: ${input:ref:Tracker id or URL, or a one-line idea}
 

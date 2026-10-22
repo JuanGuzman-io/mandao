@@ -16,14 +16,15 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md", description: polyrepo slices }
 capabilities: [read, search, edit, shell]
-templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md]
-scripts: [where, next, trace, tasks, commit-spec]
+templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md, rules/telemetry.md]
+scripts: [where, next, trace, tasks, commit-spec, event]
 approval: required
 ---
 
 # /mandao-tasks
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Spec: {{arg:spec}}
 

@@ -13,6 +13,7 @@ import { measureSessions } from '../scripts/session-turns.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { docPath, dropLogCache, hasExecutionLog, logPath, specLogInCache } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
+import { readTelemetryEvents } from '../scripts/telemetry.js';
 import {
   acStatus,
   type BugsAfterMerge,
@@ -20,7 +21,9 @@ import {
   type CloseSummary,
   changelogLine,
   compareTdd,
+  correctHistoricalCosts,
   costKaizen,
+  historicalDuplicateAmount,
   impactItems,
   type LeaderSwitch,
   parseCloseSummary,
@@ -31,6 +34,7 @@ import {
   renderCloseSummary,
   sessionCutKaizen,
   specMetrics,
+  summarizeTelemetry,
   upsertChangelog,
   verifyResults,
   withEnvironment,
@@ -100,10 +104,35 @@ function registerKaizen(run: Command, ctx: CliContext) {
     .action((ref: string, o: { trackerBugs?: string }) => {
       const config = readConfig(ctx.root());
       const spec = readSpec(findSpec(ctx.root(), config, ref));
+      const folders = existsSync(join(ctx.root(), config.paths.specs))
+        ? readdirSync(join(ctx.root(), config.paths.specs)).filter((d) => hasExecutionLog(join(ctx.root(), config.paths.specs, d)))
+        : [];
+      const historical = correctHistoricalCosts(
+        folders.flatMap((name) => specCosts(join(ctx.root(), config.paths.specs, name)).map((entry) => ({ ...entry, spec: name }))),
+      );
       json({
         ...metricsOf(config, spec, o.trackerBugs === undefined ? undefined : Number(o.trackerBugs)),
         costs: specSpend(spec.dir, config.budget.per_spec),
         sessions: sessionsOf(config, spec),
+        timing: summarizeTelemetry(readTelemetryEvents(spec.dir)),
+        correctedHistoricalCosts: Object.fromEntries(
+          Object.entries(historical.byBasis)
+            .filter(([, totals]) => totals.rawBySpec[spec.name] !== undefined)
+            .map(([basis, totals]) => [
+              basis,
+              {
+                rawUsd: totals.rawBySpec[spec.name],
+                correctedUsd: totals.bySpec[spec.name] ?? 0,
+                duplicateUsd: historicalDuplicateAmount(totals.rawBySpec[spec.name] ?? 0, totals.bySpec[spec.name] ?? 0),
+                byCommand: Object.fromEntries(
+                  Object.entries(totals.rawBySpecCommand[spec.name] ?? {}).map(([command, rawUsd]) => {
+                    const correctedUsd = totals.bySpecCommand[spec.name]?.[command] ?? 0;
+                    return [command, { rawUsd, correctedUsd, duplicateUsd: historicalDuplicateAmount(rawUsd, correctedUsd) }];
+                  }),
+                ),
+              },
+            ]),
+        ),
       });
     });
 
@@ -121,7 +150,18 @@ function registerKaizen(run: Command, ctx: CliContext) {
         leaderSwitch(ctx.root(), config),
       );
       const sessionCut = sessionCutKaizen(folders.map((s) => ({ spec: s.name, measure: sessionsOf(config, s) })));
-      json({ ...compareTdd(metrics, config.kaizen.min_specs_per_group), costs, sessionCut, specs: metrics });
+      const correctedHistoricalCosts = correctHistoricalCosts(
+        folders.flatMap((spec) => specCosts(spec.dir).map((entry) => ({ ...entry, spec: spec.name }))),
+      );
+      const timingBySpec = folders.map((spec) => ({ spec: spec.name, commands: summarizeTelemetry(readTelemetryEvents(spec.dir)) }));
+      json({
+        ...compareTdd(metrics, config.kaizen.min_specs_per_group),
+        costs,
+        correctedHistoricalCosts,
+        timingBySpec,
+        sessionCut,
+        specs: metrics,
+      });
     });
 }
 

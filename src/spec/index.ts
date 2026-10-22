@@ -23,6 +23,7 @@ export * from './state.js';
 export * from './story.js';
 export * from './task-index.js';
 export * from './tasks.js';
+export * from './telemetry.js';
 export * from './timeline.js';
 export * from './trace.js';
 export * from './verify.js';

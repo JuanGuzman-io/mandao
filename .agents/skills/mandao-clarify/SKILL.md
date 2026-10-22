@@ -7,6 +7,7 @@ description: Resolve [NEEDS CLARIFICATION] items and Consistency Check findings,
 # /mandao-clarify
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Spec: <spec>
 

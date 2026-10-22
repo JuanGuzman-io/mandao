@@ -25,12 +25,14 @@ templates:
   - rules/doc-verify.md
   - rules/doc-quickstart.md
   - rules/budget.md
-scripts: [where, next, verify-plan, tests, build, status, trace, commit-spec]
+  - rules/telemetry.md
+scripts: [where, next, verify-plan, tests, build, status, trace, commit-spec, event]
 ---
 
 # /mandao-verify
 
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
+Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
 Spec: {{arg:spec}}
 

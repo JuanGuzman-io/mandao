@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "00008cc79210d887f73d9f8ec76565bd5b876e2d2969f12c0bfec330bd566633"
+      "sha256": "22590a2a1eac4d8f1186e55c94faa45d17cc2a41bafe1347ee66faae441b9d55"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "d2a55727ee10630b1570f2b0901adf90d86387ab984418d3c0305adcccd7bb95"
+      "sha256": "ac8da4686b9e999f5472d5ba00262608dd386942767a5fb140b15a7aaf99c508"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "64237584166cc8f66162eb2757a1bfb0f2720cd538a7a8f2809dde9f61cd63a1"
+      "sha256": "e4fb2355bc1dd53b4550c10aeda542d1bf25f7c641c9d2ce19d222fd7c664b1a"
     },
     {
       "path": "core/commands/init.md",
@@ -31,7 +31,7 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "b0eb7fb2de8bea846aa44a7c46e8e091ecf90fbdb8e1101404acccc79996b160"
+      "sha256": "de8c4905699f6b05fa91dff38e669d37702d1217e55557ac158602b7f7ccc591"
     },
     {
       "path": "core/commands/resume.md",
@@ -39,19 +39,19 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "c110bb915d420834b215d56977c12a861f5a482a5edc26c24d14b176aaffd235"
+      "sha256": "2514251e717286e5cafc28238982cad42f1f7d5db9d5ae86c4d537dc1d08aa86"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "3614cf0f320b594d849fd177b8bd7b9a7856d0353c75af124114df306a00d47f"
+      "sha256": "177782658852d8fd1d96acaf02298042276a75038ed6734c40747052af194c36"
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "124975931aec6736bcb0d7557c6493f9f102f9b4b2f9e10d461c1c278bacca8e"
+      "sha256": "a44b33dd5eb916d0b87e96b508eaa599dd249aa938698eb684a4a0b7460e06c6"
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "ca1abdb14e4641315cf3bcc3e80b482b74eb879e9dab96978f1279bfda00ab28"
+      "sha256": "620cd641d06990ef940cb9ead78798d04ee6873ceb446c420e1e2a24f5fef4bd"
     }
   ],
   "specSha256": "5ab623dd96fc991e9f9694400515ddeb6d68a97188803725a109c11bc421f0ae",

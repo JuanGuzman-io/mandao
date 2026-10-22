@@ -7,6 +7,7 @@ description: Run testers per suite on the impacted tests, trace every AC to its 
 # /mandao-verify
 
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
+Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
 Spec: <spec>
 
