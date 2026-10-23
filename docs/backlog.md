@@ -925,5 +925,10 @@ With two specs in parallel this doubles the PE's turns. Fix: a command may conti
 `run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
 session, stopping only at the decisions the process reserves to the PE.
 
+**Per-task cost depends on the agent remembering (2026-10-23).** In MDO-0002 the agent did not record the
+cost before each task commit, as the rule asks, and recorded it once at the end. Cost recording must be
+part of the script the commit already runs (`run commit` records it or refuses), not a step the agent can
+skip.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
