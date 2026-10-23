@@ -747,5 +747,17 @@ prose. The agent commands' pages (`docs/commands/<command>.md`) list arguments l
 - One index in the docs with every agent command and every CLI command, linking their pages; the installed
   guide carries the same index (see the item above).
 
+**The constitution approves stack choices without checking them in the environment (maintainer,
+2026-10-23).** During `/mandao-constitution` the maintainer and the agent chose `sqlite-vec` as the vector
+store, checked only against PyPI (version, license, date). `/mandao-specify` then checked it on the
+machine: the pyenv Python 3.13.4 cannot load SQLite extensions (`AttributeError`), and the embeddings
+dependency has no build for Python 3.15. The approved architecture had to be reopened (`sqlite-vec` →
+Qdrant local mode) in the middle of the first spec, through `/mandao-constitution` in active mode. Fix: the
+constitution verifies every stack choice it writes the way specify's Premise Ledger does (install or import
+it on the project's runtime, record the command, its output and the runtime version), states the runtime it
+was checked on and pins it (`.python-version`, `engines`, …), and marks an unchecked choice `UNVERIFIED`
+so approval shows it. Portability across the runtimes evaluators or teammates may use is part of the check
+when the project must run locally.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
