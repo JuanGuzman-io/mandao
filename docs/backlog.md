@@ -44,7 +44,8 @@ scope, product behavior, security or irreversible actions.
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | complete; PR #17 merged (`5d00295`) |
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | complete; PR #19 merged (`76f3649`) |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
-| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | plan approved; in progress on `perf/phase-13` |
+| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | complete; PR #20 merged (`91919de`) |
+| [Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | agreed; backlog |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
@@ -369,6 +370,24 @@ Approved plan:
   scripts), installed only on acceptance with automatic invocation disabled. `Leonxlnx/taste-skill` stays
   in this backlog (its scripts launch Chrome and download assets).
 - After the phase, repeat the external trial with a front-end spec, accepting and declining the mock.
+
+## Requirements document intake in story
+
+**Agreed (maintainer, 2026-10-22); backlog.** `/mandao-story --from <file>` (PDF, DOCX or Markdown) for
+documents that carry many requirements:
+
+1. Separate the business context (rules, glossary, actors) and propose it for the product context
+   (`docs/constitution/product.md`, `business-rules.md`, `glossary.md`), applied only with the user's
+   approval.
+2. Propose epics and stories with AC (INVEST criteria), each with a reference to the page or section of
+   the source document. A story without a reference is marked as inferred.
+3. Ambiguities and contradictions in the document become `OPEN` or `CONFLICT`, never resolved silently.
+4. Suggest a priority (MoSCoW or RICE, with `product-manager-toolkit` when installed) and the
+   dependencies between stories.
+5. The result is a single proposal file (for example `docs/product/intake/<document>-<date>.md`), not
+   specs. The PO chooses which stories to open; each continues with `mandao start` + story, or goes to the
+   tracker when an MCP is connected.
+6. Large documents are processed by sections, without losing the references.
 
 ## Task change manifest redesign
 
