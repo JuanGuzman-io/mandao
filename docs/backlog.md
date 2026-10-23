@@ -48,6 +48,7 @@ scope, product behavior, security or irreversible actions.
 | [14 — Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | plan approved; in progress on `perf/phase-14` |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
+| [13c — Mock skill scope, after phase 14](#phase-13c--after-phase-14) | phase 13 trial | phase 14 merged | agreed; after phase 14 |
 
 ## Phase 0 — Documentation and backlog
 
@@ -556,3 +557,17 @@ with emoji and trailers) and does not infer conventions from the repository's hi
    `scripts/install-hooks.mjs` runs from `prepare` in Mandao's own repository for contributors; it is
    not in the published package (`files`: `dist`, `core`) and never replaces a hook that is not Mandao's.
    This phase adds a test that pins it.
+
+## Phase 13c — after phase 14
+
+**Agreed (maintainer, 2026-10-22); runs after phase 14 merges**, because it touches files that phase 14
+changes (commands, rules, catalog, lock, diagrams and docs). Found in the phase 13 trial; the code fixes
+of that trial are phase 13b.
+
+1. **`landing-page-design` only for landing or marketing pages.** The catalog's `ai-design-skills` installs
+   the upstream skill `landing-page-design`, which is oriented to landing pages. The rule loads it only
+   when the mock is a landing or marketing page. Application screens (forms, tables, flows) are mocked
+   without it, starting from `ux.md` and the existing style.
+2. **`ux.md` and the existing product style always take priority over the skill**, in every case.
+3. **Find an interface design skill for application screens** (forms, tables, flows) and evaluate it for
+   the catalog.
