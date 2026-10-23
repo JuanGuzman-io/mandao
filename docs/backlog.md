@@ -918,5 +918,12 @@ accepting `claude-code` as an alias.
 - After 12 of 12 tasks, `run next` still recommends `/mandao-specify` for research gate R3, which the PE had
   accepted in C-7 (already listed above: an accepted exception must clear `next`).
 
+**Commands cannot chain (PE, 2026-10-23).** The PE asked MDO-0001's session to go from clarify to
+implement to verify "without stopping between steps"; the agent answered that it cannot launch
+`/mandao-implement` itself ("it is a command you have to run"), so every step hands control back to the PE.
+With two specs in parallel this doubles the PE's turns. Fix: a command may continue into the next one
+`run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
+session, stopping only at the decisions the process reserves to the PE.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
