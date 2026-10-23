@@ -5,6 +5,7 @@ import type { CliContext } from './context.js';
 import { registerDeliver } from './deliver.js';
 import { registerExtensions } from './extensions.js';
 import { registerHook } from './hook.js';
+import { registerIntake } from './intake.js';
 import { registerModels } from './models-command.js';
 import { registerRun } from './run.js';
 import { registerSetup } from './setup.js';
@@ -31,5 +32,6 @@ export function buildProgram(cwd: () => string = () => process.cwd()): Command {
   registerWorktree(program, ctx);
   registerDeliver(program, ctx);
   registerHook(program, ctx);
+  registerIntake(program, ctx);
   return program;
 }

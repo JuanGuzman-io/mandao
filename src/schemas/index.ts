@@ -4,6 +4,7 @@ export * from './command.js';
 export * from './common.js';
 export * from './config.js';
 export * from './format.js';
+export * from './intake.js';
 export * from './lock.js';
 export * from './models.js';
 export * from './research.js';
