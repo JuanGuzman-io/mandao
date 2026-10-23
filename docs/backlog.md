@@ -759,5 +759,19 @@ was checked on and pins it (`.python-version`, `engines`, …), and marks an unc
 so approval shows it. Portability across the runtimes evaluators or teammates may use is part of the check
 when the project must run locally.
 
+**The research gate blocks without a declared web-search MCP (2026-10-23).** In MDO-0001 the gate kept
+research item R3 blocked because no web-search MCP server is declared, although Claude Code has native web
+search (`doctor` says "possible native support does not count") and a premise run on the machine (P2) had
+already proved the point. The user had to be told to type an explicit acceptance. Fix: the gate offers, as
+one of its own options, accepting a recorded premise run as the evidence (recorded as the PO's decision),
+and says plainly what declaring a web-search server would change.
+
+**A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
+(active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
+clarification C-3, `design.md` (D4, D11) and `data-model.md`; the agent pointed at `/mandao-clarify` by
+hand. Fix: a constitution change made from inside a spec lists the spec documents it contradicts (from the
+spec's references to the changed constitution items) and `next` recommends the update before approval,
+with the exact command.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
