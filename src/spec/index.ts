@@ -7,6 +7,8 @@ export * from './delivery.js';
 export * from './diagram.js';
 export * from './diagram-graph.js';
 export * from './execution.js';
+export * from './intake.js';
+export * from './intake-proposal.js';
 export * from './kaizen.js';
 export * from './kaizen-costs.js';
 export * from './kaizen-sessions.js';

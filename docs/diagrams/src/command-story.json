@@ -43,7 +43,7 @@
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "e610cf176a4c30059e34e66cf2d0d740e74790ef85a4d57ddb3d1175994e3595"
+      "sha256": "f24e3e300e0714f69b95a2b2da28145ebab351400ed35639a2ed6dd833c2d151"
     },
     {
       "path": "core/commands/tasks.md",
@@ -54,10 +54,10 @@
       "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
     }
   ],
-  "specSha256": "3db2998b017a031eaab3b8a1e848b45043fbfd37776f6b00e429eb28c2943ea5",
+  "specSha256": "1dfcdc47dc6a20c5addc8c20f8edafa4e82600df253aea9f5140f015e4cdf956",
   "svgSha256": {
-    "light": "8b73afb591974dee1a8f5d678b61d12e9dfdc41c5744f11f6cb33ea05e6b47f1",
-    "dark": "db7e916121fec2eff51ee0cc8d2662b896d77b236d69641b281691db81f19b7c"
+    "light": "677df055cc0246382386a409f3f33afc3a880c08adda35582a33267df4f1cb1b",
+    "dark": "98d34fa64c4921920813cdbd4a0d5c0cea97f4275b3b5e57b16638f51e76a491"
   },
   "spec": {
     "schema_version": 2,
@@ -113,39 +113,48 @@
         "lane": "steps",
         "col": 0,
         "type": "backend",
-        "label": "1. Find or create the story",
-        "sublabel": "mandao run spec-new",
-        "width": 213
+        "label": "0. From a document",
+        "sublabel": "mandao run intake-extract +2",
+        "width": 220
       },
       {
         "id": "s1",
         "lane": "steps",
         "col": 1,
         "type": "backend",
-        "label": "2. Sufficiency rubric",
-        "width": 171
+        "label": "1. Find or create the story",
+        "sublabel": "mandao run spec-new",
+        "width": 213
       },
       {
         "id": "s2",
         "lane": "steps",
         "col": 2,
         "type": "backend",
-        "label": "3. Write story.md",
-        "width": 143
+        "label": "2. Sufficiency rubric",
+        "width": 171
       },
       {
         "id": "s3",
         "lane": "steps",
         "col": 3,
         "type": "backend",
-        "label": "3b. UI mock",
-        "sublabel": "mandao run mock-offer",
-        "width": 171
+        "label": "3. Write story.md",
+        "width": 143
       },
       {
         "id": "s4",
         "lane": "steps-2",
         "col": 0,
+        "type": "backend",
+        "label": "3b. UI mock",
+        "sublabel": "mandao run mock-offer",
+        "width": 171
+      },
+      {
+        "id": "s5",
+        "lane": "steps-2",
+        "col": 1,
         "type": "security",
         "label": "4. Approve",
         "sublabel": "mandao run next",
@@ -158,6 +167,14 @@
         "type": "database",
         "label": "specs/<ID>/story.md",
         "width": 157
+      },
+      {
+        "id": "w1",
+        "lane": "writes",
+        "col": 1,
+        "type": "database",
+        "label": "docs/product/intake/<doc>-<date>.md",
+        "width": 269
       }
     ],
     "edges": [
@@ -182,9 +199,14 @@
         "to": "s4"
       },
       {
-        "id": "s4-writes",
+        "id": "s4-s5",
         "from": "s4",
-        "to": "w0",
+        "to": "s5"
+      },
+      {
+        "id": "s5-writes",
+        "from": "s5",
+        "to": "w1",
         "label": "writes",
         "variant": "dashed"
       }

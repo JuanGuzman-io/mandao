@@ -11,7 +11,7 @@ Create or enrich a user story with enough business context: sufficiency rubric, 
 
 ## Arguments
 
-- `ref`: Tracker id or URL, or a one-line idea
+- `ref`: Tracker id or URL, a one-line idea, --from <file> (Markdown or PDF), or --intake <proposal>#I-n
 
 ## Reads
 
@@ -21,9 +21,11 @@ Create or enrich a user story with enough business context: sufficiency rubric, 
 ## Writes
 
 - `specs/<ID>-<slug>/story.md`
+- `docs/product/intake/<doc>-<date>.md`
 
 ## Steps
 
+0. From a document
 1. Find or create the story
 2. Sufficiency rubric
 3. Write story.md
@@ -41,6 +43,10 @@ Yes: it stops for your approval.
 - `mandao run trace`
 - `mandao run event`
 - `mandao run mock-offer`
+- `mandao run intake-extract`
+- `mandao run intake-check`
+- `mandao run intake-story`
+- `mandao run intake-open`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

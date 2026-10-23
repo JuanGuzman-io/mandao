@@ -208,3 +208,33 @@ files: [checkout.html]   # every file of mockups/ except the README
 
 `mandao approve <ID> design` refuses a missing README, a listed file that is missing, or `source: design`
 with no export file (`.html`, `.htm`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, `.pdf`). Approval hashes include `mockups/`.
+
+## `docs/product/intake/<doc>-<YYYY-MM-DD>.md` — requirements document intake (ADR 0057)
+
+Written by `/mandao-story --from <file>` from the template `product/intake-proposal.md`. Frontmatter:
+
+```yaml
+schema_version: 1
+source: { path: "docs/inbox/rfp.pdf", sha256: "<hex>", extractor: pdftotext }   # pdftotext | markdown | native
+doc: rfp                 # slug of the file's base name; its cache is .mandao/cache/intake/<doc>/
+date: 2026-10-22
+status: proposed         # proposed | closed (mandao intake close)
+```
+
+The body sections, parsed by heading by `mandao run intake-check`:
+
+| Section | Shape | IDs |
+|---|---|---|
+| `## Business context` | table `ID \| Kind \| Proposal \| Target \| Ref \| Status`; Kind `rule \| term \| actor`; Target `business-rules.md \| glossary.md \| product.md`; Status `proposed \| approved \| applied \| rejected \| CONFLICT` | `C-n` |
+| `## Epics` | `### E-n — <name>`, one paragraph ending `refs: [p. 3, p. 4]` | `E-n` |
+| `## Stories` | `### I-n — <title>`, then bullets `epic`, `refs` (or `inferred: true`), `priority` (MoSCoW or RICE), `depends_on`, `invest`, `opened` (only once opened), then `#### AC-n — <name>` with GIVEN / WHEN / THEN | `I-n` |
+| `## Open and conflicts` | table `ID \| Type \| Question or contradiction \| Ref \| Status`; Type `OPEN \| CONFLICT` | `Q-n` |
+| `## Coverage` | table `Section \| Ref \| Covered by \| Status`; one row per section; Status `covered \| no requirement \| requires OCR`; Covered by lists IDs, or `—` | — |
+
+Refs are `p. N` (PDF) or `§ A > B` (Markdown) and must exist in the cache's `sections.json`; without the
+cache `references-unverified` is a warning, and a sha256 that differs from the cached extraction is the
+problem `source-changed` (`intake-extract --force` re-extracts over a cache of another file). IDs must
+use their prefix (`C-n`, `E-n`, `I-n`, `Q-n`), and "Covered by" is `—` on `no requirement` and `requires
+OCR` rows. The check also refuses missing epics, unknown or cyclic
+`depends_on`, reused IDs, an OCR section that is not `requires OCR`, and `status: closed` while a `C-n`
+is still `proposed`.
