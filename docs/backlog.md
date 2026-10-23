@@ -767,7 +767,9 @@ one of its own options, accepting a recorded premise run as the evidence (record
 and says plainly what declaring a web-search server would change. Once that exception is recorded, the gate
 and `run next` must treat the item as resolved: today the gate keeps flagging R3/R5 and `next` keeps
 recommending `/mandao-specify` after the PO accepted the local evidence, so the user has to ignore the
-recommended step to approve.
+recommended step to approve. After 15 of 15 tasks, `next` still pointed back to `/mandao-specify`, saying
+R3 relies on model knowledge without web evidence, although R3 in `research.md` cites sqlite.org; the gate
+must name the exact claim it rejects and why the cited source does not count.
 
 **A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
 (active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
