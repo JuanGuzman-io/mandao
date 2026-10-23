@@ -51,6 +51,7 @@ scope, product behavior, security or irreversible actions.
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
+| [Intake to first story in the same session](#intake-to-first-story-in-the-same-session) | beta trial (asistente-asesores) | phase 14 | agreed; backlog; inconsistent hand-overs between intake, start, story and specify |
 
 ## Phase 0 — Documentation and backlog
 
@@ -625,3 +626,343 @@ Maintainer steps:
 
 If `npm dist-tag add` is refused, run the command the script prints. A published version is never
 republished: a fix ships as `0.1.0-beta.1`.
+
+## Intake to first story in the same session
+
+**Agreed (maintainer, 2026-10-23); backlog.** Found running the beta on a real technical test
+(`/mandao-story --from` over an 8-page PDF, constitution in a custom `paths.constitution`).
+
+1. **Continue in the same chat.** After `/mandao-story --from` writes the proposal, the user expects to
+   go on with the first story in that same session. Today the next step is `mandao start` in a terminal,
+   which creates a worktree and opens a new session; running `/mandao-story --intake …#I-n` directly
+   leaves the work on the current branch (`run spec-new` only proposes the branch and worktree), which
+   fails later when that branch is protected. `/mandao-story --intake` (and plain `/mandao-story` with no
+   spec) should create the spec in place when none exists: the branch from the configured model in the
+   current checkout, the spec folder and the start record, with the worktree only as an option. The
+   proposal and constitution changes the intake left uncommitted must reach that branch (commit them, or
+   carry them over).
+2. **Configured paths.** `rules/intake.md` hard-codes `docs/constitution/` and the proposal path
+   `docs/product/intake/`; they must follow `paths.constitution` and a configurable intake path, as the
+   other commands do.
+3. **Explain the next step.** The intake's closing message names `mandao start` without saying it is a
+   terminal command that creates the branch and worktree; with item 1 the message points to the
+   in-session step instead.
+4. **Group stories into specs.** An intake of 11 stories suggested opening them one by one; the
+   proposal should suggest which stories form one spec (rule 8 of `rules/spec-docs.md`: dependent AC are
+   one spec) and how to mark several `I-n` as opened by the same spec.
+5. **`mandao start` ignores the intake.** Started for an intake story, `mandao start --open` opened the
+   harness with `/mandao-specify <ID> --depth lite`: it skipped `/mandao-story --intake` (losing the
+   prefilled AC, references and resolved questions) and guessed lite depth for a spec that the source
+   document needs at standard (specification, plan and tasks). The worktree was also cut from the last
+   commit, without the uncommitted proposal. `start` should detect an open intake proposal, carry it
+   over, and suggest `story --intake` with a depth derived from the proposal.
+6. **`/mandao-specify` without a story ignores the intake.** Run on the new spec, it found no story and
+   asked the scope from scratch (scope, wording, depth), proposing options that differ from the
+   proposal's grouping. It never looked for the open intake proposal, so the prefilled AC, the page
+   references and the resolved questions (Q-1 to Q-6) would have had to be retyped. When an intake
+   proposal names this spec's stories, or an unopened one matches the title, specify must offer to
+   start from it (through `story --intake`) instead of eliciting.
+
+**The underlying defect: the flows are inconsistent (maintainer, 2026-10-23).** `story --from`, `mandao
+start`, `specify` and `story --intake` each assume a different next step, and none reads the state the
+others left: the intake recommends `start`, `start` opens `specify --depth lite`, and `specify` elicits as
+if there were no proposal. The fix is one shared rule for "what comes next" after an intake, read by
+`next`, `start`, `story` and `specify` alike (the intake proposal and its opened stories as state), with
+a test that runs `--from` → first story → specify end to end and checks every hand-over.
+
+**Requirement (maintainer, 2026-10-23): no manual branches or git commands in any documented flow.**
+"There is no reason we should have to create branches by hand; that must be well defined in the
+commands and in the processes." Mandao's commands own the branch, the worktree and moving pending work
+onto them; the user only runs Mandao commands and answers questions.
+
+Evidence: the steps the maintainer had to run by hand in the trial, each a gap to close.
+
+| Manual step | Why it was needed | What Mandao must do instead |
+|---|---|---|
+| Decide between `mandao start`, a hand-made branch or working on `main` | the intake's next step did not say where the spec's branch comes from | one documented path: the command that opens the spec creates the branch per `branching` |
+| `git stash` in `main`, `git stash pop` in the worktree | `start` cut the worktree from the last commit, without the intake's uncommitted proposal and constitution changes | carry the intake's pending files onto the spec branch, or refuse with the exact step it will take |
+| Cancel `/mandao-specify --depth lite` that `start` opened | `start` did not hand over to `story --intake` | `start` (or the in-session path) opens the intake story |
+| `git worktree remove --force` and `git branch -D` | there is no Mandao command to abandon or restart a spec that was started by mistake | a command to abandon or restart a started spec, which removes its worktree and branch after confirmation and frees or keeps the ID explicitly |
+| `git switch -c feat/MDO-0001-…` with the same name | to keep the spec ID and carry the pending changes in the same checkout | the in-session spec creation of item 1 |
+| Editing the proposal to close an open question by hand | the agent asked the PO, but there is no step that records the answer | `intake-check` or the story command records PO answers in the proposal |
+
+Also seen while writing the first story in place: `run spec-new` proposed `MDO-0002` because the branch
+`feat/MDO-0001-…` already existed, so the agent set the ID by hand (an existing spec branch with no spec
+must be reused, not skipped); and the run's cost and telemetry went to `quick` because the spec did not
+exist when the command started (they must move to the spec once it is created).
+
+**Worktree policy is contradictory (maintainer, 2026-10-23).** After the worktree `start` made was
+removed and the spec continued on its branch in the main checkout (advice given in the trial, without
+knowing the rule below), `/mandao-specify` asked how to rebuild the worktree and offered three options:
+commit on `main` (a protected branch under the project's `feature-branch` model), move everything to the
+spec branch, or stay without a worktree (with the warning that `implement` may refuse). The rules
+disagree: ADR 0015 and `specify` say later commands refuse to work outside the worktree, and `implement`
+checks `run where` and refuses; item 1 above asks for the worktree to be optional. Decide one policy,
+record it in one place (ADR 0015 and the guide), and make `start`, `story`, `specify`, `implement`,
+`next` and `doctor` follow it the same way.
+
+Rules for every command, so these inconsistencies stop:
+
+- **Never offer an option that breaks the project's configuration**: no commit on a protected branch,
+  no step against `branching`. If no valid option exists, say why and stop.
+- **Never offer an option that a later command will refuse** (working outside a worktree when
+  `implement` requires one). The option list comes from the same rule the later command checks.
+- **One recommended way, done by the command**: the command performs it after one confirmation; the
+  user does not run git.
+- **The state decides, not the agent**: whether a spec has a branch, a worktree and its pending files is
+  read from a script (`run where`, `run spec-new`), and every command reads the same answer.
+
+**The next step is not copy-ready (maintainer, 2026-10-23).** When a command ends it says "continue with
+/mandao-specify" without the spec ID or its arguments, so the user cannot copy and paste it. Cause:
+`src/spec/next.ts` returns bare slash commands (`'/mandao-specify'`, `'/mandao-clarify'`, …; only
+`mandao approve …` carries the ID), and each command closes with a loose "names the command that follows;
+give it". Fix: `run next` returns complete invocations (spec ID and only the arguments that change
+something; no `--depth standard`, which is the default), written the way the active harness invokes them;
+one shared closing rule in a template every command loads (the recommended command alone in a code block,
+then the options, each complete, and a new-session action first when needed); tests that `next` never
+returns a slash command without the ID when there is a spec.
+
+**Command arguments are not documented in the project (maintainer, 2026-10-23).** `mandao start` suggested
+`--depth lite` and the user could not tell what `--depth` does or which values exist. The per-command
+pages (`docs/commands/<command>.md`: arguments, values, defaults, outputs, steps) live only in the GitHub
+repository and are not in the npm package; the project only gets `.mandao/guide.md`, one line per command
+with no arguments. Fix: the installed guide lists, per command, its arguments with values, default and an
+example (or the package ships the command pages and the guide links them).
+
+**The repository docs do not list every command and flag (maintainer, 2026-10-23).** The aim: the repo
+docs make clear every command that exists and its flags. Measured on `main` (`0.1.0-beta.0`):
+`mandao deliver` is missing from `docs/cli.md`; 18 of the 54 `mandao run` subcommands are not documented
+there (`branching`, `loop`, `commit-spec`, `test-review`, `diagram-drift`, `diagram`, `close-summary`,
+`release-status`, `quick-log`, `research`, `premise`, `archify`, `security-scanning`, `mock-offer`,
+`mock-install`, `quick-check`, `models`, `fingerprint`); CLI flags appear only partly, inside each row's
+prose. The agent commands' pages (`docs/commands/<command>.md`) list arguments loosely: `specify` documents
+"`depth`: lite | standard | full (default: standard)" while every hand-over writes `--depth lite`, and
+`story` buries `--from` and `--intake` inside the `ref` description. Fix:
+
+- `docs/cli.md` is derived from the CLI definitions (every command, subcommand and flag with its values
+  and default), like the command pages are derived from `core/commands`, with a check that fails when a
+  command or flag is undocumented.
+- Each agent command page lists its arguments and flags one per line: syntax as typed (`--depth lite`),
+  values, default, an example; one syntax used everywhere (pages, hand-overs, `next`).
+- One index in the docs with every agent command and every CLI command, linking their pages; the installed
+  guide carries the same index (see the item above).
+
+**The constitution approves stack choices without checking them in the environment (maintainer,
+2026-10-23).** During `/mandao-constitution` the maintainer and the agent chose `sqlite-vec` as the vector
+store, checked only against PyPI (version, license, date). `/mandao-specify` then checked it on the
+machine: the pyenv Python 3.13.4 cannot load SQLite extensions (`AttributeError`), and the embeddings
+dependency has no build for Python 3.15. The approved architecture had to be reopened (`sqlite-vec` →
+Qdrant local mode) in the middle of the first spec, through `/mandao-constitution` in active mode. Fix: the
+constitution verifies every stack choice it writes the way specify's Premise Ledger does (install or import
+it on the project's runtime, record the command, its output and the runtime version), states the runtime it
+was checked on and pins it (`.python-version`, `engines`, …), and marks an unchecked choice `UNVERIFIED`
+so approval shows it. Portability across the runtimes evaluators or teammates may use is part of the check
+when the project must run locally.
+
+**The research gate blocks without a declared web-search MCP (2026-10-23).** In MDO-0001 the gate kept
+research item R3 blocked because no web-search MCP server is declared, although Claude Code has native web
+search (`doctor` says "possible native support does not count") and a premise run on the machine (P2) had
+already proved the point. The user had to be told to type an explicit acceptance. Fix: the gate offers, as
+one of its own options, accepting a recorded premise run as the evidence (recorded as the PO's decision),
+and says plainly what declaring a web-search server would change. Once that exception is recorded, the gate
+and `run next` must treat the item as resolved: today the gate keeps flagging R3/R5 and `next` keeps
+recommending `/mandao-specify` after the PO accepted the local evidence, so the user has to ignore the
+recommended step to approve. After 15 of 15 tasks, `next` still pointed back to `/mandao-specify`, saying
+R3 relies on model knowledge without web evidence, although R3 in `research.md` cites sqlite.org; the gate
+must name the exact claim it rejects and why the cited source does not count.
+
+**A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
+(active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
+clarification C-3, `design.md` (D4, D11) and `data-model.md`; the agent pointed at `/mandao-clarify` by
+hand. Fix: a constitution change made from inside a spec lists the spec documents it contradicts (from the
+spec's references to the changed constitution items) and `next` recommends the update before approval,
+with the exact command.
+
+**Roles assume a team; a solo maintainer is a PE (maintainer, 2026-10-23).** The constitution templates
+set `owner: PO` (product, business rules) and `owner: tech lead` (architecture), and the commands ask "the
+PO decides" or "the tech lead decides". The maintainer works alone and signs every decision as PE
+(Product Engineer); the agent only wrote "PE" because it was told. Fix: a configurable role map (e.g.
+`roles: { po: PE, tech_lead: PE }` in `.mandao/config.yml`, asked at `init`), used by the templates'
+`owner`, the questions and every recorded attribution.
+
+**Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
+leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks
+them up: MDO-0001's tasks were written with "no gate commands declared, each task is verified with its own
+`uv run pytest …`", so the first implementation would run with no lint, format or typecheck gate. Fix: the
+task that creates the manifest declares the gates (proposed from the stack in `standards.md`, approved by
+the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
+project whose constitution lists gates as OPEN. The proposal must include every gate a later command
+requires: in MDO-0001 the PE approved four gates in T1, and `run commit` then stopped asking for a `build`
+gate (answered `build: none`); that question belongs in the same approval. Later, delivery 1's checkpoint
+stopped on `SECURITY_GAPS` (tasks tagged security, no secrets or SAST gate): the constitution had already
+recorded secrets and SAST as `unknown` but proposed no gate, so the PE had to configure `secrets`, `sast`
+and `audit` mid-implementation. The constitution proposes them with the other gates.
+In MDO-0002 (frontend), `tasks` planned T1 so that its own `build` gate could not pass: `index.html` loads
+`src/main.tsx`, which the plan gave to T3, and the agent had to ask how to handle it. `tasks` must check
+that the first task's declared files satisfy every gate it will run (entry files for `build`, a test for
+`test`), adding the minimal file to that task's list.
+
+**Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
+implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
+constitution to the first `implement` of a technical test took many turns, most of them spent on the flow
+defects above (intake hand-over, `start`, the worktree, reopened constitution, research gate, undeclared
+gates) and on manual corrections between commands. Measure it: count the PE's turns and the minutes from
+`story --from` to the first `implement` on this trial, set a target, and make the end-to-end test of this
+section assert it. Pending constitution adjustments, gates and approvals should batch into one step when
+they can.
+
+**Deliver with an externally required structure (PE, 2026-10-23).** The technical test requires, per
+feature, `especificaciones/001-caracteristica/especificacion.md` (context, objective, scope, functional and
+non-functional requirements, risks, Gherkin AC), `plan.md` (architecture, components, testing strategy) and
+`tareas.md`. Mandao writes `story.md`, `requirements.md`, `design.md`, `data-model.md` and `tasks.md`,
+with those sections spread across them; only the folders could be renamed (`paths`). Decision for the
+trial: keep Mandao's files and, at close, write in each spec folder short files with the required names
+that point to the file and section holding each required point. Fix in Mandao: a configurable delivery
+view (`deliverables:` mapping required file names and sections to Mandao's documents) that `close` writes
+and `verify` checks for completeness, so a required section with no source shows up before delivery.
+
+**A stale pending commit blocks the next task (2026-10-23).** In MDO-0001, T1 was committed (`b3ad4ed`)
+after the `build: none` gate was added in its own commit (`de1b081`). `_log/state.yml` kept T1's earlier
+`pending_commits` entry, whose manifest (taken before `.mandao/config.yml` and the lock changed) no longer
+matches HEAD; no Mandao script can remove it, and T2 could not start because it touches a file of that
+entry. The only way on was a hand edit of `state.yml`, recorded as a discrepancy. Fix: `run commit` (or a
+reconcile step in `checkpoint`) recognises an entry whose task is already committed, by its `Task:`
+trailer, and closes it, reporting the files that differ; a gate added mid-task refreshes the pending
+manifest instead of leaving it stale.
+
+**One task per session is too slow (PE, 2026-10-23).** "Imagine, I have only just finished 1 of 11." T1
+of MDO-0001 took the whole session and ended with a second session cut (135k tokens; "saving" $2.41), after
+the first cut before T1. On a subscription those savings are list-price equivalents, not money, while every
+cut costs the PE time. Fixes: the session-cut advice weighs the cost basis (on a subscription, cut only
+for context limits, not for equivalent savings) and `init` asks for `session.cut_min_savings` instead of
+defaulting to $1; the Leader keeps its own context small (delegates reading and gate output to
+subagents) so one session covers several tasks; `implement` continues from task to task without stopping
+unless a decision is needed. Evidence: after the PE raised `session.cut_min_savings` to 50, `implement`
+ran several tasks in a row and the PE noticed the speed-up at once.
+
+**Friction seen in T1 (2026-10-23):**
+- The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
+  agent had to put `.venv/bin` on `PATH`. Red runs must use the project's declared test gate command.
+  **Severe (MDO-0001 T17):** `run red` recorded a red run whose only failure was `pytest: command not found`
+  (exit 127). An infrastructure failure was accepted as TDD red evidence; the agent noticed and recorded it
+  again. A red run must count only test failures (collected tests that fail), never a missing runner,
+  exit 127, a collection error or a crash.
+- The commit script refused `.mandao/mandao.lock` inside the task commit, so the lock went in a separate
+  `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs with it.
+- The hand edit of `state.yml` was flagged as a discrepancy but its reason was not recorded; the reason
+  had to go in a commit message. A recorded discrepancy must carry the PE's reason.
+
+**The PE moved to Spec Kit in parallel (PE, 2026-10-23).** "It took too long. I think in parallel with
+Spec Kit." State when it happened: MDO-0001 had 1 of 12 tasks committed (T1) and T2 in progress, after the
+constitution, an intake, a story, a standard spec with a reopened constitution, and two session cuts in the
+first task. The same technical test is now run with Spec Kit in a separate folder, reusing the approved
+decisions. Use it as a benchmark: time and PE interventions to the first implemented task, cost, and
+coverage of the test's requirements in both runs; record the numbers here and make the items above
+(hand-overs, manual git, session cuts, gates) the first phase after the beta.
+
+**Dependency policy and audit on a real stack (2026-10-23).** In MDO-0001's T3 the constitution's rule
+"only MIT, Apache-2.0 or BSD" stopped the task on transitive dependencies every Python stack carries
+(certifi, tqdm, pathspec under MPL-2.0; typing_extensions under PSF-2.0; py_rust_stemmers with no license
+metadata, MIT in its repository). The PE had to grant an exception for the whole spec. Then the first
+`pip-audit`, run only because the PE chose it, found 35 CVEs in a transitive (pillow 12.3.0 via fastembed),
+accepted as unreachable with a review trigger. Fixes: the constitution template separates direct from
+transitive dependencies and lists the usual weak-copyleft and PSF licenses for unmodified transitives;
+the proposed gates include `audit` (e.g. `pip-audit`, `npm audit`) next to format, lint, typecheck and
+test; an accepted vulnerability is recorded with its reachability reason and review trigger, and close
+carries it to the delivery notes.
+
+**Internal logs in the deliverable tree (2026-10-23).** The intake's cost and telemetry went to
+`especificaciones/quick/_log/` because no spec existed yet; next to `MDO-0001-…` it reads as a third
+feature named "quick" in a tree an evaluator inspects. Mandao's own logs that belong to no spec should
+live outside `paths.specs` (e.g. under `.mandao/`).
+
+**Parallel specs do not share the project's current state (2026-10-23).** The PE started MDO-0002 (the
+frontend) in parallel with MDO-0001. `mandao start` cut it from `main`, so it lacked everything MDO-0001 had
+changed in shared files: the reopened constitution (Qdrant, the error table, "Fuente" with excerpt), the
+intake proposal, and `.mandao/config.yml` (the session-cut threshold the PE raised for speed, the gates,
+`build: none`). Its sessions ran with the old threshold and its Reviewer would check against the old
+constitution; the agent had to copy those files from the other branch by hand. Fix: shared project state
+(constitution, `.mandao/config.yml`, intake proposals) changes through its own short path to `main`
+(e.g. a `chore` PR that `start` and `constitution` propose when a spec edits them), and `start` warns
+when another open spec branch holds unmerged changes to those files, offering to carry them.
+
+**`<this harness>` is never filled in (PE, 2026-10-23).** The installed Claude Code commands say
+`--harness <this harness>` 23 times across 9 commands (clarify, close, implement, quick, resume, specify,
+story, tasks, verify); the adapter knows the harness but leaves the placeholder. The agent guesses
+`--harness claude-code`, Mandao answers `Unknown harness "claude-code"` (`src/cli/spec-context.ts:19`,
+without listing the valid ids, unlike `init`), and that error became the title of the PE's Claude Code
+tabs. Fix: each adapter renders the placeholder as its own id (`claude`, `codex`, `copilot`, …), with a
+content test that no rendered file keeps `<this harness>`; the error lists the valid ids; consider
+accepting `claude-code` as an alias.
+
+**Seen at the end of MDO-0002's implement (2026-10-23):**
+- The Reviewers' low-severity findings were not logged as advisories ("Mandao logged none"); they live only
+  in the review files, so the summary cannot list them. Every open finding, whatever its severity, must
+  reach the spec's record and the closing summary.
+- Each task needed an extra `docs` commit for its `tasks.md` edits (status moves, file lists the Reviewer
+  asked for, a kind change), because the commit script refuses spec changes it did not record itself.
+  Spec bookkeeping the process itself causes belongs in the task's commit.
+- Tests ran from the repository root, where the `web` project's Vitest config never loads; the agent had to
+  add `tests.impacted` for `web`. In a monorepo, test commands run from each project's folder, as gates do.
+  The `format` and `lint` gates did not cover `tests/web/` either.
+- One deferred e2e run was logged three times (once per checkpoint). Then verify stayed `blocked` only
+  because T4's e2e were "deferred to CI" and the repository has no CI, although the same e2e had just
+  passed locally against the real backend (4/4, in the same report). A recorded local run of the deferred
+  suite must clear the deferral, and a project without CI must not be blocked forever by one.
+- The PR plan proposed 4 stacked PRs from 4,766 changed lines, most of them `package-lock.json`. Line
+  counts for PR sizing must leave out lockfiles and generated files.
+
+**Seen at the end of MDO-0001's implement (2026-10-23):**
+- `run commit` refuses the `[x]` box that its own `--done` writes in `tasks.md`; the agent committed it
+  separately in every task.
+- The `test` gate passed a data file (`tests/fixtures/consultas.json`) to pytest, which exits 4 ("no tests
+  collected"); the agent validated T10 by running the suite by hand. Gates must pass only test files.
+- There is no `eval` gate: the PE's approved evaluation gate (`uv run pytest -m eval`, real embeddings
+  model) went into the `metrics` slot. Model and quality evaluations need their own named gate.
+- T11 and T12 needed no new code (their evidence is an independent inspection and recorded mutations), and
+  Mandao recorded them as "implemented by the Leader" (`self`), which reads as if the Leader wrote code.
+  A task closed by evidence alone needs its own label.
+- After 12 of 12 tasks, `run next` still recommends `/mandao-specify` for research gate R3, which the PE had
+  accepted in C-7 (already listed above: an accepted exception must clear `next`).
+
+**Commands cannot chain (PE, 2026-10-23).** The PE asked MDO-0001's session to go from clarify to
+implement to verify "without stopping between steps"; the agent answered that it cannot launch
+`/mandao-implement` itself ("it is a command you have to run"), so every step hands control back to the PE.
+With two specs in parallel this doubles the PE's turns. Fix: a command may continue into the next one
+`run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
+session, stopping only at the decisions the process reserves to the PE.
+
+**Per-task cost depends on the agent remembering (2026-10-23).** In MDO-0002 the agent did not record the
+cost before each task commit, as the rule asks, and recorded it once at the end. Cost recording must be
+part of the script the commit already runs (`run commit` records it or refuses), not a step the agent can
+skip.
+
+**Seen at MDO-0001's close (2026-10-23):**
+- Close fixed the swapped spec references (security vs interface IDs) only in `story.md`; `design.md`,
+  `data-model.md` and `tasks.md` kept the wrong IDs because the PE's answer "only covered the story". A
+  reference fix applies to every document of the spec that carries it.
+- Delivery had to be handed to the PE as a terminal command (`mandao deliver` asks interactively), once
+  more breaking the in-session flow; it should run inside the session with its questions asked there.
+- `mandao worktree clean`, run from an agent session after the merge, listed MDO-0001 as "merged clean"
+  but stopped at an interactive confirmation it could not get (no terminal) and removed nothing; the
+  worktree was removed with `git` by hand. Without a TTY it needs a `--yes` path or a refusal that says so.
+
+**No light lane for an infrastructure change (PE, 2026-10-23).** Adding a GitHub Actions workflow (the
+project's existing gates in CI) was refused by `/mandao-quick`: it touches the constitution's CI status,
+adds pinned third-party actions and spans backend and frontend. The proposed path was a full spec, so the PE
+implemented CI outside Mandao. Fix: an infrastructure lane for changes that wire existing gates into CI (or
+similar tooling) with a short checklist (pin actions, licence check, update `infrastructure.md` with
+approval) instead of the spec cycle.
+
+**`deliver` refuses a quick created without `start --quick` (2026-10-23).** A UI quick change was made
+on its own branch and worktree, committed with its quick-log row and cost, reviewed (PASS), and then
+`mandao deliver quick/<slug>` failed because the quick had no start record. Either `quick` creates the
+start record when it creates the branch, or `deliver` works from the quick-log row and the branch.
+
+**The quick log says "this commit" instead of a hash (PE, 2026-10-23).** Each row of
+`quick/quick-log.md` is written inside the commit it records, so its Commit column reads "this commit";
+for a reader of the table it identifies nothing. Fix: readers derive the hash from git (the commit that
+added the row), or the row is completed with the hash right after the commit.
+
+Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
+outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
