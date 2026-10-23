@@ -21,6 +21,7 @@ import { type BaselineLog, recordBaseline } from './baseline.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { mockSkillNames } from './mock-skills.js';
 import { registerLedger } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
 import { registerTasks } from './run-tasks.js';
@@ -117,7 +118,8 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
       const budget = decideBudget(probeMachine(), effectiveResources(config.resources, project?.resources), 'unit');
       const models = modelsFor(ctx, harness, task.project);
       const loop = loopContext(ctx, spec, id, harness, task.project);
-      json(composeBrief(ctx.root(), config, spec, task, models, harness, Math.max(1, budget.workers), loop));
+      const workers = Math.max(1, budget.workers);
+      json(composeBrief(ctx.root(), config, spec, task, models, harness, workers, loop, mockSkillNames(ctx.root(), config)));
     });
 
   run

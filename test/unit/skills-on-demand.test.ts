@@ -56,17 +56,20 @@ describe('catalog: install_on and model_invocation', () => {
 
 describe('mockSkills: what an accepted mock may install, as commands, never run', () => {
   const c = () => catalogSchema.parse(catalog());
-  test('lists matching skills with the exact skills add command', () => {
-    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['claude'], pinned: [] })).toEqual([
-      { id: 'claude-only', install: 'node .mandao/bin/mandao.mjs skills add claude-only --yes' },
-      { id: 'design', install: 'node .mandao/bin/mandao.mjs skills add design --yes' },
+  test('lists matching skills with the exact mock-install command', () => {
+    // Trial 13 D3: the install commits its own files, so the command is mock-install for the spec.
+    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['claude'], pinned: [], spec: 'MDO-0001' })).toEqual([
+      { id: 'claude-only', install: 'node .mandao/bin/mandao.mjs run mock-install MDO-0001 --yes' },
+      { id: 'design', install: 'node .mandao/bin/mandao.mjs run mock-install MDO-0001 --yes' },
     ]);
   });
 
   test('profile, harness (a plugin needs Claude Code) and already pinned skills filter it', () => {
-    expect(mockSkills(c(), { profiles: ['data'], harnesses: ['claude'], pinned: [] }).map((s) => s.id)).toEqual(['claude-only']);
-    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['codex'], pinned: [] }).map((s) => s.id)).toEqual(['design']);
-    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['codex'], pinned: ['design'] })).toEqual([]);
+    expect(mockSkills(c(), { profiles: ['data'], harnesses: ['claude'], pinned: [], spec: 'MDO-0001' }).map((s) => s.id)).toEqual([
+      'claude-only',
+    ]);
+    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['codex'], pinned: [], spec: 'MDO-0001' }).map((s) => s.id)).toEqual(['design']);
+    expect(mockSkills(c(), { profiles: ['app'], harnesses: ['codex'], pinned: ['design'], spec: 'MDO-0001' })).toEqual([]);
   });
 });
 

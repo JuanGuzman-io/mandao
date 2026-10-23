@@ -1,5 +1,12 @@
 import { describe, expect, test } from 'vitest';
-import { hasUxReferences, mockOffer, mockupProblems, parseMockupReadme, redactPrivateLinks } from '../../src/spec/mockup.js';
+import {
+  hasUxReferences,
+  mockOffer,
+  mockupProblems,
+  parseMockupReadme,
+  privateLinkLines,
+  redactPrivateLinks,
+} from '../../src/spec/mockup.js';
 import { changedSince } from '../../src/spec/next.js';
 import { parseState, renderState } from '../../src/spec/state.js';
 
@@ -77,6 +84,24 @@ describe('rework F1, F12: private links and what files may list', () => {
     expect(redactPrivateLinks('$& https://claude.ai/z', undefined)).toBe('$& [private claude.ai link omitted]');
   });
 
+  test('review F7: %-encoded claude.ai addresses are redacted; encoded look-alikes are not', () => {
+    const R = '[private claude.ai link omitted]';
+    expect(redactPrivateLinks('a https%3A%2F%2Fclaude.ai%2Fdesign b', undefined)).toBe(`a ${R} b`);
+    expect(redactPrivateLinks('a claude%2Eai%2Fx b %2563laude.ai/y', undefined)).toBe(`a ${R} b ${R}`);
+    expect(redactPrivateLinks('see "?u=https%3A%2F%2Fwww.claude.ai%2Fx" end', undefined)).toBe(`see "${R}" end`);
+    expect(redactPrivateLinks('a notclaude%2Eai/x b 100%25 c', undefined)).toBe('a notclaude%2Eai/x b 100%25 c');
+    expect(privateLinkLines('x.md', 'ok\nhttps%3A%2F%2Fclaude%2Eai%2Fp')).toEqual([expect.stringMatching(/^x\.md:2: /)]);
+  });
+
+  test('review round 2 F2: a 500 KB single-line base64 run is processed in linear time', () => {
+    const run = Buffer.alloc(375_000, 7).toString('base64');
+    const started = performance.now();
+    expect(redactPrivateLinks(`x ${run} y`, undefined)).toBe(`x ${run} y`);
+    expect(privateLinkLines('big.html', run)).toEqual([]);
+    // Loose bound: quadratic took minutes; slow CI must not flake.
+    expect(performance.now() - started).toBeLessThan(5000);
+  });
+
   test('round 3: claude.ai URLs without a scheme are redacted; look-alike hosts are not', () => {
     expect(redactPrivateLinks('see claude.ai/design/p/1, www.claude.ai/x and claude.ai.', undefined)).toBe(
       'see [private claude.ai link omitted], [private claude.ai link omitted] and [private claude.ai link omitted].',
@@ -114,7 +139,10 @@ describe('rework F1, F12: private links and what files may list', () => {
   });
 
   test('F12: a listed entry that is a folder (or not a regular file) is refused', () => {
-    const problems = mockupProblems({ readme: readme('source: html\nfiles: [shots]'), kind: () => 'other' });
+    const problems = mockupProblems({
+      readme: readme('source: html\nfiles: [a.html, shots]'),
+      kind: (f) => (f === 'shots' ? 'other' : 'file'),
+    });
     expect(problems).toEqual([expect.stringMatching(/mockups\/shots is not a regular file/)]);
   });
 });
@@ -131,6 +159,41 @@ describe('rework B: a /design export that arrives as a .zip is unzipped into moc
 
   test('a .zip without README is refused too', () => {
     expect(mockupProblems({ kind: all, present: ['design.zip'] })).toEqual([expect.stringMatching(/unzip the export/)]);
+  });
+});
+
+describe('trial 13: what mockups/ must hold, and private links in any document', () => {
+  const all = () => 'file' as const;
+  test('D2: source html must list an export file', () => {
+    expect(mockupProblems({ readme: readme('source: html\nfiles: [notes.txt]'), kind: all })).toEqual([
+      expect.stringMatching(/source html lists no export/),
+    ]);
+  });
+
+  test('D2: every regular file in mockups/ other than README.md must be listed, for any source', () => {
+    const present = ['README.md', 'form.html', 'notes.txt', 'shots/a.png'];
+    for (const source of ['html', 'design'])
+      expect(mockupProblems({ readme: readme(`source: ${source}\nfiles: [form.html]`), kind: all, present })).toEqual([
+        'unlisted file mockups/notes.txt: list it in files or remove it',
+        'unlisted file mockups/shots/a.png: list it in files or remove it',
+      ]);
+  });
+
+  test('D5: a symlink anywhere under mockups/, listed or not, is refused', () => {
+    expect(mockupProblems({ readme: readme('source: html\nfiles: [form.html]'), kind: all, symlinks: ['linked', 'sub/x.html'] })).toEqual([
+      'mockups/linked is a symlink: copy the file instead',
+      'mockups/sub/x.html is a symlink: copy the file instead',
+    ]);
+    expect(mockupProblems({ kind: all, symlinks: ['linked'] })).toEqual(['mockups/linked is a symlink: copy the file instead']);
+  });
+
+  test('D6: privateLinkLines names the file and the line of each claude.ai address, scheme or not', () => {
+    const text = 'title\nsee https://claude.ai/design/p/1\nok notclaude.ai\nand claude.ai/design/p/2\n';
+    expect(privateLinkLines('spec.md', text)).toEqual([
+      expect.stringMatching(/^spec\.md:2: .*claude\.ai/),
+      expect.stringMatching(/^spec\.md:4: .*claude\.ai/),
+    ]);
+    expect(privateLinkLines('spec.md', 'nothing private, notclaude.ai/x')).toEqual([]);
   });
 });
 
@@ -156,6 +219,18 @@ describe('hasUxReferences', () => {
       expect(hasUxReferences(story(`\n${line}\n`))).toBe(false);
     },
   );
+
+  test.each(['TBD', 'TBC', 'todo', '- TODO.', 'Pending', '* pending.', 'Pendiente', '1. tbd'])(
+    'D7: placeholder %s is no reference',
+    (line) => {
+      expect(hasUxReferences(story(`\n${line}\n`))).toBe(false);
+    },
+  );
+
+  test('D7: "Not yet designed." stays content', () => {
+    expect(hasUxReferences(story('\nNot yet designed.\n'))).toBe(true);
+    expect(hasUxReferences(story('\nTBD: see the checkout flow\n'))).toBe(true);
+  });
 
   test('round 3: an ASSUMPTION that only contains "not" is a reference', () => {
     expect(hasUxReferences(story('\nASSUMPTION: follows the existing checkout page, not a new design\n'))).toBe(true);

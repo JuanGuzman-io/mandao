@@ -8,7 +8,7 @@ import { changedFiles, changeManifest, commitState, repoRoot } from '../scripts/
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection, recordUnrun } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
-import { mockupPackSection } from '../scripts/mockups.js';
+import { mockupLink, mockupPackSection } from '../scripts/mockups.js';
 import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { reviewDiff } from '../scripts/review.js';
@@ -18,7 +18,7 @@ import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import { measureGate } from '../scripts/telemetry.js';
-import { LOOP_BRAKE_LIMIT, type LoopState, loopState, observeLoop, type Task, timeline } from '../spec/index.js';
+import { LOOP_BRAKE_LIMIT, type LoopState, loopState, observeLoop, redactPrivateLinks, type Task, timeline } from '../spec/index.js';
 import { onPath } from '../util/which.js';
 import { writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
@@ -26,6 +26,7 @@ import type { CliContext } from './context.js';
 import { implementSummary } from './implement-summary.js';
 import { json } from './json.js';
 import { currentAttempt, taskOf } from './leader-utils.js';
+import { mockSkillNames, reviewRuleFor } from './mock-skills.js';
 import { reviewPackContent } from './review-pack.js';
 import { type CheckpointOptions, withCheckpointOptions, writeCheckpoint } from './run-ledger.js';
 import { stepCut, verifyCut } from './session-advice.js';
@@ -224,7 +225,9 @@ function leaderStep(ctx: CliContext, ref: string, id: string, o: CheckpointOptio
     ...(checkpoint ? { checkpoint: { written: true, pendingCommits: checkpoint.pendingCommits } } : {}),
     loop,
     ...(cut ? { session: cut } : {}),
-    ...(withBrief ? { brief: composeBrief(ctx.root(), config, spec, task, models, harness, workers, context) } : {}),
+    ...(withBrief
+      ? { brief: composeBrief(ctx.root(), config, spec, task, models, harness, workers, context, mockSkillNames(ctx.root(), config)) }
+      : {}),
   };
 }
 
@@ -271,6 +274,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     harness,
     1,
     loopContext(ctx, spec, id, harness, task.project),
+    mockSkillNames(ctx.root(), config),
   );
   const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
   const removedTests = deletedTests(repoRoot(spec.dir), spec.progress, id);
@@ -278,7 +282,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     .reverse()
     .find((row) => row.task === id && row.notes.includes('test deletion:'))
     ?.notes.match(/(?:^|; )test deletion: ([^;]+)/)?.[1];
-  const pack = reviewPackContent(
+  const content = reviewPackContent(
     id,
     attempt,
     recorded.full,
@@ -288,8 +292,10 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     deletionReason,
     gates,
     reviewDiff(repoRoot(spec.dir), spec.dir, ctx.root()),
-    mockupPackSection(ctx.root(), brief.mockup),
+    mockupPackSection(ctx.root(), brief.mockup, reviewRuleFor(ctx.root(), config, task.project)),
   );
+  // No claude.ai address reaches the Reviewer from the story, spec, tasks, diff or mock files (trial 13 D6).
+  const pack = redactPrivateLinks(content, mockupLink(spec.dir));
   // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
   const name = `${id}-${attempt}-pack.md`;
   const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);

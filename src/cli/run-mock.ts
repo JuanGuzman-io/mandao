@@ -1,13 +1,9 @@
-import { join } from 'node:path';
 import type { Command } from 'commander';
-import { readCatalog } from '../engine/catalog.js';
-import { LOCK_FILE, readLock } from '../engine/files.js';
-import type { Config } from '../schemas/index.js';
 import { mockOfferFor, recordMockDecision } from '../scripts/mockups.js';
-import type { SpecFolder } from '../scripts/spec.js';
-import { mockSkills } from '../skills/on-demand.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { registerMockInstall } from './mock-install.js';
+import { skillsToOffer } from './mock-skills.js';
 import { loadSpec } from './spec-context.js';
 
 interface MockOptions {
@@ -16,15 +12,7 @@ interface MockOptions {
   force?: boolean;
 }
 
-/** The skills an accepted mock may install, as commands for the session to run after the person agrees. */
-function skillsToOffer(root: string, config: Config, spec: SpecFolder) {
-  const projects = spec.story?.meta.projects ?? [];
-  const profiles = config.projects.filter((p) => projects.includes(p.name)).map((p) => p.profile);
-  const pinned = (readLock(join(root, LOCK_FILE))?.skills ?? []).map((s) => s.id);
-  return mockSkills(readCatalog(), { profiles, harnesses: config.harnesses, pinned });
-}
-
-/** `mandao run mock-offer <spec>`: whether to suggest a UI mock (phase 13), and `--record` the answer once. */
+/** `mandao run mock-offer <spec>`: whether to suggest a UI mock (phase 13), and `--record` the answer once; also registers `mock-install`. */
 export function registerMockOffer(run: Command, ctx: CliContext) {
   run
     .command('mock-offer <spec>')
@@ -36,7 +24,11 @@ export function registerMockOffer(run: Command, ctx: CliContext) {
       const { config, spec } = loadSpec(ctx, ref);
       if (o.source !== undefined && o.record === undefined) throw new Error('--source goes only with --record accepted');
       const mock = o.record !== undefined ? recordMockDecision(spec, o.record, o.source, o.force) : undefined;
-      const skills = mock?.decision === 'accepted' ? skillsToOffer(ctx.root(), config, spec) : undefined;
-      json({ ...mockOfferFor(ctx.root(), config, spec), ...(mock ? { recorded: true } : {}), ...(skills ? { skills } : {}) });
+      const offer = mockOfferFor(ctx.root(), config, spec);
+      // The skills come with the suggestion, so the one consent question names them before the answer (trial 13 D1),
+      // and again after acceptance until they are installed (review F9).
+      const skills = offer.suggest || offer.decided === 'accepted' ? skillsToOffer(ctx.root(), config, spec) : [];
+      json({ ...offer, ...(mock ? { recorded: true } : {}), ...(skills.length ? { skills } : {}) });
     });
+  registerMockInstall(run, ctx);
 }
