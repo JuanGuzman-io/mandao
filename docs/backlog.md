@@ -571,3 +571,8 @@ of that trial are phase 13b.
 2. **`ux.md` and the existing product style always take priority over the skill**, in every case.
 3. **Find an interface design skill for application screens** (forms, tables, flows) and evaluate it for
    the catalog.
+4. **Prose for the phase 13b code.** `rules/mockups.md`, `src/spec/AGENTS.md`, ADR 0056 and `docs/schemas.md`
+   describe: `run mock-install <ID> --yes`, its own `chore` commit and its refusal of a lock with uncommitted changes; skills returned with the offer;
+   every file in `mockups/` listed and no symlinks; an `html` source needs an export file; claude.ai
+   addresses refused in every approvable document and redacted from briefs and packs; `TBD`/`pending`
+   as no reference; the Reviewer rule in the pack; `mockup.skills` in the brief.
