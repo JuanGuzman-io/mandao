@@ -51,7 +51,7 @@ scope, product behavior, security or irreversible actions.
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
-| [Intake to first story in the same session](#intake-to-first-story-in-the-same-session) | beta trial (asistente-asesores) | phase 14 | agreed; backlog |
+| [Intake to first story in the same session](#intake-to-first-story-in-the-same-session) | beta trial (asistente-asesores) | phase 14 | agreed; backlog; inconsistent hand-overs between intake, start, story and specify |
 
 ## Phase 0 — Documentation and backlog
 
@@ -656,3 +656,16 @@ republished: a fix ships as `0.1.0-beta.1`.
    document needs at standard (specification, plan and tasks). The worktree was also cut from the last
    commit, without the uncommitted proposal. `start` should detect an open intake proposal, carry it
    over, and suggest `story --intake` with a depth derived from the proposal.
+6. **`/mandao-specify` without a story ignores the intake.** Run on the new spec, it found no story and
+   asked the scope from scratch (scope, wording, depth), proposing options that differ from the
+   proposal's grouping. It never looked for the open intake proposal, so the prefilled AC, the page
+   references and the resolved questions (Q-1 to Q-6) would have had to be retyped. When an intake
+   proposal names this spec's stories, or an unopened one matches the title, specify must offer to
+   start from it (through `story --intake`) instead of eliciting.
+
+**The underlying defect: the flows are inconsistent (maintainer, 2026-10-23).** `story --from`, `mandao
+start`, `specify` and `story --intake` each assume a different next step, and none reads the state the
+others left: the intake recommends `start`, `start` opens `specify --depth lite`, and `specify` elicits as
+if there were no proposal. The fix is one shared rule for "what comes next" after an intake, read by
+`next`, `start`, `story` and `specify` alike (the intake proposal and its opened stories as state), with
+a test that runs `--from` → first story → specify end to end and checks every hand-over.
