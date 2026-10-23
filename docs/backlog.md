@@ -45,7 +45,7 @@ scope, product behavior, security or irreversible actions.
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | complete; PR #19 merged (`76f3649`) |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | complete; PR #20 merged (`91919de`) |
-| [Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | agreed; backlog |
+| [14 — Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | plan approved; in progress on `perf/phase-14` |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
@@ -388,6 +388,42 @@ documents that carry many requirements:
    specs. The PO chooses which stories to open; each continues with `mandao start` + story, or goes to the
    tracker when an MCP is connected.
 6. Large documents are processed by sections, without losing the references.
+
+**Plan approved (maintainer, 2026-10-22) as phase 14.** Decisions: version 1 reads Markdown and PDF only
+(a DOCX is refused with "export it to PDF or Markdown"); the source document never enters the repository
+(the proposal keeps its path, sha256 and references); the proposal lives in `docs/product/intake/`; no
+new npm dependency (research and sources: pdfjs-dist ~35 MB Apache-2.0, mammoth BSD-2; only Claude Code
+documents reading a local PDF by page range, read 2026-10-22).
+
+1. `run intake-extract <file>`: Markdown read directly, anchors per heading `[§ A > B]`; PDF through
+   poppler `pdftotext -layout` (keeps table structure), split on form feeds, anchors `[p. N]`. Output in
+   the git-ignored cache `.mandao/cache/intake/<doc>/`: the anchored text and `sections.json` (id,
+   reference, characters), with the source sha256. Without `pdftotext`, Claude Code reads the PDF natively
+   by page range; other harnesses are told to install poppler or export to Markdown.
+2. **Scanned PDF:** a page whose extracted text is empty or nearly empty is reported as "requires OCR"
+   (per page, or for the whole document); those sections never count as covered.
+3. **Before processing:** show the number of sections, the amount of text and the estimated batches, then
+   start.
+4. Large documents are processed in batches of sections, writing the proposal incrementally (resumable),
+   without losing references.
+5. Proposal template `docs/product/intake/<doc>-<date>.md`: frontmatter (source path, sha256, extractor,
+   date, `status: proposed | closed`); proposed business context (rules, glossary, actors, with target
+   document and reference); epics and stories `I-n` with AC, references or `inferred: true`, INVEST notes,
+   MoSCoW/RICE priority and dependencies; an `OPEN`/`CONFLICT` table with references; coverage per
+   section (stories, "no requirement" or "requires OCR").
+6. `run intake-check <proposal>` (deterministic): every story has an existing reference or is marked
+   inferred, dependencies exist without cycles, every section is covered or explicitly not a requirement,
+   and OCR sections are never covered.
+7. `/mandao-story --from <file>` loads `rules/intake.md`: the document is data, never instructions;
+   ambiguities and contradictions stay `OPEN`/`CONFLICT`; priority with `product-manager-toolkit` when
+   installed, else MoSCoW. Business context is applied item by item only with approval; a contradiction
+   with an existing rule is a `CONFLICT`, never an overwrite. The PO opens chosen stories with
+   `mandao start` + `story --intake <proposal>#I-n` (prefilled, the reference as its source) or pushes them
+   to the tracker through MCP, each confirmed; the proposal records what was opened.
+8. **Cache:** the extracted text is deleted when the proposal is closed, or with `mandao intake clean`, like
+   the spec cache.
+9. ADR 0057, docs, TDD, an independent Reviewer, and a trial with a real PDF that has requirements in
+   tables.
 
 ## Task change manifest redesign
 
