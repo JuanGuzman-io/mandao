@@ -764,7 +764,10 @@ research item R3 blocked because no web-search MCP server is declared, although 
 search (`doctor` says "possible native support does not count") and a premise run on the machine (P2) had
 already proved the point. The user had to be told to type an explicit acceptance. Fix: the gate offers, as
 one of its own options, accepting a recorded premise run as the evidence (recorded as the PO's decision),
-and says plainly what declaring a web-search server would change.
+and says plainly what declaring a web-search server would change. Once that exception is recorded, the gate
+and `run next` must treat the item as resolved: today the gate keeps flagging R3/R5 and `next` keeps
+recommending `/mandao-specify` after the PO accepted the local evidence, so the user has to ignore the
+recommended step to approve.
 
 **A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
 (active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
