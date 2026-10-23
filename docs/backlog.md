@@ -50,7 +50,7 @@ scope, product behavior, security or irreversible actions.
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
-| [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | ready; the maintainer publishes |
+| [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
 
 ## Phase 0 — Documentation and backlog
 
@@ -594,7 +594,14 @@ plumbing.
 
 ## Beta release 0.1.0-beta.0
 
-**Ready (2026-10-22); the maintainer publishes.** Version `0.1.0-beta.0` in changesets pre mode `beta`;
+**Published (maintainer, 2026-10-23)** from `2053385`: `latest` and `beta` point at `0.1.0-beta.0`, the
+tag `v0.1.0-beta.0` is on GitHub, and `npx mandao@beta --version` prints `0.1.0-beta.0`. Notes from the
+publication: the first attempt stopped in `prepublishOnly` on a test timeout under a full local run (PR #24
+gave the log history tests 30 s); the second needed 2FA on the npm account, with a passkey confirmed in the
+browser (no `--otp`); `0.0.0-stage` in the version list is npm's staged-publishing placeholder. Pending,
+by the maintainer: configure trusted publishing (step 7) before the next release.
+
+**Was ready (2026-10-22); the maintainer publishes.** Version `0.1.0-beta.0` in changesets pre mode `beta`;
 the name `mandao` is free on npm and no tag exists. Procedure: `CONTRIBUTING.md`, "First publication".
 
 Checks by the agent before the publication: phase 13b merged; the `0.1.0-beta.0` CHANGELOG entry covers
@@ -614,7 +621,7 @@ Maintainer steps:
 7. npmjs.com → `mandao` → Settings → Trusted publishing → GitHub Actions: repository
    `JuanGuzman-io/mandao`, workflow `release.yml`, no environment; then require 2FA and disallow tokens.
    The configuration expires unless a publish uses it within 2 days.
-8. `npx mandao@beta --version` in an empty folder.
+8. `npx mandao@beta --version` in an empty folder (no `--`: with it the flag reaches Mandao as a command).
 
 If `npm dist-tag add` is refused, run the command the script prints. A published version is never
 republished: a fix ships as `0.1.0-beta.1`.
