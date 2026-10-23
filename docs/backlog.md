@@ -843,6 +843,10 @@ ran several tasks in a row and the PE noticed the speed-up at once.
 **Friction seen in T1 (2026-10-23):**
 - The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
   agent had to put `.venv/bin` on `PATH`. Red runs must use the project's declared test gate command.
+  **Severe (MDO-0001 T17):** `run red` recorded a red run whose only failure was `pytest: command not found`
+  (exit 127). An infrastructure failure was accepted as TDD red evidence; the agent noticed and recorded it
+  again. A red run must count only test failures (collected tests that fail), never a missing runner,
+  exit 127, a collection error or a crash.
 - The commit script refused `.mandao/mandao.lock` inside the task commit, so the lock went in a separate
   `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs with it.
 - The hand edit of `state.yml` was flagged as a discrepancy but its reason was not recorded; the reason
