@@ -889,5 +889,19 @@ tabs. Fix: each adapter renders the placeholder as its own id (`claude`, `codex`
 content test that no rendered file keeps `<this harness>`; the error lists the valid ids; consider
 accepting `claude-code` as an alias.
 
+**Seen at the end of MDO-0002's implement (2026-10-23):**
+- The Reviewers' low-severity findings were not logged as advisories ("Mandao logged none"); they live only
+  in the review files, so the summary cannot list them. Every open finding, whatever its severity, must
+  reach the spec's record and the closing summary.
+- Each task needed an extra `docs` commit for its `tasks.md` edits (status moves, file lists the Reviewer
+  asked for, a kind change), because the commit script refuses spec changes it did not record itself.
+  Spec bookkeeping the process itself causes belongs in the task's commit.
+- Tests ran from the repository root, where the `web` project's Vitest config never loads; the agent had to
+  add `tests.impacted` for `web`. In a monorepo, test commands run from each project's folder, as gates do.
+  The `format` and `lint` gates did not cover `tests/web/` either.
+- One deferred e2e run was logged three times (once per checkpoint).
+- The PR plan proposed 4 stacked PRs from 4,766 changed lines, most of them `package-lock.json`. Line
+  counts for PR sizing must leave out lockfiles and generated files.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
