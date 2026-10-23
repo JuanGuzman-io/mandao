@@ -712,5 +712,22 @@ Rules for every command, so these inconsistencies stop:
 - **The state decides, not the agent**: whether a spec has a branch, a worktree and its pending files is
   read from a script (`run where`, `run spec-new`), and every command reads the same answer.
 
+**The next step is not copy-ready (maintainer, 2026-10-23).** When a command ends it says "continue with
+/mandao-specify" without the spec ID or its arguments, so the user cannot copy and paste it. Cause:
+`src/spec/next.ts` returns bare slash commands (`'/mandao-specify'`, `'/mandao-clarify'`, …; only
+`mandao approve …` carries the ID), and each command closes with a loose "names the command that follows;
+give it". Fix: `run next` returns complete invocations (spec ID and only the arguments that change
+something; no `--depth standard`, which is the default), written the way the active harness invokes them;
+one shared closing rule in a template every command loads (the recommended command alone in a code block,
+then the options, each complete, and a new-session action first when needed); tests that `next` never
+returns a slash command without the ID when there is a spec.
+
+**Command arguments are not documented in the project (maintainer, 2026-10-23).** `mandao start` suggested
+`--depth lite` and the user could not tell what `--depth` does or which values exist. The per-command
+pages (`docs/commands/<command>.md`: arguments, values, defaults, outputs, steps) live only in the GitHub
+repository and are not in the npm package; the project only gets `.mandao/guide.md`, one line per command
+with no arguments. Fix: the installed guide lists, per command, its arguments with values, default and an
+example (or the package ships the command pages and the guide links them).
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
