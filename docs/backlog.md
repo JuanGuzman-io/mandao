@@ -866,5 +866,15 @@ carries it to the delivery notes.
 feature named "quick" in a tree an evaluator inspects. Mandao's own logs that belong to no spec should
 live outside `paths.specs` (e.g. under `.mandao/`).
 
+**Parallel specs do not share the project's current state (2026-10-23).** The PE started MDO-0002 (the
+frontend) in parallel with MDO-0001. `mandao start` cut it from `main`, so it lacked everything MDO-0001 had
+changed in shared files: the reopened constitution (Qdrant, the error table, "Fuente" with excerpt), the
+intake proposal, and `.mandao/config.yml` (the session-cut threshold the PE raised for speed, the gates,
+`build: none`). Its sessions ran with the old threshold and its Reviewer would check against the old
+constitution; the agent had to copy those files from the other branch by hand. Fix: shared project state
+(constitution, `.mandao/config.yml`, intake proposals) changes through its own short path to `main`
+(e.g. a `chore` PR that `start` and `constitution` propose when a spec edits them), and `start` warns
+when another open spec branch holds unmerged changes to those files, offering to carry them.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
