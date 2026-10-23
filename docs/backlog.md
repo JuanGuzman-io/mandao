@@ -937,5 +937,12 @@ cost before each task commit, as the rule asks, and recorded it once at the end.
 part of the script the commit already runs (`run commit` records it or refuses), not a step the agent can
 skip.
 
+**Seen at MDO-0001's close (2026-10-23):**
+- Close fixed the swapped spec references (security vs interface IDs) only in `story.md`; `design.md`,
+  `data-model.md` and `tasks.md` kept the wrong IDs because the PE's answer "only covered the story". A
+  reference fix applies to every document of the spec that carries it.
+- Delivery had to be handed to the PE as a terminal command (`mandao deliver` asks interactively), once
+  more breaking the in-session flow; it should run inside the session with its questions asked there.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
