@@ -63,3 +63,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0054](0054-version-notes.md) | Version release notes | Accepted (Phase 10) |
 | [0055](0055-commitlint-conflict-check.md) | Commitlint conflict check | Accepted (Phase 12) |
 | [0056](0056-ui-mocks-before-implementation.md) | UI mocks before implementation | Accepted (Phase 13) |
+| [0057](0057-requirements-document-intake.md) | Requirements document intake | Accepted (Phase 14) |
