@@ -791,5 +791,14 @@ task that creates the manifest declares the gates (proposed from the stack in `s
 the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
 project whose constitution lists gates as OPEN.
 
+**Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
+implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
+constitution to the first `implement` of a technical test took many turns, most of them spent on the flow
+defects above (intake hand-over, `start`, the worktree, reopened constitution, research gate, undeclared
+gates) and on manual corrections between commands. Measure it: count the PE's turns and the minutes from
+`story --from` to the first `implement` on this trial, set a target, and make the end-to-end test of this
+section assert it. Pending constitution adjustments, gates and approvals should batch into one step when
+they can.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
