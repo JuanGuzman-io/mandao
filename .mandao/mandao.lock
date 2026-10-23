@@ -705,7 +705,7 @@ files:
     harness: mandao
     from: template:shared/rules/mockups.md
     ownership: owned
-    hash: sha256-GHlInK1Gn/rHK1htZrMy+c9EAbaPN82QPau7jWTMWWc=
+    hash: sha256-zrxCo01bORtRnef3JtuWilAz6RH63hKTTYIWIwDO1Hk=
     scope: project
   - path: .mandao/templates/app/rules/quick-gate.md
     harness: mandao

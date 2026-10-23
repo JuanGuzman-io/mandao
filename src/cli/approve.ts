@@ -6,7 +6,7 @@ import { readConfig } from '../engine/files.js';
 import { researchToolCapabilities } from '../engine/research-tools.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
-import { MOCKUPS_DIR, mockupBlockers, mockupHashes } from '../scripts/mockups.js';
+import { MOCKUPS_DIR, mockupBlockers, mockupHashes, privateLinkBlockers } from '../scripts/mockups.js';
 import { verifiedReuseReferences } from '../scripts/research.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
@@ -86,10 +86,11 @@ function blockers(
   harness: ReturnType<typeof harnessOption>,
 ): string[] {
   const open = openItems(spec).criticalOpen.map((q) => `critical OPEN: ${q}`);
-  if (step === 'story') return spec.story ? open : ['story.md is missing'];
+  if (step === 'story') return spec.story ? [...open, ...privateLinkBlockers(spec.dir)] : ['story.md is missing'];
   if (step === 'design' || step === 'spec') {
     if (!spec.requirements) return [`${step === 'spec' ? LITE_DOC : 'requirements.md'} is missing`];
-    const documents = [...specPremiseFindings(spec.dir).map((f) => f.message), ...mockupBlockers(spec.dir)];
+    const mock = [...mockupBlockers(spec.dir), ...privateLinkBlockers(spec.dir)];
+    const documents = [...specPremiseFindings(spec.dir).map((f) => f.message), ...mock];
     return [...open, ...documents, ...researchIssuesFor(root, spec, config, harness)];
   }
   if (step === 'tasks') {
@@ -97,7 +98,7 @@ function blockers(
     const file = docPath(spec.dir, 'tasks');
     const layout = taskLayoutIssues(readFileSync(file, 'utf8'), spec.tasks, spec.story, { inline: file.endsWith(LITE_DOC) });
     const cycles = planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`);
-    return [...open, ...cycles, ...layout, ...spec.issues, ...deliveryIssues(spec.tasks)];
+    return [...open, ...cycles, ...layout, ...spec.issues, ...deliveryIssues(spec.tasks), ...privateLinkBlockers(spec.dir)];
   }
   return [];
 }

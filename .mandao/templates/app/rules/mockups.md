@@ -5,7 +5,7 @@ rule: mockups
 
 # UI mocks before implementation
 
-Run `node .mandao/bin/mandao.mjs run mock-offer <ID>`. It returns `{ suggest, reason, uiProjects, uxReferences, decided?, source? }`.
+Run `node .mandao/bin/mandao.mjs run mock-offer <ID>`. It returns `{ suggest, reason, uiProjects, uxReferences, decided?, source?, skills? }`.
 Offer a mock only when `suggest` is true; when `decided` is set, never ask again. Offer it once per spec,
 in `story` or `specify`, whichever runs first.
 
@@ -47,9 +47,11 @@ existing product. The brief for `/design` or the HTML mock comes from the story 
 states (empty, loading, error) and the copy the AC name.
 
 Design skills install only for an accepted mock: the question above names them, so a yes covers the install.
-`--record accepted` returns `skills: [{ id, install }]`: run each `install` (the form
-`node .mandao/bin/mandao.mjs skills add <id> --yes`), then use the skill
-for the mock and for the UI tasks. Never install or load one for a declined or unasked mock.
+After `--record accepted`, run each `install` it returns (`node .mandao/bin/mandao.mjs run mock-install <ID> --yes`)
+before the first task: it installs the skills, verified against the catalog commit, in their own `chore`
+commit, never in the approval or a task commit. Never use `skills add` for a mock skill. Then use the skill
+for the mock and for the UI tasks (the brief names it in `mockup.skills`). Never install or load one for a
+declined or unasked mock.
 
 ## mockups/README.md
 

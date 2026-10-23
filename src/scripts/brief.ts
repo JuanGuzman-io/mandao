@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ResolvedModels } from '../models/resolve.js';
 import { buildCommand, type Config, type RiskTag } from '../schemas/index.js';
-import { type LoopContext, type LoopState, loopState, type Task } from '../spec/index.js';
+import { type LoopContext, type LoopState, loopState, redactStrings, type Task } from '../spec/index.js';
 import {
   detectRunner,
   fillCommand,
@@ -13,7 +13,7 @@ import {
   reverseDependents,
   selectImpact,
 } from './impact.js';
-import { type BriefMockup, type BriefMockupProblem, mockupForBrief } from './mockups.js';
+import { type BriefMockup, type BriefMockupProblem, mockupForBrief, mockupLink } from './mockups.js';
 import { changedRedTests } from './red.js';
 import type { SpecFolder } from './spec.js';
 
@@ -103,7 +103,7 @@ function decisions(spec: SpecFolder, task: Task) {
   });
 }
 
-/** The scoped brief the Leader hands to the Implementer, and the rules the Reviewer applies. */
+/** The scoped brief the Leader hands to the Implementer, and the rules the Reviewer applies; private links redacted. */
 export function composeBrief(
   root: string,
   config: Config,
@@ -113,6 +113,8 @@ export function composeBrief(
   harness: string,
   workers: number,
   loop: LoopContext = {},
+  /** The names the accepted mock's installed skills load under (the CLI resolves them; phase 13 F4). */
+  mockSkills: string[] = [],
 ): Brief {
   const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
   const dir = projectDir(root, project.path);
@@ -125,27 +127,31 @@ export function composeBrief(
     ...(runner ? { runner } : {}),
     ...(graph ? { graph } : {}),
   });
-  return {
-    spec: spec.name,
-    task,
-    acceptance: acceptance(spec, task),
-    scenarios: scenarios(spec, task),
-    decisions: decisions(spec, task),
-    coverageChecklist: [
-      ...task.ac.map((ref) => ({ ref, kind: 'acceptance' as const })),
-      ...task.scenarios.map((ref) => ({ ref, kind: 'scenario' as const })),
-    ],
-    project: {
-      name: project.name,
-      path: project.path,
-      gates: { ...project.gates, ...(buildCommand(project) ? {} : { build: undefined }) } as Record<string, string>,
+  // No claude.ai address reaches a brief, from any document (trial 13 D6): every string is redacted.
+  return redactStrings<Brief>(
+    {
+      spec: spec.name,
+      task,
+      acceptance: acceptance(spec, task),
+      scenarios: scenarios(spec, task),
+      decisions: decisions(spec, task),
+      coverageChecklist: [
+        ...task.ac.map((ref) => ({ ref, kind: 'acceptance' as const })),
+        ...task.scenarios.map((ref) => ({ ref, kind: 'scenario' as const })),
+      ],
+      project: {
+        name: project.name,
+        path: project.path,
+        gates: { ...project.gates, ...(buildCommand(project) ? {} : { build: undefined }) } as Record<string, string>,
+      },
+      skillMap: skillMapRows(root),
+      lenses: [...new Set(task.risk_tags.flatMap((t) => LENSES[t]))],
+      loop: loopState(task, spec.execution, models, harness, loop),
+      impact: { ...impact, ...(impact.command ? { commandForBudget: fillCommand(impact.command, impact.files, workers) } : {}) },
+      ...(graph ? { graph: { source: 'graphify' as const, dependents: reverseDependents(graph, task.files, 1) } } : {}),
+      ...redTests(root, spec, task.id),
+      ...withMockup(mockupForBrief(root, config, spec, task, mockSkills)),
     },
-    skillMap: skillMapRows(root),
-    lenses: [...new Set(task.risk_tags.flatMap((t) => LENSES[t]))],
-    loop: loopState(task, spec.execution, models, harness, loop),
-    impact: { ...impact, ...(impact.command ? { commandForBudget: fillCommand(impact.command, impact.files, workers) } : {}) },
-    ...(graph ? { graph: { source: 'graphify' as const, dependents: reverseDependents(graph, task.files, 1) } } : {}),
-    ...redTests(root, spec, task.id),
-    ...withMockup(mockupForBrief(root, config, spec, task)),
-  };
+    mockupLink(spec.dir),
+  );
 }

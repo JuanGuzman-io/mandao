@@ -45,9 +45,12 @@ scope, product behavior, security or irreversible actions.
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | complete; PR #19 merged (`76f3649`) |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | complete; PR #20 merged (`91919de`) |
-| [14 — Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | plan approved; in progress on `perf/phase-14` |
+| [13b — Phase 13 trial fixes](#phase-13b--phase-13-trial-fixes) | phase 13 trial | phase 13 | complete in the PR of `perf/phase-13b` |
+| [14 — Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | complete; PR #22 merged (`57e60dc`); table trial pending |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
+| [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
+| [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | ready; the maintainer publishes |
 
 ## Phase 0 — Documentation and backlog
 
@@ -556,3 +559,62 @@ with emoji and trailers) and does not infer conventions from the repository's hi
    `scripts/install-hooks.mjs` runs from `prepare` in Mandao's own repository for contributors; it is
    not in the published package (`files`: `dist`, `core`) and never replaces a hook that is not Mandao's.
    This phase adds a test that pins it.
+
+## Phase 13c — after the beta
+
+**Agreed (maintainer, 2026-10-22); moved after the beta (maintainer, 2026-10-22)** so the beta ships now;
+originally planned after phase 14 because it touches the same files (commands, rules, catalog, lock,
+diagrams and docs). Found in the phase 13 trial; the code fixes
+of that trial are phase 13b.
+
+1. **`landing-page-design` only for landing or marketing pages.** The catalog's `ai-design-skills` installs
+   the upstream skill `landing-page-design`, which is oriented to landing pages. The rule loads it only
+   when the mock is a landing or marketing page. Application screens (forms, tables, flows) are mocked
+   without it, starting from `ux.md` and the existing style.
+2. **`ux.md` and the existing product style always take priority over the skill**, in every case.
+3. **Find an interface design skill for application screens** (forms, tables, flows) and evaluate it for
+   the catalog.
+4. **Prose for the phase 13b code.** `rules/mockups.md`, `src/spec/AGENTS.md`, ADR 0056 and `docs/schemas.md`
+   describe: `run mock-install <ID> --yes`, its own `chore` commit and its refusal of a lock with uncommitted changes; skills returned with the offer;
+   every file in `mockups/` listed and no symlinks; an `html` source needs an export file; claude.ai
+   addresses refused in every approvable document and redacted from briefs and packs; `TBD`/`pending`
+   as no reference; the Reviewer rule in the pack; `mockup.skills` in the brief.
+
+## Phase 13b — phase 13 trial fixes
+
+**Approved (maintainer, 2026-10-22).** The code fixes of the phase 13 trial (D1–D7 and the friction that
+needs code), reviewed independently over four rounds. Decisions: installing an accepted mock's skills is
+its own `🔧 chore` commit with `Refs`, before the first task, never in the approval or a task commit
+(`run mock-install <ID> --yes`, verifying every copy against the catalog commit); no symlink anywhere
+under `mockups/`. `rules/mockups.md` names `mock-install`; the rest of the prose is phase 13c item 4.
+Known and left for later (low): `mock-install` on a detached HEAD or a branch with no commit (a raw git
+error, nothing written), a hand-removed pin committed under the install subject, a mock skill with a
+non-git source, the check-then-act race on `mockups/` (same user, local), and the duplicated commit
+plumbing.
+
+## Beta release 0.1.0-beta.0
+
+**Ready (2026-10-22); the maintainer publishes.** Version `0.1.0-beta.0` in changesets pre mode `beta`;
+the name `mandao` is free on npm and no tag exists. Procedure: `CONTRIBUTING.md`, "First publication".
+
+Checks by the agent before the publication: phase 13b merged; the `0.1.0-beta.0` CHANGELOG entry covers
+phases 12, 13, 13b and 14; on the merged `main` commit, PR CI green, `npm pack --dry-run` reviewed (no
+sourcemaps; CHANGELOG, README and LICENSE included) and the tarball installed in a temporary folder
+(`mandao --version`, `init`). The commit to publish is reported to the maintainer.
+
+Maintainer steps:
+
+1. `git checkout main && git pull`; confirm the reported commit.
+2. `npm login` with a 2FA account.
+3. `npm ci`.
+4. `node scripts/publish-tag.mjs --provenance=false`: `prepublishOnly` runs the full suite first; 2FA
+   prompt (`--otp=<code>` is accepted); it publishes with `--tag beta` and points `latest` at it.
+5. `npm dist-tag ls mandao`: `beta` and `latest` at `0.1.0-beta.0`.
+6. `git push origin v0.1.0-beta.0`.
+7. npmjs.com → `mandao` → Settings → Trusted publishing → GitHub Actions: repository
+   `JuanGuzman-io/mandao`, workflow `release.yml`, no environment; then require 2FA and disallow tokens.
+   The configuration expires unless a publish uses it within 2 days.
+8. `npx mandao@beta --version` in an empty folder.
+
+If `npm dist-tag add` is refused, run the command the script prints. A published version is never
+republished: a fix ships as `0.1.0-beta.1`.
