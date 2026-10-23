@@ -10,6 +10,6 @@ export interface CommandSkill {
 export function commandSkills(catalog: Catalog): CommandSkill[] {
   return catalog.bootstrap
     .map((id) => [id, catalog.skills[id]] as const)
-    .filter(([, s]) => s !== undefined && s.binding === 'core' && s.source.type !== 'bundled')
+    .filter(([, s]) => s !== undefined && s.binding === 'core' && s.source.type !== 'bundled' && !s.install_on)
     .map(([id, s]) => ({ id, commands: [...s!.phases] }));
 }

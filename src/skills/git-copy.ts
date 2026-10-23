@@ -1,8 +1,9 @@
 import { spawnSync } from 'node:child_process';
-import { lstatSync, readdirSync, realpathSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { extname, isAbsolute, join, sep } from 'node:path';
-import { copyNewFile, makeScratchDir, removeScratchDir } from '../writer/files.js';
+import { parseDocument } from 'yaml';
+import { copyNewFile, makeScratchDir, removeScratchDir, writeText } from '../writer/files.js';
 import type { InstallOptions, InstallStep, Runner, SkillResult } from './install.js';
 
 type CopyStep = InstallStep & { kind: 'copy' };
@@ -68,13 +69,34 @@ function unsafe(step: CopyStep): string | undefined {
   return undefined;
 }
 
-/** Shallow, sparse fetch of the tag into `dir`; returns the commit it resolved to, or the reason it failed. */
+/** A full commit hash, any case (the schema refuses uppercase; this path does not depend on it). */
+const FULL_COMMIT = /^[0-9a-f]{40}$/i;
+
+/**
+ * Downloads `ref` into `dir`, shallow and without blobs: a tag or branch with `clone --branch`, a full commit
+ * (upstreams without tags) with `init` + `fetch --depth 1 origin <commit>` + checkout of `FETCH_HEAD`.
+ */
+function download(step: CopyStep, dir: string): ReturnType<typeof git> {
+  if (!FULL_COMMIT.test(step.ref))
+    return git(['clone', '--quiet', '--depth', '1', '--branch', step.ref, '--filter=blob:none', '--sparse', '--', step.url, dir], dir);
+  const init = git(['init', '--quiet'], dir);
+  if (init.status !== 0) return init;
+  const remote = git(['remote', 'add', '--', 'origin', step.url], dir);
+  if (remote.status !== 0) return remote;
+  return git(['fetch', '--quiet', '--depth', '1', '--filter=blob:none', 'origin', '--', step.ref.toLowerCase()], dir);
+}
+
+/** Shallow, sparse fetch of the ref into `dir`; returns the commit it resolved to, or the reason it failed. */
 function fetchTag(step: CopyStep, dir: string): { head: string } | { error: string } {
-  const clone = git(['clone', '--quiet', '--depth', '1', '--branch', step.ref, '--filter=blob:none', '--sparse', '--', step.url, dir], dir);
-  if (clone.status !== 0) return { error: gitFailure('fetch', clone) };
+  const fetched = download(step, dir);
+  if (fetched.status !== 0) return { error: gitFailure('fetch', fetched) };
   const sparse =
     step.path === '.' ? git(['sparse-checkout', 'disable'], dir) : git(['sparse-checkout', 'set', '--stdin'], dir, `${step.path}\n`);
   if (sparse.status !== 0) return { error: gitFailure(`checkout of ${step.path}`, sparse) };
+  if (FULL_COMMIT.test(step.ref)) {
+    const checkout = git(['checkout', '--quiet', '--detach', 'FETCH_HEAD'], dir);
+    if (checkout.status !== 0) return { error: gitFailure(`checkout of ${step.ref}`, checkout) };
+  }
   const head = git(['rev-parse', 'HEAD'], dir);
   if (head.status !== 0) return { error: gitFailure('reading the fetched commit', head) };
   return { head: head.stdout.trim() };
@@ -111,6 +133,48 @@ function planCopy(clone: string, path: string): Plan | { error: string } {
   walk(real, '', plan);
   if (!plan.docs.includes('SKILL.md')) return { error: `no SKILL.md in ${path} at the pinned commit` };
   return plan;
+}
+
+/**
+ * Pure: the SKILL.md with `disable-model-invocation: true` in its frontmatter (Claude Code loads it only when
+ * invoked). Literal edit (no `$` patterns), keeping a BOM and CRLF line ends; creates the frontmatter if missing.
+ */
+export function withModelInvocationDisabled(text: string): string {
+  const bom = text.startsWith('\uFEFF') ? '\uFEFF' : '';
+  const rest = text.slice(bom.length);
+  const eol = /^[^\n]*\r\n/.test(rest) ? '\r\n' : '\n';
+  const fm = /^---\r?\n(?:([\s\S]*?)\r?\n)?---(?=\r?\n|$)/.exec(rest);
+  const lines = fm?.[1] ? fm[1].split(/\r?\n/) : [];
+  const at = lines.findIndex((l) => /^disable-model-invocation\s*:/.test(l));
+  if (at >= 0) lines[at] = 'disable-model-invocation: true';
+  else lines.push('disable-model-invocation: true');
+  const head = `---${eol}${lines.join(eol)}${eol}---`;
+  return fm ? bom + head + rest.slice(fm[0].length) : `${bom}${head}${eol}${rest}`;
+}
+
+/** Codex reads `agents/openai.yaml` next to SKILL.md; this policy keeps it from invoking the skill on its own. */
+const CODEX_POLICY = `# Written by mandao: the catalog sets model_invocation: false, so the skill is invoked explicitly.
+policy:
+  allow_implicit_invocation: false
+`;
+const INVOCATION_NOTE =
+  'automatic invocation disabled (Claude Code: disable-model-invocation; Codex: agents/openai.yaml; other harnesses have no equivalent: load it explicitly)';
+
+/** Upstream `agents/openai.yaml` with `policy.allow_implicit_invocation: false` set, the rest (comments too) kept. */
+function withCodexPolicy(text: string): string {
+  const doc = parseDocument(text);
+  if (doc.errors.length) throw new Error(`agents/openai.yaml does not parse: ${doc.errors[0]!.message}`);
+  doc.setIn(['policy', 'allow_implicit_invocation'], false);
+  return String(doc);
+}
+
+/** Disables automatic invocation in a fresh copy: SKILL.md frontmatter, plus the Codex policy under `.agents/skills`. */
+function disableInvocation(target: { rel: string; abs: string }) {
+  const skill = join(target.abs, 'SKILL.md');
+  writeText(skill, withModelInvocationDisabled(readFileSync(skill, 'utf8')));
+  if (!target.rel.startsWith('.agents/skills/')) return;
+  const policy = join(target.abs, 'agents', 'openai.yaml');
+  writeText(policy, existsSync(policy) ? withCodexPolicy(readFileSync(policy, 'utf8')) : CODEX_POLICY);
 }
 
 /** Copies the files into `dest` (never over an existing file, never a symlink), keeping their permission bits. */
@@ -150,7 +214,7 @@ function copyPlan(
   plan: Plan,
   targets: { rel: string; abs: string }[],
   kept: string[],
-  opts: InstallOptions & { root: string; manual: string },
+  opts: InstallOptions & { root: string; manual: string; modelInvocation?: boolean },
 ): Outcome {
   const { root, manual } = opts;
   const withScripts = Boolean(opts.withScripts) && plan.scripts.length > 0;
@@ -163,6 +227,7 @@ function copyPlan(
   const files = withScripts ? [...plan.docs, ...plan.scripts] : plan.docs;
   try {
     for (const t of targets) copyFiles(plan.src, t.abs, files);
+    if (opts.modelInvocation === false) for (const t of targets) disableInvocation(t);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     return { status: 'failed', detail: `copy failed: ${reason}; ${undoCopies(targets, root)}; ${manual}` };
@@ -173,7 +238,7 @@ function copyPlan(
       id,
       plan,
       targets.map((t) => t.rel),
-      kept,
+      opts.modelInvocation === false ? [...kept, INVOCATION_NOTE] : kept,
       withScripts,
     ),
     ...(withScripts ? { scripts: true } : {}),
@@ -190,7 +255,7 @@ export function copyGitSkill(
   step: CopyStep,
   root: string,
   runner: Runner,
-  opts: InstallOptions & { folders: string[]; manual: string },
+  opts: InstallOptions & { folders: string[]; manual: string; modelInvocation?: boolean },
 ): Outcome {
   const refused = unsafe(step);
   if (refused) return { status: 'failed', detail: `${refused}; nothing copied` };

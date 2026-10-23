@@ -13,6 +13,7 @@ import {
   reverseDependents,
   selectImpact,
 } from './impact.js';
+import { type BriefMockup, type BriefMockupProblem, mockupForBrief } from './mockups.js';
 import { changedRedTests } from './red.js';
 import type { SpecFolder } from './spec.js';
 
@@ -51,12 +52,16 @@ export interface Brief {
   graph?: { source: 'graphify'; dependents: string[] };
   /** Tests recorded red for this task and those changed since (ADR 0022); the Reviewer judges changes. */
   redTests?: { files: string[]; changed: string[] };
+  /** The approved mock of a UI task (phase 13): the Implementer follows it, the Reviewer checks against it. */
+  mockup?: BriefMockup | BriefMockupProblem;
 }
 
 function redTests(root: string, spec: SpecFolder, task: string): Pick<Brief, 'redTests'> {
   const entry = spec.progress?.red_tests.find((r) => r.task === task);
   return entry ? { redTests: { files: entry.files.map((f) => f.path), changed: changedRedTests(root, spec.progress, task) } } : {};
 }
+
+const withMockup = (mockup: Brief['mockup']): Pick<Brief, 'mockup'> => (mockup ? { mockup } : {});
 
 /** Rows of the `## Skill Map` table in the root AGENTS.md. */
 export function skillMapRows(root: string): string[] {
@@ -141,5 +146,6 @@ export function composeBrief(
     impact: { ...impact, ...(impact.command ? { commandForBudget: fillCommand(impact.command, impact.files, workers) } : {}) },
     ...(graph ? { graph: { source: 'graphify' as const, dependents: reverseDependents(graph, task.files, 1) } } : {}),
     ...redTests(root, spec, task.id),
+    ...withMockup(mockupForBrief(root, config, spec, task)),
   };
 }

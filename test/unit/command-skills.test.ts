@@ -54,11 +54,38 @@ describe('commandSkills (FR-1, D1)', () => {
 describe('catalog and lock schemas (D1, D3)', () => {
   test('AC-3: every git source has a 40-hex commit; one without commit is rejected', () => {
     const gits = Object.entries(catalog.skills).filter(([, s]) => s.source.type === 'git');
-    expect(gits.map(([id]) => id).sort()).toEqual(['brainstorming', 'product-manager-toolkit', 'software-architect']);
+    expect(gits.map(([id]) => id).sort()).toEqual(['ai-design-skills', 'brainstorming', 'product-manager-toolkit', 'software-architect']);
     for (const [id, s] of gits) expect((s.source as { commit?: string }).commit, id).toMatch(/^[0-9a-f]{40}$/);
     const bad = structuredClone(catalog) as unknown as { skills: Record<string, { source: Record<string, unknown> }> };
     delete bad.skills['software-architect']!.source.commit;
     expect(catalogSchema.safeParse(bad).success).toBe(false);
+  });
+
+  test('round 3: every git ref is a tag/branch-like name (not hex) or the full 40-hex commit itself', () => {
+    const gits = Object.entries(catalog.skills).filter(([, s]) => s.source.type === 'git');
+    for (const [id, s] of gits) {
+      const { ref, commit } = s.source as { ref: string; commit: string };
+      if (/^[0-9a-f]{40}$/.test(ref)) expect(ref, id).toBe(commit);
+      else expect(ref, id).not.toMatch(/^[0-9a-f]+$/);
+    }
+    expect((catalog.skills['ai-design-skills']!.source as { ref: string }).ref).toBe('1c1e97cb9878e236552c772092dda7adcdddbcb2');
+  });
+
+  test('round 3: the schema refuses a short hash ref and a full hash ref that differs from commit', () => {
+    const withRef = (ref: string) => {
+      const c = structuredClone(catalog) as unknown as { skills: Record<string, { source: Record<string, unknown> }> };
+      c.skills['ai-design-skills']!.source.ref = ref;
+      return catalogSchema.safeParse(c);
+    };
+    const short = withRef('1c1e97c');
+    expect(short.success).toBe(false);
+    expect(JSON.stringify(short.error?.issues)).toMatch(/tag or the full 40-hex commit/);
+    expect(withRef('a'.repeat(40)).success).toBe(false);
+    expect(withRef('1c1e97cb9878e236552c772092dda7adcdddbcb2').success).toBe(true);
+    const upper = withRef('1C1E97CB9878E236552C772092DDA7ADCDDDBCB2');
+    expect(upper.success).toBe(false);
+    expect(JSON.stringify(upper.error?.issues)).toMatch(/lowercase/);
+    expect(withRef('1C1E97C').success).toBe(false);
   });
 
   test('AC-3/D3: brainstorming, product-manager-toolkit and software-architect use the pinned git sources', () => {

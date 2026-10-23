@@ -44,6 +44,10 @@ const skill = z.object({
   profiles: z.array(profile).default([...PROFILES]),
   /** What the commands do without the skill (shown when it is not installed). */
   fallback: z.string().min(1).optional(),
+  /** `mock-accepted`: never proposed nor installed by init, sync or matching; only `mandao skills add <id>` after an accepted mock (phase 13). */
+  install_on: z.literal('mock-accepted').optional(),
+  /** `false`: the copied SKILL.md disables automatic model invocation; the skill is loaded explicitly. */
+  model_invocation: z.boolean().default(true),
 });
 
 const matcher = z
@@ -67,6 +71,31 @@ const technology = z.object({
   alt: z.array(z.object({ skill: kebabId, when })).default([]),
 });
 
+/** Why an all-hex `ref` is refused (hex is read case-insensitively), or undefined when it is the pinned commit. */
+function hexRefProblem(ref: string, commit: string): string | undefined {
+  if (ref !== ref.toLowerCase()) return `ref ${ref} is a hash in uppercase: use lowercase hex (the full 40-hex commit)`;
+  if (ref.length !== 40) return `ref ${ref} looks like a short hash: use a tag or the full 40-hex commit (equal to commit)`;
+  return ref === commit ? undefined : `ref ${ref} is a commit but not the pinned commit ${commit}`;
+}
+
+/**
+ * Git-source rules over the whole entry: `model_invocation: false` works only on a copy Mandao writes (a git
+ * source), and a hex `ref` must be the full pinned commit (upstreams without tags are fetched by commit).
+ */
+function gitSourceIssues(skills: Record<string, z.infer<typeof skill>>, ctx: z.RefinementCtx) {
+  for (const [id, s] of Object.entries(skills)) {
+    if (!s.model_invocation && s.source.type !== 'git')
+      ctx.addIssue({
+        code: 'custom',
+        path: ['skills', id, 'model_invocation'],
+        message: `model_invocation: false needs a git source (Mandao edits only the SKILL.md it copies); "${id}" is ${s.source.type}`,
+      });
+    if (s.source.type !== 'git' || !/^[0-9a-f]+$/i.test(s.source.ref)) continue;
+    const message = hexRefProblem(s.source.ref, s.source.commit);
+    if (message) ctx.addIssue({ code: 'custom', path: ['skills', id, 'source', 'ref'], message });
+  }
+}
+
 export const catalogSchema = z
   .object({
     schema_version: schemaVersion,
@@ -82,6 +111,12 @@ export const catalogSchema = z
     const known = new Set(Object.keys(cat.skills));
     const check = (id: string, path: (string | number)[]) => {
       if (!known.has(id)) ctx.addIssue({ code: 'custom', path, message: `unknown skill "${id}"` });
+      else if (cat.skills[id]!.install_on)
+        ctx.addIssue({
+          code: 'custom',
+          path,
+          message: `"${id}" installs only on ${cat.skills[id]!.install_on}: only \`mandao skills add ${id}\``,
+        });
     };
     cat.bootstrap.forEach((id, i) => {
       check(id, ['bootstrap', i]);
@@ -99,6 +134,7 @@ export const catalogSchema = z
         }
       }
     }
+    gitSourceIssues(cat.skills, ctx);
     for (const [pack, ids] of Object.entries(cat.packs)) {
       ids.forEach((id, i) => {
         check(id, ['packs', pack, i]);

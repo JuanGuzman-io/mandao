@@ -147,6 +147,14 @@ describe('docs/spec-anatomy.md is built from the manifest (S-8.1)', () => {
     }
   });
 
+  test('phase 13: mockups/ is a version 2 conditional at every depth, rendered with its purpose; version 1 does not allow it', () => {
+    for (const depth of DEPTHS) expect(layoutManifest(2, depth).optional, depth).toContain('mockups/');
+    expect(layoutManifest(1, 'standard').optional).not.toContain('mockups/');
+    expect(anatomyTables()).toContain('| `mockups/` | UI mock approved with the design | only when a mock was made |');
+    const entries = ['story.md', 'spec.md', 'mockups/'];
+    expect(layoutFindings({ story: { schema_version: 2, status: 'draft' }, docs: { 'spec.md': {} }, entries }).unexpected).toEqual([]);
+  });
+
   test('S-8.1: the README links the page', () => {
     expect(readFileSync(join(root, 'README.md'), 'utf8')).toContain('docs/spec-anatomy.md');
   });

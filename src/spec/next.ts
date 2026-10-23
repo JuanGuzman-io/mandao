@@ -1,6 +1,7 @@
 import { type Approval, activeApprovals } from './approvals.js';
 import { type DeliveryProgress, deliveryProgress } from './deliveries.js';
 import { blockingMarkers, withoutCode, withoutFences } from './markdown.js';
+import { MOCKUPS_FOLDER } from './mockup.js';
 import type { Requirements } from './requirements.js';
 import type { Story } from './story.js';
 import type { Task } from './tasks.js';
@@ -84,10 +85,13 @@ export function openItems(spec: Pick<NextSpec, 'story' | 'requirements'>): { cri
 }
 
 /** The documents that changed since their last recorded hash, by file name. Without a recorded hash, none (no claim). */
-export function changedSince(rows: Approval[], hashes: Record<string, string>): string[] {
+export function changedSince(rows: Approval[], hashes: Record<string, string> | undefined): string[] {
+  if (!hashes) return [];
   const recorded: Record<string, string> = {};
   for (const row of rows) Object.assign(recorded, row.sha256);
-  return Object.keys(recorded).filter((file) => hashes[file] !== undefined && hashes[file] !== recorded[file]);
+  // A missing hash makes no claim, except for a mock file: its deletion after approval is a change (phase 13).
+  const changed = (file: string) => (hashes[file] === undefined ? file.startsWith(MOCKUPS_FOLDER) : hashes[file] !== recorded[file]);
+  return Object.keys(recorded).filter(changed);
 }
 
 const approve = (id: string, step: string) => `mandao approve ${id} ${step}`;
@@ -114,7 +118,7 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
   const draft = draftStep(spec, lite, facts.tasksStatus);
   if (draft) return rec(approve(id, draft), `the ${draft === 'story' ? 'story' : 'spec'} is still draft`, '/mandao-clarify');
   const approvals = activeApprovals(facts.approvals ?? []).filter((a) => a.step !== 'shown');
-  const changed = changedSince(approvals, facts.hashes ?? {});
+  const changed = changedSince(approvals, facts.hashes);
   if (!changed.length) return undefined;
   return rec(approve(id, lite ? 'spec' : 'design'), `${changed.join(', ')} changed after its approval`, '/mandao-clarify');
 }

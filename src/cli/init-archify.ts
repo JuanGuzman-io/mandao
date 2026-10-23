@@ -24,6 +24,7 @@ const ARCHIFY: CatalogSkill = {
   phases: ['specify', 'implement', 'close'],
   profiles: ['app', 'ai', 'data'],
   fallback: 'Run the shared `mandao run archify` helper after installing Archify.',
+  model_invocation: true,
 };
 
 function archifyCatalog() {

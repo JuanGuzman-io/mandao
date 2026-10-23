@@ -28,12 +28,13 @@ export interface LayoutManifest {
 /** The six committed log files of a version 2 spec (FR-3). */
 export const LOG_FILES_V2 = ['state.yml', 'execution.md', 'reviews.md', 'gates.md', 'premises.md', 'costs.yml'];
 
-/** Conditional files, with when each one appears (rendered in `docs/spec-anatomy.md`). */
-export const CONDITIONALS: { file: string; when: string }[] = [
+/** Conditional files, with when each one appears (rendered in `docs/spec-anatomy.md`); `since` is the first layout version allowing it. */
+export const CONDITIONALS: { file: string; when: string; since?: LayoutVersion }[] = [
   { file: 'quickstart.md', when: 'the spec has behavior a user or PO can see' },
   { file: 'data-model.md', when: 'the spec changes data' },
   { file: 'contract/', when: 'the spec spans several projects' },
   { file: 'research.md', when: 'the spec contains NEEDS RESEARCH questions' },
+  { file: 'mockups/', when: 'a mock was made', since: 2 },
 ];
 
 /** What each file is for, rendered in `docs/spec-anatomy.md`. */
@@ -49,6 +50,7 @@ export const FILE_PURPOSE: Record<string, string> = {
   'data-model.md': 'The data the spec changes',
   'contract/': 'The contract between projects',
   'research.md': 'Dated evidence and decisions for research questions',
+  'mockups/': 'UI mock approved with the design',
   'state.yml': 'Start request, baseline, progress, approvals and session-cut estimates',
   'execution.md': 'One row per execution event',
   'reviews.md': 'Verdict and findings per task and attempt',
@@ -99,7 +101,7 @@ export function layoutManifest(version: LayoutVersion, depth: Depth): LayoutMani
       ...(version === 1
         ? ['spec.md', 'requirements.md', 'design.md', 'tasks.md', 'verify-report.md', 'close-summary.md', ...V1_LEGACY]
         : []),
-      ...CONDITIONALS.map((c) => c.file),
+      ...CONDITIONALS.filter((c) => version >= (c.since ?? 1)).map((c) => c.file),
       'diagrams/',
       '_log/',
     ],

@@ -4,10 +4,11 @@ import type { Command } from 'commander';
 import { type Config, projectGate } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
 import { writeProgress } from '../scripts/checkpoint.js';
-import { changedFiles, changeManifest, commitState, renderChangeManifest, repoRoot } from '../scripts/commits.js';
+import { changedFiles, changeManifest, commitState, repoRoot } from '../scripts/commits.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection, recordUnrun } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
+import { mockupPackSection } from '../scripts/mockups.js';
 import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { reviewDiff } from '../scripts/review.js';
@@ -25,6 +26,7 @@ import type { CliContext } from './context.js';
 import { implementSummary } from './implement-summary.js';
 import { json } from './json.js';
 import { currentAttempt, taskOf } from './leader-utils.js';
+import { reviewPackContent } from './review-pack.js';
 import { type CheckpointOptions, withCheckpointOptions, writeCheckpoint } from './run-ledger.js';
 import { stepCut, verifyCut } from './session-advice.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor } from './spec-context.js';
@@ -286,6 +288,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     deletionReason,
     gates,
     reviewDiff(repoRoot(spec.dir), spec.dir, ctx.root()),
+    mockupPackSection(ctx.root(), brief.mockup),
   );
   // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
   const name = `${id}-${attempt}-pack.md`;
@@ -296,60 +299,6 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     bytes: Buffer.byteLength(pack),
     gatesRecorded: recorded.table !== undefined,
   };
-}
-
-function reviewPackContent(
-  id: string,
-  attempt: number,
-  full: string,
-  brief: unknown,
-  manifest: ReturnType<typeof changeManifest>,
-  removedTests: ReturnType<typeof deletedTests>,
-  deletionReason: string | undefined,
-  gates: string,
-  diff: string,
-): string {
-  return [
-    `# Review pack — ${id}, attempt ${attempt}`,
-    '',
-    'Review exactly this task. The Leader already ran the gates and the impacted tests; their full output is in',
-    `\`${full}\`.`,
-    '',
-    '## Brief',
-    '',
-    '```json',
-    JSON.stringify(brief, null, 2),
-    '```',
-    '',
-    '## Mandao change manifest',
-    '',
-    'Exact changed paths, working-tree statuses, and SHA-256 content hashes reviewed below:',
-    '',
-    '```json',
-    renderChangeManifest(manifest),
-    '```',
-    '',
-    ...(removedTests.length
-      ? [
-          '## Removed test cases',
-          '',
-          `Reason recorded by the Leader: ${deletionReason ?? 'missing; block review and request one'}`,
-          '',
-          '```json',
-          JSON.stringify(removedTests, null, 2),
-          '```',
-          '',
-        ]
-      : []),
-    gates.replace(/^# /m, '## '),
-    '',
-    '## Diff',
-    '',
-    '```diff',
-    diff,
-    '```',
-    '',
-  ].join('\n');
 }
 
 function registerImplementSummary(run: Command, ctx: CliContext) {
