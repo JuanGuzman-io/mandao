@@ -691,5 +691,26 @@ Also seen while writing the first story in place: `run spec-new` proposed `MDO-0
 must be reused, not skipped); and the run's cost and telemetry went to `quick` because the spec did not
 exist when the command started (they must move to the spec once it is created).
 
+**Worktree policy is contradictory (maintainer, 2026-10-23).** After the worktree `start` made was
+removed and the spec continued on its branch in the main checkout (advice given in the trial, without
+knowing the rule below), `/mandao-specify` asked how to rebuild the worktree and offered three options:
+commit on `main` (a protected branch under the project's `feature-branch` model), move everything to the
+spec branch, or stay without a worktree (with the warning that `implement` may refuse). The rules
+disagree: ADR 0015 and `specify` say later commands refuse to work outside the worktree, and `implement`
+checks `run where` and refuses; item 1 above asks for the worktree to be optional. Decide one policy,
+record it in one place (ADR 0015 and the guide), and make `start`, `story`, `specify`, `implement`,
+`next` and `doctor` follow it the same way.
+
+Rules for every command, so these inconsistencies stop:
+
+- **Never offer an option that breaks the project's configuration**: no commit on a protected branch,
+  no step against `branching`. If no valid option exists, say why and stop.
+- **Never offer an option that a later command will refuse** (working outside a worktree when
+  `implement` requires one). The option list comes from the same rule the later command checks.
+- **One recommended way, done by the command**: the command performs it after one confirmation; the
+  user does not run git.
+- **The state decides, not the agent**: whether a spec has a branch, a worktree and its pending files is
+  read from a script (`run where`, `run spec-new`), and every command reads the same answer.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
