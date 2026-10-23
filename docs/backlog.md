@@ -42,9 +42,9 @@ scope, product behavior, security or irreversible actions.
 | [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | complete; PR #17 merged (`5d00295`) |
-| [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | implementation in PR #19 |
+| [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | complete; PR #19 merged (`76f3649`) |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
-| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
+| [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | plan approved; in progress on `perf/phase-13` |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
@@ -315,7 +315,7 @@ Several subagents run tasks at the same time.
 
 ## Phase 13 — UI mocks before implementation
 
-**Agreed (maintainer, 2026-10-22), pending phase plan approval.** Today no command proposes anything
+**Plan approved (maintainer, 2026-10-22).** Today no command proposes anything
 visual: `story.md` only links existing designs under `## UX references`, and a spec that touches a
 front end goes from requirements to tasks with nothing the PO can see.
 
@@ -348,6 +348,27 @@ Code read access to design context.
    against it.
 5. **Location.** A `mockups/` folder inside the spec, conditional on content (only when there was a
    mock) and added to the layout manifest.
+
+Approved plan:
+
+- `mandao run mock-offer <spec>` decides deterministically: suggest when the spec touches a project with
+  a UI surface (front-end or mobile dependencies, a mobile manifest, or an HTML entry; overridable with
+  `projects[].ui: true | false`) and the story has no UX references. Offered once per spec, in `story` or
+  `specify`; the answer is recorded in `state.yml` and measured with the phase 2 question events.
+- On acceptance the user chooses: in Claude Code, `/design` or a static HTML mock; elsewhere, the HTML
+  mock. With `/design`, an export into `mockups/` (HTML and/or image) is mandatory: the claude.ai link is
+  private (the team, the PO and subagents cannot open it), so the brief and the review pack use the
+  export, and the link stays only as a reference in `mockups/README.md`. Before implementing it, verify in
+  Claude Code's official documentation that `/design` and `/design-sync` exist and work as described
+  (minimum version, plan), with source and date in the ADR; if that cannot be confirmed, Claude Code uses
+  only the HTML mock and `/design` stays a manual suggestion.
+- The mock starts from `ux.md`, the project's styles and, when connected, Figma; it is approved with the
+  design (approval hashes include `mockups/`), enters the brief of UI tasks, and the Reviewer checks the
+  task against it.
+- Skills: only `elayadesign/ai-design-skills` enters the catalog (pinned to commit `1c1e97c`, MIT, no
+  scripts), installed only on acceptance with automatic invocation disabled. `Leonxlnx/taste-skill` stays
+  in this backlog (its scripts launch Chrome and download assets).
+- After the phase, repeat the external trial with a front-end spec, accepting and declining the mock.
 
 ## Task change manifest redesign
 
