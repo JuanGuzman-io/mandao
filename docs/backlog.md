@@ -812,5 +812,14 @@ that point to the file and section holding each required point. Fix in Mandao: a
 view (`deliverables:` mapping required file names and sections to Mandao's documents) that `close` writes
 and `verify` checks for completeness, so a required section with no source shows up before delivery.
 
+**A stale pending commit blocks the next task (2026-10-23).** In MDO-0001, T1 was committed (`b3ad4ed`)
+after the `build: none` gate was added in its own commit (`de1b081`). `_log/state.yml` kept T1's earlier
+`pending_commits` entry, whose manifest (taken before `.mandao/config.yml` and the lock changed) no longer
+matches HEAD; no Mandao script can remove it, and T2 could not start because it touches a file of that
+entry. The only way on was a hand edit of `state.yml`, recorded as a discrepancy. Fix: `run commit` (or a
+reconcile step in `checkpoint`) recognises an entry whose task is already committed, by its `Task:`
+trailer, and closes it, reporting the files that differ; a gate added mid-task refreshes the pending
+manifest instead of leaving it stale.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
