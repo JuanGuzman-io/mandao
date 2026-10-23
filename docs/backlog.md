@@ -795,6 +795,10 @@ gate (answered `build: none`); that question belongs in the same approval. Later
 stopped on `SECURITY_GAPS` (tasks tagged security, no secrets or SAST gate): the constitution had already
 recorded secrets and SAST as `unknown` but proposed no gate, so the PE had to configure `secrets`, `sast`
 and `audit` mid-implementation. The constitution proposes them with the other gates.
+In MDO-0002 (frontend), `tasks` planned T1 so that its own `build` gate could not pass: `index.html` loads
+`src/main.tsx`, which the plan gave to T3, and the agent had to ask how to handle it. `tasks` must check
+that the first task's declared files satisfy every gate it will run (entry files for `build`, a test for
+`test`), adding the minimal file to that task's list.
 
 **Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
 implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
