@@ -783,5 +783,13 @@ PO decides" or "the tech lead decides". The maintainer works alone and signs eve
 `roles: { po: PE, tech_lead: PE }` in `.mandao/config.yml`, asked at `init`), used by the templates'
 `owner`, the questions and every recorded attribution.
 
+**Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
+leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks
+them up: MDO-0001's tasks were written with "no gate commands declared, each task is verified with its own
+`uv run pytest …`", so the first implementation would run with no lint, format or typecheck gate. Fix: the
+task that creates the manifest declares the gates (proposed from the stack in `standards.md`, approved by
+the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
+project whose constitution lists gates as OPEN.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
