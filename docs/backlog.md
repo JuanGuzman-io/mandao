@@ -828,7 +828,8 @@ cut costs the PE time. Fixes: the session-cut advice weighs the cost basis (on a
 for context limits, not for equivalent savings) and `init` asks for `session.cut_min_savings` instead of
 defaulting to $1; the Leader keeps its own context small (delegates reading and gate output to
 subagents) so one session covers several tasks; `implement` continues from task to task without stopping
-unless a decision is needed.
+unless a decision is needed. Evidence: after the PE raised `session.cut_min_savings` to 50, `implement`
+ran several tasks in a row and the PE noticed the speed-up at once.
 
 **Friction seen in T1 (2026-10-23):**
 - The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
@@ -837,6 +838,30 @@ unless a decision is needed.
   `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs with it.
 - The hand edit of `state.yml` was flagged as a discrepancy but its reason was not recorded; the reason
   had to go in a commit message. A recorded discrepancy must carry the PE's reason.
+
+**The PE moved to Spec Kit in parallel (PE, 2026-10-23).** "It took too long. I think in parallel with
+Spec Kit." State when it happened: MDO-0001 had 1 of 12 tasks committed (T1) and T2 in progress, after the
+constitution, an intake, a story, a standard spec with a reopened constitution, and two session cuts in the
+first task. The same technical test is now run with Spec Kit in a separate folder, reusing the approved
+decisions. Use it as a benchmark: time and PE interventions to the first implemented task, cost, and
+coverage of the test's requirements in both runs; record the numbers here and make the items above
+(hand-overs, manual git, session cuts, gates) the first phase after the beta.
+
+**Dependency policy and audit on a real stack (2026-10-23).** In MDO-0001's T3 the constitution's rule
+"only MIT, Apache-2.0 or BSD" stopped the task on transitive dependencies every Python stack carries
+(certifi, tqdm, pathspec under MPL-2.0; typing_extensions under PSF-2.0; py_rust_stemmers with no license
+metadata, MIT in its repository). The PE had to grant an exception for the whole spec. Then the first
+`pip-audit`, run only because the PE chose it, found 35 CVEs in a transitive (pillow 12.3.0 via fastembed),
+accepted as unreachable with a review trigger. Fixes: the constitution template separates direct from
+transitive dependencies and lists the usual weak-copyleft and PSF licenses for unmodified transitives;
+the proposed gates include `audit` (e.g. `pip-audit`, `npm audit`) next to format, lint, typecheck and
+test; an accepted vulnerability is recorded with its reachability reason and review trigger, and close
+carries it to the delivery notes.
+
+**Internal logs in the deliverable tree (2026-10-23).** The intake's cost and telemetry went to
+`especificaciones/quick/_log/` because no spec existed yet; next to `MDO-0001-…` it reads as a third
+feature named "quick" in a tree an evaluator inspects. Mandao's own logs that belong to no spec should
+live outside `paths.specs` (e.g. under `.mandao/`).
 
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
