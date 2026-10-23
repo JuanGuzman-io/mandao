@@ -13,13 +13,31 @@ const block = (version: string, lines: string[]) =>
 
 const workspaceRelative = (from: string, to: string) => posix.relative(from, to) || '.';
 
+/** The subject and emoji lines of the guide's Commits section; plain Conventional Commits when `commits.emoji` is false. */
+function commitSubjectLines(config: AdapterInput['config']): string[] {
+  const emoji = config.commits.emoji;
+  if (emoji === false)
+    return [
+      `Subject: \`<type>(<scope>): <subject>\` (plain Conventional Commits, no emoji), imperative mood, at most ${config.commits.max_subject_length} characters.`,
+      '',
+      'A breaking change adds `!` after the scope and a `BREAKING CHANGE:` trailer.',
+    ];
+  return [
+    `Subject: \`<emoji> <type>(<scope>): <subject>\`, imperative mood, at most ${config.commits.max_subject_length} characters without the emoji.`,
+    '',
+    `Emoji per type: ${Object.entries(emoji)
+      .filter(([k]) => k !== 'breaking')
+      .map(([k, v]) => `${k} ${v}`)
+      .join(', ')}. A breaking change uses ${emoji.breaking} instead of the type emoji.`,
+  ];
+}
+
 /** The full guide: workspace, commands, rules and commit conventions. Read when a mandao runs, not loaded by every session. */
 function guide(input: AdapterInput): string {
   const { config } = input;
   const commands = selectCommands({ ...input, scope: 'project' });
   const stable = commands.filter((c) => c.meta.status === 'stable');
   const stubs = commands.filter((c) => c.meta.status === 'stub');
-  const emoji = config.commits.emoji;
   const t = config.commits.trailers;
 
   const lines = [
@@ -60,12 +78,7 @@ function guide(input: AdapterInput): string {
     '',
     '## Commits',
     '',
-    `Subject: \`<emoji> <type>(<scope>): <subject>\`, imperative mood, at most ${config.commits.max_subject_length} characters without the emoji.`,
-    '',
-    `Emoji per type: ${Object.entries(emoji)
-      .filter(([k]) => k !== 'breaking')
-      .map(([k, v]) => `${k} ${v}`)
-      .join(', ')}. A breaking change uses ${emoji.breaking} instead of the type emoji.`,
+    ...commitSubjectLines(config),
     '',
     `Trailers: \`${t.refs}: <tracker id>\`, \`${t.task}: <task>\`, \`${t.acs}: <AC ids>\`, \`${t.quick}: <name>\` for quick changes.`,
   ];

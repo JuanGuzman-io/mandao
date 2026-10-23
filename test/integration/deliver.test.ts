@@ -28,10 +28,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-function repo(provider: 'other' | 'github' = 'other') {
+function repo(provider: 'other' | 'github' = 'other', extraConfig = '') {
   const root = makeTree({
     'package.json': '{"name":"delivery-test"}',
-    '.mandao/config.yml': 'schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n',
+    '.mandao/config.yml': 'schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n' + extraConfig,
     'specs/MDO-0009-delivery/story.md':
       '---\nschema_version: 2\nid: MDO-0009\ntype: story\nstatus: closed\n---\n# Ship safely\n\n### AC-1 — Delivery remains confirmed\n',
     'specs/MDO-0009-delivery/_log/state.yml':
@@ -120,7 +120,8 @@ describe('mandao deliver manual-provider path', () => {
 
     await run(root, 'MDO-0009', '--record-pr-url', 'https://github.com/org/repo/pull/1');
     expect(readFileSync(join(root, 'specs/MDO-0009-delivery/close-summary.md'), 'utf8')).toContain('https://github.com/org/repo/pull/1');
-    expect(git(remote, 'log', '-1', '--format=%s', 'feat/MDO-0009-delivery')).toContain('record PR destination');
+    expect(git(remote, 'log', '-1', '--format=%s', 'feat/MDO-0009-delivery')).toBe('📝 docs(delivery): record PR destination');
+    expect(git(remote, 'log', '-1', '--format=%(trailers:key=Refs,valueonly)', 'feat/MDO-0009-delivery')).toBe('MDO-0009');
 
     git(root, 'checkout', '-q', 'main');
     git(root, 'merge', '--no-ff', '-m', 'Merge pull request #1 from org/feat/MDO-0009-delivery', 'feat/MDO-0009-delivery');
@@ -134,6 +135,17 @@ describe('mandao deliver manual-provider path', () => {
       pr_url: 'https://github.com/org/repo/pull/1',
       report: `released on main, PR #1, merge ${git(root, 'rev-parse', '--short', 'HEAD')}`,
     });
+  });
+
+  test('with commits.emoji false the delivery record commit is plain Conventional Commits and keeps its Refs trailer', async () => {
+    const { root, remote } = repo('other', 'commits:\n  emoji: false\n');
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const localBin = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    vi.stubEnv('PATH', localBin);
+    await run(root, 'MDO-0009');
+    expect(git(remote, 'log', '-1', '--format=%s', 'feat/MDO-0009-delivery')).toBe('docs(delivery): record PR destination');
+    expect(git(remote, 'log', '-1', '--format=%(trailers:key=Refs,valueonly)', 'feat/MDO-0009-delivery')).toBe('MDO-0009');
   });
 
   test('without gh on GitHub, pushes and prints the manual PR URL without merging', async () => {

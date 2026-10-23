@@ -118,12 +118,19 @@ export const declaresNoBuild = (project: Pick<ProjectConfig, 'gates'>): boolean 
 
 const commits = z
   .object({
+    /** The per-type emoji map, or `false` for plain Conventional Commits (no emoji in generated subjects; ADR 0055). */
     emoji: z
-      .object(
-        Object.fromEntries([...COMMIT_TYPES, 'breaking'].map((t) => [t, z.string().min(1)])) as Record<
-          CommitType | 'breaking',
-          z.ZodString
-        >,
+      .union(
+        [
+          z.literal(false),
+          z.object(
+            Object.fromEntries([...COMMIT_TYPES, 'breaking'].map((t) => [t, z.string().min(1)])) as Record<
+              CommitType | 'breaking',
+              z.ZodString
+            >,
+          ),
+        ],
+        { error: 'commits.emoji is false or a per-type map; true is not accepted (the map is the default)' },
       )
       .default(DEFAULT_COMMIT_EMOJI),
     max_subject_length: z.number().int().positive().default(72),
@@ -244,7 +251,7 @@ export const configSchema = z
     if (cfg.workspace === 'polyrepo' && cfg.projects.some((p) => p.path === '.')) {
       ctx.addIssue({ code: 'custom', path: ['projects'], message: 'polyrepo projects cannot live at the workspace root' });
     }
-    const emojis = Object.values(cfg.commits.emoji);
+    const emojis = cfg.commits.emoji === false ? [] : Object.values(cfg.commits.emoji);
     if (new Set(emojis).size !== emojis.length)
       ctx.addIssue({ code: 'custom', path: ['commits', 'emoji'], message: 'each commit type needs a distinct emoji' });
   });

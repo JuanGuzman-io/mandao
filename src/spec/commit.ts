@@ -1,4 +1,4 @@
-import type { Config } from '../schemas/index.js';
+import type { CommitType, Config } from '../schemas/index.js';
 import { isTestFile } from '../scripts/impact.js';
 import type { Story } from './story.js';
 import type { Task, TaskKind } from './tasks.js';
@@ -49,6 +49,11 @@ function trailerProblem(line: string, own: Set<string>): string | undefined {
   return undefined;
 }
 
+/** The subject prefix for a commit type: the configured emoji and a space, or nothing when `commits.emoji` is false. */
+export function emojiPrefix(config: Config, type: CommitType | 'breaking'): string {
+  return config.commits.emoji === false ? '' : `${config.commits.emoji[type]} `;
+}
+
 /** Header and trailers for a task's commit, following rules/commits.md and the configured emoji map. */
 export function commitMessage(
   config: Config,
@@ -60,9 +65,9 @@ export function commitMessage(
   extra: string[] = [],
 ): CommitMessage {
   const type = commitType(story, task, files);
-  const emoji = breaking ? config.commits.emoji.breaking : config.commits.emoji[type];
+  const prefix = emojiPrefix(config, breaking ? 'breaking' : type);
   const scope = config.projects.length > 1 ? task.project : (task.files[0]?.split('/').slice(-2, -1)[0] ?? task.project);
-  const header = `${emoji} ${type}(${scope})${breaking ? '!' : ''}: ${subject}`;
+  const header = `${prefix}${type}(${scope})${breaking ? '!' : ''}: ${subject}`;
   const t = config.commits.trailers;
   const trailers = [`${t.refs}: ${story.meta.id}`, `${t.task}: ${task.id}`, ...(task.ac.length ? [`${t.acs}: ${task.ac.join(', ')}`] : [])];
   const issues: string[] = task.kind ? kindIssues(task.kind, files) : [];
@@ -72,9 +77,9 @@ export function commitMessage(
     if (problem) issues.push(problem);
     else trailers.push(line);
   }
-  const length = [...header.slice(emoji.length + 1)].length;
+  const length = [...header.slice(prefix.length)].length;
   if (length > config.commits.max_subject_length)
-    issues.push(`header is ${length} characters without the emoji; the limit is ${config.commits.max_subject_length}`);
+    issues.push(`header is ${length} characters${prefix ? ' without the emoji' : ''}; the limit is ${config.commits.max_subject_length}`);
   if (/\.$/.test(subject)) issues.push('subject ends with a period');
   return { header, trailers, text: `${header}\n\n${trailers.join('\n')}\n`, issues };
 }

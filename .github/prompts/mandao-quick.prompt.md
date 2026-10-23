@@ -76,7 +76,7 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
    the Review column: never type a model name or a review note into the log. Pass what the reviewer said about itself, verbatim,
    as `--claimed-reviewer`; it is only compared.
 3. Commit following `.mandao/templates/app/rules/commits.md`, with the trailer `Mandao-Quick: <name>` and,
-   when a spec id is active, `Refs: <ID>`. Example:
+   when a spec id is active, `Refs: <ID>`. Example (without the emoji when `commits.emoji` is false):
 
    ```
    🐛 fix(web): correct checkout button label

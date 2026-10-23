@@ -61,3 +61,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0052](0052-verified-research-search.md) | Verified search for research approval | Accepted (Phase 8) |
 | [0053](0053-deliveries-inside-a-spec.md) | Deliveries inside a spec | Accepted (Phase 9a) |
 | [0054](0054-version-notes.md) | Version release notes | Accepted (Phase 10) |
+| [0055](0055-commitlint-conflict-check.md) | Commitlint conflict check | Accepted (Phase 12) |

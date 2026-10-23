@@ -14,7 +14,7 @@ import type { ReviewScope } from '../scripts/review-scope.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { specLogInCache } from '../scripts/spec-log.js';
-import { type ExecutionRow, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
+import { type ExecutionRow, emojiPrefix, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
 import { budgetFor } from './budget.js';
 import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst, requireTestDeletionReason } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
@@ -299,7 +299,7 @@ function registerCommitSpec(run: Command, ctx: CliContext) {
       const id = spec.story?.meta.id ?? spec.name;
       const repo = repoRoot(spec.dir);
       const scope = config.projects.length > 1 ? 'specs' : (spec.story?.meta.projects[0] ?? config.projects[0]!.name);
-      const header = `${config.commits.emoji.docs} docs(${scope}): ${SPEC_STEPS[step as keyof typeof SPEC_STEPS](id)}`;
+      const header = `${emojiPrefix(config, 'docs')}docs(${scope}): ${SPEC_STEPS[step as keyof typeof SPEC_STEPS](id)}`;
       const result = commitSpecDocs({
         repo,
         specDir: spec.dir,
