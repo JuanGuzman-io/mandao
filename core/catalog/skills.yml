@@ -66,6 +66,24 @@ skills:
     vetted: false
     binding: core
     phases: [constitution]
+  # Mock-only: `install_on: mock-accepted` means init, sync and matching never install it; only
+  # `node .mandao/bin/mandao.mjs skills add <id> --yes` after an accepted mock (rules/mockups.md). Vetted false:
+  # license, pin and contents were checked at the source on 2026-10-22, but admission (design doc 17.2) also
+  # asks for a real-project trial, which has not happened. Upstream auto-triggers on any web UI, so
+  # `model_invocation: false` disables automatic invocation on copy (ADR 0056). Leonxlnx/taste-skill is not here.
+  ai-design-skills:
+    description: Landing-page and web UI design guidance for visual mocks; used only after the user accepts a mock.
+    source: { type: git, url: https://github.com/elayadesign/ai-design-skills, ref: 1c1e97cb9878e236552c772092dda7adcdddbcb2, path: skills/landing-page-design, commit: 1c1e97cb9878e236552c772092dda7adcdddbcb2 }
+    version: 1c1e97c
+    author: Elaya
+    license: MIT
+    vetted: false
+    binding: conditional
+    phases: [story, specify, implement]
+    profiles: [app]
+    fallback: The mock is built from ux.md, the project styles and the story, without the skill's guidance.
+    install_on: mock-accepted
+    model_invocation: false
   nestjs-best-practices:
     description: NestJS module architecture, dependency injection, security and performance practices.
     source: { type: skills, ref: UNVERIFIED/nestjs-best-practices }

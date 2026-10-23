@@ -26,7 +26,7 @@ reads, `.mandao/templates/app/rules/spec-docs.md`, `.mandao/templates/app/rules/
 `.mandao/templates/app/rules/doc-quickstart.md` when the spec has visible behavior.
 
 Write requirements and design content in `en` and anything addressed to the PO
-(story text, business questions) in `en`. Headings and keywords stay in English.
+(story text, questions) in `en`. Headings and keywords stay in English.
 
 **Skills.** Use `brainstorming` when the story starts from nothing (no code and no tracker context) and
 `product-manager-toolkit` when there is code and product context. This command's steps continue after `brainstorming`: ignore its hand-off to `superpowers:writing-plans`, which is not installed. When a skill is missing, follow this command's own steps without it and note
@@ -50,24 +50,23 @@ and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
 from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues`
 before asking. This is the fallback when the session started in the main checkout
-(`mandao start` does it as a script, with the full setup of §14.5): after creating the worktree, move into it before any other step, because later commands refuse to work outside it:
+(`mandao start` does it as a script, §14.5): after creating it, move into the worktree first, because later commands refuse to work outside it:
 print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
 Then go on. **A story written before the worktree** (by /mandao-story,
 untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
-the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact inside that worktree. Install the project's dependencies **inside the worktree** (e.g. `npm ci`), never
-a symlink to another checkout: test runners and agent sandboxes write into them. Skip this when the
-session already runs in the worktree. If there is no `story.md`, write one from
+the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact inside that worktree. Install dependencies **inside the worktree** (e.g. `npm ci`), never
+a symlink to another checkout. Skip this when the session already runs in the worktree. If there is no `story.md`, write one from
 `.mandao/templates/app/spec/story.md` with what the item says, marking gaps `OPEN` (critical ones block specify).
 
 When the story's `type` is not `story`, follow `.mandao/templates/app/rules/spec-types.md`.
 
 ## 2. Research
 
-Mark uncertain questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness <this harness>`;
+Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness <this harness>`;
 reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `.mandao/templates/app/spec/research.md`; create one subagent task for every uncovered question, parallelize
-independent tasks and include §20 safety rule in each brief.
+independent ones, with the §20 safety rule in each brief.
 
 ## 3. Depth
 
@@ -117,14 +116,18 @@ From `.mandao/templates/app/spec/design.md`:
 ## 5b. quickstart.md (only with visible behavior)
 
 When the spec has behavior a user or a PO can see, write `quickstart.md` from
-`.mandao/templates/app/spec/quickstart.md`: prerequisites in one line, 3–6 steps with the exact command or click
-and what appears, and the expected result; about 400 tokens at most. Not for test-only specs,
+`.mandao/templates/app/spec/quickstart.md`: prerequisites in one line, 3–6 steps (command or click, and what
+appears) and the expected result; about 400 tokens at most. Not for test-only specs,
 refactors or internal infrastructure.
 
 ## 5c. data-model.md (only when data changes)
 
-When the spec adds or changes entities, fields, relationships or states (never by how many tasks, requirements or scenarios there are), write `data-model.md` from
+When the spec adds or changes entities, fields, relationships or states, write `data-model.md` from
 `.mandao/templates/app/spec/data-model.md` following `.mandao/templates/app/rules/doc-data-model.md`.
+
+## 6b. UI mock
+
+When `node .mandao/bin/mandao.mjs run mock-offer <ID>` says `suggest` (and `story` did not ask), follow `.mandao/templates/app/rules/mockups.md`.
 
 ## 7. Consistency Check
 
@@ -134,8 +137,8 @@ and `.mandao/templates/app/rules/consistency-check.md` for the semantic part, ov
 
 ## 8. Diagram for approval
 
-`node .mandao/bin/mandao.mjs run diagram <ID>` says whether the spec needs one. When it does, or the spec changes data, follow
-`.mandao/templates/app/rules/diagram.md`; otherwise skip this step.
+When `node .mandao/bin/mandao.mjs run diagram <ID>` says the spec needs one, or it changes data, follow
+`.mandao/templates/app/rules/diagram.md`; else skip.
 
 ## 9. Close
 

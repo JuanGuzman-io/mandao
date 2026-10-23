@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "b3890d5d1cdecf0f532cf41e662edaab41f0f660eeda138b618fec0bf42b9b2c"
+      "sha256": "4cce20ef92e4f66a646922f6f62f5833ba043788299992dee1195b6955dc03c2"
     },
     {
       "path": "core/commands/init.md",
@@ -39,11 +39,11 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "dac76a26174261999fda61788d55d21775c4571d5bb7a33462785ddceff1037b"
+      "sha256": "9a486ba01d67acdf88042815e449c627fac34753a60171b57988415ec7747bf3"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "1aa0df73a766f90b260fab74738ae50bb93a45bec9f4778ba5fa5fb711da2062"
+      "sha256": "e610cf176a4c30059e34e66cf2d0d740e74790ef85a4d57ddb3d1175994e3595"
     },
     {
       "path": "core/commands/tasks.md",
@@ -54,10 +54,10 @@
       "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
     }
   ],
-  "specSha256": "a9465293343e67dacc1c72604fe88490493fcf2112f9d2216d10df8b97398226",
+  "specSha256": "fa260223b8a172d3729d40eef9efee6b80915ec3ce7fe3d0f68919f0152f506a",
   "svgSha256": {
-    "light": "67ad96b177cf00bf99dc99ad914fd288172b439223c6b28f5ebc6d7df1367cc8",
-    "dark": "563ebf3bc52edd0bef1f65f3a79c380847c1426957cf0b7dfabd64f67565c33e"
+    "light": "c7a09ceb18ed910a20703daea93d8540e3e3a5f0aa99be8749438d52abb579b5",
+    "dark": "2a1a3a6c8096965683042b75db42df82100d7ce317fb0ff913e10e9a04d4361c"
   },
   "spec": {
     "schema_version": 2,
@@ -184,23 +184,32 @@
         "lane": "steps-3",
         "col": 0,
         "type": "backend",
-        "label": "7. Consistency Check",
-        "sublabel": "mandao run trace",
-        "width": 164
+        "label": "6b. UI mock",
+        "sublabel": "mandao run mock-offer",
+        "width": 171
       },
       {
         "id": "s9",
         "lane": "steps-3",
         "col": 1,
+        "type": "backend",
+        "label": "7. Consistency Check",
+        "sublabel": "mandao run trace",
+        "width": 164
+      },
+      {
+        "id": "s10",
+        "lane": "steps-3",
+        "col": 2,
         "type": "security",
         "label": "8. Diagram for approval",
         "sublabel": "mandao run diagram",
         "width": 185
       },
       {
-        "id": "s10",
+        "id": "s11",
         "lane": "steps-3",
-        "col": 2,
+        "col": 3,
         "type": "backend",
         "label": "9. Close",
         "sublabel": "mandao run commit-spec +1",
@@ -291,9 +300,14 @@
         "to": "s10"
       },
       {
-        "id": "s10-writes",
+        "id": "s10-s11",
         "from": "s10",
-        "to": "w2",
+        "to": "s11"
+      },
+      {
+        "id": "s11-writes",
+        "from": "s11",
+        "to": "w3",
         "label": "writes",
         "variant": "dashed"
       }

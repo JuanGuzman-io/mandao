@@ -14,8 +14,8 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
 capabilities: [read, search, edit, shell, mcp]
-templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md]
-scripts: [next, spec-new, trace, event]
+templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md, rules/mockups.md]
+scripts: [next, spec-new, trace, event, mock-offer]
 approval: required
 ---
 
@@ -63,6 +63,14 @@ From `{{template:spec/story.md}}`, following `{{template:rules/spec-docs.md}}` a
   with explicit clause ids. Keywords and ids stay in English; the text is in `{{language.business}}`.
 - Separate specs only by principle 8 of `{{template:rules/spec-docs.md}}`; the user decides.
 - `sources:` lists every source with its date. `status: draft`.
+
+## 3b. UI mock (only when offered)
+
+With `story.md` written, run `{{script:mock-offer}} <ID>` (it reads `## UX references`); when it says
+`suggest`, follow `{{template:rules/mockups.md}}`.
+<!-- mandao:if harness=claude -->
+In Claude Code the mock may be made with `/design`; its export into `mockups/` stays mandatory.
+<!-- mandao:endif -->
 
 ## 4. Approve
 

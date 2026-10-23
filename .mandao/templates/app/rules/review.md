@@ -25,6 +25,12 @@ rows for an `evidence: mutation` task. For the latter, check the classification 
 change to production behavior means it is not characterization → FAIL. Each recorded mutation
 (`mutations/<Tn>-<n>.md`) must change what an assertion protects.
 
+A task whose brief carries `mockup` must follow the approved mock (`mockup.files`, with `readme` for the
+starting points): layout, states, copy and tokens. A deviation is justified in the Implementer's report, or
+it is a FAIL (core lens). When the brief carries `mockup: { readme, problem }` (an unparseable README), the
+Reviewer cannot check the task against the mock: it records an open finding naming the README problem and
+does not PASS a UI acceptance criterion on visual grounds.
+
 ## Risk tags → lenses
 
 | Tags | Lens |

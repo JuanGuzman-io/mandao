@@ -40,6 +40,7 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 6. design.md
 5b. quickstart.md (only with visible behavior)
 5c. data-model.md (only when data changes)
+6b. UI mock
 7. Consistency Check
 8. Diagram for approval (you approve)
 9. Close
@@ -60,6 +61,7 @@ Yes: it stops for your approval.
 - `mandao run premise`
 - `mandao run event`
 - `mandao run research`
+- `mandao run mock-offer`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

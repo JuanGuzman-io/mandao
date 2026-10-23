@@ -70,7 +70,11 @@ their short JSON, and decide; never paste their full output into the conversatio
    as `--claimed-implementer` / `--claimed-reviewer`: it is only compared, never recorded as the identity,
    and only a claim that names a different model is recorded as `identity mismatch`.
 2. **Brief:** the `brief` field of `step` (or `node .mandao/bin/mandao.mjs run brief $spec <Tn> --harness <h>`) gives
-   the clauses, files, exemplar, gates, skills, lenses, models and impacted tests.
+   the clauses, files, exemplar, gates, skills, lenses, models and impacted tests. A UI task also carries
+   `mockup: { readme, files, source, artboard? }`: the Implementer follows the approved mock in those files
+   (never the private `/design` link) and justifies each deviation in its report; the Reviewer fails an
+   unjustified one. Load the installed mock skill (`ai-design-skills`) for such a task only when the spec's
+   mock was accepted.
 3. **Red tests first** when `loop` returns `write-red-tests` (TDD, ADR 0022: the task declares tests).
    Send the brief to the agent `loop` names (`tdd.testsBy`: the `tester` for risk tags or tier strong,
    else the Implementer) asking **only** for the tests from the spec, recorded with `mandao run red` (a
