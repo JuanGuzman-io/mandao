@@ -776,5 +776,12 @@ hand. Fix: a constitution change made from inside a spec lists the spec document
 spec's references to the changed constitution items) and `next` recommends the update before approval,
 with the exact command.
 
+**Roles assume a team; a solo maintainer is a PE (maintainer, 2026-10-23).** The constitution templates
+set `owner: PO` (product, business rules) and `owner: tech lead` (architecture), and the commands ask "the
+PO decides" or "the tech lead decides". The maintainer works alone and signs every decision as PE
+(Product Engineer); the agent only wrote "PE" because it was told. Fix: a configurable role map (e.g.
+`roles: { po: PE, tech_lead: PE }` in `.mandao/config.yml`, asked at `init`), used by the templates'
+`owner`, the questions and every recorded attribution.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
