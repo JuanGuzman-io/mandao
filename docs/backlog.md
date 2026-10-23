@@ -43,7 +43,7 @@ scope, product behavior, security or irreversible actions.
 | [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | complete; PR #17 merged (`5d00295`) |
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | plan approved; in progress on `perf/phase-11` |
-| [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | agreed (reduced scope); pending phase plan approval |
+| [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
 | [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
