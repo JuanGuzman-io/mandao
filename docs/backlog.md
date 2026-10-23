@@ -905,7 +905,10 @@ accepting `claude-code` as an alias.
 - Tests ran from the repository root, where the `web` project's Vitest config never loads; the agent had to
   add `tests.impacted` for `web`. In a monorepo, test commands run from each project's folder, as gates do.
   The `format` and `lint` gates did not cover `tests/web/` either.
-- One deferred e2e run was logged three times (once per checkpoint).
+- One deferred e2e run was logged three times (once per checkpoint). Then verify stayed `blocked` only
+  because T4's e2e were "deferred to CI" and the repository has no CI, although the same e2e had just
+  passed locally against the real backend (4/4, in the same report). A recorded local run of the deferred
+  suite must clear the deferral, and a project without CI must not be blocked forever by one.
 - The PR plan proposed 4 stacked PRs from 4,766 changed lines, most of them `package-lock.json`. Line
   counts for PR sizing must leave out lockfiles and generated files.
 
