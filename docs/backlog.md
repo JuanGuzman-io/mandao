@@ -686,5 +686,10 @@ Evidence: the steps the maintainer had to run by hand in the trial, each a gap t
 | `git switch -c feat/MDO-0001-…` with the same name | to keep the spec ID and carry the pending changes in the same checkout | the in-session spec creation of item 1 |
 | Editing the proposal to close an open question by hand | the agent asked the PO, but there is no step that records the answer | `intake-check` or the story command records PO answers in the proposal |
 
+Also seen while writing the first story in place: `run spec-new` proposed `MDO-0002` because the branch
+`feat/MDO-0001-…` already existed, so the agent set the ID by hand (an existing spec branch with no spec
+must be reused, not skipped); and the run's cost and telemetry went to `quick` because the spec did not
+exist when the command started (they must move to the spec once it is created).
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
