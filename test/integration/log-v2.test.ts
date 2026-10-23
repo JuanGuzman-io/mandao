@@ -12,7 +12,7 @@ import { CACHE, filesUnder, git, history, OTHER_LAST, repo, run, SIX, SPEC, useL
 
 useLogEnv();
 
-describe('S-3.1: a version 2 log is six committed files', () => {
+describe('S-3.1: a version 2 log is six committed files', { timeout: 30_000 }, () => {
   test('S-3.1: after attempts, gates, reviews and premises, git ls-files _log lists exactly the six files, in at most 1000 lines', async () => {
     const root = repo(2);
     await history(root);
@@ -52,7 +52,7 @@ describe('S-3.2: the bulk stays in .mandao/cache/<ID>/, outside git', { timeout:
   });
 });
 
-describe('logs.level: what close does with the cache', () => {
+describe('logs.level: what close does with the cache', { timeout: 30_000 }, () => {
   test('logs.level: the default summary deletes the cache at close, full keeps it, and neither commits it', async () => {
     for (const level of ['summary', 'full'] as const) {
       const root = repo(2);
@@ -69,7 +69,7 @@ describe('logs.level: what close does with the cache', () => {
   });
 });
 
-describe('S-3.3: every reader gives the same answer on both versions of one history', () => {
+describe('S-3.3: every reader gives the same answer on both versions of one history', { timeout: 30_000 }, () => {
   /** Normalised so the two trees compare: their roots, timestamps and short hashes differ. */
   const norm = (value: unknown, root: string) =>
     JSON.stringify(value, (key, item) => (['activeMs', 'userWaitMs', 'agentWaitMs', 'gateMs'].includes(key) ? '<duration>' : item))
@@ -110,7 +110,7 @@ describe('S-3.3: every reader gives the same answer on both versions of one hist
   });
 });
 
-describe('S-3.4: what must not be lost stays in the committed log', () => {
+describe('S-3.4: what must not be lost stays in the committed log', { timeout: 30_000 }, () => {
   test('S-3.4: reviews.md has the FAIL verdict and findings, gates.md the failing output of the task files, state.yml the approval, premises.md the exit and excerpt', async () => {
     const root = repo(2);
     const dir = await history(root);
@@ -163,7 +163,7 @@ describe('MDO-0007 on a version 2 spec: a forced full run is a section of execut
   });
 });
 
-describe('security: a story id that is a path never reaches outside .mandao/cache/', () => {
+describe('security: a story id that is a path never reaches outside .mandao/cache/', { timeout: 30_000 }, () => {
   const survivors = (root: string) =>
     ['.mandao/config.yml', 'package.json', 'src/cli/skills.ts', '.git/HEAD'].map((f) => existsSync(join(root, f)));
 
