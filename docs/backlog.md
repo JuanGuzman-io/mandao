@@ -880,5 +880,14 @@ constitution; the agent had to copy those files from the other branch by hand. F
 (e.g. a `chore` PR that `start` and `constitution` propose when a spec edits them), and `start` warns
 when another open spec branch holds unmerged changes to those files, offering to carry them.
 
+**`<this harness>` is never filled in (PE, 2026-10-23).** The installed Claude Code commands say
+`--harness <this harness>` 23 times across 9 commands (clarify, close, implement, quick, resume, specify,
+story, tasks, verify); the adapter knows the harness but leaves the placeholder. The agent guesses
+`--harness claude-code`, Mandao answers `Unknown harness "claude-code"` (`src/cli/spec-context.ts:19`,
+without listing the valid ids, unlike `init`), and that error became the title of the PE's Claude Code
+tabs. Fix: each adapter renders the placeholder as its own id (`claude`, `codex`, `copilot`, …), with a
+content test that no rendered file keeps `<this harness>`; the error lists the valid ids; consider
+accepting `claude-code` as an alias.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
