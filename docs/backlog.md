@@ -800,5 +800,15 @@ gates) and on manual corrections between commands. Measure it: count the PE's tu
 section assert it. Pending constitution adjustments, gates and approvals should batch into one step when
 they can.
 
+**Deliver with an externally required structure (PE, 2026-10-23).** The technical test requires, per
+feature, `especificaciones/001-caracteristica/especificacion.md` (context, objective, scope, functional and
+non-functional requirements, risks, Gherkin AC), `plan.md` (architecture, components, testing strategy) and
+`tareas.md`. Mandao writes `story.md`, `requirements.md`, `design.md`, `data-model.md` and `tasks.md`,
+with those sections spread across them; only the folders could be renamed (`paths`). Decision for the
+trial: keep Mandao's files and, at close, write in each spec folder short files with the required names
+that point to the file and section holding each required point. Fix in Mandao: a configurable delivery
+view (`deliverables:` mapping required file names and sections to Mandao's documents) that `close` writes
+and `verify` checks for completeness, so a required section with no source shows up before delivery.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
