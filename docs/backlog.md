@@ -959,5 +959,10 @@ on its own branch and worktree, committed with its quick-log row and cost, revie
 `mandao deliver quick/<slug>` failed because the quick had no start record. Either `quick` creates the
 start record when it creates the branch, or `deliver` works from the quick-log row and the branch.
 
+**The quick log says "this commit" instead of a hash (PE, 2026-10-23).** Each row of
+`quick/quick-log.md` is written inside the commit it records, so its Commit column reads "this commit";
+for a reader of the table it identifies nothing. Fix: readers derive the hash from git (the commit that
+added the row), or the row is completed with the hash right after the commit.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
