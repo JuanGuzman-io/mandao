@@ -19,11 +19,12 @@ projects:                      # always a list; a simple repo is one project wit
     profile: app               # app | ai | data (defaults to default_profile)
     tracker_key: API
     repo: git@github.com:acme/api.git   # required in polyrepo ("local" without a remote)
-    gates:                     # level 0 gates, run from the project path
+    gates:                     # level 0 gates, run from the project folder (projects[].path): paths are relative to it
       format: npm run format:check
       lint: npm run lint
       typecheck: npm run typecheck
       test: npm test --
+      build: npm run build        # or the literal `none` (case-sensitive): no build step by choice
       secrets: gitleaks detect
       audit: npm audit --omit=dev
       sast: semgrep --config auto

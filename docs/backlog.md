@@ -45,6 +45,7 @@ scope, product behavior, security or irreversible actions.
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | plan approved; in progress on `perf/phase-11` |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | agreed (reduced scope); pending phase plan approval |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | agreed; pending phase plan approval |
+| [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 
 ## Phase 0 — Documentation and backlog
@@ -318,6 +319,17 @@ Several subagents run tasks at the same time.
 visual: `story.md` only links existing designs under `## UX references`, and a spec that touches a
 front end goes from requirements to tasks with nothing the PO can see.
 
+Evidence (phase 11 trial, 2026-10-22): a real lite spec added a form to the example app's web front
+end; the story had no UX references, no command proposed anything visual, and the Implementer decided
+alone how the form looks. Research for the plan (sources and dates in the phase 11 trial notes, read
+2026-10-22): Claude Code can invoke Claude Design (`/design`, research preview from v2.1.234; it publishes
+an artifact canvas and returns a link, and `/design-sync` loads an existing design system), so item 2's
+assumption is outdated and the plan must re-check it; `elayadesign/ai-design-skills` (MIT, one skill, no
+tags: pin a commit) auto-triggers on any web UI, against "only on acceptance"; `Leonxlnx/taste-skill`
+(MIT, release v2.1.4) runs Node scripts that launch Chrome and download assets from public sites, which
+needs a security decision; Figma's official remote MCP server (`https://mcp.figma.com/mcp`) gives Claude
+Code read access to design context.
+
 1. **Only on acceptance.** `story` or `specify` suggests a mock when the implementation touches a
    front-end or mobile project and the story has no UX references. If the user declines, the flow goes
    on without a mock and loads nothing extra. The design skills load only when the user accepts: for
@@ -336,6 +348,15 @@ front end goes from requirements to tasks with nothing the PO can see.
    against it.
 5. **Location.** A `mockups/` folder inside the spec, conditional on content (only when there was a
    mock) and added to the layout manifest.
+
+## Task change manifest redesign
+
+**Agreed (maintainer, 2026-10-22); backlog.** Found in the phase 11 trial: a task's Reviewer-approved
+manifest records every change in the working tree at review time, so unrelated changes (a Mandao upgrade
+mid-spec, another task's pending files) enter it; two tasks then share files and `run commit` refuses.
+Phase 11 adds only the minimal brake (a commit stops on files that are neither declared by the task nor in
+the diff the Reviewer saw). The redesign scopes the manifest to the task: declared files plus the
+reviewed out-of-list files, with unrelated changes kept out of the review pack and the commit.
 
 ## Migrate MDO-0008 to MDO-0010 to layout v2
 

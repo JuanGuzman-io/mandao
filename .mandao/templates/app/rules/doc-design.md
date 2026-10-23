@@ -30,7 +30,8 @@ Applies the principles in `spec-docs.md`.
   system whose falsity would change a decision, task or scope item, with what changes if false. A High
   premise counts as verified only with an executed command and an excerpt of its output (read-only, in
   the worktree or a sandbox, with a timeout, through the resource guard); a search or a read is not
-  enough. The run is recorded with `mandao run premise <spec> <Pn> -- <command>`, from the worktree: probe
+  enough. The run is recorded with `mandao run premise <spec> <Pn> -- <command>` (each argument is quoted for the
+  shell by Mandao: write the command as you would type it), from the worktree: probe
   scripts go in the spec's `_log/premises/probes/`, never in a home folder or outside the repository; the
   command may not name a path outside the worktree, and its temporary files (`TMPDIR`) and its `HOME`
   stay in `_log/premises/tmp/`, removed after the run; without a recorded

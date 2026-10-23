@@ -112,7 +112,8 @@ Write the workspace level in `{{paths.constitution}}/` from the templates, and a
   inconsistent, write the dominant convention and record the exceptions as `CONFLICT`.
 - Name one **exemplar file** per kind of module (controller, service, component…) in `standards.md`.
 - Propose gate commands per project (format, lint, typecheck, test, secrets, audit, sast, metrics)
-  from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`.
+  from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`. A gate
+  command runs from the project folder (`projects[].path`), so write its paths relative to that folder.
 - Inspect local security gates and every project CI definition for secret scanners and SAST. Run
   `{{script:security-scanning}}` for deterministic detection and, when a GitHub remote and `gh` are
   available, read-only provider API evidence. Present each result as detected, user-declared or

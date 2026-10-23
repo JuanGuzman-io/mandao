@@ -64,8 +64,8 @@ Pick the task: `{{arg:task}}` or `next` from `{{script:tasks}} {{arg:spec}}` (st
 `{{script:tasks}}`) reports a delivery boundary, run `{{script:verify-plan}} {{arg:spec}} --delivery <n>`,
 run its suites and report. The checkpoint passes when `scope.clear` is true: `blockers` always holds the
 permanent "partial plan" line, so it is never empty. When `clear` is false, rework what the other
-blockers name before the next delivery starts. Then recommend a new session before the next
-delivery. The partial plan never verifies the spec; the final verify covers every AC. Then repeat until the task is done, halted or pivoted. **One call per step:**
+blockers name before the next delivery starts. Then recommend a new conversation before the next
+delivery, naming the harness's new-conversation action first (e.g. `/clear` in Claude Code). The partial plan never verifies the spec; the final verify covers every AC. Then repeat until the task is done, halted or pivoted. **One call per step:**
 `{{script:step}} {{arg:spec}} <Tn> --harness <this harness> [checkpoint options]` writes the checkpoint
 (when you pass any), returns the next action from `loop`, and adds the brief when the action delegates
 work. The mechanical parts (gates, the review input, the final report) are scripts too: run them, read
@@ -78,8 +78,9 @@ their short JSON, and decide; never paste their full output into the conversatio
    `reason`, and wait for `mandao approve <spec> budget --to <usd>`; with no person to ask (a headless
    run), stop and leave it pending.
    When the reply has `session.stop: true` (a new session saves at least `session.cut_min_savings`,
-   ADR 0038), stop before delegating: tell the user the `reason` and `savings`, and that a new session
-   continues from the checkpoint with `/mandao-implement {{arg:spec}}`. Otherwise go on without asking:
+   ADR 0038), stop before delegating: tell the user the `reason` and `savings`, give
+   `session.advice.action` first and then `session.advice.then` (the new conversation continues from the
+   checkpoint with `/mandao-implement {{arg:spec}}`). Otherwise go on without asking:
    the estimate is already in `_log/session-cuts.md`.
    Checkpoints are the only memory between sessions: write one after every step below (the same
    options work on `{{script:checkpoint}}` when you need no next action).

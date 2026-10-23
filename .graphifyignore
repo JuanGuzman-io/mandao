@@ -1,5 +1,5 @@
 # mandao:begin
-# Managed by mandao 0.1.0: generated files and build outputs stay out of the code graph.
+# Managed by mandao 0.1.0-beta.0: generated files and build outputs stay out of the code graph.
 .agents/skills/mandao-audit/
 .agents/skills/mandao-audit/agents/openai.yaml
 .agents/skills/mandao-clarify/

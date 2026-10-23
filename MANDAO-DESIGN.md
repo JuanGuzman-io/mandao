@@ -417,7 +417,7 @@ parallel_safe: true
 `kind` determines the commit type and is checked against the real diff. `test_levels` and `evidence`
 replace legacy `tests`, `dod` and `characterization`, still accepted for older specs. Module AGENTS.md
 and its Claude pointer remain implicit DoD. `[x]` is written with the task's PASS commit. Tracker
-subtasks are pending. **DECIDED, pending Phase 3:** the Implementer brief must contain the relevant
+subtasks are pending. **DECIDED (Phase 3, ADR 0045):** the Implementer brief must contain the relevant
 design decisions, rejected alternatives and the scenario/clause checklist; reconcile the command and
 doc-tasks rule about repeating decisions without dropping their constraints.
 
@@ -902,7 +902,7 @@ measurement limitation. Diagram drift compares module paths and contract IDs, ne
    unrelated work. Version 2 writes no `docs/releases/<ID>/` or `docs/kaizen/<ID>.md`; version 1 keeps
    those legacy outputs. Shared accepted lessons may update `docs/kaizen/lessons.md`.
 
-**DECIDED, pending Phases 5–6:** unresolved ASSUMPTION/CONFLICT items must be resolved with a decision
+**DECIDED (Phases 5–6):** unresolved ASSUMPTION/CONFLICT items must be resolved with a decision
 and link or transferred to the backlog with an owner. Delivery target and PR URL must land in the same
 PR before merge; subsequent release state is derived read-only from git, with no post-merge record commit.
 
@@ -1110,7 +1110,7 @@ Raised in the gap sweep. **In this section, untagged items are OPEN**, overridin
 - **DECIDED (ADRs 0036/0038), implemented:** minimal command context, model profiles, cache diagnostics and session-cut advice (§14.7). A general enforced per-subagent context budget remains **OPEN**.
 - **DECIDED (ADR 0036), implemented:** optional per-spec budgets, 80% warning and explicit continuation authorization (§14.7).
 - **Notifications:** Slack alerts on HALT, pending approvals and close.
-- **Implemented:** per-spec Kaizen, cross-spec comparison and role costs. **DECIDED, pending Phases 2/9:** script-owned active/user/agent timing, corrected historical cost view and parallelism comparison. Actual waiting time is not inferred from gaps between commits.
+- **Implemented:** per-spec Kaizen, cross-spec comparison and role costs. **Implemented (Phase 2, ADR 0044):** script-owned active/user/agent timing and a corrected historical cost view. **DECIDED, pending Phase 9b:** parallelism comparison. Actual waiting time is not inferred from gaps between commits.
 - **Implemented (ADR 0030):** init can create a new folder/repo or run a shadow pilot without modifying tracked managed files; doctor detects conflicting SDD framework folders without removing them. Semantic import of in-flight work remains **OPEN**.
 - **Format migrations:** `mandao migrate` using `schema_version`.
 - **Testing Mandao itself:** evals of the commands (e.g., does `specify` catch a planted AC↔FR contradiction?).
@@ -1152,6 +1152,9 @@ it records acceptance criteria, dependencies, status and the phase responsible f
 | 9a | AC-based deliveries inside a spec, partial verify per delivery, `pr-plan` cut by delivery (ADR 0053) |
 | 9b | Isolated task parallelism, integration queue and measurements; pending Kaizen evidence |
 | 10 | Version release notes from merged specs in business language |
+| 11 | Beta preparation: docs match the code, repository About text, trial on a non-Mandao project, publication readiness |
+| 12 | Commitlint conflict check: `doctor` detects a project commitlint; hooks never installed without confirmation |
+| 13 | UI mocks before implementation, only on acceptance |
 
 Migration of v1 MDO-0008–0010 remains outside these phases until layout v2 is proven on a real spec.
 Work types in ADR 0031 remain **PROPOSED**; decisions still unresolved in §23 remain **OPEN**, except

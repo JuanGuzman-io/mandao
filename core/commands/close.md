@@ -131,8 +131,8 @@ a field with `—`: leave it out.
 - **Hotfix lane** (`lane: hotfix` in story.md): remind the user, with the exact branches from
   `{{script:branching}}`, that the fix must be merged back into every branch of `hotfix.merge_to` other
   than the one it was merged into (e.g. gitflow: `main` and `develop`; env-branches: `staging` and
-  `test`). Mandao never merges or pushes; list each back-merge as an open item in the technical notes
-  until the user confirms it.
+  `test`). Mandao never creates the back-merge itself; list each back-merge as an open item in the
+  technical notes until the user confirms it.
 - Environments: only as CI or the tracker reports them —
   `{{script:close-summary}} {{arg:spec}} --env <name> --source ci|tracker`. Promotion is never automated.
 

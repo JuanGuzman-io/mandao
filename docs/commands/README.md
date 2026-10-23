@@ -18,6 +18,6 @@ How they fit together: the [overview in the README](../../README.md#how-it-works
 | [`/mandao-close`](close.md) | Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram. | yes | 🟢 stable |
 | [`/mandao-quick`](quick.md) | Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial. | no | 🟢 stable |
 | [`/mandao-resume`](resume.md) | Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness. | no | 🟢 stable |
-| [`/mandao-research`](research.md) | Sourced research for technical decisions. | — | ⚪ planned |
+| [`/mandao-research`](research.md) | Sourced research for technical decisions. Planned as a standalone command; research already runs inside `/mandao-specify` (ADR 0051, 0052). | — | ⚪ planned |
 | [`/mandao-perf`](perf.md) | Find and fix performance problems with evidence: budgets, protocol, baseline, diagnosis by layer, one measured optimization per task. | — | ⚪ planned |
 | [`/mandao-audit`](audit.md) | Read-only audit by lenses (drift, docs, architecture, security, quality, performance, infra, ai, process, skills) with scored findings. | — | ⚪ planned |
