@@ -943,6 +943,9 @@ skip.
   reference fix applies to every document of the spec that carries it.
 - Delivery had to be handed to the PE as a terminal command (`mandao deliver` asks interactively), once
   more breaking the in-session flow; it should run inside the session with its questions asked there.
+- `mandao worktree clean`, run from an agent session after the merge, listed MDO-0001 as "merged clean"
+  but stopped at an interactive confirmation it could not get (no terminal) and removed nothing; the
+  worktree was removed with `git` by hand. Without a TTY it needs a `--yes` path or a refusal that says so.
 
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
