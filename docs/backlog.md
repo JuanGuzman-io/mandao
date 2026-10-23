@@ -650,3 +650,9 @@ republished: a fix ships as `0.1.0-beta.1`.
 4. **Group stories into specs.** An intake of 11 stories suggested opening them one by one; the
    proposal should suggest which stories form one spec (rule 8 of `rules/spec-docs.md`: dependent AC are
    one spec) and how to mark several `I-n` as opened by the same spec.
+5. **`mandao start` ignores the intake.** Started for an intake story, `mandao start --open` opened the
+   harness with `/mandao-specify <ID> --depth lite`: it skipped `/mandao-story --intake` (losing the
+   prefilled AC, references and resolved questions) and guessed lite depth for a spec that the source
+   document needs at standard (specification, plan and tasks). The worktree was also cut from the last
+   commit, without the uncommitted proposal. `start` should detect an open intake proposal, carry it
+   over, and suggest `story --intake` with a depth derived from the proposal.
