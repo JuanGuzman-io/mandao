@@ -947,5 +947,12 @@ skip.
   but stopped at an interactive confirmation it could not get (no terminal) and removed nothing; the
   worktree was removed with `git` by hand. Without a TTY it needs a `--yes` path or a refusal that says so.
 
+**No light lane for an infrastructure change (PE, 2026-10-23).** Adding a GitHub Actions workflow (the
+project's existing gates in CI) was refused by `/mandao-quick`: it touches the constitution's CI status,
+adds pinned third-party actions and spans backend and frontend. The proposed path was a full spec, so the PE
+implemented CI outside Mandao. Fix: an infrastructure lane for changes that wire existing gates into CI (or
+similar tooling) with a short checklist (pin actions, licence check, update `infrastructure.md` with
+approval) instead of the spec cycle.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
