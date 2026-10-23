@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative } from 'node:path';
-import { keepsLogCache, STORY_ID } from '../schemas/index.js';
+import { effectiveLayoutVersion, keepsLogCache, STORY_ID } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 
 /**
@@ -42,7 +42,11 @@ function storyField(specDir: string, field: string): string | number | undefined
  * integrity hashes included, in the spec's local cache (MDO-0011 design D3). It is the predicate the spec
  * domain's `specLogInCache` uses, so a quoted or unknown version never splits one spec between two layouts.
  */
-export const usesLogCache = (specDir: string) => keepsLogCache(storyField(specDir, 'schema_version'));
+export function usesLogCache(specDir: string): boolean {
+  const hasStory = existsSync(join(specDir, 'story.md'));
+  const declared = hasStory ? storyField(specDir, 'schema_version') : undefined;
+  return keepsLogCache(effectiveLayoutVersion(declared, hasStory, existsSync(join(specDir, '_log', 'state.yml'))));
+}
 
 /** The workspace root of a spec: the nearest folder above it with `.mandao/config.yml`, else the folder above `specs/`. */
 function workspaceOf(specDir: string): string {

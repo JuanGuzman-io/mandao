@@ -1,17 +1,17 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Command } from 'commander';
-import type { Config } from '../schemas/index.js';
+import { type Config, projectGate } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
 import { writeProgress } from '../scripts/checkpoint.js';
 import { changedFiles, changeManifest, commitState, renderChangeManifest, repoRoot } from '../scripts/commits.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
-import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection } from '../scripts/gates.js';
+import { GATE_ORDER, type GateResult, gateResult, gatesLog, gatesPassed, gatesSection, recordUnrun } from '../scripts/gates.js';
 import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js';
 import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { reviewDiff } from '../scripts/review.js';
-import { runTests } from '../scripts/run-tests.js';
+import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { securityGateCommand } from '../scripts/security-gates.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, logSections, readApprovalLog, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
@@ -44,10 +44,8 @@ function gateCommand(
     const impact = impactFor(ctx, project, changed);
     return impact.command ? fillCommand(impact.command, impact.files, workers) : undefined;
   }
-  return securityGateCommand(gate, project.gates[gate as keyof typeof project.gates], task.risk_tags.includes('security'), onPath);
+  return securityGateCommand(gate, projectGate(project, gate), task.risk_tags.includes('security'), onPath);
 }
-
-const inProject = (cmd: string, path: string) => `${path === '.' ? '' : `cd ${JSON.stringify(path)} && `}${cmd} 2>&1`;
 
 /** Built-in gate: changed tests that list folders must say what they scan (`mandao-scans:`), MDO-0007. */
 function scanMarkers(repo: string, changed: string[]): GateResult | undefined {
@@ -78,7 +76,7 @@ async function runGates(ctx: CliContext, spec: SpecFolder, task: Task, attempt: 
     }
     const command = gateCommand(ctx, gate, project, changed, workers, task);
     if (!command) {
-      notConfigured.push(gate);
+      recordUnrun(gate, project, results, notConfigured);
       continue;
     }
     const execution = await executeGate(ctx, config, spec, task, project, gate, command, changed, force);
@@ -133,7 +131,7 @@ async function executeGate(
     },
     () =>
       measureGate(spec.dir, spec.name, gate, () =>
-        runTests(ctx.root(), `${task.id} ${gate}`, inProject(command, project.path), budget, undefined, { keepOutput: true }),
+        runTests(ctx.root(), `${task.id} ${gate}`, inProjectDir(command, project.path), budget, undefined, { keepOutput: true }),
       ),
   );
   return { result: gateResult(gate, run), ...(run.output ? { output: run.output } : {}) };
@@ -287,7 +285,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     removedTests,
     deletionReason,
     gates,
-    reviewDiff(repoRoot(spec.dir), spec.dir),
+    reviewDiff(repoRoot(spec.dir), spec.dir, ctx.root()),
   );
   // Nothing reads a pack back (design P1): version 2 keeps it in the local cache, outside git.
   const name = `${id}-${attempt}-pack.md`;

@@ -40,6 +40,15 @@ export function commitType(story: Story, task: Task, files: string[] = []): Task
   return task.kind ?? kindFromFiles(files) ?? TYPE_BY_SPEC[story.meta.type] ?? 'feat';
 }
 
+/** Why an extra trailer line cannot join the block: one line, `Token: value`, and not a key Mandao writes itself. */
+function trailerProblem(line: string, own: Set<string>): string | undefined {
+  if (/[\r\n]/.test(line)) return `trailer ${JSON.stringify(line)} has a newline: pass one --trailer per line`;
+  const key = /^([A-Za-z][A-Za-z0-9-]*):[ \t]+\S/.exec(line)?.[1];
+  if (!key) return `trailer ${JSON.stringify(line)} is not shaped "Token: value"`;
+  if (own.has(key.toLowerCase())) return `trailer key ${key} is one Mandao writes itself; it cannot be added or overridden`;
+  return undefined;
+}
+
 /** Header and trailers for a task's commit, following rules/commits.md and the configured emoji map. */
 export function commitMessage(
   config: Config,
@@ -48,6 +57,7 @@ export function commitMessage(
   subject: string,
   breaking = false,
   files: string[] = [],
+  extra: string[] = [],
 ): CommitMessage {
   const type = commitType(story, task, files);
   const emoji = breaking ? config.commits.emoji.breaking : config.commits.emoji[type];
@@ -56,6 +66,12 @@ export function commitMessage(
   const t = config.commits.trailers;
   const trailers = [`${t.refs}: ${story.meta.id}`, `${t.task}: ${task.id}`, ...(task.ac.length ? [`${t.acs}: ${task.ac.join(', ')}`] : [])];
   const issues: string[] = task.kind ? kindIssues(task.kind, files) : [];
+  const own = new Set([t.refs, t.task, t.acs, t.quick].map((k) => k.toLowerCase()));
+  for (const line of extra) {
+    const problem = trailerProblem(line, own);
+    if (problem) issues.push(problem);
+    else trailers.push(line);
+  }
   const length = [...header.slice(emoji.length + 1)].length;
   if (length > config.commits.max_subject_length)
     issues.push(`header is ${length} characters without the emoji; the limit is ${config.commits.max_subject_length}`);

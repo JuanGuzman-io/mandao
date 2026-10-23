@@ -22,9 +22,21 @@ const FULL_CAP = 2 * 1024 * 1024;
 
 const TAIL_CHARS = 4000;
 
-/** Wraps a command so it runs at low priority where the OS allows it. */
+/** Wraps a command so it runs at low priority where the OS allows it; `sh -c` keeps builtins such as `cd` working. */
 export function withPriority(command: string, priority: Budget['priority']): string {
-  return priority === 'low' && process.platform !== 'win32' ? `nice -n 10 ${command}` : command;
+  if (priority !== 'low' || process.platform === 'win32') return command;
+  return `nice -n 10 sh -c '${command.replace(/'/g, "'\\''")}'`;
+}
+
+/**
+ * A gate command run from its project folder, with stderr in its output. On POSIX a group keeps the stderr of
+ * every step; Windows has no group form here, so it keeps only the last step's stderr.
+ */
+export function inProjectDir(command: string, path: string): string {
+  if (process.platform === 'win32') return path === '.' ? `${command} 2>&1` : `cd ${JSON.stringify(path)} && ${command} 2>&1`;
+  // The newline closes the group even after a `#` comment or `&`. Single quotes: `$` and backticks in a path never expand.
+  const group = `{ ${command}\n} 2>&1`;
+  return path === '.' ? group : `cd '${path.replaceAll("'", "'\\''")}' && ${group}`;
 }
 
 /**

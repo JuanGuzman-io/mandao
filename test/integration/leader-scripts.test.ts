@@ -140,7 +140,7 @@ describe('Leader scripts', () => {
     expect(pack).toContain('+export const list = () => [];');
     expect(pack).not.toContain('### typecheck — FAIL'); // the output blocks stay in the gates log
     writeFileSync(join(root, 'src/cli/skills.ts'), 'export const list = () => ["changed after pack"] as const;\n');
-    expect(() => checkReview(readSpec(join(root, SPEC)), { task: 'T2', verdict: 'PASS', review: reviewFile('PASS') })).toThrow(
+    expect(() => checkReview(readSpec(join(root, SPEC)), { task: 'T2', verdict: 'PASS', review: reviewFile('PASS') }, root)).toThrow(
       /working tree changed after the review pack was generated/,
     );
   });
@@ -183,6 +183,14 @@ describe('Leader scripts', () => {
     const blocked = await run(root, 'review', 'MDO-0001', 'T2', '--via', 'codex', '--gates', gates, '--brief', brief);
     expect(blocked).toMatchObject({ verdict: 'FAIL', recorded: true, securityBlockers: ['F1: Unsafe shell input (src/run.ts:1)'] });
     expect(readFileSync(join(root, blocked.review), 'utf8')).toContain('Unsafe shell input');
+
+    // Phase 11: an approving review records what the Reviewer was shown, for the commit brake.
+    vi.stubEnv('MOCK_REVIEW', 'VERDICT: PASS\n\n## Findings (JSON)\n\n```json\n{"version":1,"findings":[]}\n```');
+    const passed = await run(root, 'review', 'MDO-0001', 'T2', '--via', 'codex', '--gates', gates, '--brief', brief);
+    expect(passed).toMatchObject({ verdict: 'PASS', recorded: true });
+    const manifests = readSpec(join(root, SPEC)).progress!.approved_manifests;
+    expect(manifests.at(-1)!.reviewed).toContain('src/cli/skills.ts');
+    expect(manifests.at(-1)!.receipts).toEqual([]);
   });
 
   test('implement-summary: verdicts, FAIL reasons and identities from the log', async () => {

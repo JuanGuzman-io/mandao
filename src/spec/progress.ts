@@ -47,6 +47,10 @@ export const progressSchema = z.object({
         subject: z.string().min(1),
         files: z.array(z.string()).default([]),
         manifest: z.array(z.object({ path: z.string(), status: z.string(), sha256: z.string() })).optional(),
+        /** Paths the Reviewer saw as a diff (not as receipts); absent on entries queued before the brake. */
+        reviewed: z.array(z.string()).optional(),
+        /** Generated files the Reviewer saw only as receipts, with their origin. */
+        receipts: z.array(z.object({ path: z.string(), origin: z.string() })).optional(),
       }),
     )
     .default([]),
@@ -57,6 +61,9 @@ export const progressSchema = z.object({
         task: z.string().regex(/^T\d+$/),
         attempt: z.number().int().positive(),
         files: z.array(z.object({ path: z.string(), status: z.string(), sha256: z.string() })),
+        /** Paths the Reviewer saw as a diff (not as receipts). */
+        reviewed: z.array(z.string()).optional(),
+        receipts: z.array(z.object({ path: z.string(), origin: z.string() })).optional(),
       }),
     )
     .default([]),

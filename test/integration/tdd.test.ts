@@ -220,7 +220,15 @@ describe('mandao run red', () => {
     const spec = readSpec(dir);
     writeProgress(dir, {
       ...spec.progress!,
-      approved_manifests: [{ task: 'T2', attempt: 1, files: changeManifest(root, dir) }],
+      approved_manifests: [
+        {
+          task: 'T2',
+          attempt: 1,
+          files: changeManifest(root, dir),
+          reviewed: ['test/a.test.ts'],
+          receipts: [{ path: '.claude/agents/x.md', origin: 'persona:leader' }],
+        },
+      ],
     });
     await run(
       root,
@@ -235,6 +243,10 @@ describe('mandao run red', () => {
       '--clear',
     );
     expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits[0]).toMatchObject({
+      reviewed: ['test/a.test.ts'],
+      receipts: [{ path: '.claude/agents/x.md', origin: 'persona:leader' }],
+    });
     expect(
       readSpec(join(root, SPEC))
         .execution.filter((r) => r.verdict === 'PASS')

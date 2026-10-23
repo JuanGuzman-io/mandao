@@ -65,6 +65,7 @@ const specsDir = (root: string, config: Config) => join(root, config.paths.specs
 /** Finds a spec by folder path, full folder name or id prefix (`MDO-0001`). */
 export function findSpec(root: string, config: Config, ref: string): string {
   if (existsSync(join(ref, 'story.md'))) return resolve(ref);
+  if (existsSync(join(root, ref, 'story.md'))) return resolve(root, ref);
   const base = specsDir(root, config);
   const entries = existsSync(base) ? readdirSync(base) : [];
   const match = entries.find((e) => e === ref) ?? entries.find((e) => e.startsWith(`${ref}-`));

@@ -100,6 +100,22 @@ const project = z.object({
 });
 export type ProjectConfig = z.infer<typeof project>;
 
+/** `gates.build: none` declares that the project has no build step by choice (case-sensitive). */
+export const BUILD_NONE = 'none';
+
+/** The project's build command, or undefined when none is configured or the project declared `build: none`. */
+export function buildCommand(project: Pick<ProjectConfig, 'gates'>): string | undefined {
+  const build = project.gates.build;
+  return build === BUILD_NONE ? undefined : build;
+}
+
+/** The command of a gate; `build: none` is no command (only the build gate reads `none` as a declaration). */
+export const projectGate = (project: Pick<ProjectConfig, 'gates'>, gate: string): string | undefined =>
+  gate === 'build' ? buildCommand(project) : project.gates[gate as keyof ProjectConfig['gates']];
+
+/** Whether the project says `build: none` on purpose, as opposed to leaving the build unconfigured. */
+export const declaresNoBuild = (project: Pick<ProjectConfig, 'gates'>): boolean => project.gates.build === BUILD_NONE;
+
 const commits = z
   .object({
     emoji: z

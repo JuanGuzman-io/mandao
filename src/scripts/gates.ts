@@ -1,4 +1,4 @@
-import { GATES } from '../schemas/index.js';
+import { declaresNoBuild, GATES, type ProjectConfig } from '../schemas/index.js';
 import type { TestRun } from './run-tests.js';
 
 /** Level 0 order (rules/review.md): cheap checks first; `test` means the impacted tests. */
@@ -36,6 +36,15 @@ export function gateResult(gate: string, run: TestRun): GateResult {
   const missing = run.exitCode === 127 || /command not found|not recognized as an internal/i.test(run.output ?? '');
   if (missing) return { gate, status: 'NOT_INSTALLED', exitCode: run.exitCode ?? 127 };
   return { gate, status: 'FAIL', ...(run.exitCode !== undefined ? { exitCode: run.exitCode } : {}), excerpt: excerpt(run.output) };
+}
+
+/** The reason of a gate skipped because the project declared `build: none` (not "not configured"). */
+export const DECLARED_NONE = 'declared none';
+
+/** A gate with no command: a declared-none build is recorded as skipped on purpose, anything else as not configured. */
+export function recordUnrun(gate: string, project: Pick<ProjectConfig, 'gates'>, results: GateResult[], notConfigured: string[]): void {
+  if (gate === 'build' && declaresNoBuild(project)) results.push({ gate, status: 'SKIPPED', reason: DECLARED_NONE });
+  else notConfigured.push(gate);
 }
 
 /** A failed gate blocks the review; a tool that is not installed or a deferred run is reported, not failed. */
@@ -103,8 +112,9 @@ export function gatesSection(
 
 /** The verdict line and the status table, the same in both layouts: what the review pack reads. */
 function statusTable(results: GateResult[], notConfigured: string[]): string[] {
+  const declaredNone = results.filter((r) => r.reason === DECLARED_NONE).map((r) => r.gate);
   return [
-    `${gatesPassed(results) ? 'Every configured gate passed' : 'A gate failed'}${notConfigured.length ? `; not configured: ${notConfigured.join(', ')}` : ''}.`,
+    `${gatesPassed(results) ? 'Every configured gate passed' : 'A gate failed'}${notConfigured.length ? `; not configured: ${notConfigured.join(', ')}` : ''}${declaredNone.length ? `; declared none: ${declaredNone.join(', ')}` : ''}.`,
     '',
     '| Gate | Status | Exit |',
     '|---|---|---|',

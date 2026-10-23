@@ -105,7 +105,7 @@ async function wideAttempt(root: string, t: string, attempt: number) {
 
 /** 3 tasks x 2 attempts: a 10,000-line failing gate, a 5,000-line change (so a 5,000-line pack) per attempt, FAIL then PASS, a mutation, 2 premises. */
 async function wideHistory(root: string) {
-  const long = `"for(let i=1;i<=100;i++)console.log('line '+i)"`;
+  const long = "for(let i=1;i<=100;i++)console.log('line '+i)";
   for (const p of ['P1', 'P2']) await run(root, 'premise', 'MDO-0001', p, '--', 'node', '-e', long);
   for (const t of ['T1', 'T2', 'T3']) {
     for (const attempt of [1, 2]) await wideAttempt(root, t, attempt);

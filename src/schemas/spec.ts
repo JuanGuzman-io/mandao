@@ -10,6 +10,16 @@ export const STORY_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
 export const LAYOUT_VERSIONS = [1, 2] as const;
 export type LayoutVersion = (typeof LAYOUT_VERSIONS)[number];
 
+/**
+ * The layout version of a spec: its story's `schema_version` when a story exists (as parsed, so unknown stays
+ * unknown), else the current layout when `_log/state.yml` exists (`mandao start` writes it before the story),
+ * else undefined. Both the spec domain and the writer route through this one rule.
+ */
+export function effectiveLayoutVersion(storyVersion: unknown, hasStory: boolean, hasStateFile: boolean): unknown {
+  if (hasStory) return storyVersion;
+  return hasStateFile ? LAYOUT_VERSIONS[LAYOUT_VERSIONS.length - 1] : undefined;
+}
+
 /** The first layout version with a six-file `_log/` and a local cache (MDO-0011 design D3). */
 const FIRST_CACHE_VERSION = 2;
 

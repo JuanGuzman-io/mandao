@@ -102,3 +102,32 @@ test('the launcher propagates the exit code of the resolved command', () => {
   }
   expect(status).toBe(7);
 });
+
+test('when the locked version cannot run, the launcher says how to pin the installed one', () => {
+  const root = realpathSync(
+    makeTree({
+      '.mandao/mandao.lock': 'mandao: 1.2.3\n',
+      ...bin('node_modules/.bin/mandao', '2.0.0'),
+      'tools/npx': '#!/bin/sh\necho "npm error 404 mandao@1.2.3" >&2\nexit 1\n',
+      'pkg/': '',
+    }),
+  );
+  for (const path of ['node_modules/.bin/mandao', 'tools/npx']) chmodSync(join(root, path), 0o755);
+  const script = join(root, '.mandao/bin/mandao.mjs');
+  mkdirSync(join(root, '.mandao/bin'), { recursive: true });
+  writeFileSync(script, launcherScript('1.2.3', 'auto'));
+  let failure = { status: 0, stderr: '' };
+  try {
+    execFileSync(process.execPath, [script, 'doctor'], {
+      cwd: join(root, 'pkg'),
+      env: { PATH: join(root, 'tools') },
+      encoding: 'utf8',
+      stdio: 'pipe',
+    });
+  } catch (e) {
+    failure = e as { status: number; stderr: string };
+  }
+  expect(failure.status).toBe(1);
+  expect(failure.stderr).toContain('if npm could not fetch the locked mandao@1.2.3');
+  expect(failure.stderr).toContain(`${join(root, 'node_modules/.bin/mandao')} sync`);
+});

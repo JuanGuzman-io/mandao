@@ -5,7 +5,7 @@ import { ADAPTERS } from '../adapters/index.js';
 import { readRecommendations } from '../models/load.js';
 import { loadLayers } from '../resolver/layers.js';
 import { ResolveError } from '../resolver/resolve.js';
-import { type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
+import { BUILD_NONE, type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { onPath } from '../util/which.js';
@@ -56,6 +56,7 @@ function workspaceFindings(root: string, config: Config): Finding[] {
         fix: 'set projects[].repo to its remote URL so close can link PRs',
       });
     for (const [gate, command] of Object.entries(p.gates)) {
+      if (gate === 'build' && command === BUILD_NONE) continue;
       const bin = command.trim().split(/\s+/)[0] ?? '';
       if (bin && !onPath(bin)) {
         out.push({
@@ -70,7 +71,7 @@ function workspaceFindings(root: string, config: Config): Finding[] {
       out.push({
         level: 'info',
         message: `project "${p.name}": no command for gates ${missing.join(', ')}`,
-        fix: `add projects[].gates in .mandao/config.yml, e.g. lint: "npm run lint"`,
+        fix: `add projects[].gates in .mandao/config.yml, e.g. lint: "npm run lint"; a gate runs from the project folder (projects[].path), so its paths are relative to it`,
       });
     }
   }
