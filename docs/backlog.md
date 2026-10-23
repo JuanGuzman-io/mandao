@@ -729,5 +729,23 @@ repository and are not in the npm package; the project only gets `.mandao/guide.
 with no arguments. Fix: the installed guide lists, per command, its arguments with values, default and an
 example (or the package ships the command pages and the guide links them).
 
+**The repository docs do not list every command and flag (maintainer, 2026-10-23).** The aim: the repo
+docs make clear every command that exists and its flags. Measured on `main` (`0.1.0-beta.0`):
+`mandao deliver` is missing from `docs/cli.md`; 18 of the 54 `mandao run` subcommands are not documented
+there (`branching`, `loop`, `commit-spec`, `test-review`, `diagram-drift`, `diagram`, `close-summary`,
+`release-status`, `quick-log`, `research`, `premise`, `archify`, `security-scanning`, `mock-offer`,
+`mock-install`, `quick-check`, `models`, `fingerprint`); CLI flags appear only partly, inside each row's
+prose. The agent commands' pages (`docs/commands/<command>.md`) list arguments loosely: `specify` documents
+"`depth`: lite | standard | full (default: standard)" while every hand-over writes `--depth lite`, and
+`story` buries `--from` and `--intake` inside the `ref` description. Fix:
+
+- `docs/cli.md` is derived from the CLI definitions (every command, subcommand and flag with its values
+  and default), like the command pages are derived from `core/commands`, with a check that fails when a
+  command or flag is undocumented.
+- Each agent command page lists its arguments and flags one per line: syntax as typed (`--depth lite`),
+  values, default, an example; one syntax used everywhere (pages, hand-overs, `next`).
+- One index in the docs with every agent command and every CLI command, linking their pages; the installed
+  guide carries the same index (see the item above).
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
