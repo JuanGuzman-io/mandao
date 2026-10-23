@@ -63,6 +63,15 @@ describe('config', () => {
     expect(messages(r)).toContain('polyrepo projects cannot live at the workspace root');
   });
 
+  test('commits.emoji accepts false (plain Conventional Commits) and keeps the map as default', () => {
+    const base = { schema_version: 1, workspace: 'single', projects: [{ name: 'a', path: '.' }], harnesses: ['claude'] };
+    expect(configSchema.parse({ ...base, commits: { emoji: false } }).commits.emoji).toBe(false);
+    expect(configSchema.parse({ ...base, commits: {} }).commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);
+    const bad = configSchema.safeParse({ ...base, commits: { emoji: true } });
+    expect(bad.success).toBe(false);
+    expect(messages(bad)).toContain('commits.emoji is false or a per-type map; true is not accepted (the map is the default)');
+  });
+
   test('commit emoji must be unique per type', () => {
     const r = configSchema.safeParse({
       ...baseConfig,

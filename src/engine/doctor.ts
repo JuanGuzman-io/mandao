@@ -15,6 +15,7 @@ import { archifyScript } from './archify.js';
 import { readCatalog } from './catalog.js';
 import { constitutionPrincipleFindings } from './constitution-principles.js';
 import { cacheFindings } from './doctor-cache.js';
+import { commitlintFindings } from './doctor-commitlint.js';
 import { harnessFindings } from './doctor-harness.js';
 import { modelFindings } from './doctor-models.js';
 import { skillFindings } from './doctor-skills.js';
@@ -85,7 +86,7 @@ function workspaceFindings(root: string, config: Config): Finding[] {
       out.push({ level: 'warn', message: 'workspace artifacts are local only (local_only: true) and not versioned' });
     }
   }
-  return [...out, ...pendingCommitFindings(root, config), ...branchingFindings(root, config)];
+  return [...out, ...pendingCommitFindings(root, config), ...branchingFindings(root, config), ...commitlintFindings(root, config)];
 }
 
 /** Reports verified, absent and unverified security-scan coverage without treating unknown as failure. */

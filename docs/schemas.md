@@ -44,6 +44,7 @@ branching:                     # ADR 0023: a preset plus only the fields that di
 commits:
   emoji: { feat: ✨, fix: 🐛, docs: 📝, style: 🎨, refactor: ♻️, test: ✅, chore: 🔧,
            perf: ⚡️, build: 📦️, ci: 👷, revert: ⏪️, breaking: 💥 }
+  # emoji: false             # plain Conventional Commits: no emoji in generated subjects, no emoji rule in commitlint (ADR 0055)
   max_subject_length: 72
   trailers: { refs: Refs, task: Mandao-Task, acs: Mandao-AC, quick: Mandao-Quick }
 scripts: { runner: npx }       # npx (pinned version) | local (devDependency)

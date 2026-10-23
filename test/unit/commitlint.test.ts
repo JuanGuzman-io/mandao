@@ -89,3 +89,31 @@ test('branchIdPattern extracts tracker and local ids', () => {
   expect('fix/MDO-0007-typo'.match(re)?.[1]).toBe('MDO-0007');
   expect('main'.match(re)).toBeNull();
 });
+
+describe('generated commitlint config with commits.emoji false', () => {
+  test('parses a plain header and does not require the emoji rule', async () => {
+    const config = configSchema.parse({
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'a', path: '.', profile: 'app' }],
+      harnesses: ['claude'],
+      commits: { emoji: false },
+    });
+    const file = join(makeTree({}), 'commitlint.config.mjs');
+    writeFileSync(file, commitlintConfig(config, '0.1.0'));
+    const plain = (await import(pathToFileURL(file).href)).default as typeof cfg & { rules: Record<string, unknown> };
+    expect(plain.rules).not.toHaveProperty('mandao-emoji');
+    expect(plain.rules['type-enum']).toEqual([
+      2,
+      'always',
+      ['feat', 'fix', 'docs', 'style', 'refactor', 'test', 'chore', 'perf', 'build', 'ci', 'revert'],
+    ]);
+    const m = 'feat(api)!: add endpoint'.match(plain.parserPreset.parserOpts.headerPattern);
+    expect(plain.parserPreset.parserOpts.headerCorrespondence).toEqual(['type', 'scope', 'breaking', 'subject']);
+    expect(m?.slice(1)).toEqual(['feat', 'api', '!', 'add endpoint']);
+    expect('✨ feat(api): x'.match(plain.parserPreset.parserOpts.headerPattern)).toBeNull();
+    const rule = plain.plugins[0]!.rules['mandao-header-length']!;
+    expect(rule({ header: `feat: ${'x'.repeat(70)}` })[0]).toBe(false);
+    expect(rule({ header: 'feat: short' })[0]).toBe(true);
+  });
+});

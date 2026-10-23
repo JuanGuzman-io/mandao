@@ -278,7 +278,7 @@ export interface SpecCommit {
 }
 
 /**
- * Commits only the spec folder (`📝 docs(<scope>): <subject>` with `Refs: <id>`): specify on approval,
+ * Commits only the spec folder (`[<emoji> ]docs(<scope>): <subject>` with `Refs: <id>`; no emoji when `commits.emoji` is false): specify on approval,
  * clarify after recording answers. `extraPaths` adds the close documents (release, Kaizen, constitution,
  * module guides); nothing else is ever staged. Local only, never on a protected branch.
  */

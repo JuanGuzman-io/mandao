@@ -26,6 +26,8 @@ Mandao-AC: AC-1, AC-3
 
 - Header: `<emoji> <type>(<scope>): <subject>`. Emoji first, unicode, imperative mood, at most the
   configured length (72 by default) without the emoji.
+- With `commits.emoji: false` in `.mandao/config.yml` the header is plain Conventional Commits,
+  `<type>(<scope>): <subject>`: no emoji, no emoji map, and the length limit counts the whole header.
 - Type: a task's commit takes the task's `kind` from `tasks.md`, checked against the real diff (a
   commit that only changes tests is `test`, only documentation is `docs`).
 - Scope: the project in a monorepo or polyrepo, the module in a single repo.
@@ -35,5 +37,7 @@ Mandao-AC: AC-1, AC-3
 - Trailers: `Refs`, `Mandao-Task`, `Mandao-AC`; quick changes use `Mandao-Quick: <name>`.
 - Closing keywords (`Fixes <ID>`) only on the final commit or the PR.
 
-`.mandao/commitlint.config.mjs` enforces the header, the emoji ↔ type map and the `Refs` trailer on
-spec branches.
+`.mandao/commitlint.config.mjs` enforces the header, the emoji ↔ type map (unless `commits.emoji` is
+false) and the `Refs` trailer on spec branches. A project's own commitlint config that extends
+`@commitlint/config-conventional` rejects the emoji prefix: `mandao doctor` warns and suggests
+`commits.emoji: false`.

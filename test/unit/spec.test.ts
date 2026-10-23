@@ -332,3 +332,20 @@ test('commitMessage builds the header and trailers from the config', () => {
     'subject ends with a period',
   ]);
 });
+
+test('commitMessage with commits.emoji false builds a plain Conventional Commits header', () => {
+  const config = configSchema.parse({
+    schema_version: 1,
+    workspace: 'single',
+    projects: [{ name: 'mandao', path: '.' }],
+    harnesses: ['claude'],
+    commits: { emoji: false },
+  });
+  const story = parseStory(read('story.md')).story!;
+  const task = parseTasks(read('tasks.md')).tasks[1]!;
+  expect(commitMessage(config, story, task, 'add skills list command').text).toBe(
+    'feat(cli): add skills list command\n\nRefs: MDO-0001\nMandao-Task: T2\nMandao-AC: AC-2, AC-2/C1\n',
+  );
+  expect(commitMessage(config, story, task, `${'x'.repeat(70)}.`).issues[0]).toBe('header is 82 characters; the limit is 72');
+  expect(commitMessage(config, story, task, 'drop old flag', true).header).toBe('feat(cli)!: drop old flag');
+});
