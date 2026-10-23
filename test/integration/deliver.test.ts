@@ -31,7 +31,7 @@ afterEach(() => {
 function repo(provider: 'other' | 'github' = 'other', extraConfig = '') {
   const root = makeTree({
     'package.json': '{"name":"delivery-test"}',
-    '.mandao/config.yml': 'schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n' + extraConfig,
+    '.mandao/config.yml': `schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n${extraConfig}`,
     'specs/MDO-0009-delivery/story.md':
       '---\nschema_version: 2\nid: MDO-0009\ntype: story\nstatus: closed\n---\n# Ship safely\n\n### AC-1 — Delivery remains confirmed\n',
     'specs/MDO-0009-delivery/_log/state.yml':
