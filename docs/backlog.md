@@ -821,5 +821,22 @@ reconcile step in `checkpoint`) recognises an entry whose task is already commit
 trailer, and closes it, reporting the files that differ; a gate added mid-task refreshes the pending
 manifest instead of leaving it stale.
 
+**One task per session is too slow (PE, 2026-10-23).** "Imagine, I have only just finished 1 of 11." T1
+of MDO-0001 took the whole session and ended with a second session cut (135k tokens; "saving" $2.41), after
+the first cut before T1. On a subscription those savings are list-price equivalents, not money, while every
+cut costs the PE time. Fixes: the session-cut advice weighs the cost basis (on a subscription, cut only
+for context limits, not for equivalent savings) and `init` asks for `session.cut_min_savings` instead of
+defaulting to $1; the Leader keeps its own context small (delegates reading and gate output to
+subagents) so one session covers several tasks; `implement` continues from task to task without stopping
+unless a decision is needed.
+
+**Friction seen in T1 (2026-10-23):**
+- The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
+  agent had to put `.venv/bin` on `PATH`. Red runs must use the project's declared test gate command.
+- The commit script refused `.mandao/mandao.lock` inside the task commit, so the lock went in a separate
+  `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs with it.
+- The hand edit of `state.yml` was flagged as a discrepancy but its reason was not recorded; the reason
+  had to go in a commit message. A recorded discrepancy must carry the PE's reason.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
