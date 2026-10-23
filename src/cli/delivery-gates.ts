@@ -1,16 +1,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { join } from 'node:path';
-import type { Config, ProjectConfig } from '../schemas/index.js';
+import { type Config, type ProjectConfig, projectGate } from '../schemas/index.js';
 import { detectRunner, fillCommand, findScanners, projectDir, readGraph, selectImpact } from '../scripts/impact.js';
-import { runTests } from '../scripts/run-tests.js';
+import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { budgetFor } from './budget.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-
-function fromProject(project: ProjectConfig, command: string): string {
-  if (project.path === '.') return command;
-  return `cd '${project.path.replaceAll("'", "'\\''")}' && ${command}`;
-}
 
 function command(cwd: string, bin: string, args: string[]): string {
   const result = spawnSync(bin, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
@@ -38,13 +33,13 @@ async function runPrePushGate(
 ): Promise<void> {
   const kind = gate === 'build' ? 'build' : 'unit';
   const budget = budgetFor(repo, config, project, kind, `delivery ${gate}`);
-  const result = await runTests(repo, `delivery ${gate}`, fromProject(project, check), budget);
+  const result = await runTests(repo, `delivery ${gate}`, inProjectDir(check, project.path), budget);
   if (result.status !== 'PASS') throw new Error(`pre-push ${gate} ${result.status}: ${result.reason}`);
 }
 
 async function runProjectGates(repo: string, config: Config, project: ProjectConfig): Promise<void> {
   for (const gate of ['lint', 'typecheck', 'build'] as const) {
-    const check = project.gates[gate];
+    const check = projectGate(project, gate);
     if (!check) continue;
     console.log(`Pre-push ${project.name}/${gate}: ${check}`);
     await runPrePushGate(repo, config, project, gate, check);
@@ -73,7 +68,7 @@ async function runProjectTests(repo: string, config: Config, project: ProjectCon
   const budget = budgetFor(repo, config, project, 'unit', `delivery impacted tests ${project.name}`);
   const commandLine = fillCommand(impact.command, impact.files, Math.max(1, budget.workers));
   console.log(`Pre-push ${project.name}/impacted tests (${impact.source}): ${commandLine}`);
-  const result = await runTests(repo, `delivery impacted tests ${project.name}`, fromProject(project, commandLine), budget);
+  const result = await runTests(repo, `delivery impacted tests ${project.name}`, inProjectDir(commandLine, project.path), budget);
   if (result.status !== 'PASS') throw new Error(`pre-push impacted tests ${result.status}: ${result.reason}`);
 }
 

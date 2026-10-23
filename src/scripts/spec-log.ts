@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { keepsLogCache } from '../schemas/index.js';
+import { effectiveLayoutVersion, keepsLogCache } from '../schemas/index.js';
 import { type Approval, parseApprovals, renderApprovals } from '../spec/approvals.js';
 import { renderCosts } from '../spec/costs.js';
 import { LAYOUT_VERSIONS, layoutManifest, tasksHaveOwnFile } from '../spec/layout.js';
@@ -41,10 +41,12 @@ export function keepsStateFile(schemaVersion: unknown): boolean {
   return version !== undefined && layoutManifest(version, 'lite').log.includes(STATE_FILE);
 }
 
-/** The story's `schema_version`, or undefined when there is no story (the quick folder, a spec not specified yet). */
+/** The spec's layout version: the story's `schema_version`, or the current layout before the story when `mandao start` wrote `_log/state.yml`. */
 function storyVersion(specDir: string): unknown {
   const story = join(specDir, 'story.md');
-  return existsSync(story) ? frontmatterOf(readFileSync(story, 'utf8')).data.schema_version : undefined;
+  const hasStory = existsSync(story);
+  const declared = hasStory ? frontmatterOf(readFileSync(story, 'utf8')).data.schema_version : undefined;
+  return effectiveLayoutVersion(declared, hasStory, existsSync(join(specDir, LOG_DIR, STATE_FILE)));
 }
 
 /** True when this spec keeps its state in `_log/state.yml`; a version 1 spec, or a folder without a story, keeps its own files. */

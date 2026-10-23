@@ -29,7 +29,7 @@ AI agents write code fast. They also guess, skip tests, and say "done" when it i
 
 - **Specs your PO can read.** Stories with acceptance criteria, traced to requirements, tasks, tests and commits. Every spec folder follows one fixed layout per depth: see [spec anatomy](docs/spec-anatomy.md).
 - **A reviewer that isn't the author.** Every task is reviewed by a separate agent in a clean context — a different model or a different harness when one is available, and the record says when it isn't.
-- **Research with a paper trail.** Unfamiliar and version-bound choices use dated sources and reusable evidence; unverified model memory cannot justify high-impact decisions. Declare web-search MCP servers per harness in `research.web_search_servers`.
+- **Research with a paper trail.** Inside `specify`, unfamiliar and version-bound choices are researched into dated sources and reusable evidence; unverified model memory cannot justify high-impact decisions. Declare web-search MCP servers per harness in `research.web_search_servers`.
 - **Tests before code (TDD).** Write a failing test from the spec, make it pass, then refactor. Mandao requires recorded red evidence before implementation where TDD applies: the test demonstrates the missing behavior before the code addresses it, keeping implementation tied to the spec. [TDD in the task flow](#test-driven-development-tdd).
 - **One flow, any harness.** Claude Code, Codex, OpenCode, Copilot. Out of tokens mid-spec? Switch tools and run `/mandao-resume`.
 - **Safer skill installs.** Catalog skill repositories require HTTPS; Git preserves your `GIT_SSH_COMMAND` and adds non-interactive mode only when no `BatchMode` setting is present.
@@ -49,9 +49,9 @@ constitution → story → specify → [clarify] → tasks → implement → ver
 ```
 
 1. **Constitution** — once per project. Maps the code, writes the technical rules and the product context, and picks the right skills for your stack.
-2. **Spec** — a story becomes requirements, a design (with a diagram you approve) and small tasks.
-3. **Implement** — a Leader hands each task to an Implementer; a Reviewer checks it; one commit per approved task. Never a push.
-4. **Close** — after `verify` checks every acceptance criterion, `close` writes the "For the PO" section of the close summary (`mandao run version-notes <version>` assembles them per version) and feeds what was learned back into the constitution.
+2. **Spec** — a story becomes requirements, a design (with a diagram you approve) and small tasks. A big spec keeps one story and design but can split its execution into deliveries, each with a partial verify ([ADR 0053](docs/decisions/0053-deliveries-inside-a-spec.md)).
+3. **Implement** — a Leader hands each task to an Implementer; a Reviewer checks it; one local commit per approved task, never a push.
+4. **Close** — after `verify` checks every acceptance criterion, `close` writes the "For the PO" section of the close summary (`mandao run version-notes <version>` assembles them per version) and feeds what was learned back into the constitution. Then `mandao deliver` asks once for the destination and how far to go: push and open the PR, or also merge once the PR's CI is green.
 
 Every spec works in its own git worktree, so your main checkout stays clean.
 
@@ -162,7 +162,7 @@ mandao start "add a remember-me option to login"   # branch + worktree + setup, 
 1. Open your agent **inside the worktree** (`mandao start` prints the exact command; `--open` launches it).
 2. Run `/mandao-specify` — at lite depth, one session writes the story, the spec and the tasks.
 3. Approve from the terminal: `mandao approve <ID> spec` — no model session, no tokens. It prints the command for the next step.
-4. In a **new** session, from the worktree: `/mandao-implement`, then `/mandao-verify` and `/mandao-close`. A fresh session costs less than re-reading the whole specify context on every turn ([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)).
+4. Clear the conversation in the same window (`/clear` in Claude Code, `/new` in Codex and OpenCode, a new chat in Copilot and Antigravity) and run, from the worktree, `/mandao-implement`, then `/mandao-verify` and `/mandao-close`. A fresh context costs less than re-reading the whole specify context on every turn ([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)); `mandao approve` prints the exact action for your harness.
 
 Started from the main checkout by mistake? Mandao creates the worktree anyway and tells you how to resume there.
 
@@ -179,7 +179,7 @@ What you'll see:
 1. A **gate check**: is this really small? (one module, no contracts or public interfaces, no risky areas such as auth, payments or migrations). If not, Mandao suggests a spec instead.
 2. The change, lint and the impacted tests — never the whole suite on your laptop.
 3. An **independent review**.
-4. One commit, in the team's format. No push.
+4. One local commit, in the team's format. Nothing is pushed until you confirm it with `mandao deliver`.
 
 ```
 🐛 fix(web): correct checkout button label
@@ -235,11 +235,11 @@ Each path has its own diagram in [docs/process-map.md](docs/process-map.md).
 | [`tasks`](docs/commands/tasks.md) | Small, traceable tasks with test levels declared | 🟢 stable |
 | [`implement`](docs/commands/implement.md) | Leader → Implementer → Reviewer, red tests first, one commit per task | 🟢 stable |
 | [`verify`](docs/commands/verify.md) | Impacted tests, e2e on critical flows, AC traceability | 🟢 stable |
-| [`close`](docs/commands/close.md) | Release notes, diagram drift, Kaizen, publish to your tracker | 🟢 stable |
+| [`close`](docs/commands/close.md) | Release notes, diagram drift, Kaizen, publish to your tracker; then `mandao deliver` | 🟢 stable |
 | [`quick`](docs/commands/quick.md) | Small changes behind a gate | 🟢 stable |
 | [`resume`](docs/commands/resume.md) | Continue a spec from its checkpoint, in any harness | 🟢 stable |
 | [`init`](docs/commands/init.md) | Set up Mandao in a repo from inside your agent (after `init --scope global`) | 🟢 stable |
-| [`research`](docs/commands/research.md) | Sourced research for technical decisions | ⚪ planned |
+| [`research`](docs/commands/research.md) | Standalone sourced research (planned); research already runs inside `specify` | ⚪ planned |
 | [`perf`](docs/commands/perf.md) | Measured performance work: before and after, every time | ⚪ planned |
 | [`audit`](docs/commands/audit.md) | Project health by lens: drift, security, quality… | ⚪ planned |
 

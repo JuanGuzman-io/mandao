@@ -112,7 +112,7 @@ export const run = (root: string, ...args: string[]) => cli(root, 'run', ...args
 export async function history(root: string) {
   const dir = join(root, SPEC);
   const T = ['--task', 'T2', '--harness', 'claude'];
-  for (const p of ['P1', 'P2']) await run(root, 'premise', 'MDO-0001', p, '--', 'node', '-e', `"console.log('pinned ${p}')"`);
+  for (const p of ['P1', 'P2']) await run(root, 'premise', 'MDO-0001', p, '--', 'node', '-e', `console.log('pinned ${p}')`);
   for (const attempt of [1, 2]) {
     await run(root, 'checkpoint', 'MDO-0001', ...T, '--verdict', 'STARTED', '--tier', 'standard');
     writeFileSync(join(root, 'src/cli/skills.ts'), `export const a = ${attempt + 1};\n`);

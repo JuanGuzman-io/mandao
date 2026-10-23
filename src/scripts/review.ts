@@ -1,7 +1,7 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, posix, relative } from 'node:path';
 import { LOCK_FILE, readLock } from '../engine/files.js';
 import { parseFrontmatter } from '../engine/frontmatter.js';
 import type { Choice, ResolvedModels } from '../models/resolve.js';
@@ -9,6 +9,7 @@ import type { HarnessId } from '../schemas/index.js';
 import type { CrossReviewer } from '../spec/index.js';
 import { changedFiles } from './commits.js';
 import type { Identity } from './identity.js';
+import { lockPath, posixPath, type ReviewScope } from './review-scope.js';
 
 /** Harnesses Mandao can launch as a read-only reviewer process (ADR 0021). */
 export const REVIEW_PROCESSES = ['codex', 'claude', 'opencode'] as const;
@@ -108,26 +109,24 @@ function diagramReceipt(repo: string, file: string, content: string): Receipt | 
   }
 }
 
-/** Source diff plus verifiable receipts for generated harness copies and source-derived diagrams. */
-export function reviewDiff(repo: string, specDir: string): string {
-  const files = changedFiles(repo, specDir);
-  if (!files.length) return '(no changes)';
-  const git = (args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
-  const untracked = new Set(
-    git(['ls-files', '--others', '--exclude-standard', '--', ...files])
-      .split('\n')
-      .filter(Boolean),
-  );
+/**
+ * Changed files split into those the pack shows as a diff (`included`) and those it shows only as hash receipts.
+ * Lock paths are relative to the workspace `home`, changed files to the git `repo`; both are compared as
+ * repo-relative paths.
+ */
+function classifyChanges(repo: string, files: string[], home: string) {
   const lock = (() => {
     try {
-      return readLock(join(repo, LOCK_FILE));
+      return readLock(join(home, LOCK_FILE));
     } catch {
       return undefined;
     }
   })();
-  const receipts: { path: string; hash: string; origin: string }[] = [];
+  const homeInRepo = posixPath(relative(repo, home));
+  const inRepo = (p: string) => (homeInRepo ? posix.join(homeInRepo, p) : p);
+  const receipts: Receipt[] = [];
   const included: string[] = [];
-  const generatedByLock = new Map((lock?.files ?? []).filter((f) => f.ownership === 'owned').map((f) => [f.path, f]));
+  const generatedByLock = new Map((lock?.files ?? []).filter((f) => f.ownership === 'owned').map((f) => [inRepo(f.path), f]));
   for (const file of files) {
     const full = join(repo, file);
     if (!existsSync(full)) {
@@ -147,11 +146,28 @@ export function reviewDiff(repo: string, specDir: string): string {
     }
     included.push(file);
   }
+  return { included, receipts };
+}
+
+/** The scope of a review (see `outOfScope` in review-scope.ts for how it is judged), from the pack's one classification. */
+export const reviewScope = (repo: string, specDir: string, home: string = repo): ReviewScope => reviewPack(repo, specDir, home).scope;
+
+/** The review pack's diff text and the scope it implies, from one classification of the working tree. */
+export function reviewPack(repo: string, specDir: string, home: string = repo): { diff: string; scope: ReviewScope } {
+  const files = changedFiles(repo, specDir);
+  if (!files.length) return { diff: '(no changes)', scope: { reviewed: [], receipts: [] } };
+  const git = (args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  const untracked = new Set(
+    git(['ls-files', '--others', '--exclude-standard', '--', ...files])
+      .split('\n')
+      .filter(Boolean),
+  );
+  const { included, receipts } = classifyChanges(repo, files, home);
   const untrackedIncluded = included.filter((f) => untracked.has(f));
   const trackedIncluded = included.filter((f) => !untracked.has(f));
   const diff = trackedIncluded.length ? git(['diff', 'HEAD', '--', ...trackedIncluded]) : '';
   const added = untrackedIncluded.map((f) => `--- /dev/null\n+++ b/${f} (new file)\n${readFileSync(join(repo, f), 'utf8')}`);
-  return [
+  const text = [
     diff,
     ...added,
     ...(receipts.length
@@ -160,7 +176,15 @@ export function reviewDiff(repo: string, specDir: string): string {
   ]
     .filter(Boolean)
     .join('\n');
+  const lock = lockPath(repo, home);
+  return {
+    diff: text,
+    scope: { reviewed: included.filter((f) => f !== lock), receipts: receipts.map(({ path, origin }) => ({ path, origin })) },
+  };
 }
+
+/** Source diff plus verifiable receipts for generated harness copies and source-derived diagrams. */
+export const reviewDiff = (repo: string, specDir: string, home: string = repo): string => reviewPack(repo, specDir, home).diff;
 
 export function reviewPrompt(instructions: string, brief: unknown, diff: string, gates: string): string {
   return [

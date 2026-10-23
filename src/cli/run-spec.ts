@@ -1,8 +1,10 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
 import { ADAPTERS } from '../adapters/index.js';
 import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
+import { declaresNoBuild } from '../schemas/config.js';
 import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
@@ -10,11 +12,12 @@ import { activeSpecDir, recordFullRun } from '../scripts/forced.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
-import { runTests } from '../scripts/run-tests.js';
+import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { checkTransition, expectedPlace, proposeSpec, readLayout, whereAmI } from '../scripts/spec.js';
-import { readApprovalLog } from '../scripts/spec-log.js';
+import { LOG_DIR, readApprovalLog, specKeepsState } from '../scripts/spec-log.js';
 import { commitMessage, layoutProblems, loopState, timeline, trace } from '../spec/index.js';
 import { nextFor, recordShown } from './approve.js';
+import { type BaselineLog, recordBaseline } from './baseline.js';
 import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -135,13 +138,18 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
     .command('commit-msg <spec> <task> <subject...>')
     .description('Commit header and trailers for a task, checked like commitlint')
     .option('--breaking', 'a breaking change (💥 and !)')
-    .action((ref: string, id: string, subject: string[], opts: { breaking?: boolean }) => {
+    .option('--trailer <line>', 'extra trailer for the trailer block, e.g. "Co-Authored-By: …" (repeatable)', collect, [] as string[])
+    .action((ref: string, id: string, subject: string[], opts: { breaking?: boolean; trailer: string[] }) => {
       const { config, spec } = loadSpec(ctx, ref);
       const task = spec.tasks.find((t) => t.id === id);
       if (!task || !spec.story) throw new Error(`Need story.md and ${id} in tasks.md`);
-      json(commitMessage(config, spec.story, task, subject.join(' '), opts.breaking));
+      const msg = commitMessage(config, spec.story, task, subject.join(' '), opts.breaking, [], opts.trailer);
+      json(msg);
+      if (msg.issues.length) process.exitCode = 1;
     });
 }
+
+const collect = (value: string, all: string[]) => [...all, value];
 
 /** Close refuses a folder that does not match its layout; an unreadable version is a problem too. */
 function closeLayoutProblems(dir: string, principleIds: string[]): string[] {
@@ -281,7 +289,7 @@ async function runTestsCommand(ctx: CliContext, name: string, files: string[], o
       projectRoot: project.path === '.' ? ctx.root() : join(ctx.root(), project.path),
       force: opts.force,
     },
-    () => runTests(ctx.root(), `${name} tests`, command, budget, Number(opts.queueWait) * 1000),
+    () => runTests(ctx.root(), `${name} tests`, command && inProjectDir(command, project.path), budget, Number(opts.queueWait) * 1000),
   );
   if (!opts.full) return { ...result, impact: impact.source };
   const record = { at: new Date().toISOString(), project: name, reason: opts.reason?.trim() ?? '', status: result.status };
@@ -302,6 +310,10 @@ function registerBuild(run: Command, ctx: CliContext) {
       const config = readConfig(ctx.root());
       const project = projectNamed(ctx, name);
       if (!project.gates.build) throw new Error(`project "${name}" has no gates.build in .mandao/config.yml`);
+      if (declaresNoBuild(project)) {
+        json({ project: name, gate: 'build', status: 'SKIPPED', reason: 'gates.build is none: no build by choice' });
+        return;
+      }
       const budget = budgetFor(ctx.root(), config, project, 'build', `${name} build`, opts.force);
       const result = await runWithGateReceipt(
         {
@@ -315,10 +327,36 @@ function registerBuild(run: Command, ctx: CliContext) {
           projectRoot: project.path === '.' ? ctx.root() : join(ctx.root(), project.path),
           force: opts.force,
         },
-        () => runTests(ctx.root(), `${name} build`, project.gates.build, budget),
+        () => runTests(ctx.root(), `${name} build`, project.gates.build && inProjectDir(project.gates.build, project.path), budget),
       );
       json({ ...result, status: result.status === 'DEFERRED_TO_CI' ? 'DEFERRED' : result.status });
       if (result.status !== 'PASS') process.exitCode = 1;
+    });
+}
+
+/** `mandao run baseline`: re-runs the baseline gates and rewrites the spec's baseline record. */
+function registerBaseline(run: Command, ctx: CliContext) {
+  run
+    .command('baseline <spec>')
+    .description(
+      'Re-run the baseline gates (lint, typecheck, build) in this worktree and rewrite the spec baseline (after fixing a gate config)',
+    )
+    .option('--quick', '<spec> is the slug of a quick change: rewrite its baseline-<slug>.md')
+    .action(async (ref: string, opts: { quick?: boolean }) => {
+      const config = readConfig(ctx.root());
+      let log: BaselineLog;
+      if (opts.quick) {
+        // The slug becomes a file name: only the shape `mandao start --quick` produces, never a path.
+        if (!/^[a-z0-9][a-z0-9-]*$/.test(ref)) throw new Error(`"${ref}" is not a quick-change slug`);
+        const specDir = join(ctx.root(), config.paths.specs, 'quick');
+        if (!existsSync(join(specDir, LOG_DIR, `start-${ref}.yml`))) throw new Error(`No quick change "${ref}" in ${specDir}`);
+        log = { specDir, dir: join(specDir, LOG_DIR), suffix: `-${ref}`, state: false };
+      } else {
+        const spec = loadSpec(ctx, ref).spec;
+        log = { specDir: spec.dir, dir: join(spec.dir, LOG_DIR), suffix: '', state: specKeepsState(spec.dir) };
+      }
+      const r = await recordBaseline(ctx.root(), config, ctx.root(), log, true);
+      json({ baseline: r.outcome, file: r.file, ...(r.notRun.length ? { notRun: r.notRun } : {}) });
     });
 }
 
@@ -336,5 +374,6 @@ export function registerSpecWriters(run: Command, ctx: CliContext) {
   registerLedger(run, ctx);
   registerTestRuns(run, ctx);
   registerBuild(run, ctx);
+  registerBaseline(run, ctx);
   registerNext(run, ctx);
 }

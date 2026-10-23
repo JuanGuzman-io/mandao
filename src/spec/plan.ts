@@ -45,6 +45,22 @@ function pathRoot(file: string): string {
   return root === '.' ? '' : root;
 }
 
+/**
+ * Whether a declared task path (a file, a folder or a glob) covers `path`. Both are normalized as `pathRoot`
+ * does; a literal covers itself and what is under it, a glob covers what matches it (`posix.matchesGlob`,
+ * Node >= 22.18). A path that cannot be bounded (`..`, an extglob, empty) covers nothing: fail closed.
+ */
+export function declaredCovers(declared: string, path: string): boolean {
+  const norm = posix.normalize(declared.replaceAll('\\', '/')).replace(/^\/+/, '');
+  if (norm === '' || norm === '.' || norm === '..' || norm.startsWith('../') || /[@+!]\(/.test(norm)) return false;
+  const target = posix.normalize(path.replaceAll('\\', '/')).replace(/^\/+/, '');
+  if (!/[*?[{]/.test(norm)) {
+    const literal = norm.replace(/\/+$/, '');
+    return target === literal || target.startsWith(`${literal}/`);
+  }
+  return posix.matchesGlob(target, norm);
+}
+
 /** Two declared paths overlap when one is the other or a folder (or glob root) that contains it. */
 function pathsOverlap(a: string, b: string): boolean {
   const [x, y] = [pathRoot(a), pathRoot(b)];

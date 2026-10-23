@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { ResolvedModels } from '../models/resolve.js';
-import type { Config, RiskTag } from '../schemas/index.js';
+import { buildCommand, type Config, type RiskTag } from '../schemas/index.js';
 import { type LoopContext, type LoopState, loopState, type Task } from '../spec/index.js';
 import {
   detectRunner,
@@ -130,7 +130,11 @@ export function composeBrief(
       ...task.ac.map((ref) => ({ ref, kind: 'acceptance' as const })),
       ...task.scenarios.map((ref) => ({ ref, kind: 'scenario' as const })),
     ],
-    project: { name: project.name, path: project.path, gates: project.gates as Record<string, string> },
+    project: {
+      name: project.name,
+      path: project.path,
+      gates: { ...project.gates, ...(buildCommand(project) ? {} : { build: undefined }) } as Record<string, string>,
+    },
     skillMap: skillMapRows(root),
     lenses: [...new Set(task.risk_tags.flatMap((t) => LENSES[t]))],
     loop: loopState(task, spec.execution, models, harness, loop),

@@ -108,6 +108,10 @@ if (choice.mismatch)
     \`mandao: \${choice.mismatch.source} install is \${choice.mismatch.version}; using locked mandao@\${PINNED}\`,
   );
 const result = spawnSync(choice.command, choice.args, { stdio: 'inherit', shell: process.platform === 'win32' });
+if (choice.mismatch && result.status !== 0)
+  console.error(
+    \`mandao: if npm could not fetch the locked mandao@\${PINNED} (for example after upgrading Mandao on purpose), pin the installed \${choice.mismatch.version} with: \${/\\s/.test(candidate) ? JSON.stringify(candidate) : candidate} sync\`,
+  );
 process.exit(result.status ?? 1);
 `;
 }

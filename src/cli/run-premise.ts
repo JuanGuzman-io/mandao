@@ -74,6 +74,24 @@ const sha = (dir: string) => {
   }
 };
 
+/** Characters a shell word may hold unquoted on every platform. */
+const PLAIN_WORD = /^[A-Za-z0-9_@%+=:,./-]+$/;
+
+/**
+ * One argument as the shell must read it: POSIX single quotes, or double quotes for cmd.exe on Windows, where
+ * `%VAR%`, and cmd metacharacters after an embedded `"`, are still interpreted: keep Windows probes simple.
+ */
+export function shellQuote(word: string, platform: NodeJS.Platform = process.platform): string {
+  if (PLAIN_WORD.test(word)) return word;
+  if (platform === 'win32') return `"${word.replace(/"/g, '\\"')}"`;
+  return `'${word.replace(/'/g, "'\\''")}'`;
+}
+
+/** The argv a caller gave, joined for `shell: true` so each argument arrives exactly as given. */
+export function shellJoin(words: string[], platform: NodeJS.Platform = process.platform): string {
+  return words.map((w) => shellQuote(w, platform)).join(' ');
+}
+
 /**
  * `mandao run premise <spec> <Pn> -- <command>`: runs the command that proves a High premise in the
  * spec's worktree, with a timeout and through the queue and the resource budget, and records the run.
@@ -91,7 +109,7 @@ export function registerPremise(run: Command, ctx: CliContext) {
       const design = docPath(spec.dir, 'design');
       const known = existsSync(design) ? parsePremises(readFileSync(design, 'utf8')).map((p) => p.id) : [];
       if (!known.includes(id)) throw new Error(`${id} is not in the Premise Ledger of ${relative(ctx.root(), design)}`);
-      const command = words.join(' ');
+      const command = shellJoin(words);
       const cwd = repoRoot(spec.dir);
       // MDO-0007: probes lived in the user's home. Every path the command names stays in the worktree.
       const outside = pathsOutside(words, cwd);

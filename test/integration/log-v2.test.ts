@@ -183,7 +183,7 @@ describe('security: a story id that is a path never reaches outside .mandao/cach
     const story = join(root, SPEC, 'story.md');
     writeFileSync(story, readFileSync(story, 'utf8').replace(/^id: .*$/m, "id: '../..'"));
     const before = readdirSync(root).sort();
-    await run(root, 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', '"1"').catch(() => undefined);
+    await run(root, 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', '1').catch(() => undefined);
     expect(readdirSync(root).sort()).toEqual(before);
     expect(existsSync(join(root, 'integrity.json'))).toBe(false);
   });

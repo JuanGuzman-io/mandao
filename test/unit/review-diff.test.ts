@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { reviewDiff } from '../../src/scripts/review.js';
+import { reviewDiff, reviewScope } from '../../src/scripts/review.js';
 import { sha256 } from '../../src/util/hash.js';
 import { initTestRepo, makeTree } from '../helpers.js';
 
@@ -51,6 +51,11 @@ describe('Reviewer source diff receipts', () => {
     expect(diff).toContain('.claude/commands/mandao-test.md');
     expect(diff).toContain('from command:test');
     expect(diff).not.toContain('+generated copy v2');
+    // receipt-only files and the lock were not reviewed as a diff
+    expect(reviewScope(root, join(root, 'specs/example'))).toEqual({
+      reviewed: ['src/main.ts'],
+      receipts: [{ path: '.claude/commands/mandao-test.md', origin: 'command:test' }],
+    });
   });
 
   test('includes the complete generated diff when its receipt does not match', () => {

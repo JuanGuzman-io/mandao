@@ -97,17 +97,22 @@ stored anywhere. Provenance is attached to every release.
 
 ### First publication (once, by a maintainer)
 
-This historical bootstrap procedure is outside the improvement program. Do not run a manual
-`npm publish` during these phases: the current `prepublishOnly` lifecycle runs the full suite locally.
-Use PR CI and the trusted-publisher workflow for releases; Phase 6 will reconcile delivery lifecycles
-with the configured pre-push policy.
-
-The trusted publisher can only be configured on a package that exists, so the first version is
-published by hand:
+Publication readiness is item 4 of [Phase 11 in the backlog](docs/backlog.md#phase-11--beta-preparation).
+The maintainer publishes the first version, `0.1.0-beta.0`, by hand, because the trusted publisher can
+only be configured on a package that exists. `prepublishOnly` runs `npm run check` (typecheck, lint, the
+full test suite and `diagrams:check`) and then the build, so a publish runs the full suite locally; that
+is expected for a publish. During ordinary phase work, never run `npm run check` or a manual publish
+locally: the full suite runs in PR CI.
 
 1. `npm login` with an account that has two-factor authentication.
 2. Use a commit whose complete PR CI passed; run `npm ci`, lint, typecheck, build and impacted tests locally.
-3. `npm publish --tag next` (2FA prompt). `--tag next` keeps it off `latest` until it is validated.
+3. `node scripts/publish-tag.mjs --provenance=false` (2FA prompt). Extra arguments go to `npm publish`; this
+   first, hand-run publish needs `--provenance=false` because `publishConfig.provenance` only works in
+   CI (npm fails with EUSAGE outside a supported provider). Provenance comes with the workflow publishes
+   after that. The script applies the dist-tag rule below by hand: no stable
+   version exists yet, so it publishes with `--tag beta` and then sets `latest` to the same version.
+4. `npm dist-tag ls mandao` to confirm both `beta` and `latest` point at `0.1.0-beta.0`.
+5. Push the local tag the script created: `git push origin v0.1.0-beta.0`.
 
 ### Configure GitHub Actions as trusted publisher (once)
 
@@ -129,6 +134,28 @@ settings, require two-factor authentication and disallow tokens for publishing.
 2. Run the **Release** workflow (Actions → Release → Run workflow) on `main`. It checks, builds, runs
    the smoke test, then either opens the "version packages" PR or, once that PR is merged, publishes
    with OIDC. A manual run on a tag publishes that tag's package version directly; other refs are skipped.
-3. Promote a validated `next` release with `npm dist-tag add mandao@<version> latest`.
+   Changesets only versions; the publish step is `scripts/publish-tag.mjs` (`npm run release`, which also runs `changeset git-tag`),
+   which always passes an explicit dist-tag (see below).
+3. For the stable release, run `npx changeset pre exit` and merge the resulting version PR.
+4. After every publish, verify the tags with `npm dist-tag ls mandao`.
+
+### Dist-tag rule
+
+`scripts/publish-tag.mjs` decides from the version being published and the versions already on the
+registry (`npm view mandao versions --json`; a 404 means none):
+
+| Case | Publish | `latest` |
+|---|---|---|
+| Prerelease, no stable version published yet | `--tag beta` | also set to this version (`npm dist-tag add`), so `latest` is the newest beta during the beta period |
+| Prerelease, a stable version exists | `--tag beta` | untouched |
+| Stable | `--tag latest` | set by the publish |
+
+A version already on the registry is not published again. The script publishes, runs `changeset git-tag`
+(local tags), prints `New tag: mandao@<v>`, then sets the extra tag. If `npm dist-tag add` is refused
+(trusted publishing may authorize only publish), the script exits 1: the workflow run fails before the
+action pushes the tags or creates the GitHub release. Run the `npm dist-tag add mandao@<v> latest` command
+the script printed by hand, then rerun the workflow: it finds the version published and `latest` set, and
+the action then pushes the tag and creates the release. During the beta this manual step may be needed.
+Rerunning after a fully successful run may fail on the release that already exists.
 
 Requirements the workflow already meets: `id-token: write`, Node 22.14 or later, npm 11.5.1 or later.

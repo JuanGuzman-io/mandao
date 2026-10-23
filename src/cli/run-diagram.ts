@@ -142,7 +142,7 @@ export function registerDiagram(run: Command, ctx: CliContext) {
     .option('--type <type>', DIAGRAM_TYPES.join(' | '))
     .option('--tool <tool>', DIAGRAM_TOOLS.join(' | '))
     .option('--file <path>', 'rendered diagram, relative to the spec folder (Archify)')
-    .option('--mermaid <file>', 'Mermaid source to embed in design.md (fallback without Archify)')
+    .option('--mermaid <file>', 'Mermaid source to embed in design.md (only with an explicit diagrams.engine: mermaid)')
     .option(
       '--graph <file>',
       'structured source, relative to the spec folder (diagrams/proposed.graph.json): ids are module paths or contract ids',

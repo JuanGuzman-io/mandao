@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, posix } from 'node:path';
 
-export type Runner = 'vitest' | 'jest' | 'nx' | 'pytest' | 'go';
+export type Runner = 'vitest' | 'jest' | 'nx' | 'pytest' | 'go' | 'node';
 
 /** Native related-test selection per runner. `{files}` and `{workers}` are filled in later. */
 export const RUNNER_COMMANDS: Record<Runner, { related: string; module: string }> = {
@@ -11,6 +11,8 @@ export const RUNNER_COMMANDS: Record<Runner, { related: string; module: string }
   nx: { related: 'npx nx affected -t test --parallel={workers}', module: 'npx nx affected -t test --parallel={workers}' },
   pytest: { related: 'pytest {files}', module: 'pytest {files}' },
   go: { related: 'go test -p {workers} {files}', module: 'go test -p {workers} {files}' },
+  // Node's built-in runner takes test files, not folders (Node 22 fails on a directory argument).
+  node: { related: 'node --test --test-concurrency={workers} {files}', module: 'node --test --test-concurrency={workers} {files}' },
 };
 
 /** Detects the project's test runner from its manifests. */
@@ -22,6 +24,8 @@ export function detectRunner(projectDir: string): Runner | undefined {
     if (existsSync(join(projectDir, 'nx.json'))) return 'nx';
     if ('vitest' in deps) return 'vitest';
     if ('jest' in deps) return 'jest';
+    const scripts = pkg.scripts as Record<string, string> | undefined;
+    if (/(?:^|[\s;&|])node\s+(?:--[\w-]+(?:=\S+)?\s+)*--test(?=\s|$)/.test(scripts?.test ?? '')) return 'node';
   }
   if (existsSync(join(projectDir, 'go.mod'))) return 'go';
   if (['pytest.ini', 'pyproject.toml', 'setup.cfg', 'conftest.py'].some((f) => existsSync(join(projectDir, f)))) return 'pytest';
@@ -182,8 +186,20 @@ export function selectImpact(input: {
   }
   if (runner && tests.length)
     return { source: 'runner', runner, graphTests, files: tests, command: RUNNER_COMMANDS[runner].related, confidence: 'medium', notes };
-  // Uncertain impact: the touched modules (their folders), never the whole suite.
-  const modules = [...new Set(inProject.map((f) => posix.dirname(rel(f))))].map((d) => (runner === 'go' ? `./${d}/...` : d));
+  return uncertainImpact(runner, inProject.map(rel), graphTests, notes);
+}
+
+/** Uncertain impact: the touched modules (their folders), never the whole suite; Node's runner takes no folders. */
+function uncertainImpact(runner: Runner | undefined, files: string[], graphTests: string[], notes: string[]): ImpactSelection {
+  if (runner === 'node')
+    return {
+      source: 'module',
+      graphTests,
+      files: [],
+      confidence: 'low',
+      notes: [...notes, 'impact uncertain and node --test takes files, not folders: configure projects[].tests.impacted'],
+    };
+  const modules = [...new Set(files.map((f) => posix.dirname(f)))].map((d) => (runner === 'go' ? `./${d}/...` : d));
   return {
     source: 'module',
     ...(runner ? { runner, command: RUNNER_COMMANDS[runner].module } : {}),

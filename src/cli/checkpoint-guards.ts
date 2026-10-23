@@ -3,7 +3,8 @@ import { join } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type ChangeManifestEntry, changedFiles, changeManifest, repoRoot } from '../scripts/commits.js';
 import { deletedTests, testsWithoutRed } from '../scripts/red.js';
-import { parseVerdict } from '../scripts/review.js';
+import { parseVerdict, reviewScope } from '../scripts/review.js';
+import type { ReviewScope } from '../scripts/review-scope.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { commitMessage, NOTE_FLAGS, parseReviewFindings, securityBlockers, taskAttempt } from '../spec/index.js';
@@ -85,7 +86,8 @@ function manifestFromPack(spec: SpecFolder, task: string, attempt: number): Chan
 export function checkReview(
   spec: SpecFolder,
   o: { task?: string; verdict?: string; reviewer?: string; review?: string },
-): { note?: string; manifest?: ChangeManifestEntry[] } {
+  home: string,
+): { note?: string; manifest?: ChangeManifestEntry[]; scope?: ReviewScope } {
   const reviewed = o.verdict === 'PASS' || (o.verdict === 'FAIL' && o.reviewer);
   if (!reviewed || !o.task) return {};
   if (!o.review) throw new Error(`--verdict ${o.verdict} needs --review <file|-> with the Reviewer's whole answer`);
@@ -101,7 +103,9 @@ export function checkReview(
   if (specLogInCache(spec.dir)) writeLogSection(spec.dir, 'reviews.md', `${o.task} — attempt ${attempt}`, text);
   else writeText(join(logPath(spec.dir, 'reviews'), `${o.task}-${attempt}-review.md`), text);
   if (o.verdict !== 'PASS') return {};
-  return { manifest: approvedReviewManifest(spec, o.task, attempt) };
+  const manifest = approvedReviewManifest(spec, o.task, attempt);
+  // The tree equals the pack's manifest here, so the same classification the pack used says what was a diff.
+  return { manifest, scope: reviewScope(repoRoot(spec.dir), spec.dir, home) };
 }
 
 function approvedReviewManifest(spec: SpecFolder, task: string, attempt: number): ChangeManifestEntry[] {

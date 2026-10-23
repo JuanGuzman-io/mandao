@@ -58,11 +58,35 @@ describe('impact', () => {
     ]);
   });
 
+  test('the node runner runs the impacted test files, and with none it asks for tests.impacted instead of passing folders', () => {
+    const withTests = selectImpact({
+      changed: ['apps/api/src/db.js', 'apps/api/test/db.test.js'],
+      projectPath: 'apps/api',
+      runner: 'node',
+    });
+    expect(withTests).toMatchObject({
+      source: 'runner',
+      files: ['test/db.test.js'],
+      command: 'node --test --test-concurrency={workers} {files}',
+    });
+    const none = selectImpact({ changed: ['apps/api/src/db.js'], projectPath: 'apps/api', runner: 'node' });
+    expect(none).toMatchObject({ source: 'module', confidence: 'low' });
+    expect(none).not.toHaveProperty('command');
+    expect(none.notes.join(' ')).toMatch(/projects\[\]\.tests\.impacted/);
+  });
+
   test('runner detection and test file patterns', () => {
     expect(detectRunner(makeTree({ 'package.json': JSON.stringify({ devDependencies: { vitest: '5' } }) }))).toBe('vitest');
     expect(detectRunner(makeTree({ 'package.json': pkg('x'), 'nx.json': '{}' }))).toBe('nx');
     expect(detectRunner(makeTree({ 'go.mod': 'module x' }))).toBe('go');
     expect(detectRunner(makeTree({ 'pyproject.toml': '' }))).toBe('pytest');
+    const nodeTest = JSON.stringify({ name: 'api', scripts: { test: 'node --test test/*.test.js' } });
+    expect(detectRunner(makeTree({ 'package.json': nodeTest }))).toBe('node');
+    expect(detectRunner(makeTree({ 'package.json': JSON.stringify({ scripts: { test: 'mocha' } }) }))).toBeUndefined();
+    for (const test of ['node scripts/x.js --test', 'ts-node --test', 'node --test-only a.js'])
+      expect(detectRunner(makeTree({ 'package.json': JSON.stringify({ scripts: { test } }) }))).toBeUndefined();
+    const flagged = JSON.stringify({ scripts: { test: 'c8 node --experimental-sqlite --test test/*.test.js' } });
+    expect(detectRunner(makeTree({ 'package.json': flagged }))).toBe('node');
     expect(['a.test.ts', 'tests/x.py', 'test_x.py', 'x_test.go', 'src/a.ts'].map(isTestFile)).toEqual([true, true, true, true, false]);
   });
 

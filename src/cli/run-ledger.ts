@@ -3,14 +3,15 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import type { Config, HarnessId } from '../schemas/index.js';
+import { buildCommand, type Config, declaresNoBuild, type HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
-import { type ChangeManifestEntry, changedFiles, commitPending, commitSpecDocs, repoRoot } from '../scripts/commits.js';
+import { type ChangeManifestEntry, changedFiles, commitPending, commitSpecDocs, reconciledTasks, repoRoot } from '../scripts/commits.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
-import { runTests } from '../scripts/run-tests.js';
+import type { ReviewScope } from '../scripts/review-scope.js';
+import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { specLogInCache } from '../scripts/spec-log.js';
 import { type ExecutionRow, emojiPrefix, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
@@ -104,8 +105,16 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
   };
 }
 
+/** The review scope fields only when known: entries without them predate the out-of-scope brake. */
+const withScope = (scope?: ReviewScope) => (scope ? { reviewed: scope.reviewed, receipts: scope.receipts } : {});
+
 /** A PASS queued for its commit: only paths in the Reviewer-approved manifest are eligible. */
-function pendingEntry(spec: SpecFolder, o: CheckpointOptions, approved?: ChangeManifestEntry[]): Progress['pending_commits'] {
+function pendingEntry(
+  spec: SpecFolder,
+  o: CheckpointOptions,
+  approved?: ChangeManifestEntry[],
+  approvedScope?: ReviewScope,
+): Progress['pending_commits'] {
   if (!o.pendingCommit) return [];
   const passing = (v: string | undefined) => v === 'PASS' || v === 'DEFERRED_TO_CI';
   // The PASS may be this checkpoint's, or already written by `mandao run review --via` (ADR 0021).
@@ -113,11 +122,15 @@ function pendingEntry(spec: SpecFolder, o: CheckpointOptions, approved?: ChangeM
   if (!o.task || (!passing(o.verdict) && !(o.verdict === undefined && passing(lastVerdict)))) {
     throw new Error('--pending-commit needs --task and a PASS: give --verdict PASS, or record it first with `mandao run review`');
   }
-  const manifest =
-    approved ??
-    spec.progress?.approved_manifests.find((m) => m.task === o.task && m.attempt === taskAttempt(spec.execution, o.task))?.files;
+  const recorded = spec.progress?.approved_manifests.find((m) => m.task === o.task && m.attempt === taskAttempt(spec.execution, o.task));
+  const manifest = approved ?? recorded?.files;
   if (!manifest) throw new Error(`${o.task}: no Reviewer-approved change manifest; review and approve this exact change set first`);
-  return [{ task: o.task, subject: o.pendingCommit, files: manifest.map((f) => f.path), manifest }];
+  const scope = approved
+    ? approvedScope
+    : recorded?.reviewed
+      ? { reviewed: recorded.reviewed, receipts: recorded.receipts ?? [] }
+      : undefined;
+  return [{ task: o.task, subject: o.pendingCommit, files: manifest.map((f) => f.path), manifest, ...withScope(scope) }];
 }
 
 /** The Leader's model from models.yml for the harness, never the model's own account of itself (ADR 0021). */
@@ -141,16 +154,16 @@ function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions)
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
   requireRedFirst(spec, o.task, o.verdict);
   requireTestDeletionReason(spec, o.task, o.verdict, o.testDeletionReason);
-  const review = checkReview(spec, o);
+  const review = checkReview(spec, o, ctx.root());
   const reviewNote = review.note;
-  const pending = pendingEntry(spec, o, review.manifest);
+  const pending = pendingEntry(spec, o, review.manifest, review.scope);
   for (const p of pending) checkPendingSubject(readConfig(ctx.root()), spec, p.task, p.subject, p.files);
-  return { pending, reviewNote, manifest: review.manifest };
+  return { pending, reviewNote, manifest: review.manifest, scope: review.scope };
 }
 
 export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
-  const { pending, reviewNote, manifest } = checkedPending(ctx, spec, o);
+  const { pending, reviewNote, manifest, scope } = checkedPending(ctx, spec, o);
   const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim());
   const notes = [o.notes, reviewNote, edited].filter(Boolean).join('; ');
   if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, { ...o, notes }, now));
@@ -171,7 +184,7 @@ export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: Checkpoint
       ...(spec.progress?.approved_manifests ?? []).filter(
         (m) => !manifest || m.task !== o.task || !o.task || m.attempt !== taskAttempt(spec.execution, o.task),
       ),
-      ...(manifest && o.task ? [{ task: o.task, attempt: taskAttempt(spec.execution, o.task), files: manifest }] : []),
+      ...(manifest && o.task ? [{ task: o.task, attempt: taskAttempt(spec.execution, o.task), files: manifest, ...withScope(scope) }] : []),
     ],
   });
   return {
@@ -321,30 +334,44 @@ function registerCommit(run: Command, ctx: CliContext) {
         progress: spec.progress,
         trailers: opts.trailer ?? [],
         protectedBranches: branchingFor(config).protected,
+        home: ctx.root(),
       });
-      json(result);
+      const skipped = declaredNoBuild(config);
+      json(skipped.length ? { ...result, builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : result);
       if (result.error) process.exitCode = 1;
     });
 }
 
-async function requirePreCommitBuilds(ctx: CliContext, config: Config, spec: SpecFolder): Promise<void> {
+/** Projects whose pre-commit build is skipped because they declared `build: none` (recorded, never a PASS). */
+export const declaredNoBuild = (config: Config): string[] => config.projects.filter(declaresNoBuild).map((p) => p.name);
+
+export async function requirePreCommitBuilds(ctx: CliContext, config: Config, spec: SpecFolder): Promise<void> {
   if (!spec.progress?.pending_commits.length) return;
-  const projects = config.projects.filter((project) => project.gates.build);
-  if (!projects.length) throw new Error('run commit needs at least one configured build gate');
+  const reconciled = reconciledTasks(
+    repoRoot(spec.dir),
+    spec.story?.meta.id ?? spec.name,
+    config.commits.trailers,
+    spec.progress.pending_commits,
+  );
+  if (spec.progress.pending_commits.every((e) => reconciled.has(e.task))) return;
+  const projects = config.projects.filter((project) => buildCommand(project));
+  if (!projects.length && !declaredNoBuild(config).length)
+    throw new Error('run commit needs a configured build gate: configure a build command or `build: none` in .mandao/config.yml');
   for (const project of projects) {
+    const command = buildCommand(project)!;
     const budget = budgetFor(ctx.root(), config, project, 'build', `${project.name} pre-commit build`, false, spec.dir);
     const result = await runWithGateReceipt(
       {
         root: ctx.root(),
         project: project.name,
         gate: 'build',
-        command: project.gates.build!,
+        command,
         configuration: config,
         selectedTests: [],
         budget,
         projectRoot: join(ctx.root(), project.path),
       },
-      () => runTests(ctx.root(), `${project.name} build`, project.gates.build!, budget),
+      () => runTests(ctx.root(), `${project.name} build`, inProjectDir(command, project.path), budget),
     );
     if (result.status !== 'PASS') throw new Error(`${project.name} build is ${result.status}: ${result.reason ?? 'commit refused'}`);
   }

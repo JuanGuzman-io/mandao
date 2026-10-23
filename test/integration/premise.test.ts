@@ -101,11 +101,18 @@ describe('premises are verified only by a recorded run', () => {
       problems: [expect.stringMatching(/^P1 is High impact/)],
     });
     process.exitCode = undefined;
-    const run = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', '"console.log(\'pinned: 2\')"');
+    const run = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', "console.log('pinned: 2')");
     expect(run).toMatchObject({ premise: 'P1', recorded: true, exitCode: 0, excerpt: expect.stringContaining('pinned: 2') });
     const record = readFileSync(join(logPath(join(root, SPEC), 'premises'), 'P1.md'), 'utf8');
-    expect(record).toMatch(/- Command: `node -e "console.log\('pinned: 2'\)"`/);
+    expect(record).toContain("- Command: `node -e 'console.log('\\''pinned: 2'\\'')'`");
     expect(premiseOnly((await cli(root, 'run', 'trace', 'MDO-0001')).findings)).toEqual([]);
+  });
+
+  test('each argument reaches the command as given: parentheses, quotes and spaces need no extra quoting', async () => {
+    const root = repo();
+    const probe = "const { join } = require('node:path'); console.log(join('a', 'b') + ' (ok) & \"done\"')";
+    const run = await cli(root, 'run', 'premise', 'MDO-0001', 'P1', '--', 'node', '-e', probe);
+    expect(run).toMatchObject({ recorded: true, exitCode: 0, excerpt: expect.stringContaining('a/b (ok) & "done"') });
   });
 
   test('a premise run stays in the worktree: no path outside it, temporary files in the log and removed, no absolute paths recorded (MDO-0007)', async () => {
@@ -144,5 +151,14 @@ describe('premises are verified only by a recorded run', () => {
 
   test('a premise that is not in the ledger is refused', async () => {
     await expect(cli(repo(), 'run', 'premise', 'MDO-0001', 'P9', 'true')).rejects.toThrow(/P9 is not in the Premise Ledger/);
+  });
+});
+
+describe('premise commands keep each argument intact', () => {
+  test('POSIX single-quotes and Windows double-quotes only what needs it', async () => {
+    const { shellJoin } = await import('../../src/cli/run-premise.js');
+    const words = ['node', '-e', "console.log('a b')", 'x.js'];
+    expect(shellJoin(words, 'linux')).toBe("node -e 'console.log('\\''a b'\\'')' x.js");
+    expect(shellJoin(['node', '-e', 'console.log("a")'], 'win32')).toBe('node -e "console.log(\\"a\\")"');
   });
 });

@@ -6,7 +6,8 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { appendExecutionRow, writeProgress } from '../scripts/checkpoint.js';
 import { changeManifest, renderChangeManifest, repoRoot } from '../scripts/commits.js';
 import { type Identity, identityCell } from '../scripts/identity.js';
-import { isReviewProcess, REVIEW_PROCESSES, reviewDiff, reviewerInstructions, reviewPrompt, runReview } from '../scripts/review.js';
+import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPack, reviewPrompt, runReview } from '../scripts/review.js';
+import type { ReviewScope } from '../scripts/review-scope.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
 import { type ExecutionRow, NOTE_FLAGS, parseReviewFindings, securityBlockers, taskAttempt } from '../spec/index.js';
@@ -68,16 +69,18 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
   if (!reviewer) throw new Error(`No reviewer model for ${opts.via}: run \`mandao models\``);
   for (const f of [opts.gates, opts.brief]) if (!existsSync(f)) throw new Error(`${f} does not exist`);
   const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
+  // One classification of the tree feeds both the diff the Reviewer reads and the scope recorded with the PASS.
+  const pack = reviewPack(repoRoot(spec.dir), spec.dir, ctx.root());
   const prompt = reviewPrompt(
     reviewerInstructions(ctx.root(), opts.via),
     JSON.parse(readFileSync(opts.brief, 'utf8')),
-    `Mandao change manifest (exact paths, statuses, and content hashes under review):\n${renderChangeManifest(manifest)}\n\n${reviewDiff(repoRoot(spec.dir), spec.dir)}`,
+    `Mandao change manifest (exact paths, statuses, and content hashes under review):\n${renderChangeManifest(manifest)}\n\n${pack.diff}`,
     readFileSync(opts.gates, 'utf8'),
   );
   const r = runReview(opts.via, ctx.root(), reviewer, prompt);
   const file = keepReview(spec, task, opts.via, r.output);
   const rel = relative(ctx.root(), file);
-  const { verdict, structured, blockers } = recordReviewVerdict(spec, task, r.verdict, r.output, r.identity, rel, manifest);
+  const { verdict, structured, blockers } = recordReviewVerdict(spec, task, r.verdict, r.output, r.identity, rel, manifest, pack.scope);
   return {
     verdict: verdict ?? null,
     ...(blockers.length ? { securityBlockers: blockers } : {}),
@@ -97,6 +100,7 @@ function recordReviewVerdict(
   identity: Identity,
   reviewPath: string,
   manifest: ReturnType<typeof changeManifest>,
+  scope: ReviewScope,
 ) {
   const structured = parseReviewFindings(output).success;
   const blockers = proposed === 'PASS' && structured ? securityBlockers(output) : [];
@@ -110,7 +114,7 @@ function recordReviewVerdict(
       ...spec.progress,
       approved_manifests: [
         ...spec.progress.approved_manifests.filter((item) => item.task !== task || item.attempt !== attempt),
-        { task, attempt, files: manifest },
+        { task, attempt, files: manifest, reviewed: scope.reviewed, receipts: scope.receipts },
       ],
     });
   }

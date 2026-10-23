@@ -1,10 +1,10 @@
 // mandao-scans: none — builds temporary trees; no secrets, no network.
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
-import { dropLogCache, specLogInCache } from '../../src/scripts/spec-log.js';
+import { dropLogCache, specLogInCache, updateState } from '../../src/scripts/spec-log.js';
 import { writeText } from '../../src/writer/files.js';
-import { specCacheDir, usesLogCache } from '../../src/writer/log-integrity.js';
+import { logDiscrepancies, specCacheDir, usesLogCache } from '../../src/writer/log-integrity.js';
 import { makeTree } from '../helpers.js';
 
 /** A workspace with a version 2 spec whose story id is `id` (or has none), in a folder called `folder`. */
@@ -90,5 +90,39 @@ describe('one version predicate: the log files and the hashes of a spec follow t
     });
     const spec = join(root, 'specs', 'MDO-0001-thing');
     expect([specLogInCache(spec), usesLogCache(spec)]).toEqual([cache, cache]);
+  });
+});
+
+describe('a spec started by `mandao start`, before its story exists, already follows layout v2', () => {
+  test('with only _log/state.yml, logs and hashes go to the cache, never _log/.integrity.json', () => {
+    const root = makeTree({
+      '.mandao/config.yml': 'schema_version: 1\n',
+      'specs/MDO-0001-thing/_log/state.yml': 'start:\n  id: MDO-0001\n',
+    });
+    const spec = join(root, 'specs', 'MDO-0001-thing');
+    expect(specLogInCache(spec)).toBe(true);
+    expect(usesLogCache(spec)).toBe(true);
+    writeText(join(spec, '_log/execution.md'), '# Execution\n\nrow\n');
+    expect(existsSync(join(spec, '_log/.integrity.json'))).toBe(false);
+    expect(existsSync(join(root, '.mandao/cache/MDO-0001/integrity.json'))).toBe(true);
+  });
+
+  test('a folder with neither story nor state (a quick change) keeps its own files', () => {
+    const root = makeTree({ '.mandao/config.yml': 'schema_version: 1\n', 'specs/quick/_log/execution.md': '# Execution\n' });
+    expect(specLogInCache(join(root, 'specs', 'quick'))).toBe(false);
+    expect(usesLogCache(join(root, 'specs', 'quick'))).toBe(false);
+  });
+
+  test('the real start path: empty folder, updateState, a log write, then the story arrives', () => {
+    const root = makeTree({ '.mandao/config.yml': 'schema_version: 1\n' });
+    const spec = join(root, 'specs', 'MDO-0002-new');
+    mkdirSync(spec, { recursive: true });
+    updateState(spec, (state) => ({ ...state, start: { title: 'New', id: 'MDO-0002' } }));
+    writeText(join(spec, '_log/execution.md'), '# Execution\n\nrow\n');
+    expect(existsSync(join(spec, '_log/.integrity.json'))).toBe(false);
+    const cached = join(root, '.mandao/cache/MDO-0002/integrity.json');
+    expect(JSON.parse(readFileSync(cached, 'utf8'))).toHaveProperty(['_log/execution.md']);
+    writeFileSync(join(spec, 'story.md'), '---\nschema_version: 2\nid: MDO-0002\n---\n# X\n');
+    expect(logDiscrepancies(spec)).toEqual([]);
   });
 });

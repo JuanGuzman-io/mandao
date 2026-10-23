@@ -5,6 +5,7 @@ import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
+import { outOfScopeMessage, reconcileMessage, strayByTask } from './review-scope.js';
 import type { SpecFolder } from './spec.js';
 
 const git = (cwd: string, args: string[]) =>
@@ -119,6 +120,10 @@ export function changedFiles(repo: string, exclude?: string): string[] {
 export interface CommitRun {
   committed: { task: string; sha: string }[];
   pending: string[];
+  /** Pending tasks dropped because a commit with their trailers is already on the branch (committed by hand). */
+  alreadyCommitted?: string[];
+  /** Files per task that would enter its commit without being declared or reviewed as a diff. */
+  outOfScope?: Record<string, string[]>;
   error?: string;
 }
 
@@ -133,6 +138,8 @@ interface PendingInput {
   trailers?: string[];
   /** `branching.protected`: Mandao never commits there (ADR 0023). */
   protectedBranches?: string[];
+  /** The workspace root, where `.mandao/` lives; defaults to `repo` (they differ for a project inside a bigger repo). */
+  home?: string;
 }
 
 /** A later pending task touching the same file would end up in the earlier commit. */
@@ -141,10 +148,54 @@ function overlap(entries: Progress['pending_commits']): string | undefined {
   for (const e of entries)
     for (const f of e.files) {
       const owner = seen.get(f);
-      if (owner) return `${f} is changed by both ${owner} and ${e.task}: commit them by hand`;
+      if (owner)
+        return `${f} is changed by both ${owner} and ${e.task}: commit each by hand (\`mandao run commit-msg <spec> <task> <subject>\` gives the message), then run \`mandao run commit <spec>\` again to record them`;
       seen.set(f, e.task);
     }
   return undefined;
+}
+
+/** The stop for files that would enter a commit unreviewed and undeclared; undefined when there are none. */
+function outOfScopeStop(input: PendingInput, entries: Progress['pending_commits'], run: CommitRun): CommitRun | undefined {
+  const stray = strayByTask(entries, input.tasks, input.progress.approved_manifests, input.repo, input.home ?? input.repo);
+  // A reconcile-stuck entry already in run.outOfScope stays listed next to the queue's stray files.
+  return Object.keys(stray).length ? { ...run, outOfScope: { ...run.outOfScope, ...stray }, error: outOfScopeMessage(stray) } : undefined;
+}
+
+/**
+ * Splits the pending entries: `already` were committed by hand and their content is in scope (dropped), `stuck`
+ * were committed by hand with out-of-scope files (kept pending, reported, never block the others), `queue` is the rest.
+ */
+function reconcileSplit(input: PendingInput, all: Progress['pending_commits'], done: Set<string>) {
+  const stuck = strayByTask(
+    all.filter((e) => done.has(e.task)),
+    input.tasks,
+    input.progress.approved_manifests,
+    input.repo,
+    input.home ?? input.repo,
+  );
+  const already = all.filter((e) => done.has(e.task) && !stuck[e.task]);
+  const queue = all.filter((e) => !done.has(e.task));
+  return { queue, already, stuck: Object.keys(stuck).length ? stuck : undefined };
+}
+
+/** A run that left a hand-committed, out-of-scope entry pending says so as its error (the others already ran). */
+function withStuck(run: CommitRun): CommitRun {
+  return run.outOfScope && !run.error ? { ...run, error: reconcileMessage(run.outOfScope, run.committed.length > 0) } : run;
+}
+
+/** Everything refused before the first commit: out-of-scope files first, so no other message hides them. */
+function preflight(
+  input: PendingInput,
+  queue: Progress['pending_commits'],
+  run: CommitRun,
+): { stop: CommitRun } | { specChanges: string[] } {
+  const brake = outOfScopeStop(input, queue, run);
+  if (brake) return { stop: brake };
+  const clash = overlap(queue);
+  if (clash) return { stop: { ...run, error: clash } };
+  const manifest = validatePendingManifest(input, queue);
+  return manifest.error ? { stop: { ...run, error: manifest.error } } : { specChanges: manifest.specChanges };
 }
 
 /** Only script-owned spec records may ride with a task commit; human spec edits need review. */
@@ -181,18 +232,28 @@ function scriptLedgerPath(path: string): boolean {
  * Local only: never pushes.
  */
 export function commitPending(input: PendingInput): CommitRun {
-  const queue = [...input.progress.pending_commits];
-  const run: CommitRun = { committed: [], pending: queue.map((e) => e.task) };
-  if (!queue.length) return run;
-  const clash = overlap(queue);
-  if (clash) return { ...run, error: clash };
+  const all = input.progress.pending_commits;
   const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
-  if (input.protectedBranches?.includes(branch)) {
-    return { ...run, error: `${branch} is a protected branch: Mandao never commits there. Commit from the spec's branch and worktree` };
+  if (all.length && input.protectedBranches?.includes(branch)) {
+    return {
+      committed: [],
+      pending: all.map((e) => e.task),
+      error: `${branch} is a protected branch: Mandao never commits there. Commit from the spec's branch and worktree`,
+    };
   }
-  const manifest = validatePendingManifest(input, queue);
-  if (manifest.error) return { ...run, error: manifest.error };
-  const specChanges = manifest.specChanges;
+  const done = reconciledTasks(input.repo, input.story.meta.id, input.config.commits.trailers, all);
+  const { queue, already, stuck } = reconcileSplit(input, all, done);
+  const run: CommitRun = { committed: [], pending: all.filter((e) => !already.includes(e)).map((e) => e.task) };
+  if (stuck) run.outOfScope = stuck;
+  if (already.length) {
+    run.alreadyCommitted = already.map((e) => e.task);
+    input.progress = { ...input.progress, pending_commits: all.filter((e) => !already.includes(e)) };
+    writeProgress(input.specDir, input.progress);
+  }
+  if (!queue.length) return withStuck(run);
+  const checked = preflight(input, queue, run);
+  if ('stop' in checked) return checked.stop;
+  const specChanges = checked.specChanges;
   let progress = input.progress;
   for (const entry of queue) {
     const task = input.tasks.find((t) => t.id === entry.task);
@@ -213,7 +274,45 @@ export function commitPending(input: PendingInput): CommitRun {
     run.committed.push({ task: entry.task, sha: git(input.repo, ['rev-parse', '--short', 'HEAD']).trim() });
     run.pending = run.pending.filter((t) => t !== entry.task);
   }
-  return run;
+  return withStuck(run);
+}
+
+const sha = (data: Buffer | string) => createHash('sha256').update(data).digest('hex');
+
+/** Whether `path` at HEAD matches the manifest hash (deleted paths: absent at HEAD). */
+function atHead(repo: string, item: ChangeManifestEntry): boolean {
+  try {
+    const content = execFileSync('git', ['show', `HEAD:${item.path}`], {
+      cwd: repo,
+      maxBuffer: 64 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    return sha(content) === item.sha256;
+  } catch {
+    return item.sha256 === sha('mandao:deleted');
+  }
+}
+
+/**
+ * Pending tasks whose queued change is provably in git already: a commit carries the task's trailers, and
+ * every path of the entry's approved manifest is clean in the working tree with the approved content at HEAD.
+ * Entries without a manifest are never reconciled.
+ */
+export function reconciledTasks(
+  repo: string,
+  specId: string,
+  trailers: Config['commits']['trailers'],
+  entries: Progress['pending_commits'],
+): Set<string> {
+  const out = new Set<string>();
+  if (!entries.length) return out;
+  const commits = taskCommits(repo, specId, trailers);
+  const dirty = new Set(changeManifest(repo).map((m) => m.path));
+  for (const e of entries) {
+    if (!commits.has(e.task) || !e.manifest?.length) continue;
+    if (e.manifest.every((item) => !dirty.has(item.path) && atHead(repo, item))) out.add(e.task);
+  }
+  return out;
 }
 
 function validatePendingManifest(input: PendingInput, queue: Progress['pending_commits']): { error?: string; specChanges: string[] } {

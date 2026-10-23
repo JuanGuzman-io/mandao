@@ -1,12 +1,14 @@
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { chmodSync, cpSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { nextFor } from '../../src/cli/approve.js';
 import { configSchema } from '../../src/schemas/index.js';
 import { appendExecutionRow, writeProgress } from '../../src/scripts/checkpoint.js';
-import { changedFiles, changeManifest, commitPending, commitState, taskCommits } from '../../src/scripts/commits.js';
+import { changedFiles, changeManifest, commitPending, commitState, reconciledTasks, taskCommits } from '../../src/scripts/commits.js';
 import { readSpec } from '../../src/scripts/spec.js';
-import { commitFindings, type ExecutionRow } from '../../src/spec/index.js';
+import { commitFindings, commitMessage, type ExecutionRow } from '../../src/spec/index.js';
 import { initTestRepo, makeTree } from '../helpers.js';
 
 const fixture = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
@@ -61,6 +63,29 @@ function passPending(root: string, task: string, file: string, subject: string) 
   const files = changedFiles(root, dir).filter((f) => !queued.has(f));
   const manifest = changeManifest(root, dir);
   writeProgress(dir, { ...spec.progress!, pending_commits: [...spec.progress!.pending_commits, { task, subject, files, manifest }] });
+}
+
+const OVERLAP =
+  'src/b.ts is changed by both T2 and T1: commit each by hand (`mandao run commit-msg <spec> <task> <subject>` gives the message), then run `mandao run commit <spec>` again to record them';
+
+/** Two pending tasks whose approved manifests both touch src/b.ts, so the script refuses to split them. */
+function overlapping(root: string) {
+  const dir = join(root, SPEC);
+  mkdirSync(join(root, 'src'), { recursive: true });
+  writeFileSync(join(root, 'src/b.ts'), 'export const b = 1;\n');
+  const spec = readSpec(dir);
+  const manifest = changeManifest(root, dir);
+  const entry = (task: string) => ({ task, subject: `change ${task}`, files: ['src/b.ts'], manifest });
+  writeProgress(dir, { ...spec.progress!, pending_commits: [entry('T2'), entry('T1')] });
+}
+
+/** What a person does after the overlap error: commit with the trailers `run commit-msg` produces. */
+function commitByHand(root: string, task: string, file = 'src/b.ts') {
+  const spec = readSpec(join(root, SPEC));
+  const t = spec.tasks.find((x) => x.id === task)!;
+  const msg = commitMessage(config, spec.story!, t, `change ${task}`, false, [file]);
+  git(root, 'add', '--', file);
+  git(root, 'commit', '-qm', msg.text.trimEnd(), '--allow-empty');
 }
 
 const pending = (root: string) => {
@@ -131,7 +156,7 @@ describe('commits found by trailers (ADR 0021)', () => {
       ...spec.progress!,
       pending_commits: [...spec.progress!.pending_commits, { task: 'T1', subject: 'x', files: ['src/b.ts'] }],
     };
-    expect(commitPending({ ...pending(root), progress: twice }).error).toBe('src/b.ts is changed by both T2 and T1: commit them by hand');
+    expect(commitPending({ ...pending(root), progress: twice }).error).toBe(OVERLAP);
   });
 
   test('refuses legacy pending commits without a Reviewer-approved manifest', () => {
@@ -164,5 +189,65 @@ describe('commits found by trailers (ADR 0021)', () => {
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
     writeFileSync(join(root, SPEC, 'design-note.md'), 'human-authored change\n');
     expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: design-note.md/);
+  });
+
+  test('tasks committed by hand after the overlap error are reconciled, not refused again', () => {
+    const root = repo();
+    overlapping(root);
+    expect(commitPending(pending(root)).error).toBe(OVERLAP);
+    commitByHand(root, 'T2');
+    commitByHand(root, 'T1');
+    const queued = readSpec(join(root, SPEC)).progress!.pending_commits;
+    expect([...reconciledTasks(root, 'MDO-0001', config.commits.trailers, queued)]).toEqual(['T2', 'T1']);
+    const run = commitPending(pending(root));
+    expect(run).toEqual({ committed: [], pending: [], alreadyCommitted: ['T2', 'T1'] });
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits).toEqual([]);
+    const next = nextFor(root, readSpec(join(root, SPEC)), config);
+    expect(next.recommended.command).not.toMatch(/run commit/);
+  });
+
+  test('one task committed by hand and one not: the script commits only the second', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const spec = readSpec(join(root, SPEC));
+    const content = 'export const a = 1;\n';
+    const manifest = [{ path: 'src/a.ts', status: '??', sha256: createHash('sha256').update(content).digest('hex') }];
+    const t1 = { task: 'T1', subject: 'change T1', files: ['src/a.ts'], manifest };
+    writeProgress(spec.dir, { ...spec.progress!, pending_commits: [t1, ...spec.progress!.pending_commits] });
+    writeFileSync(join(root, 'src/a.ts'), content);
+    commitByHand(root, 'T1', 'src/a.ts');
+    const run = commitPending(pending(root));
+    expect(run).toMatchObject({ committed: [{ task: 'T2' }], pending: [], alreadyCommitted: ['T1'] });
+    expect(taskCommits(root, 'MDO-0001', config.commits.trailers).get('T2')).toHaveLength(1);
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits).toEqual([]);
+  });
+
+  test('a task queued again after its commit is committed by the script, not reported as already committed', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    expect(commitPending(pending(root)).committed).toHaveLength(1);
+    const dir = join(root, SPEC);
+    writeFileSync(join(root, 'src/b.ts'), 'export const t2 = 2;\n');
+    const spec = readSpec(dir);
+    const manifest = changeManifest(root, dir);
+    writeProgress(dir, {
+      ...spec.progress!,
+      pending_commits: [{ task: 'T2', subject: 'rework the command', files: ['src/b.ts'], manifest }],
+    });
+    const run = commitPending(pending(root));
+    expect(run.alreadyCommitted).toBeUndefined();
+    expect(run).toMatchObject({ committed: [{ task: 'T2' }], pending: [] });
+    expect(git(root, 'show', 'HEAD:src/b.ts')).toBe('export const t2 = 2;');
+  });
+
+  test('a hand commit with the trailers but other content than the approved manifest is not reconciled', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    writeFileSync(join(root, 'src/b.ts'), 'export const sneaky = 1;\n');
+    commitByHand(root, 'T2');
+    const run = commitPending(pending(root));
+    expect(run.alreadyCommitted).toBeUndefined();
+    expect(run.error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
+    expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
   });
 });

@@ -1,5 +1,6 @@
+// mandao-scans: none — lists only the worktree folders it creates.
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -92,6 +93,124 @@ describe('mandao start (§14.5, ADR 0037)', () => {
     expect(state.start).toMatchObject({ id: r.id, title: 'Add a login rate limit', type: 'story', lane: 'normal', branch: r.branch });
     expect(r.open).toBe(`cd ${JSON.stringify(wt)} && claude "/mandao-specify ${r.id} --depth lite"`);
     expect(git(root, 'status', '--porcelain')).toBe('');
+  });
+
+  test('a compound gate keeps the stderr of every step in the recorded baseline output', async () => {
+    const root = repo({
+      lint: 'node -e "console.error(\'ERR-FIRST\')" && node -e "console.log(\'ERR-LAST\'); process.exit(2)"',
+    });
+    await cli(root, 'start', 'Compound', 'gate', '--no-install', '--json');
+    const r = lastJson();
+    const state = parseState(readFileSync(join(r.worktree, `specs/${r.id}-compound-gate`, '_log/state.yml'), 'utf8'));
+    expect(state.baseline?.failures[0]?.output).toContain('ERR-LAST');
+    expect(state.baseline?.failures[0]?.output).toContain('ERR-FIRST');
+  });
+
+  test('run baseline re-runs the gates in the worktree and rewrites the state.yml baseline', async () => {
+    const root = repo({ lint: 'node -e "console.log(\'bad config\'); process.exit(1)"' });
+    await cli(root, 'start', 'Rerun', 'me', '--no-install', '--json');
+    const r = lastJson();
+    const wt = r.worktree as string;
+    const state = () => parseState(readFileSync(join(wt, `specs/${r.id}-rerun-me`, '_log/state.yml'), 'utf8'));
+    expect(state().baseline?.gates).toContainEqual({ project: 'shop', gate: 'lint', result: 'FAIL' });
+    writeYaml(join(wt, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.', gates: { lint: 'node -e "process.exit(0)"' } }],
+      harnesses: ['claude'],
+      paths: { worktrees: '.worktrees' },
+    });
+    out.length = 0;
+    await cli(wt, 'run', 'baseline', r.id);
+    expect(lastJson()).toMatchObject({ baseline: 'green' });
+    expect(state().baseline?.gates).toEqual([{ project: 'shop', gate: 'lint', result: 'PASS' }]);
+    expect(state().baseline?.failures).toEqual([]);
+    expect(state().start).toMatchObject({ id: r.id });
+  });
+
+  /** Starts a spec without a baseline, then swaps the worktree config so `run baseline` has something to run. */
+  async function started(gates: Record<string, string>, extra: Record<string, unknown> = {}, ...flags: string[]) {
+    const root = repo();
+    await cli(root, 'start', 'Rerun', 'me', '--no-install', '--no-baseline', '--json', ...flags);
+    const r = lastJson();
+    const wt = r.worktree as string;
+    writeYaml(join(wt, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.', gates }],
+      harnesses: ['claude'],
+      paths: { worktrees: '.worktrees' },
+      ...extra,
+    });
+    out.length = 0;
+    return { r, wt, state: () => parseState(readFileSync(join(wt, `specs/${r.id}-rerun-me`, '_log/state.yml'), 'utf8')) };
+  }
+  const deferBuild = { resources: { operations: { build: { min_free_memory_mb: 10_000_000 } } } };
+
+  test('run baseline never reads a deferred gate as green and says which gate did not run', async () => {
+    const { r, wt, state } = await started({ lint: 'node -e "process.exit(0)"', build: 'node -e "process.exit(0)"' }, deferBuild);
+    await cli(wt, 'run', 'baseline', r.id);
+    expect(lastJson()).toMatchObject({ baseline: 'incomplete' });
+    expect(state().baseline?.text).not.toMatch(/Green/);
+    expect(state().baseline?.text).toMatch(/did not run.*shop build.*DEFERRED_TO_CI/);
+  });
+
+  test('a gate set to none is not run by baseline or run build', async () => {
+    const { r, wt, state } = await started({ lint: 'node -e "process.exit(0)"', build: 'none' });
+    await cli(wt, 'run', 'baseline', r.id);
+    expect(lastJson()).toMatchObject({ baseline: 'green' });
+    expect(state().baseline?.gates).toEqual([
+      { project: 'shop', gate: 'lint', result: 'PASS' },
+      { project: 'shop', gate: 'build', result: 'NOT_RUN_BY_CHOICE' },
+    ]);
+    out.length = 0;
+    await cli(wt, 'run', 'build', 'shop');
+    expect(lastJson()).toMatchObject({ status: 'SKIPPED' });
+    expect(process.exitCode).toBeUndefined();
+  });
+
+  test('run baseline with no gates rewrites a stale red baseline as skipped', async () => {
+    const root = repo({ lint: 'node -e "process.exit(1)"' });
+    await cli(root, 'start', 'Rerun', 'me', '--no-install', '--json');
+    const r = lastJson();
+    writeYaml(join(r.worktree, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.' }],
+      harnesses: ['claude'],
+      paths: { worktrees: '.worktrees' },
+    });
+    await cli(r.worktree, 'run', 'baseline', r.id);
+    expect(lastJson()).toMatchObject({ baseline: 'skipped' });
+    const state = parseState(readFileSync(join(r.worktree, `specs/${r.id}-rerun-me`, '_log/state.yml'), 'utf8'));
+    expect(state.baseline?.text).toMatch(/Skipped: no lint, typecheck or build gate/);
+    expect(state.baseline?.failures).toEqual([]);
+  });
+
+  test('run baseline --quick rewrites the quick change baseline file the start suffix names', async () => {
+    const { wt } = await started({ lint: 'node -e "process.exit(1)"' }, {}, '--quick');
+    const slug = readdirSync(join(wt, 'specs/quick/_log'))
+      .find((f) => f.startsWith('start-'))!
+      .replace(/^start-|\.yml$/g, '');
+    await cli(wt, 'run', 'baseline', slug, '--quick');
+    expect(readFileSync(join(wt, `specs/quick/_log/baseline-${slug}.md`), 'utf8')).toMatch(/\| shop \| lint \| FAIL \|/);
+  });
+
+  test('run baseline --quick refuses a slug that is not a quick-change slug, before building any path', async () => {
+    const { wt } = await started({ lint: 'node -e "process.exit(1)"' }, {}, '--quick');
+    for (const bad of ['../../../x', 'a/b', 'UPPER', '..'])
+      await expect(cli(wt, 'run', 'baseline', bad, '--quick')).rejects.toThrow(/not a quick-change slug/);
+  });
+
+  test('run baseline rewrites the version 1 baseline file', async () => {
+    const root = repo({ lint: 'node -e "process.exit(1)"' });
+    const dir = join(root, 'specs/MDO-0001-old');
+    mkdirSync(join(dir, '_log'), { recursive: true });
+    writeFileSync(join(dir, 'story.md'), '---\nschema_version: 1\nid: MDO-0001\n---\n\n# Old\n');
+    await cli(root, 'run', 'baseline', 'MDO-0001');
+    const file = join(dir, '_log/baseline.md');
+    expect(readFileSync(file, 'utf8')).toMatch(/\| shop \| lint \| FAIL \|/);
+    expect(existsSync(join(dir, '_log/state.yml'))).toBe(false);
   });
 
   test('a tracker id is used as is; quick changes keep their request in the quick log', async () => {

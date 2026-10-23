@@ -11,15 +11,15 @@
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "4f1ef63c0eb1998693082bba854ddaec8b78c484c55876aa44aa399f39857202"
+      "sha256": "62285b9d4a89820b9b98746a62077028315f4c381017fb5d35dc4c1ac0c8d03b"
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "7cccc017b15e87a58a94f79a26253c30c3a0d0f676d65284e2de7472530b9fbb"
+      "sha256": "7b89b5d8a17ec00157fcd740d8fbbf63eb35e82729b760de0ad6d7c3f66f1a69"
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "9687404d53b4e5a7ba4881939a0a3a09efbd2ff6dcf6a4627469a0858c9c1a03"
+      "sha256": "b3890d5d1cdecf0f532cf41e662edaab41f0f660eeda138b618fec0bf42b9b2c"
     },
     {
       "path": "core/commands/init.md",

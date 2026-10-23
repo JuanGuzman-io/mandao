@@ -32,6 +32,7 @@ jobs:
         if: github.ref == 'refs/heads/main'
         uses: changesets/action@v1
         with:
+          # `release` runs scripts/publish-tag.mjs: explicit dist-tags; changesets only versions; the script publishes and runs git-tag.
           publish: npm run release
           commit: "🔧 chore(release): version packages"
           title: "🔧 chore(release): version packages"
