@@ -12,6 +12,7 @@ import { isHarness, resolveForCli } from './models.js';
 import { registerArchify } from './run-archify.js';
 import { registerCost } from './run-cost.js';
 import { registerLeader } from './run-leader.js';
+import { registerMockOffer } from './run-mock.js';
 import { registerPremise } from './run-premise.js';
 import { registerQuickLog } from './run-quick.js';
 import { registerResearch } from './run-research.js';
@@ -34,6 +35,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerTelemetry(run, ctx);
   registerSecurityScanning(run, ctx);
   registerVersionNotes(run, ctx);
+  registerMockOffer(run, ctx);
   run
     .command('quick-check')
     .description('Measure the real working-tree diff (git diff --numstat) against size_limits.quick (JSON on stdout)')

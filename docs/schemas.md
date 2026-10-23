@@ -18,6 +18,7 @@ projects:                      # always a list; a simple repo is one project wit
     path: apps/api
     profile: app               # app | ai | data (defaults to default_profile)
     tracker_key: API
+    ui: true                   # optional: true forces and false excludes the UI surface that `run mock-offer` otherwise detects
     repo: git@github.com:acme/api.git   # required in polyrepo ("local" without a remote)
     gates:                     # level 0 gates, run from the project folder (projects[].path): paths are relative to it
       format: npm run format:check
@@ -168,6 +169,8 @@ skills:
     phases: [specify, implement]               # the commands that use the skill
     profiles: [app]
     fallback: What the commands do without the skill.   # optional
+    install_on: mock-accepted                    # optional: never installed by init, sync or matching; only `node .mandao/bin/mandao.mjs skills add <id> --yes` after an accepted UI mock
+    model_invocation: true                       # boolean, default true; false: the copied SKILL.md gets `disable-model-invocation: true` and Codex `agents/openai.yaml` gets `allow_implicit_invocation: false`
 technologies:
   flutter:
     match: { files: [pubspec.yaml] }
@@ -190,3 +193,18 @@ install. A `git` source requires `commit` (40 hex), the commit the `ref` must re
 records it (optional `commit`), and `scripts: true` when its scripts were copied with `--with-scripts`. `fallback` says what the commands do without the skill.
 `commandSkills(catalog)` in `src/skills/command-skills.ts` lists the `bootstrap` skills that are `binding: core`
 and not `bundled`, with their commands (`phases`), for every harness. Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.
+
+## `mockups/README.md` — UI mock of a spec (ADR 0056)
+
+Present only when the user accepted a mock (`mandao run mock-offer <ID> --record accepted`). Frontmatter:
+
+```yaml
+schema_version: 1
+source: design           # design | html
+link: https://claude.ai/...   # optional, design only: private, only here, never in briefs or the README body
+artboard: Checkout       # optional, design only
+files: [checkout.html]   # every file of mockups/ except the README
+```
+
+`mandao approve <ID> design` refuses a missing README, a listed file that is missing, or `source: design`
+with no export file (`.html`, `.htm`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg`, `.pdf`). Approval hashes include `mockups/`.

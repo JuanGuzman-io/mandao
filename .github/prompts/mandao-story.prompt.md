@@ -56,6 +56,11 @@ From `.mandao/templates/app/spec/story.md`, following `.mandao/templates/app/rul
 - Separate specs only by principle 8 of `.mandao/templates/app/rules/spec-docs.md`; the user decides.
 - `sources:` lists every source with its date. `status: draft`.
 
+## 3b. UI mock (only when offered)
+
+With `story.md` written, run `node .mandao/bin/mandao.mjs run mock-offer <ID>` (it reads `## UX references`); when it says
+`suggest`, follow `.mandao/templates/app/rules/mockups.md`.
+
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer

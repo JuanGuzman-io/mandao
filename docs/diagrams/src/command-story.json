@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "b3890d5d1cdecf0f532cf41e662edaab41f0f660eeda138b618fec0bf42b9b2c"
+      "sha256": "4cce20ef92e4f66a646922f6f62f5833ba043788299992dee1195b6955dc03c2"
     },
     {
       "path": "core/commands/init.md",
@@ -39,11 +39,11 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "dac76a26174261999fda61788d55d21775c4571d5bb7a33462785ddceff1037b"
+      "sha256": "9a486ba01d67acdf88042815e449c627fac34753a60171b57988415ec7747bf3"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "1aa0df73a766f90b260fab74738ae50bb93a45bec9f4778ba5fa5fb711da2062"
+      "sha256": "e610cf176a4c30059e34e66cf2d0d740e74790ef85a4d57ddb3d1175994e3595"
     },
     {
       "path": "core/commands/tasks.md",
@@ -54,10 +54,10 @@
       "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
     }
   ],
-  "specSha256": "198d75dbdddf67328fd5c90e9bea1bd512c41f90c81ac47c636cacaebf57e7a6",
+  "specSha256": "3db2998b017a031eaab3b8a1e848b45043fbfd37776f6b00e429eb28c2943ea5",
   "svgSha256": {
-    "light": "5fd244cdcb8377a8a86883d70b8e6db3f1f8ce286120c31d5b7f948d65c1c108",
-    "dark": "8b642d1fb3f8a184344fa0712f35cfd6948ff5a548c468626d70852f58a7b2e0"
+    "light": "8b73afb591974dee1a8f5d678b61d12e9dfdc41c5744f11f6cb33ea05e6b47f1",
+    "dark": "db7e916121fec2eff51ee0cc8d2662b896d77b236d69641b281691db81f19b7c"
   },
   "spec": {
     "schema_version": 2,
@@ -91,6 +91,10 @@
       {
         "id": "steps",
         "label": "Steps"
+      },
+      {
+        "id": "steps-2",
+        "label": "Steps, continued"
       },
       {
         "id": "writes",
@@ -133,6 +137,15 @@
         "id": "s3",
         "lane": "steps",
         "col": 3,
+        "type": "backend",
+        "label": "3b. UI mock",
+        "sublabel": "mandao run mock-offer",
+        "width": 171
+      },
+      {
+        "id": "s4",
+        "lane": "steps-2",
+        "col": 0,
         "type": "security",
         "label": "4. Approve",
         "sublabel": "mandao run next",
@@ -164,8 +177,13 @@
         "to": "s3"
       },
       {
-        "id": "s3-writes",
+        "id": "s3-s4",
         "from": "s3",
+        "to": "s4"
+      },
+      {
+        "id": "s4-writes",
+        "from": "s4",
         "to": "w0",
         "label": "writes",
         "variant": "dashed"

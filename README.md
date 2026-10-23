@@ -160,7 +160,7 @@ mandao start "add a remember-me option to login"   # branch + worktree + setup, 
 ```
 
 1. Open your agent **inside the worktree** (`mandao start` prints the exact command; `--open` launches it).
-2. Run `/mandao-specify` — at lite depth, one session writes the story, the spec and the tasks.
+2. Run `/mandao-specify` — at lite depth, one session writes the story, the spec and the tasks. When the spec touches a UI and the story has no UX references, it offers a visual mock once ([ADR 0056](docs/decisions/0056-ui-mocks-before-implementation.md)).
 3. Approve from the terminal: `mandao approve <ID> spec` — no model session, no tokens. It prints the command for the next step.
 4. Clear the conversation in the same window (`/clear` in Claude Code, `/new` in Codex and OpenCode, a new chat in Copilot and Antigravity) and run, from the worktree, `/mandao-implement`, then `/mandao-verify` and `/mandao-close`. A fresh context costs less than re-reading the whole specify context on every turn ([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)); `mandao approve` prints the exact action for your harness.
 

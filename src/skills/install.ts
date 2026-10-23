@@ -189,7 +189,12 @@ export function installSkills(
         return { id, step, status: isInstalled(id, skill, root, home, runner) ? 'installed' : 'pending' };
       case 'copy': {
         const folders = skillFolders(opts.harnesses ?? ['claude']);
-        const outcome = copyGitSkill(id, step, root, runner, { ...opts, folders, manual: describeStep(id, step, folders) });
+        const outcome = copyGitSkill(id, step, root, runner, {
+          ...opts,
+          folders,
+          manual: describeStep(id, step, folders),
+          modelInvocation: skill.model_invocation,
+        });
         return { id, step, ...outcome };
       }
     }

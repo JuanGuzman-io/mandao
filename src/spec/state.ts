@@ -1,6 +1,7 @@
 import { parse as parseYaml, stringify as stringifyYaml } from 'yaml';
 import { z } from 'zod';
 import { approvalSchema } from './approvals.js';
+import { mockStateSchema } from './mockup.js';
 import { progressSchema } from './progress.js';
 
 /** `start`: the request `mandao start` recorded for the first command (version 1: `start.yml`). */
@@ -51,6 +52,8 @@ export const stateSchema = z.object({
   progress: progressSchema.optional(),
   approvals: z.array(approvalSchema).default([]),
   cut_estimates: z.array(cutEstimateSchema).default([]),
+  /** The answer to the spec's one UI mock offer (phase 13, `run mock-offer --record`). */
+  mock: mockStateSchema.optional(),
 });
 export type State = z.infer<typeof stateSchema>;
 export type StateInput = z.input<typeof stateSchema>;
@@ -62,7 +65,7 @@ export function parseState(text: string | undefined): State {
   return stateSchema.parse(data ?? {});
 }
 
-const ORDER: StateSection[] = ['start', 'baseline', 'progress', 'approvals', 'cut_estimates'];
+const ORDER: StateSection[] = ['start', 'baseline', 'progress', 'approvals', 'cut_estimates', 'mock'];
 
 /** The file, sections in a fixed order; absent sections and empty lists are left out. */
 export function renderState(state: StateInput): string {
@@ -72,5 +75,5 @@ export function renderState(state: StateInput): string {
     return v !== undefined && !(Array.isArray(v) && !v.length);
   });
   const body = present.length ? stringifyYaml(Object.fromEntries(present.map((k) => [k, valid[k]])), { lineWidth: 0 }) : '{}\n';
-  return `# Written by mandao scripts: start request, baseline, progress, approvals and session-cut estimates.\n${body}`;
+  return `# Written by mandao scripts: start request, baseline, progress, approvals, session-cut estimates and the mock decision.\n${body}`;
 }

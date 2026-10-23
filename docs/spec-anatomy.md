@@ -61,6 +61,7 @@ reported as unexpected. `diagrams/` and `_log/` are allowed at every depth.
 | `data-model.md` | The data the spec changes | only when the spec changes data |
 | `contract/` | The contract between projects | only when the spec spans several projects |
 | `research.md` | Dated evidence and decisions for research questions | only when the spec contains NEEDS RESEARCH questions |
+| `mockups/` | UI mock approved with the design | only when a mock was made |
 
 ### The six log files (`_log/`)
 

@@ -27,6 +27,7 @@ Create or enrich a user story with enough business context: sufficiency rubric, 
 1. Find or create the story
 2. Sufficiency rubric
 3. Write story.md
+3b. UI mock (only when offered)
 4. Approve (you approve)
 
 ## Approval
@@ -39,6 +40,7 @@ Yes: it stops for your approval.
 - `mandao run spec-new`
 - `mandao run trace`
 - `mandao run event`
+- `mandao run mock-offer`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

@@ -80,6 +80,8 @@ const project = z.object({
     .optional(),
   /** Polyrepo: remote URL of the project's own repository (or `local` when it has none). */
   repo: z.string().min(1).optional(),
+  /** Whether the project has a UI surface (phase 13 mocks); absent means detected from its dependencies and files. */
+  ui: z.boolean().optional(),
   /** Shell command per deterministic gate, run from the project path. Missing gates are reported by doctor. */
   gates: z.partialRecord(gate, z.string().min(1)).default({}),
   /**

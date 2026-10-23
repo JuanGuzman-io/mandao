@@ -6,6 +6,7 @@ import { readConfig } from '../engine/files.js';
 import { researchToolCapabilities } from '../engine/research-tools.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
+import { MOCKUPS_DIR, mockupBlockers, mockupHashes } from '../scripts/mockups.js';
 import { verifiedReuseReferences } from '../scripts/research.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
@@ -88,7 +89,8 @@ function blockers(
   if (step === 'story') return spec.story ? open : ['story.md is missing'];
   if (step === 'design' || step === 'spec') {
     if (!spec.requirements) return [`${step === 'spec' ? LITE_DOC : 'requirements.md'} is missing`];
-    return [...open, ...specPremiseFindings(spec.dir).map((f) => f.message), ...researchIssuesFor(root, spec, config, harness)];
+    const documents = [...specPremiseFindings(spec.dir).map((f) => f.message), ...mockupBlockers(spec.dir)];
+    return [...open, ...documents, ...researchIssuesFor(root, spec, config, harness)];
   }
   if (step === 'tasks') {
     if (!spec.tasks.length) return [...open, 'no tasks to approve'];
@@ -153,10 +155,11 @@ function budgetTo(to: string | undefined): number | 'none' {
 
 const APPROVABLE = ['story.md', 'requirements.md', 'design.md', 'spec.md', 'research.md'];
 
-/** The hash of each approvable document the spec has, by file name. tasks.md is left out: its checkboxes change as tasks pass. */
+/** The hash of each approvable document by file name, plus every `mockups/` file unless `only` leaves it out. tasks.md is left out: its checkboxes change. */
 export function currentHashes(dir: string, only?: string[]): Record<string, string> {
   const files = APPROVABLE.filter((f) => (!only || only.includes(f)) && existsSync(join(dir, f)));
-  return Object.fromEntries(files.map((f) => [f, docHash(readFileSync(join(dir, f), 'utf8'))]));
+  const docs = Object.fromEntries(files.map((f) => [f, docHash(readFileSync(join(dir, f), 'utf8'))]));
+  return !only || only.includes(MOCKUPS_DIR) ? { ...docs, ...mockupHashes(dir) } : docs;
 }
 
 const readApprovals = (spec: SpecFolder) => readApprovalLog(spec.dir);
@@ -228,7 +231,7 @@ export function nextFor(
 /** Appends the approval to the spec's approvals and returns it. */
 function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions, docs: string[]) {
   const note = step === 'security-gaps' ? o.reason : o.byRunning ? `approved by running ${o.byRunning}` : o.note;
-  const hashes = currentHashes(spec.dir, docs);
+  const hashes = currentHashes(spec.dir, step === 'design' || step === 'spec' ? [...docs, MOCKUPS_DIR] : docs);
   return appendApproval(
     spec,
     {
