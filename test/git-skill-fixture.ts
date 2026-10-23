@@ -1,3 +1,4 @@
+// mandao-scans: none — lists only the temporary trees it creates.
 import { execFileSync } from 'node:child_process';
 import { chmodSync, mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
