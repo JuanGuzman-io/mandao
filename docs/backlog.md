@@ -791,7 +791,10 @@ task that creates the manifest declares the gates (proposed from the stack in `s
 the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
 project whose constitution lists gates as OPEN. The proposal must include every gate a later command
 requires: in MDO-0001 the PE approved four gates in T1, and `run commit` then stopped asking for a `build`
-gate (answered `build: none`); that question belongs in the same approval.
+gate (answered `build: none`); that question belongs in the same approval. Later, delivery 1's checkpoint
+stopped on `SECURITY_GAPS` (tasks tagged security, no secrets or SAST gate): the constitution had already
+recorded secrets and SAST as `unknown` but proposed no gate, so the PE had to configure `secrets`, `sast`
+and `audit` mid-implementation. The constitution proposes them with the other gates.
 
 **Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
 implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
