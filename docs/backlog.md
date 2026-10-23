@@ -789,7 +789,9 @@ them up: MDO-0001's tasks were written with "no gate commands declared, each tas
 `uv run pytest …`", so the first implementation would run with no lint, format or typecheck gate. Fix: the
 task that creates the manifest declares the gates (proposed from the stack in `standards.md`, approved by
 the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
-project whose constitution lists gates as OPEN.
+project whose constitution lists gates as OPEN. The proposal must include every gate a later command
+requires: in MDO-0001 the PE approved four gates in T1, and `run commit` then stopped asking for a `build`
+gate (answered `build: none`); that question belongs in the same approval.
 
 **Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
 implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
