@@ -669,3 +669,22 @@ others left: the intake recommends `start`, `start` opens `specify --depth lite`
 if there were no proposal. The fix is one shared rule for "what comes next" after an intake, read by
 `next`, `start`, `story` and `specify` alike (the intake proposal and its opened stories as state), with
 a test that runs `--from` → first story → specify end to end and checks every hand-over.
+
+**Requirement (maintainer, 2026-10-23): no manual branches or git commands in any documented flow.**
+"There is no reason we should have to create branches by hand; that must be well defined in the
+commands and in the processes." Mandao's commands own the branch, the worktree and moving pending work
+onto them; the user only runs Mandao commands and answers questions.
+
+Evidence: the steps the maintainer had to run by hand in the trial, each a gap to close.
+
+| Manual step | Why it was needed | What Mandao must do instead |
+|---|---|---|
+| Decide between `mandao start`, a hand-made branch or working on `main` | the intake's next step did not say where the spec's branch comes from | one documented path: the command that opens the spec creates the branch per `branching` |
+| `git stash` in `main`, `git stash pop` in the worktree | `start` cut the worktree from the last commit, without the intake's uncommitted proposal and constitution changes | carry the intake's pending files onto the spec branch, or refuse with the exact step it will take |
+| Cancel `/mandao-specify --depth lite` that `start` opened | `start` did not hand over to `story --intake` | `start` (or the in-session path) opens the intake story |
+| `git worktree remove --force` and `git branch -D` | there is no Mandao command to abandon or restart a spec that was started by mistake | a command to abandon or restart a started spec, which removes its worktree and branch after confirmation and frees or keeps the ID explicitly |
+| `git switch -c feat/MDO-0001-…` with the same name | to keep the spec ID and carry the pending changes in the same checkout | the in-session spec creation of item 1 |
+| Editing the proposal to close an open question by hand | the agent asked the PO, but there is no step that records the answer | `intake-check` or the story command records PO answers in the proposal |
+
+Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
+outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
