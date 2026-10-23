@@ -425,6 +425,10 @@ documents reading a local PDF by page range, read 2026-10-22).
 9. ADR 0057, docs, TDD, an independent Reviewer, and a trial with a real PDF that has requirements in
    tables.
 
+**Pending (maintainer, 2026-10-22):** the trial with a real PDF that has requirements in tables is left
+pending: poppler (`pdftotext`) is not installed on the maintainer's machine. It runs once poppler is
+available, to check that `pdftotext -layout` keeps table rows readable.
+
 ## Task change manifest redesign
 
 **Agreed (maintainer, 2026-10-22); backlog.** Found in the phase 11 trial: a task's Reviewer-approved
