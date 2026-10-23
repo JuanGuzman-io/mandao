@@ -51,6 +51,7 @@ scope, product behavior, security or irreversible actions.
 | [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
+| [Intake to first story in the same session](#intake-to-first-story-in-the-same-session) | beta trial (asistente-asesores) | phase 14 | agreed; backlog |
 
 ## Phase 0 — Documentation and backlog
 
@@ -625,3 +626,27 @@ Maintainer steps:
 
 If `npm dist-tag add` is refused, run the command the script prints. A published version is never
 republished: a fix ships as `0.1.0-beta.1`.
+
+## Intake to first story in the same session
+
+**Agreed (maintainer, 2026-10-23); backlog.** Found running the beta on a real technical test
+(`/mandao-story --from` over an 8-page PDF, constitution in a custom `paths.constitution`).
+
+1. **Continue in the same chat.** After `/mandao-story --from` writes the proposal, the user expects to
+   go on with the first story in that same session. Today the next step is `mandao start` in a terminal,
+   which creates a worktree and opens a new session; running `/mandao-story --intake …#I-n` directly
+   leaves the work on the current branch (`run spec-new` only proposes the branch and worktree), which
+   fails later when that branch is protected. `/mandao-story --intake` (and plain `/mandao-story` with no
+   spec) should create the spec in place when none exists: the branch from the configured model in the
+   current checkout, the spec folder and the start record, with the worktree only as an option. The
+   proposal and constitution changes the intake left uncommitted must reach that branch (commit them, or
+   carry them over).
+2. **Configured paths.** `rules/intake.md` hard-codes `docs/constitution/` and the proposal path
+   `docs/product/intake/`; they must follow `paths.constitution` and a configurable intake path, as the
+   other commands do.
+3. **Explain the next step.** The intake's closing message names `mandao start` without saying it is a
+   terminal command that creates the branch and worktree; with item 1 the message points to the
+   in-session step instead.
+4. **Group stories into specs.** An intake of 11 stories suggested opening them one by one; the
+   proposal should suggest which stories form one spec (rule 8 of `rules/spec-docs.md`: dependent AC are
+   one spec) and how to mark several `I-n` as opened by the same spec.
