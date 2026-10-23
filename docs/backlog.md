@@ -903,5 +903,18 @@ accepting `claude-code` as an alias.
 - The PR plan proposed 4 stacked PRs from 4,766 changed lines, most of them `package-lock.json`. Line
   counts for PR sizing must leave out lockfiles and generated files.
 
+**Seen at the end of MDO-0001's implement (2026-10-23):**
+- `run commit` refuses the `[x]` box that its own `--done` writes in `tasks.md`; the agent committed it
+  separately in every task.
+- The `test` gate passed a data file (`tests/fixtures/consultas.json`) to pytest, which exits 4 ("no tests
+  collected"); the agent validated T10 by running the suite by hand. Gates must pass only test files.
+- There is no `eval` gate: the PE's approved evaluation gate (`uv run pytest -m eval`, real embeddings
+  model) went into the `metrics` slot. Model and quality evaluations need their own named gate.
+- T11 and T12 needed no new code (their evidence is an independent inspection and recorded mutations), and
+  Mandao recorded them as "implemented by the Leader" (`self`), which reads as if the Leader wrote code.
+  A task closed by evidence alone needs its own label.
+- After 12 of 12 tasks, `run next` still recommends `/mandao-specify` for research gate R3, which the PE had
+  accepted in C-7 (already listed above: an accepted exception must clear `next`).
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
