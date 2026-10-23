@@ -954,5 +954,10 @@ implemented CI outside Mandao. Fix: an infrastructure lane for changes that wire
 similar tooling) with a short checklist (pin actions, licence check, update `infrastructure.md` with
 approval) instead of the spec cycle.
 
+**`deliver` refuses a quick created without `start --quick` (2026-10-23).** A UI quick change was made
+on its own branch and worktree, committed with its quick-log row and cost, reviewed (PASS), and then
+`mandao deliver quick/<slug>` failed because the quick had no start record. Either `quick` creates the
+start record when it creates the branch, or `deliver` works from the quick-log row and the branch.
+
 Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
 outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
