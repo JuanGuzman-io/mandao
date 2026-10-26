@@ -15,7 +15,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
   - { path: "docs/product/intake/<doc>-<date>.md" }
 capabilities: [read, search, edit, shell, mcp]
-templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md, rules/mockups.md, rules/intake.md, product/intake-proposal.md]
+templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md, rules/mockups.md, rules/intake.md, product/intake-proposal.md, rules/next-step.md]
 scripts: [next, spec-new, trace, event, mock-offer, intake-extract, intake-check, intake-story, intake-open]
 approval: required
 ---
@@ -87,4 +87,4 @@ In Claude Code the mock may be made with `/design`; its export into `mockups/` s
 ## 4. Approve
 
 Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
-to post the approved AC back as a comment (only after confirmation). Next: `{{script:next}} <ID> --harness {{harness}}` names the command that follows; give it.
+to post the approved AC back as a comment (only after confirmation). End with `{{template:rules/next-step.md}}`: `{{script:next}} <ID> --harness {{harness}}`.

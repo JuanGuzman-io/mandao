@@ -20,7 +20,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
-templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md]
+templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
 scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
@@ -197,9 +197,8 @@ block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows. When it returns
-`autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
-return control to the user with verification merely suggested. Report the implementation and verify
-results together. If the implementation summary has `session.cut: true`, start the recommended fresh
-conversation first and continue with verify there, inside the worktree (ADR 0038). Any verification
-blocker or question that requires the user still pauses normally.
+End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`. Verify always
+follows implement in this same session (`autoContinue`); report the implementation and verify results
+together. If the implementation summary has `session.cut: true`, start the recommended fresh conversation
+first and continue with verify there (ADR 0038). Any verification blocker or question that requires the
+user still pauses normally.

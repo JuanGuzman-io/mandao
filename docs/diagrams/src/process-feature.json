@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "1e514aba79ec669a8cf4d0a305cf6ff2e85e25e9402ccddcd52fee8542e9bd75"
+      "sha256": "8cf4e5fa330e3d82fdcec3a9a94d7caafd15c3d231abdce01914c5816d08b348"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "db88f668480e00370fa0740d860b8839607091638dd284c8eb4b6ebeb9c49a4b"
+      "sha256": "08053917f88550ce5416de6524ff64d944aa7689033117f1df44f5d7186c7db8"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "ba80ff5da65a997c70e76a13eeb5b40130d2db2a638cd73a096a9358bd06e5c7"
+      "sha256": "7d461cbcabc81ad89b76076876d9f52a3dfe7d65009ed3d2ee19de3a1f14ee37"
     },
     {
       "path": "core/commands/init.md",
@@ -31,7 +31,7 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "2865854331366c05a1465c232b2f34382aec24d73b38e43cb6d4827a8b4ca0d5"
+      "sha256": "5352d421511dd215c1783d72c0369515cf69e6e6897c4fee80d2a0c2d0018549"
     },
     {
       "path": "core/commands/resume.md",
@@ -39,19 +39,19 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "706f0b8c018958abd069aa1c0c847cc114e93d9cc62a5e762364436056c97ce0"
+      "sha256": "835fe3a267cdb918cf962535b4ec5cf630be94fcd2f9244dd186736f792492a6"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "d0111434f3c1de3bddf3668954a7c54cc701730d755fec0716a9bb25daff0045"
+      "sha256": "5806e675c506b73ae623c932dfc289d031d712208d6b71c8d79f0f01b7650c48"
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "824ebb0a0e6f2deb477e4a5223f2611c50e1a016f79bdeaca1cf9017050ad06f"
+      "sha256": "31d99161f4396736bcc74e0137d48bc936c18b16949f5e7cbdec7cb65196a006"
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "5720ff0cf344a7269b2cf23241b0ab27438bd4ea558e39b8dea69cff9f102ad6"
+      "sha256": "d58e2a1160e5f146fdf152a471c8034cbeb9afb1fcdf01c3d46dc2077a538185"
     },
     {
       "path": "docs/process-map.md",

@@ -56,12 +56,6 @@ describe('core content', () => {
     expect(close).toMatch(/use Mermaid only when\s+`diagrams\.engine: mermaid` is explicitly configured/);
   });
 
-  test('completed implementation returns an automatic verify transition instead of a handoff', () => {
-    const implement = readFileSync('core/commands/implement.md', 'utf8');
-    expect(implement).toMatch(/`autoContinue: true`, invoke its recommended `\/mandao-verify` immediately/);
-    expect(implement).toMatch(/do not\s+return control to the user with verification merely suggested/);
-  });
-
   test('Reviewer treats linter-driven test deletion as blocking and asks for a split', () => {
     const reviewer = readFileSync('core/personas/reviewer.md', 'utf8');
     const policy = readFileSync('core/templates/shared/rules/test-policy.md', 'utf8');

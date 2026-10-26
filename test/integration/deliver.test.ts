@@ -192,6 +192,30 @@ describe('mandao deliver manual-provider path', () => {
   });
 });
 
+describe('mandao deliver inside an agent session (no terminal, phase 16)', () => {
+  test('--list names the destinations; --target and --scope deliver without any prompt', async () => {
+    promptState.groups = 0;
+    const { root, remote } = quickRepo();
+    restoreTerminal();
+    restoreTerminal = stubTerminal(false);
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+    const localBin = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    vi.stubEnv('PATH', localBin);
+
+    await run(root, 'quick/fix-typo', '--list');
+    expect(JSON.parse(logs.at(-1)!)).toMatchObject({ targets: [expect.objectContaining({ branch: 'main', default: true })] });
+    await expect(run(root, 'quick/fix-typo')).rejects.toThrow(/--target <branch> --scope/);
+    await expect(run(root, 'quick/fix-typo', '--scope', 'everything')).rejects.toThrow(/--scope must be all, push-pr or nothing/);
+
+    await run(root, 'quick/fix-typo', '--target', 'main', '--scope', 'push-pr');
+    expect(promptState.groups).toBe(0);
+    expect(git(remote, 'show-ref', '--verify', 'refs/heads/feat/quick-fix-typo')).toBeTruthy();
+    expect(logs.join('\n')).toContain('Open a PR manually from feat/quick-fix-typo into main');
+  });
+});
+
 describe('mandao deliver quick without a start record', () => {
   test('derives the branch, base and lane from the configuration (quick made without start --quick)', async () => {
     promptState.groups = 0;

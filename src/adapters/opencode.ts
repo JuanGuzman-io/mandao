@@ -92,6 +92,7 @@ export const opencodeAdapter: Adapter = {
   id: 'opencode',
   name: 'OpenCode',
   session: {
+    invoke: (command) => `/${command}`,
     enterWorktree: false,
     newConversation: '/new',
     resume: (worktree, first) => openByHand('opencode', worktree, first),

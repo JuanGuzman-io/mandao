@@ -29,6 +29,7 @@ templates:
   - rules/doc-close.md
   - rules/budget.md
   - rules/telemetry.md
+  - rules/next-step.md
 scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec, event]
 approval: required
 ---
@@ -136,10 +137,11 @@ a field with `—`: leave it out.
 - Environments: only as CI or the tracker reports them —
   `{{script:close-summary}} {{arg:spec}} --env <name> --source ci|tracker`. Promotion is never automated.
 
-After close commits its record, run `mandao deliver {{arg:spec}}`. It asks in one grouped confirmation for
-the PR destination and the delivery level (everything, push and PR only, or nothing). The worktree's
-recorded start branch is the default; other remote branches from `branching` are offered only when they
-exist. Never push directly to a protected destination. Without GitHub CLI, push and give the manual PR
+After close commits its record, deliver in this session; never send the PE to a terminal for it.
+`{{mandao}} deliver {{arg:spec}} --list` gives the destinations (the start branch is the default; other remote
+branches from `branching` only when they exist). Ask the PE once, as one grouped question: the destination and
+the delivery level (everything, push and PR only, or nothing). Then run
+`{{mandao}} deliver {{arg:spec}} --target <branch> --scope <all|push-pr|nothing>` with the answers. Never push directly to a protected destination. Without GitHub CLI, push and give the manual PR
 link/steps; CI is “not verifiable” and merge stays with the user. Before any merge, the selected target
 and PR URL must be committed in `close-summary.md` and `docs/CHANGELOG.md` on this PR.
 

@@ -107,6 +107,7 @@ Run `{{script:quick-check}}` and read its JSON.
 
    The commit lists the code files, `specs/quick/quick-log.md` and `{{paths.specs}}/quick/_log/costs.yml`.
 4. Report: what changed, gates run, review result, commit hash.
-5. Deliver through the same grouped, confirmed flow as a spec: `mandao deliver quick/<slug>` (the slug
-   from `mandao start --quick`). A manual-provider path pushes and prints PR steps; without verifiable CI,
+5. Deliver in this session through the same grouped, confirmed flow as a spec: `{{mandao}} deliver quick/<slug> --list`,
+   one grouped question to the PE (destination and level), then
+   `{{mandao}} deliver quick/<slug> --target <branch> --scope <all|push-pr|nothing>`. A manual-provider path pushes and prints PR steps; without verifiable CI,
    merge remains with the user.

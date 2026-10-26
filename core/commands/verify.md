@@ -26,6 +26,7 @@ templates:
   - rules/doc-quickstart.md
   - rules/budget.md
   - rules/telemetry.md
+  - rules/next-step.md
 scripts: [where, next, verify-plan, security-scanning, tests, build, status, trace, commit-spec, event]
 ---
 
@@ -104,4 +105,4 @@ report.
 - Either way, commit the report on its own: `{{script:commit-spec}} {{arg:spec}} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`.

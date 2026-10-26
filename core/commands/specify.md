@@ -51,6 +51,7 @@ templates:
   - rules/budget.md
   - rules/telemetry.md
   - rules/mockups.md
+  - rules/next-step.md
 scripts: [next, spec-new, trace, diagram, branching, commit-spec, resources, premise, event, research, mock-offer]
 approval: required
 ---
@@ -212,4 +213,4 @@ When `{{script:diagram}} <ID>` says the spec needs one, or it changes data, foll
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `{{script:commit-spec}} {{arg:ref}} specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
-  `{{script:next}} <ID> --shown --harness {{harness}}` (it records what was shown) and give the command it names as the next mandao.
+  `{{script:next}} <ID> --shown --harness {{harness}}` (it records what was shown), then end with `{{template:rules/next-step.md}}`.

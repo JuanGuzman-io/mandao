@@ -1,23 +1,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import * as p from '@clack/prompts';
 import type { Command } from 'commander';
-import { parse as parseYaml } from 'yaml';
-import { readConfig } from '../engine/files.js';
-import type { Branching } from '../schemas/branching.js';
 import type { Config } from '../schemas/index.js';
-import { branchingFor, specBranch, startPoint } from '../scripts/branching.js';
-import {
-  canDeleteMergedBranch,
-  hasSecurityCheck,
-  manualPullRequestUrl,
-  parseRemoteBranches,
-  providerForRemote,
-} from '../scripts/delivery.js';
-import type { SpecFolder } from '../scripts/spec.js';
-import { findSpec, mainCheckout, readSpec } from '../scripts/spec.js';
-import { STATE_FILE } from '../scripts/spec-log.js';
+import { canDeleteMergedBranch, hasSecurityCheck, manualPullRequestUrl, parseRemoteBranches } from '../scripts/delivery.js';
+import { readSpec } from '../scripts/spec.js';
 import { deliveryTargets, resolveDeliveryTarget } from '../spec/delivery.js';
 import {
   changelogLine,
@@ -29,11 +17,11 @@ import {
   upsertChangelog,
   withDelivery,
 } from '../spec/index.js';
-import { parseState } from '../spec/state.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+import { type DeliveryContext, findWorktree, loadDeliveryContext } from './delivery-context.js';
 import { prePush } from './delivery-gates.js';
-import { requireTerminal } from './terminal.js';
+import { canPrompt, requireTerminal } from './terminal.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
@@ -44,106 +32,28 @@ interface DeliveryChoices {
   scope: 'all' | 'push-pr' | 'nothing';
 }
 
-type StartRecord = { id?: string; title?: string; lane?: string; branch?: string; base?: string };
-
-interface DeliveryContext {
-  config: ReturnType<typeof readConfig>;
-  repo: string;
-  worktree: string;
-  specDir: string;
-  branch: string;
-  start: StartRecord;
-  spec?: SpecFolder;
-  quick: boolean;
-  quickName?: string;
-  info: ReturnType<typeof originInfo>;
-  branching: Branching;
-}
-
-function originInfo(repo: string): { url: string; provider: 'github' | 'other'; branches: string[] } {
-  const url = git(repo, ['config', '--get', 'remote.origin.url']);
-  const provider = providerForRemote(url);
-  if (!provider) throw new Error('origin has no remote URL');
-  const branches = parseRemoteBranches(git(repo, ['ls-remote', '--heads', 'origin']));
-  return { url, provider, branches };
-}
-
-/** Reads the start record written by `mandao start`; quick starts retain one file per request. */
-function startRecord(dir: string, quick = false, quickName?: string): StartRecord {
-  const file = quick
-    ? join(dir, '_log', `start-${quickName}.yml`)
-    : [join(dir, '_log', STATE_FILE), join(dir, '_log', 'start.yml'), join(dir, 'start.yml')].find((candidate) => existsSync(candidate));
-  if (!file) return {};
-  const text = readIf(file);
-  if (!text) return {};
-  if (quick) {
-    return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
-  }
-  if (file.endsWith(STATE_FILE)) return parseState(text).start ?? {};
-  return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
-}
-
-/**
- * A quick change made without `mandao start --quick` has no start record: its branch is the current or the one
- * local branch named `…quick-<slug>`, else the configured name; base and lane follow from its prefix.
- */
-function derivedQuickStart(config: Config, dir: string, slug: string): StartRecord {
-  const b = branchingFor(config);
-  const own = (name: string) => name.endsWith(`quick-${slug}`);
-  const current = git(dir, ['branch', '--show-current']);
-  const local = git(dir, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']).split('\n').filter(own);
-  // The quick's own branch, whatever its prefix (fix/, hotfix/): the current one, else the one local match.
-  const found = own(current) ? current : local.length === 1 ? local[0] : undefined;
-  const branch = found ?? specBranch(config, b, { id: 'quick', slug });
-  const hotfix = branch.startsWith(b.prefixes.hotfix);
-  return { id: 'quick', title: slug, branch, base: startPoint(b, hotfix), lane: hotfix ? 'hotfix' : 'normal' };
-}
-
 function quickPullRequestBody(title: string, quickDir: string, repo: string): string {
   const href = relative(repo, quickDir).split(sep).join('/');
   return `## Outcome\n\n${title}\n\n## For developers\n\nSee the quick log for measured files, gates and review evidence.\n\nQuick log: [quick-log.md](${href}/quick-log.md)`;
 }
 
-function loadDeliveryContext(root: string, ref: string): DeliveryContext {
-  const config = readConfig(root);
-  const quickName = /^(?:quick\/|quick:)(.+)$/.exec(ref)?.[1];
-  const quick = Boolean(quickName);
-  const foundDir = quick ? join(root, config.paths.specs, 'quick') : findSpec(root, config, ref);
-  const realFoundDir = realpathSync(foundDir);
-  const repo = mainCheckout(realFoundDir);
-  const invocationRoot = realpathSync(root);
-  const recorded = startRecord(realFoundDir, quick, quickName);
-  const start = quickName && !recorded.branch ? derivedQuickStart(config, realFoundDir, quickName) : recorded;
-  if (!start.branch) throw new Error(`start record for ${ref} is missing its source branch`);
-  const branch = start.branch;
-  const worktree = findWorktree(repo, branch) ?? root;
-  if (git(worktree, ['branch', '--show-current']) !== branch)
-    throw new Error(`the worktree for ${branch} is unavailable; resume delivery from that branch`);
-  const specDir = quick ? join(worktree, config.paths.specs, 'quick') : join(worktree, relative(invocationRoot, realFoundDir));
-  const spec = quick ? undefined : readSpec(specDir);
-  if (!quick && spec?.story?.meta.status !== 'closed') throw new Error(`${ref} must be a closed spec before delivery`);
-  if (git(worktree, ['status', '--porcelain']))
-    throw new Error('delivery stops with uncommitted or untracked changes; commit or review them first');
-  const info = originInfo(repo);
-  const branching = branchingFor(config, spec?.story?.meta.projects[0]);
-  return {
-    config,
-    repo,
-    worktree,
-    specDir,
-    branch,
-    start,
-    ...(spec ? { spec } : {}),
-    quick,
-    ...(quickName ? { quickName } : {}),
-    info,
-    branching,
-  };
+/** The destinations delivery offers, the default one marked: what the agent asks the PE in the session. */
+function targetsOf(delivery: DeliveryContext) {
+  const targets = deliveryTargets(delivery.start.base, delivery.branching, delivery.info.branches, delivery.start.lane === 'hotfix');
+  if (!targets.length) throw new Error('origin has no configured destination branch; create a remote branch before delivery');
+  return targets;
+}
+
+/** The PE's answers given as flags (`--target`, `--scope`), asked by the agent in the session: no prompt (phase 16). */
+function chosenDestination(delivery: DeliveryContext, target: string | undefined, scope: DeliveryChoices['scope']) {
+  const targets = targetsOf(delivery);
+  const choices: DeliveryChoices = { target: target ?? targets.find((t) => t.default)!.branch, scope };
+  if (scope === 'nothing') return { choices };
+  return { choices, target: resolveDeliveryTarget(choices.target, targets, delivery.info.branches) };
 }
 
 async function selectDestination(delivery: DeliveryContext): Promise<{ choices: DeliveryChoices; target?: string }> {
-  const targets = deliveryTargets(delivery.start.base, delivery.branching, delivery.info.branches, delivery.start.lane === 'hotfix');
-  if (!targets.length) throw new Error('origin has no configured destination branch; create a remote branch before delivery');
+  const targets = targetsOf(delivery);
   const choices = await confirmDelivery(
     targets.map((target) => ({
       value: target.branch,
@@ -241,11 +151,25 @@ function recordManualPrUrl(delivery: DeliveryContext, url: string): void {
   console.log(`Recorded PR URL for ${current.target}; the PR now contains the delivery record.`);
 }
 
-async function runDelivery(ctx: CliContext, ref: string, options: { recordPrUrl?: string }): Promise<void> {
+interface DeliverOptions {
+  recordPrUrl?: string;
+  list?: boolean;
+  target?: string;
+  scope?: string;
+}
+
+const SCOPES = ['all', 'push-pr', 'nothing'] as const;
+
+async function runDelivery(ctx: CliContext, ref: string, options: DeliverOptions): Promise<void> {
+  if (options.scope && !(SCOPES as readonly string[]).includes(options.scope))
+    throw new Error(`--scope must be all, push-pr or nothing, not "${options.scope}"`);
   const delivery = loadDeliveryContext(ctx.root(), ref);
   if (options.recordPrUrl) return recordManualPrUrl(delivery, options.recordPrUrl);
-  requireTerminal('mandao deliver');
-  const selected = await selectDestination(delivery);
+  if (options.list) return void console.log(JSON.stringify({ targets: targetsOf(delivery) }));
+  if (!options.scope) requireTerminal('mandao deliver', '--target <branch> --scope <all|push-pr|nothing> (see --list)');
+  const selected = options.scope
+    ? chosenDestination(delivery, options.target, options.scope as DeliveryChoices['scope'])
+    : await selectDestination(delivery);
   if (selected.choices.scope === 'nothing') {
     console.log('Delivery cancelled; no Git action was taken.');
     return;
@@ -329,13 +253,6 @@ function recordSpecDelivery(repo: string, specDir: string, target: string, confi
   command(repo, 'git', ['commit', '-m', `${header}\n\n${config.commits.trailers.refs}: ${spec.story.meta.id}`]);
 }
 
-function findWorktree(repo: string, branch: string): string | undefined {
-  return git(repo, ['worktree', 'list', '--porcelain'])
-    .split('\n\n')
-    .map((block) => ({ path: /^worktree (.+)$/m.exec(block)?.[1], branch: /^branch refs\/heads\/(.+)$/m.exec(block)?.[1] }))
-    .find((entry) => entry.branch === branch)?.path;
-}
-
 /** Cleanup runs from the principal checkout, after checking branch ancestry and refusing dirty trees. */
 function cleanupMergedWorktree(repo: string, branch: string, target: string): void {
   const worktree = findWorktree(repo, branch);
@@ -371,12 +288,17 @@ export function registerDeliver(program: Command, ctx: CliContext) {
     .command('deliver <spec>')
     .description('Confirm a destination, then push and open a PR; merge only after green CI')
     .option('--record-pr-url <url>', 'record a manually-created PR URL before merge, then push the update')
-    .action((ref: string, options: { recordPrUrl?: string }) => runDelivery(ctx, ref, options));
+    .option('--list', 'print the destinations it offers as JSON (the default one marked) and do nothing')
+    .option('--target <branch>', 'the PR destination the PE chose (default: the marked one)')
+    .option('--scope <scope>', 'all | push-pr | nothing: deliver without prompting (an agent asks the PE first)')
+    .action((ref: string, options: DeliverOptions) => runDelivery(ctx, ref, options));
 }
 
 async function offerPromotion(repo: string, promotion: string[], target: string, title: string, body: string) {
   const next = promotion[promotion.indexOf(target) + 1];
   if (!next) return;
+  if (!canPrompt())
+    return void console.log(`Promotion to ${next} is the next step: run \`mandao deliver\` from a terminal or open that PR.`);
   const answer = await p.confirm({ message: `Promote ${target} to ${next} by opening a separate PR?`, initialValue: false });
   if (p.isCancel(answer) || !answer) return;
   const url = command(repo, 'gh', ['pr', 'create', '--base', next, '--head', target, '--title', title, '--body', body]);

@@ -16,7 +16,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md", description: polyrepo slices }
 capabilities: [read, search, edit, shell]
-templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md, rules/telemetry.md]
+templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
 scripts: [where, next, trace, tasks, commit-spec, event]
 approval: required
 ---
@@ -97,4 +97,4 @@ open version 1 spec it warns and does not convert it; the migration goes through
    `{{mandao}} approve --by-running /mandao-implement --harness {{harness}} {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.
+   available yet. End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038).

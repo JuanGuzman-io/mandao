@@ -40,6 +40,7 @@ export const antigravityAdapter: Adapter = {
   id: 'antigravity',
   name: 'Antigravity',
   session: {
+    invoke: (command) => `/${command}`,
     enterWorktree: false,
     newConversation: '⌘N / Ctrl+N',
     resume: (worktree, first) => openByHand('antigravity', worktree, first),

@@ -108,6 +108,19 @@ describe('nextStep: later stages (S-1.5)', () => {
   });
 });
 
+describe('nextStep: chaining (phase 16)', () => {
+  test('with chain on, a step that needs no decision continues; a decision, a question or a session boundary stops', () => {
+    const lite = spec({ depth: 'lite' }).spec;
+    expect(nextStep(lite, { chain: true })).toMatchObject({ recommended: { command: '/mandao-implement' }, autoContinue: true });
+    expect(nextStep(lite, {}).autoContinue).toBeUndefined();
+    const draft = spec({ depth: 'lite', doc: 'draft' }).spec;
+    expect(nextStep(draft, { chain: true }).autoContinue).toBeUndefined();
+    const open = spec({ depth: 'lite', extra: '- [NEEDS CLARIFICATION]: which list?' }).spec;
+    expect(nextStep(open, { chain: true })).toMatchObject({ recommended: { command: '/mandao-clarify' } });
+    expect(nextStep(open, { chain: true }).autoContinue).toBeUndefined();
+  });
+});
+
 describe('nextStep: research evidence gate', () => {
   test('unresolved or unverified research returns to specify before tasks or implementation', () => {
     const { spec: s } = spec({ depth: 'standard', tasks: 'none' });

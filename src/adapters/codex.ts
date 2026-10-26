@@ -69,6 +69,7 @@ export const codexAdapter: Adapter = {
   id: 'codex',
   name: 'Codex',
   session: {
+    invoke: (command) => `$${command}`,
     enterWorktree: false,
     newConversation: '/new',
     resume: (worktree, first) => {
