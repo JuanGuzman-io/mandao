@@ -165,6 +165,8 @@ export const configSchema = z
         specs: relPath.default('specs'),
         constitution: relPath.default('docs/constitution'),
         releases: relPath.default('docs/releases'),
+        /** Intake proposals of `/mandao-story --from` (phase 14; configurable since phase 16). */
+        intake: relPath.default('docs/product/intake'),
         /** Where spec worktrees live, relative to the workspace root; may sit outside it. `{repo}` = the root folder name. */
         worktrees: z.string().min(1).default('../{repo}.worktrees'),
       })

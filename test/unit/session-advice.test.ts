@@ -4,7 +4,7 @@ import { ADAPTERS } from '../../src/adapters/index.js';
 // src/cli/session-advice.ts and returns `{ action, then, fallback }` (spec D4); `action` is undefined when the
 // harness has no in-place new-conversation action.
 import { sessionAdvice } from '../../src/cli/session-advice.js';
-import { openCommand } from '../../src/cli/start.js';
+import { openCommand } from '../../src/cli/spec-open.js';
 
 const WORKTREE = '/work/MDO-0001-wt';
 const FIRST = '/mandao-implement MDO-0001';

@@ -17,6 +17,7 @@ describe('config', () => {
       specs: 'specs',
       constitution: 'docs/constitution',
       releases: 'docs/releases',
+      intake: 'docs/product/intake',
       worktrees: '../{repo}.worktrees',
     });
     expect(cfg.spec.branch).toBe('{prefix}{id}-{slug}');

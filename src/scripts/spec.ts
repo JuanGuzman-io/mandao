@@ -171,7 +171,7 @@ const gitLines = (root: string, args: string[]) => {
  * MDO-0003 after its branch was deleted): spec folders on every local branch, active worktrees, branch
  * names, `Refs` trailers anywhere in history (reflog included) and tracked paths that carry an id.
  */
-function idsInUse(root: string, config: Config): string[] {
+export function idsInUse(root: string, config: Config): string[] {
   const specs = config.paths.specs;
   const branches = gitLines(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']);
   return [

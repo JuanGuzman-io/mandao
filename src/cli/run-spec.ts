@@ -13,7 +13,7 @@ import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
-import { checkTransition, expectedPlace, proposeSpec, readLayout, whereAmI } from '../scripts/spec.js';
+import { checkTransition, expectedPlace, readLayout, whereAmI } from '../scripts/spec.js';
 import { LOG_DIR, readApprovalLog, specKeepsState } from '../scripts/spec-log.js';
 import { commitMessage, layoutProblems, loopState, timeline, trace } from '../spec/index.js';
 import { nextFor, recordShown } from './approve.js';
@@ -27,26 +27,11 @@ import { specPremiseFindings } from './run-premise.js';
 import { registerTasks } from './run-tasks.js';
 import { registerVerify } from './run-verify.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
+import { registerSpecNew } from './spec-create.js';
 
 /** Spec proposal, traceability and the task plan. */
 function registerPlanning(run: Command, ctx: CliContext) {
-  run
-    .command('spec-new <title...>')
-    .description('Propose the id, folder, branch, base and worktree for a new spec')
-    .option('--id <id>', 'tracker id (default: the next local id)')
-    .option('--type <type>', 'story | bug | …', 'story')
-    .option('--project <name>', "polyrepo: use this project's branching model")
-    .option('--hotfix', 'hotfix lane: start from branching.hotfix.from with the hotfix prefix')
-    .option('--harness <id>', 'the active harness: adds `resume` when --first is given', 'claude')
-    .option('--first <command>', 'the mandao to run first in the worktree, e.g. "/mandao-specify <ID>"')
-    .action(
-      (title: string[], opts: { id?: string; type: string; project?: string; hotfix?: boolean; harness?: string; first?: string }) => {
-        const { harness, first, ...options } = opts;
-        const proposal = proposeSpec(ctx.root(), readConfig(ctx.root()), title.join(' '), options);
-        const active = harnessOption(harness);
-        json(first ? { ...proposal, resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : proposal);
-      },
-    );
+  registerSpecNew(run, ctx);
 
   run
     .command('branching')

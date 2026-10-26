@@ -5,10 +5,11 @@ import { cleanIntake, closeIntake } from '../scripts/intake.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 
-/** `docs/product/intake/` under the workspace home (the root when there is no config). */
+/** `paths.intake` (default `docs/product/intake/`) under the workspace home; the default when there is no config. */
 function proposalsDir(root: string): string {
-  const home = hasConfig(root) ? readConfig(root).home : '.';
-  return join(root, home, 'docs', 'product', 'intake');
+  if (!hasConfig(root)) return join(root, 'docs', 'product', 'intake');
+  const config = readConfig(root);
+  return join(root, config.home, config.paths.intake);
 }
 
 /** `mandao intake close|clean`: closing an intake proposal and its local cache (phase 14). */

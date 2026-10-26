@@ -12,7 +12,7 @@ import {
   sessionContext,
 } from '../scripts/session-cut.js';
 import type { SpecFolder } from '../scripts/spec.js';
-import { openCommand } from './start.js';
+import { openCommand } from './spec-open.js';
 
 /** This Claude Code session's context and its model's prices; other harnesses expose neither (ADR 0038). */
 function claudeSession(harness: string) {
