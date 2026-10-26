@@ -1,10 +1,16 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { readSpec } from '../../src/scripts/spec.js';
-import { initTestRepo, makeTree } from '../helpers.js';
+import { initTestRepo, makeTree, stubTerminal } from '../helpers.js';
+
+let restoreTerminal: () => void;
+beforeEach(() => {
+  restoreTerminal = stubTerminal();
+});
+afterEach(() => restoreTerminal());
 
 const promptState = vi.hoisted(() => ({ groups: 0, target: 'main', scope: 'push-pr' }));
 vi.mock('@clack/prompts', () => ({

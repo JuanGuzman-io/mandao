@@ -33,6 +33,7 @@ import { parseState } from '../spec/state.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { prePush } from './delivery-gates.js';
+import { requireTerminal } from './terminal.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
@@ -226,6 +227,7 @@ function recordManualPrUrl(delivery: DeliveryContext, url: string): void {
 async function runDelivery(ctx: CliContext, ref: string, options: { recordPrUrl?: string }): Promise<void> {
   const delivery = loadDeliveryContext(ctx.root(), ref);
   if (options.recordPrUrl) return recordManualPrUrl(delivery, options.recordPrUrl);
+  requireTerminal('mandao deliver');
   const selected = await selectDestination(delivery);
   if (selected.choices.scope === 'nothing') {
     console.log('Delivery cancelled; no Git action was taken.');

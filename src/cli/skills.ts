@@ -16,6 +16,7 @@ import {
 } from '../skills/install.js';
 import { type CliContext, editConfig } from './context.js';
 import { c } from './output.js';
+import { requireTerminal } from './terminal.js';
 
 /** Expands packs, rejects unknown skills and enforces the project cap. Pure. */
 export function selectSkills(ids: string[], catalog: Catalog, lock: Lock): { wanted: string[]; packs: string[] } {
@@ -129,6 +130,7 @@ export async function skillsAdd(ctx: CliContext, ids: string[], opts: { yes?: bo
 
   printPlan(wanted, catalog, harnesses);
   if (!opts.yes) {
+    requireTerminal('mandao skills add', '--yes');
     const ok = await p.confirm({ message: 'Run these installers now?' });
     if (p.isCancel(ok) || !ok) return console.log(c.dim('  Nothing installed.'));
   }

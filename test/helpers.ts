@@ -78,3 +78,13 @@ export function reviewFile(verdict: 'PASS' | 'FAIL', findings = ''): string {
     'review.md',
   );
 }
+
+/** Makes stdin look like a terminal (prompting commands refuse without one); returns the undo. */
+export function stubTerminal(value = true): () => void {
+  const before = Object.getOwnPropertyDescriptor(process.stdin, 'isTTY');
+  Object.defineProperty(process.stdin, 'isTTY', { value, configurable: true, writable: true });
+  return () => {
+    if (before) Object.defineProperty(process.stdin, 'isTTY', before);
+    else delete (process.stdin as { isTTY?: boolean }).isTTY;
+  };
+}
