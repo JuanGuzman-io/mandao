@@ -65,6 +65,13 @@ function deferredEntry(o: CheckpointOptions) {
   return [{ task: o.task ?? '—', tests: list, reason: reason.trim() }];
 }
 
+/** The same deferral repeated on a later checkpoint replaces its entry instead of adding one (MDO-0002 logged it three times). */
+function withDeferred(all: Progress['deferred_to_ci'], added: Progress['deferred_to_ci']): Progress['deferred_to_ci'] {
+  const key = (d: Progress['deferred_to_ci'][number]) => `${d.task}\u0000${[...d.tests].sort().join('\u0000')}`;
+  const replaced = new Set(added.map(key));
+  return [...all.filter((d) => !replaced.has(key(d))), ...added];
+}
+
 /** On REPORTED and on a verdict: red tests that changed since they were recorded red (ADR 0022). */
 function redNotes(spec: SpecFolder, o: CheckpointOptions): string[] {
   if (!o.task || !o.verdict || o.verdict === 'STARTED' || o.verdict === 'RED') return [];
@@ -177,7 +184,7 @@ export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: Checkpoint
     current,
     open_questions: o.question ?? spec.progress?.open_questions ?? [],
     next_step: o.next ?? '',
-    deferred_to_ci: [...(spec.progress?.deferred_to_ci ?? []), ...deferredEntry(o)],
+    deferred_to_ci: withDeferred(spec.progress?.deferred_to_ci ?? [], deferredEntry(o)),
     // Red tests stay recorded across checkpoints: they are what a later change is compared with (ADR 0022).
     red_tests: spec.progress?.red_tests ?? [],
     pending_commits: [...(spec.progress?.pending_commits ?? []), ...pending],

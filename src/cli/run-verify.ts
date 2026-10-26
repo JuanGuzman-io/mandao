@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import type { Command } from 'commander';
 import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
-import { collectSecurityScanning } from '../engine/security-scanning.js';
+import { collectSecurityScanning, hasCi } from '../engine/security-scanning.js';
 import { commitState, repoRoot, taskCommits } from '../scripts/commits.js';
 import { findSpec, readLayout, readSpec } from '../scripts/spec.js';
 import { readApprovalLog } from '../scripts/spec-log.js';
@@ -83,6 +83,7 @@ export function registerVerify(run: Command, ctx: CliContext) {
           })) as Parameters<typeof verifyPlan>[0]['securityCoverage'],
           securityGapsApproved,
           ciConfirmed: Boolean(opts.ciConfirmed),
+          ciAvailable: hasCi(repo),
           ...(delivery !== undefined ? { delivery } : {}),
         }),
         issues: spec.issues,

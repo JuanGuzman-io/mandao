@@ -71,6 +71,9 @@ function filesInDirectory(root: string): string[] {
   return out;
 }
 
+/** Whether the repository has any CI configuration (the same files security scanning reads). */
+export const hasCi = (repo: string) => workflows(repo).length > 0;
+
 function workflows(repo: string): string[] {
   const out = [...filesInDirectory(join(repo, '.github', 'workflows')), ...filesInDirectory(join(repo, '.gitlab'))];
   for (const file of [

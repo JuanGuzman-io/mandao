@@ -22,6 +22,7 @@ import { budgetFor } from './budget.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { mockSkillNames } from './mock-skills.js';
+import { runDeferred } from './run-deferred.js';
 import { registerLedger } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
 import { registerTasks } from './run-tasks.js';
@@ -239,8 +240,13 @@ function registerTestRuns(run: Command, ctx: CliContext) {
     .option('--reason <text>', 'why the full suite has to run here and not in CI')
     .option('--queue-wait <s>', 'seconds to wait in the queue', '1800')
     .option('--force', 'run even when the budget defers (recorded; ADR 0024)')
+    .option('--spec <id>', 'with --deferred: the spec whose task deferred the runs')
+    .option('--deferred <task>', "run here the task's runs deferred to CI; a PASS clears them (needs --spec)")
     .action(async (name: string, files: string[], opts: TestsOptions) => {
-      const result = await runTestsCommand(ctx, name, files, opts);
+      if (opts.deferred && !opts.spec) throw new Error('--deferred needs --spec <id>');
+      const result = opts.deferred
+        ? await runDeferred(ctx, name, opts.spec!, opts.deferred, opts)
+        : await runTestsCommand(ctx, name, files, opts);
       json(result);
       if (result.status !== 'PASS') process.exitCode = 1;
     });
@@ -249,6 +255,8 @@ function registerTestRuns(run: Command, ctx: CliContext) {
 interface TestsOptions {
   full?: boolean;
   reason?: string;
+  spec?: string;
+  deferred?: string;
   queueWait: string;
   force?: boolean;
 }
