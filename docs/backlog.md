@@ -53,8 +53,8 @@ scope, product behavior, security or irreversible actions.
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
 | [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
-| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | implemented on `perf/phase-17`; review PASS; PR pending |
-| [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
+| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | complete; PR #29 merged (`9aec6ca`) |
+| [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | in progress on `perf/phase-18` |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
 | [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
 | [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
@@ -955,6 +955,15 @@ outside Mandao, for both the in-place and the worktree path, and the guide docum
 ## Phase 17 — Gates and commits
 
 **Agreed (PE, 2026-10-26); after phase 15.**
+
+**Plan approved (PE, 2026-10-26).** Decisions:
+1. An unverified stack choice warns, it does not block: it stays marked `UNVERIFIED` in the constitution and
+   `mandao doctor` reports it; a spec that depends on it turns it into a `High` premise, which already
+   blocks design approval. The constitution has no approval step to block on.
+2. An accepted vulnerability is a new approval step, `vulnerability` (package, id, reachability reason,
+   review trigger), not an extension of `security-gaps`, which means "no scanner".
+3. A constitution changed after a spec's approval makes `next` recommend `/mandao-specify <ID>`, naming
+   the approved documents, and then `mandao approve <ID> design`.
 
 **Plan approved (PE, 2026-10-26),** by item: (A) the constitution proposes every gate in one approval (format,
 lint, typecheck, test, build or `none`, secrets, sast, audit), written as proposed in `standards.md` when no
