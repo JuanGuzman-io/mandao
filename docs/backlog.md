@@ -965,6 +965,13 @@ outside Mandao, for both the in-place and the worktree path, and the guide docum
 3. A constitution changed after a spec's approval makes `next` recommend `/mandao-specify <ID>`, naming
    the approved documents, and then `mandao approve <ID> design`.
 
+**Implemented on `perf/phase-18` (ADR 0061).** Stack checks (`run stack-check`, `_log/stack.md`, doctor
+warnings, runtime pin), constitution hash in design/spec approvals with `next` naming the documents,
+`roles` in config and `init --roles` (this repository: PE), the dependency license policy in the
+`standards.md` template and the `vulnerability` approval carried to the close summary. Also fixed: the
+`log-v2` readers test measured the live Claude Code session when run inside one (`CLAUDE_CODE_SESSION_ID`
+now stubbed). Left as written: the `## For the PO` heading (a section name the code reads).
+
 **Plan approved (PE, 2026-10-26),** by item: (A) the constitution proposes every gate in one approval (format,
 lint, typecheck, test, build or `none`, secrets, sast, audit), written as proposed in `standards.md` when no
 manifest exists; `approve tasks` and `run tasks` refuse a project with no gates unless a task declares

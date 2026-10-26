@@ -145,6 +145,7 @@ Use `pnpm dlx`, not the deprecated `pnpx`.
 3. **Workspace:** mode (single, monorepo, polyrepo) and projects are detected and confirmed.
 4. **Profile:** a workspace default (`app` | `ai` | `data`), then one profile per project, pre-filled from detection (ADR 0011).
 5. **Languages:** `language.business` and `language.technical` (§3).
+   **Roles (ADR 0061):** who decides, as `roles: { po, tech_lead, dev }` (defaults `PO`, `tech lead`, `dev`); a solo maintainer answers "only me" and is one role in all three (e.g. `PE`). Commands and installed templates render `{{roles.*}}`.
 6. **Models:** simple or routed mode, then a model per role and harness, showing Mandao's recommendation with the option to type another (§14.3).
 7. **Skill packs:** detected from the stack when inside a repo; the user confirms.
 
@@ -262,6 +263,7 @@ AGENTS.md                       # root, project and module levels (CLAUDE.md is 
 - Only `close` **applies** them, with human approval, a `CHANGELOG.md` entry, and an ADR if architectural.
 - **Single writer:** close applies explicitly approved impacts and commits them with the spec on its unprotected worktree branch; never writes directly to a protected branch. Before close, impacts remain proposals. There is no separate implemented "apply-capable branch" requirement.
 - When the stack changes, the sync also proposes Skill Map adjustments.
+- **DECIDED (ADR 0061, phase 18) — drift:** `approve design|spec` records the constitution's hash (top-level `.md` of the workspace and the spec's projects; `CHANGELOG.md` and `_log/` left out). When the constitution changes after it, `next` recommends `/mandao-specify <ID>` naming the approved documents, then the approval; a CHANGELOG entry names the affected specs (`- Affects:`). Approvals without that hash make no claim.
 
 ### 7.4 AGENTS.md
 
@@ -357,6 +359,7 @@ Utilities: `quick`, `resume`; `research`, `perf` and `audit` are **planned**. Th
 - Builds the graph, both knowledge layers, AGENTS.md hierarchy, personas, model registry.
 - **DECIDED (ADR 0012):** in new and legacy mode documents are written as `status: draft`; the user reviews the files and approval moves them to `approved`. Nothing is committed before approval. Hint: `[mode] [--product]`.
 - `--product` / `ingest <source>` mode incorporates business sources (tracker, SharePoint, transcripts, Slack) with distillation and provenance.
+- **DECIDED (ADR 0061, phase 18) — stack checked on the runtime:** each stack choice is a `### S<n>` check in `architecture.md` § Stack verification, proven by `mandao run stack-check S<n> -- <command>` (recorded in `<constitution>/_log/stack.md` with the runtime version) or marked `UNVERIFIED: <why>`; the runtime is pinned. `doctor` warns on an unchecked choice and an unpinned runtime (a warning, not a block: a spec relying on the choice proves it as a High premise). The `standards.md` template separates direct from transitive dependency licenses; an accepted vulnerability is `mandao approve <spec> vulnerability` and close carries it to Delivery.
 - Ends with **skill resolution** (§17).
 - Bounded clarification: one round, questions with proposed defaults.
 
