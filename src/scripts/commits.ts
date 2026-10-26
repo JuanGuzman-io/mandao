@@ -296,9 +296,9 @@ function renameSources(repo: string, files: string[]): string[] {
   const out: string[] = [];
   for (let i = 0; i < records.length; i++) {
     const record = records[i]!;
-    if (record[0] !== 'R') continue;
-    i++;
-    if (files.includes(record.slice(3)) && records[i]) out.push(records[i]!);
+    if (record[0] !== 'R' && record[0] !== 'C') continue;
+    i++; // the source path follows a rename or a copy
+    if (record[0] === 'R' && files.includes(record.slice(3)) && records[i]) out.push(records[i]!);
   }
   return out;
 }

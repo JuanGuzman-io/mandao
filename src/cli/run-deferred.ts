@@ -33,7 +33,7 @@ export async function runDeferred(ctx: CliContext, name: string, ref: string, ta
     );
   const budget = budgetFor(root, config, project, 'e2e', `${task} deferred`, opts.force, spec.dir);
   // Paths are relative to the project, which the command runs from (as red does; review F3).
-  const base = posix.normalize(project.path);
+  const base = posix.normalize(project.path).replace(/\/+$/, '') || '.';
   const inProject = (t: string) =>
     base !== '.' && posix.normalize(t).startsWith(`${base}/`) ? posix.relative(base, posix.normalize(t)) : t;
   const tests = entries.flatMap((e) => e.tests).map(inProject);

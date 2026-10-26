@@ -53,7 +53,7 @@ scope, product behavior, security or irreversible actions.
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
 | [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
-| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | implemented on `perf/phase-17`; review and PR pending |
+| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | implemented on `perf/phase-17`; review PASS; PR pending |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
 | [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
@@ -977,6 +977,13 @@ project command from its folder; deferred runs deduplicated, `run tests --spec -
 approved paths only; `onlyTaskBookkeeping` and `run task-files`; the lock with the task's config change; cost in
 `run commit`; `--discrepancy-reason` at checkpoint and commit. Deviation: the build entry-file check of the first
 task is a planner rule (`rules/doc-tasks.md`), not a refusal.
+
+Independent review (2026-10-26): FAIL with 12 findings (two high: a task commit took whatever was staged; a
+deferred run could be cleared by a command that never ran it), all fixed with tests; a second pass reopened two
+(a refused commit accepted the discrepancy; the first-task check moved on to the next task) and found three low
+ones (a staged rename split by the path-limited commit, yml/CRLF blocks, docs), fixed; third pass PASS. Accepted
+(advisory): a long `Mandao-Discrepancy` trailer can be refused by a project's commit-msg hook (nothing is accepted
+then).
 
 **Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
 leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks
