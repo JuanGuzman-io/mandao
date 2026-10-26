@@ -37,7 +37,7 @@ Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite k
 `spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
 open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
 
-1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
    refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
@@ -93,8 +93,8 @@ open version 1 spec it warns and does not convert it; the migration goes through
 7. **Check:** `{{script:tasks}} {{arg:spec}}` must show no issues, no cycles and no delivery issue (they are reported inside `issues`);
    `{{script:trace}} {{arg:spec}}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
 8. **Approve:** show the overview and the first eligible task, then record what was shown with
-   `{{script:next}} {{arg:spec}} --shown --harness <this harness>`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks --harness <this harness>`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs
-   `{{mandao}} approve --by-running /mandao-implement --harness <this harness> {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
+   `{{script:next}} {{arg:spec}} --shown --harness {{harness}}`. The user may approve from the terminal instead (`mandao approve {{arg:spec}} tasks --harness {{harness}}`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs {{command:implement}} while `tasks.md` is still `draft`, that command runs
+   `{{mandao}} approve --by-running /mandao-implement --harness {{harness}} {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.
+   available yet. Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.

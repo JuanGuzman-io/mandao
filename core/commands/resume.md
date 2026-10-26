@@ -36,7 +36,7 @@ and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_T
 1. **Place.** `{{script:where}} {{arg:spec}}`. Outside the spec's worktree: stop and give the path.
 2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening (and "delivery n of m" from `run next` or `run tasks`, if any),
    in which harness and on which model, the open questions and the recorded next step.
-3. **Models.** Use `models.yml` for **this** harness: `{{script:models}} --harness <this harness>`.
+3. **Models.** Use `models.yml` for **this** harness: `{{script:models}} --harness {{harness}}`.
    Never assume the previous harness's models are available here.
 4. **Commits pending.** Tasks in `pending_commits` passed review; their changes are not "uncommitted
    work". Commit them first with `{{script:commit}} {{arg:spec}}` (local, one commit per task, never

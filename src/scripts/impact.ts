@@ -162,13 +162,13 @@ export function selectImpact(input: {
   const graphTests = graph ? reverseDependents(graph, inProject).filter(isTestFile) : [];
   const directTests = inProject.filter(isTestFile);
   const scanTests = (input.scanners ?? []).filter((s) => inProject.some((f) => s.paths.some((p) => f.startsWith(p)))).map((s) => s.test);
-  const tests = [...new Set([...directTests, ...graphTests, ...scanTests])].map(rel);
+  const tests = runnable([...new Set([...directTests, ...graphTests, ...scanTests])].map(rel), runner);
   const notes = graph ? [] : ['no code graph: reverse dependents not used'];
   if (configured)
     return {
       source: 'configured',
       graphTests,
-      files: tests.length ? tests : inProject.map(rel),
+      files: tests.length ? tests : withoutTests(inProject.map(rel), runner),
       command: configured,
       confidence: 'high',
       notes,
@@ -189,6 +189,21 @@ export function selectImpact(input: {
   return uncertainImpact(runner, inProject.map(rel), graphTests, notes);
 }
 
+/** pytest takes test modules: a fixture or conftest under tests/ given as an argument collects nothing (exit 4). */
+const runnable = (tests: string[], runner: Runner | undefined) =>
+  runner === 'pytest' ? tests.filter((f) => PYTEST_MODULE.test(f)) : tests;
+
+/** What a configured command runs when no test was selected: the touched files, or their tests folders for pytest. */
+const withoutTests = (files: string[], runner: Runner | undefined) => (runner === 'pytest' ? modulesOf(files, runner) : files);
+
+const PYTEST_MODULE = /(^|\/)(test_[^/]*|[^/]*_test)\.py$/;
+
+/** The folders to run for touched files; for pytest a file inside a tests folder runs that whole tests folder. */
+function modulesOf(files: string[], runner: Runner | undefined): string[] {
+  const folder = (f: string) => (runner === 'pytest' ? (f.match(/^(.*?(?:^|\/)tests?)\//)?.[1] ?? posix.dirname(f)) : posix.dirname(f));
+  return [...new Set(files.map(folder))].map((d) => (runner === 'go' ? `./${d}/...` : d));
+}
+
 /** Uncertain impact: the touched modules (their folders), never the whole suite; Node's runner takes no folders. */
 function uncertainImpact(runner: Runner | undefined, files: string[], graphTests: string[], notes: string[]): ImpactSelection {
   if (runner === 'node')
@@ -199,7 +214,7 @@ function uncertainImpact(runner: Runner | undefined, files: string[], graphTests
       confidence: 'low',
       notes: [...notes, 'impact uncertain and node --test takes files, not folders: configure projects[].tests.impacted'],
     };
-  const modules = [...new Set(files.map((f) => posix.dirname(f)))].map((d) => (runner === 'go' ? `./${d}/...` : d));
+  const modules = modulesOf(files, runner);
   return {
     source: 'module',
     ...(runner ? { runner, command: RUNNER_COMMANDS[runner].module } : {}),

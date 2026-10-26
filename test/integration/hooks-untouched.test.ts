@@ -2,11 +2,17 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
-import { beforeEach, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 import { runInit } from '../../src/cli/init.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { syncProject } from '../../src/engine/sync.js';
-import { initTestRepo, makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg, stubTerminal } from '../helpers.js';
+
+let restoreTerminal: () => void;
+beforeEach(() => {
+  restoreTerminal = stubTerminal();
+});
+afterEach(() => restoreTerminal());
 
 // ADR 0055: Mandao never installs git hooks in a user project; only its own repo does, through `prepare`.
 

@@ -203,13 +203,18 @@ describe('core content', () => {
       }
     });
 
+    test.each(HARNESSES)('%s commands never keep the <this harness> placeholder', (h) => {
+      for (const f of render(h, ['clarify', 'close', 'implement', 'quick', 'resume', 'specify', 'story', 'tasks', 'verify']))
+        expect(f.content, f.path).not.toContain('<this harness>');
+    });
+
     test.each(HARNESSES)('S-2.2/C1: %s passes its own harness to run where and to spec-new', (h) => {
       for (const f of render(h, ['implement', 'verify', 'close', 'tasks'])) {
-        expect(f.content.slice(f.content.search(/run where/)), f.path).toMatch(/^run where [^\n]*--harness <this harness>/);
+        expect(f.content.slice(f.content.search(/run where/)), f.path).toMatch(new RegExp(`^run where [^\\n]*--harness ${h}\\b`));
       }
       for (const f of render(h, ['specify', 'quick'])) {
         const at = f.content.search(/run spec-new/);
-        expect(f.content.slice(at, at + 500), f.path).toMatch(/--harness <this harness>[\s\S]*--first "\/mandao-(specify|quick) /);
+        expect(f.content.slice(at, at + 500), f.path).toMatch(new RegExp(`--harness ${h}\\b[\\s\\S]*--first "/mandao-(specify|quick) `));
       }
     });
 
@@ -264,7 +269,7 @@ describe('core content', () => {
           expect(f.content, f.path).toMatch(/approve --by-running/);
           for (const m of f.content.matchAll(/approve --by-running/g)) {
             const call = f.content.slice(m.index, m.index! + 200);
-            expect(call, f.path).toMatch(new RegExp(`--harness (<this harness>|${h})`));
+            expect(call, f.path).toMatch(new RegExp(`--harness ${h}\\b`));
             expect(call, f.path).toMatch(/approve --by-running \/mandao-implement\b/);
           }
           // the step is named, as FR-5 does: `spec` for a lite draft, `tasks` for draft tasks

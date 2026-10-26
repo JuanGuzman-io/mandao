@@ -7,6 +7,7 @@ import { branchingFor } from '../scripts/branching.js';
 import { canDeleteMergedBranch } from '../scripts/delivery.js';
 import { mainCheckout, worktreesDir } from '../scripts/spec.js';
 import type { CliContext } from './context.js';
+import { requireTerminal } from './terminal.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 
@@ -31,6 +32,7 @@ export interface WorktreeInfo {
 async function confirmClean(list: WorktreeInfo[], yes: boolean | undefined, dryRun: boolean | undefined): Promise<boolean> {
   if (dryRun || yes || !list.length) return true;
   console.log(`Eligible worktrees:\n${list.map((w) => `- ${w.branch} ${w.path}`).join('\n')}`);
+  requireTerminal('mandao worktree clean', '--yes');
   const answer = await p.confirm({ message: `Remove these ${list.length} worktrees and their merged branches?`, initialValue: false });
   if (p.isCancel(answer) || !answer) console.log('Kept all worktrees.');
   return !p.isCancel(answer) && answer;

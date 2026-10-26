@@ -116,6 +116,12 @@ describe('nextStep: research evidence gate', () => {
     expect(next.recommended.reason).toContain('evidence expired');
     expect(all(next)).not.toContain('/mandao-implement');
   });
+
+  test('says how many research issues block, not only the first', () => {
+    const { spec: s } = spec({ depth: 'standard', tasks: 'none' });
+    const next = nextStep(s, { researchIssues: ['R3/C1: no web search', 'R5/C2: no source'] });
+    expect(next.recommended.reason).toBe('research gate (2 issues): R3/C1: no web search');
+  });
 });
 
 /** MDO-0010 T1 rework (attempt 2): findings of the first review. */

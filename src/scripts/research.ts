@@ -30,7 +30,7 @@ export function researchContext(root: string, config: Config, ref: string, selec
     harness,
     max_questions: config.research.max_questions,
     capabilities,
-    unverified_without_search: !capabilities[0]?.configuredWebSearchAvailable,
+    unverified_without_search: !capabilities[0]?.webSearchAvailable,
     needs_priority: report.needsPriority,
     selection_issues: report.selectionIssues,
     questions,

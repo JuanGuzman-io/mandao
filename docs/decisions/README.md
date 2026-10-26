@@ -58,9 +58,10 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0049](0049-confirmed-delivery-and-release-status.md) | Confirmed, provider-neutral delivery and Git-derived release status | Accepted (Phase 6) |
 | [0050](0050-security-scan-evidence-and-gates.md) | Per-type security-scan evidence and verification gates | Accepted (Phase 7) |
 | [0051](0051-sourced-research-gates.md) | Sourced research evidence, reuse and high-impact gates | Accepted (Phase 8) |
-| [0052](0052-verified-research-search.md) | Verified search for research approval | Accepted (Phase 8) |
+| [0052](0052-verified-research-search.md) | Verified search for research approval | Accepted (Phase 8); native search amended by [0058](0058-native-web-search-counts.md) |
 | [0053](0053-deliveries-inside-a-spec.md) | Deliveries inside a spec | Accepted (Phase 9a) |
 | [0054](0054-version-notes.md) | Version release notes | Accepted (Phase 10) |
 | [0055](0055-commitlint-conflict-check.md) | Commitlint conflict check | Accepted (Phase 12) |
 | [0056](0056-ui-mocks-before-implementation.md) | UI mocks before implementation | Accepted (Phase 13) |
 | [0057](0057-requirements-document-intake.md) | Requirements document intake | Accepted (Phase 14) |
+| [0058](0058-native-web-search-counts.md) | The harness's native web search counts as research evidence | Accepted (Phase 15) |

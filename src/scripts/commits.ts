@@ -5,6 +5,8 @@ import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
+import { onlyDoneBoxes, scriptLedgerPath } from './commit-spec-files.js';
+import { reconcileEntries } from './reconcile.js';
 import { outOfScopeMessage, reconcileMessage, strayByTask } from './review-scope.js';
 import type { SpecFolder } from './spec.js';
 
@@ -124,6 +126,8 @@ export interface CommitRun {
   alreadyCommitted?: string[];
   /** Files per task that would enter its commit without being declared or reviewed as a diff. */
   outOfScope?: Record<string, string[]>;
+  /** Already committed tasks whose commit differs from their queued manifest, with those paths. */
+  differs?: Record<string, string[]>;
   error?: string;
 }
 
@@ -179,6 +183,18 @@ function reconcileSplit(input: PendingInput, all: Progress['pending_commits'], d
   return { queue, already, stuck: Object.keys(stuck).length ? stuck : undefined };
 }
 
+/**
+ * Drops entries whose task is already committed and says so in the run, with the paths whose commit differs
+ * from the queued manifest.
+ */
+function closeAlready(input: PendingInput, run: CommitRun, already: Progress['pending_commits'], details: Map<string, string[]>) {
+  run.alreadyCommitted = already.map((e) => e.task);
+  const differs = already.map((e) => [e.task, details.get(e.task) ?? []] as const).filter(([, paths]) => paths.length);
+  if (differs.length) run.differs = Object.fromEntries(differs);
+  input.progress = { ...input.progress, pending_commits: input.progress.pending_commits.filter((e) => !already.includes(e)) };
+  writeProgress(input.specDir, input.progress);
+}
+
 /** A run that left a hand-committed, out-of-scope entry pending says so as its error (the others already ran). */
 function withStuck(run: CommitRun): CommitRun {
   return run.outOfScope && !run.error ? { ...run, error: reconcileMessage(run.outOfScope, run.committed.length > 0) } : run;
@@ -198,34 +214,6 @@ function preflight(
   return manifest.error ? { stop: { ...run, error: manifest.error } } : { specChanges: manifest.specChanges };
 }
 
-/** Only script-owned spec records may ride with a task commit; human spec edits need review. */
-function scriptLedgerPath(path: string): boolean {
-  const logDirs = ['reviews/', 'mutations/', 'gates/', 'premises/'];
-  const logFiles = [
-    'state.yml',
-    'execution.md',
-    'progress.yml',
-    'reviews.md',
-    'gates.md',
-    'premises.md',
-    'costs.yml',
-    'approvals.yml',
-    'session-cuts.md',
-    'full-runs.md',
-    'discrepancies.md',
-    '.integrity.json',
-  ];
-  return (
-    ['execution.md', 'progress.yml', 'costs.yml', 'full-runs.md', 'session-cuts.md', 'discrepancies.md', '.integrity.json'].includes(
-      path,
-    ) ||
-    ['state.yml', 'approvals.yml', '.integrity.json'].includes(path) ||
-    (path.startsWith('_log/') &&
-      (logFiles.includes(path.slice('_log/'.length)) || logDirs.some((prefix) => path.startsWith(`_log/${prefix}`)))) ||
-    logDirs.some((prefix) => path.startsWith(prefix))
-  );
-}
-
 /**
  * Commits every pending task, one commit each with its trailers, in order. The entry leaves progress.yml
  * in the same commit, along with the spec folder's bookkeeping; a failed commit puts the entry back.
@@ -241,15 +229,12 @@ export function commitPending(input: PendingInput): CommitRun {
       error: `${branch} is a protected branch: Mandao never commits there. Commit from the spec's branch and worktree`,
     };
   }
-  const done = reconciledTasks(input.repo, input.story.meta.id, input.config.commits.trailers, all);
+  const details = reconcileDetails(input.repo, input.story.meta.id, input.config.commits.trailers, all);
+  const done = new Set(details.keys());
   const { queue, already, stuck } = reconcileSplit(input, all, done);
   const run: CommitRun = { committed: [], pending: all.filter((e) => !already.includes(e)).map((e) => e.task) };
   if (stuck) run.outOfScope = stuck;
-  if (already.length) {
-    run.alreadyCommitted = already.map((e) => e.task);
-    input.progress = { ...input.progress, pending_commits: all.filter((e) => !already.includes(e)) };
-    writeProgress(input.specDir, input.progress);
-  }
+  if (already.length) closeAlready(input, run, already, details);
   if (!queue.length) return withStuck(run);
   const checked = preflight(input, queue, run);
   if ('stop' in checked) return checked.stop;
@@ -277,42 +262,30 @@ export function commitPending(input: PendingInput): CommitRun {
   return withStuck(run);
 }
 
-const sha = (data: Buffer | string) => createHash('sha256').update(data).digest('hex');
-
-/** Whether `path` at HEAD matches the manifest hash (deleted paths: absent at HEAD). */
-function atHead(repo: string, item: ChangeManifestEntry): boolean {
-  try {
-    const content = execFileSync('git', ['show', `HEAD:${item.path}`], {
-      cwd: repo,
-      maxBuffer: 64 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-    return sha(content) === item.sha256;
-  } catch {
-    return item.sha256 === sha('mandao:deleted');
-  }
+/** Pending entries whose task is already committed, with the paths that differ from that commit (`reconcileEntries`). */
+export function reconcileDetails(
+  repo: string,
+  specId: string,
+  trailers: Config['commits']['trailers'],
+  entries: Progress['pending_commits'],
+): Map<string, string[]> {
+  if (!entries.length) return new Map();
+  const history = {
+    commits: taskCommits(repo, specId, trailers),
+    times: taskCommitTimes(repo, specId, trailers),
+    dirty: new Set(changeManifest(repo).map((m) => m.path)),
+  };
+  return reconcileEntries(repo, history, entries);
 }
 
-/**
- * Pending tasks whose queued change is provably in git already: a commit carries the task's trailers, and
- * every path of the entry's approved manifest is clean in the working tree with the approved content at HEAD.
- * Entries without a manifest are never reconciled.
- */
+/** The tasks of `reconcileDetails`. */
 export function reconciledTasks(
   repo: string,
   specId: string,
   trailers: Config['commits']['trailers'],
   entries: Progress['pending_commits'],
 ): Set<string> {
-  const out = new Set<string>();
-  if (!entries.length) return out;
-  const commits = taskCommits(repo, specId, trailers);
-  const dirty = new Set(changeManifest(repo).map((m) => m.path));
-  for (const e of entries) {
-    if (!commits.has(e.task) || !e.manifest?.length) continue;
-    if (e.manifest.every((item) => !dirty.has(item.path) && atHead(repo, item))) out.add(e.task);
-  }
-  return out;
+  return new Set(reconcileDetails(repo, specId, trailers, entries).keys());
 }
 
 function validatePendingManifest(input: PendingInput, queue: Progress['pending_commits']): { error?: string; specChanges: string[] } {
@@ -335,7 +308,10 @@ function validatePendingManifest(input: PendingInput, queue: Progress['pending_c
   const specPrefix = `${relative(input.repo, input.specDir).replace(/\\/g, '/')}/`;
   const allCurrent = changeManifest(input.repo);
   const specChanges = allCurrent.filter((item) => item.path.startsWith(specPrefix));
-  const unapprovedSpec = specChanges.map((item) => item.path.slice(specPrefix.length)).filter((path) => !scriptLedgerPath(path));
+  const queued = queue.map((entry) => entry.task);
+  const unapprovedSpec = specChanges
+    .map((item) => item.path.slice(specPrefix.length))
+    .filter((path) => !scriptLedgerPath(path) && !onlyDoneBoxes(input.repo, `${specPrefix}${path}`, queued));
   if (unapprovedSpec.length)
     return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
   const current = allCurrent.filter((item) => !item.path.startsWith(specPrefix));

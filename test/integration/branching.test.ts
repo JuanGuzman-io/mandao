@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { branchingFindings } from '../../src/engine/doctor-specs.js';
@@ -74,6 +74,26 @@ describe('branching in a repository', () => {
     expect(p.command).toMatch(/^git worktree add -b feature\/PROJ-9-remember-me ".*PROJ-9-remember-me" develop$/);
     const env = proposeSpec(root, config({ branching: { model: 'env-branches' } }), 'Remember me', { id: 'PROJ-9' });
     expect(env.issues[0]).toMatch(/base branch "test" does not exist here/);
+  });
+
+  test('an explicit --id whose branch exists with no spec or worktree reuses that branch (MDO-0001 trial)', () => {
+    const root = repo(['feat/MDO-0001-remember-me']);
+    const p = proposeSpec(root, config(), 'Remember me', { id: 'MDO-0001' });
+    expect(p).toMatchObject({ branch: 'feat/MDO-0001-remember-me', reusesBranch: true, issues: [] });
+    expect(p.command).toMatch(/^git worktree add ".*MDO-0001-remember-me" feat\/MDO-0001-remember-me$/);
+  });
+
+  test('an explicit --id whose branch already holds a spec is reported, not reused', () => {
+    const root = repo();
+    git(root, 'checkout', '-qb', 'feat/MDO-0001-remember-me');
+    mkdirSync(join(root, 'specs/MDO-0001-remember-me'), { recursive: true });
+    writeFileSync(join(root, 'specs/MDO-0001-remember-me/story.md'), '# x\n');
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'spec');
+    git(root, 'checkout', '-q', 'main');
+    const p = proposeSpec(root, config(), 'Remember me', { id: 'MDO-0001' });
+    expect(p.reusesBranch).toBeUndefined();
+    expect(p.issues[0]).toMatch(/feat\/MDO-0001-remember-me" already exists with a spec or a worktree/);
   });
 
   test('never commits on a protected branch', () => {

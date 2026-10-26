@@ -114,7 +114,13 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
   const open = openItems(spec);
   const item = open.criticalOpen[0] ?? open.ask[0];
   if (item) return rec('/mandao-clarify', `${open.criticalOpen.length ? 'critical OPEN' : 'open item'}: ${item}`);
-  if (facts.researchIssues?.length) return rec('/mandao-specify', `research gate: ${facts.researchIssues[0]}`, '/mandao-clarify');
+  const research = facts.researchIssues ?? [];
+  if (research.length)
+    return rec(
+      '/mandao-specify',
+      `research gate${research.length > 1 ? ` (${research.length} issues)` : ''}: ${research[0]}`,
+      '/mandao-clarify',
+    );
   const draft = draftStep(spec, lite, facts.tasksStatus);
   if (draft) return rec(approve(id, draft), `the ${draft === 'story' ? 'story' : 'spec'} is still draft`, '/mandao-clarify');
   const approvals = activeApprovals(facts.approvals ?? []).filter((a) => a.step !== 'shown');

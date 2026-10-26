@@ -52,7 +52,7 @@ commits:
 scripts: { runner: npx }       # npx (pinned version) | local (devDependency)
 research:
   max_questions: 5             # prioritized per dispatch; evidence can accumulate across batches
-  web_search_servers:           # explicit capability declaration, validated against the harness config
+  web_search_servers:           # a search MCP per harness, validated against its config; Claude Code, Codex and Antigravity native search also counts (ADR 0058)
     - claude:.mcp.json:web_search
 budget: { per_spec: 10 }        # ADR 0036: USD per spec; a warning at 80%, a confirmation to go on at 100%
 session: { cut_min_savings: 1 } # ADR 0038: mid-implement stop only above this USD saving (default $1 or 15% of per_spec, the lower)

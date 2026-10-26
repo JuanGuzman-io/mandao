@@ -41,7 +41,7 @@ You verify that what was built is what the spec asked for, with evidence. Write 
 
 ## 1. Plan
 
-1. `{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-verify {{arg:spec}}"` — if `inWorktree` is false, move into the worktree before any other step.
+1. `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-verify {{arg:spec}}"` — if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
    refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
@@ -104,4 +104,4 @@ report.
 - Either way, commit the report on its own: `{{script:commit-spec}} {{arg:spec}} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `{{script:next}} {{arg:spec}} --harness <this harness>` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.

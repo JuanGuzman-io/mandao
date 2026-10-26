@@ -7,7 +7,7 @@ import { parse as parseYaml } from 'yaml';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
 import type { Config } from '../schemas/index.js';
-import { branchingFor } from '../scripts/branching.js';
+import { branchingFor, specBranch, startPoint } from '../scripts/branching.js';
 import {
   canDeleteMergedBranch,
   hasSecurityCheck,
@@ -33,6 +33,7 @@ import { parseState } from '../spec/state.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { prePush } from './delivery-gates.js';
+import { requireTerminal } from './terminal.js';
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
 const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
@@ -82,6 +83,22 @@ function startRecord(dir: string, quick = false, quickName?: string): StartRecor
   return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
 }
 
+/**
+ * A quick change made without `mandao start --quick` has no start record: its branch is the current or the one
+ * local branch named `…quick-<slug>`, else the configured name; base and lane follow from its prefix.
+ */
+function derivedQuickStart(config: Config, dir: string, slug: string): StartRecord {
+  const b = branchingFor(config);
+  const own = (name: string) => name.endsWith(`quick-${slug}`);
+  const current = git(dir, ['branch', '--show-current']);
+  const local = git(dir, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']).split('\n').filter(own);
+  // The quick's own branch, whatever its prefix (fix/, hotfix/): the current one, else the one local match.
+  const found = own(current) ? current : local.length === 1 ? local[0] : undefined;
+  const branch = found ?? specBranch(config, b, { id: 'quick', slug });
+  const hotfix = branch.startsWith(b.prefixes.hotfix);
+  return { id: 'quick', title: slug, branch, base: startPoint(b, hotfix), lane: hotfix ? 'hotfix' : 'normal' };
+}
+
 function quickPullRequestBody(title: string, quickDir: string, repo: string): string {
   const href = relative(repo, quickDir).split(sep).join('/');
   return `## Outcome\n\n${title}\n\n## For developers\n\nSee the quick log for measured files, gates and review evidence.\n\nQuick log: [quick-log.md](${href}/quick-log.md)`;
@@ -95,7 +112,8 @@ function loadDeliveryContext(root: string, ref: string): DeliveryContext {
   const realFoundDir = realpathSync(foundDir);
   const repo = mainCheckout(realFoundDir);
   const invocationRoot = realpathSync(root);
-  const start = startRecord(realFoundDir, quick, quickName);
+  const recorded = startRecord(realFoundDir, quick, quickName);
+  const start = quickName && !recorded.branch ? derivedQuickStart(config, realFoundDir, quickName) : recorded;
   if (!start.branch) throw new Error(`start record for ${ref} is missing its source branch`);
   const branch = start.branch;
   const worktree = findWorktree(repo, branch) ?? root;
@@ -226,6 +244,7 @@ function recordManualPrUrl(delivery: DeliveryContext, url: string): void {
 async function runDelivery(ctx: CliContext, ref: string, options: { recordPrUrl?: string }): Promise<void> {
   const delivery = loadDeliveryContext(ctx.root(), ref);
   if (options.recordPrUrl) return recordManualPrUrl(delivery, options.recordPrUrl);
+  requireTerminal('mandao deliver');
   const selected = await selectDestination(delivery);
   if (selected.choices.scope === 'nothing') {
     console.log('Delivery cancelled; no Git action was taken.');

@@ -125,6 +125,12 @@ export function renderInline(text: string, ctx: RenderContext): string {
   });
 }
 
+/** A token that takes no argument, such as `{{mandao}}` or `{{harness}}`. */
+function bareToken(whole: string, arg: string | undefined, value: () => string): string {
+  if (arg !== undefined) throw new RenderError(`unknown token "${whole}"`);
+  return value();
+}
+
 /** Renders a command body for one harness: conditionals first, then tokens. */
 export function renderBody(meta: CommandFrontmatter, body: string, ctx: RenderContext, syntax: TokenSyntax): string {
   const visible = applyConditionals(body, ctx);
@@ -142,8 +148,9 @@ export function renderBody(meta: CommandFrontmatter, body: string, ctx: RenderCo
         if (!arg || !meta.scripts.includes(arg)) throw new RenderError(`"${whole}" is not listed in frontmatter scripts`);
         return scriptCommand(arg);
       case 'mandao':
-        if (arg !== undefined) throw new RenderError(`unknown token "${whole}"`);
-        return launcherCommand();
+        return bareToken(whole, arg, launcherCommand);
+      case 'harness':
+        return bareToken(whole, arg, () => ctx.harness);
       case 'command':
         if (!arg) throw new RenderError(`"${whole}" needs a command id`);
         if (ctx.commands && !ctx.commands.has(arg)) throw new RenderError(`"${whole}" references an unknown command`);

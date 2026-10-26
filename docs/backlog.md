@@ -659,7 +659,42 @@ Not product work; kept here so they are not lost.
 
 ## Phase 15 — Blocking bugs and false evidence
 
-**Agreed (PE, 2026-10-26); next.** Small fixes, each with its test.
+**Agreed (PE, 2026-10-26); plan approved (PE, 2026-10-26); in progress on `perf/phase-15`.** Small
+fixes, each with its test.
+
+**Decision (PE, 2026-10-26): the harness's native web search counts.** "Any research that Claude Code,
+Codex or Antigravity does counts." The research gate treats web search as available when a search MCP is
+declared or an enabled harness has native web search (each adapter declares it, verified against its
+docs). This replaces phase 8's "possible native support does not count" (new ADR 0058).
+
+Approved plan, by item: (1) `redCheck` never accepts exit 126/127, pytest exits 2–5 or a vitest/jest
+"no test files"/load error as red, and names the problem; (2) the research finding names the claim and the
+reason, an entry can be `accepted` with `accepted_by`, `reason` and a reference, and `next` uses the same
+blockers as `approve` and reports how many; (3) a `{{harness}}` token renders the harness id, the shared
+templates list the valid ids, the error lists them, and `claude-code` is an alias of `claude`; (4) the
+reconcile step compares a committed task's manifest against its own commit, and checkpoint prunes
+reconciled entries (not done, by decision: see the review below); (5) `run commit` accepts a `tasks.md` diff that is exactly the `[x]` of queued tasks
+(`--done` belongs to checkpoint, not to `run commit`); (6) the pytest command receives only `test_*.py` /
+`*_test.py`; (7) a shared confirm helper refuses without a TTY and without `--yes` (exit 1, says what it
+would do), `deliver` derives a quick's branch, base and lane when the start record is missing, and `spec-new`
+with an explicit `--id` reuses an existing branch that has no spec folder or worktree. Running red with the
+gate's command from the project's folder stays in phase 17.
+
+Independent review (2026-10-26, FAIL with 9 findings, fixed or decided here):
+- **Fixed:** a hand commit of content nobody reviewed is never reconciled: a difference from the queued
+  manifest closes the entry only when another commit changed that path after it was queued (the gate commit
+  of MDO-0001 T1); a runner killed by a signal (exit above 128) or one that could not be spawned is not red;
+  `mandao start` checks out an existing branch the proposal reuses; `deliver` finds a bug or hotfix quick's
+  own branch (`fix/quick-<slug>`) from any checkout; an accepted research entry's `evidence` must be `P<n>`
+  or `C-<n>` and appear in a spec document; ADR 0052 and a code comment say ADR 0058 amends them.
+- **Not done, by decision:** checkpoint does not prune reconciled entries. `run commit` closes them (and `next`
+  recommends it whenever entries are pending), and pruning at checkpoint would skip the out-of-scope brake
+  that keeps a hand-committed entry with undeclared files pending.
+- **Accepted (low):** reconcile compares author times, so a rebase that resets author dates could close a
+  rework entry early; the branch-reuse check looks only at `origin`, like `branchExists`.
+- **Second review (PASS), accepted (low):** the reconcile difference check works per path, so further
+  unreviewed edits to a path another commit also changed close the entry (they show in `differs`); an
+  accepted entry's evidence is checked as text in the spec documents, not against `premises.md`.
 
 1. **A missing runner is not red evidence (severe; MDO-0001 T17).** `run red` recorded a red run whose
    only failure was `pytest: command not found` (exit 127). An infrastructure failure was accepted as TDD

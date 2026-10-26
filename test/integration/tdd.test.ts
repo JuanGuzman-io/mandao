@@ -171,6 +171,20 @@ describe('mandao run red', () => {
     expect(readSpec(join(root, SPEC)).progress!.red_tests.map((r) => r.task)).toEqual(['T2']);
   });
 
+  test('a missing runner is refused as red and records nothing (MDO-0001 T17)', async () => {
+    const root = workspace();
+    const before = readSpec(join(root, SPEC)).execution.length;
+    process.env.RED = '127';
+    try {
+      await run(root, 'red', 'MDO-0001', 'T2', 'test/a.test.ts');
+    } finally {
+      delete process.env.RED;
+      process.exitCode = undefined;
+    }
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ red: false, problem: expect.stringMatching(/runner could not run \(exit 127\)/) });
+    expect(readSpec(join(root, SPEC)).execution).toHaveLength(before);
+  });
+
   test('run step halts after the same recommendation three times without new execution evidence', async () => {
     const root = workspace();
     await run(root, 'step', 'MDO-0001', 'T2');

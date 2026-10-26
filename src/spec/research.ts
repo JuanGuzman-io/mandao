@@ -13,7 +13,7 @@ export interface ResearchValidationOptions {
   highPremiseIds?: string[];
   expiryMonths?: Partial<Record<ResearchTopicType, number>>;
   maxQuestions?: number;
-  /** A configured search integration is available; possible native support is not proof. */
+  /** A declared search MCP, or native search that counts (ADR 0058), is available to the active harness. */
   webSearchAvailable?: boolean;
   /** Exact prior-entry references independently verified by the caller. */
   verifiedReuseReferences?: string[];
@@ -102,15 +102,17 @@ function validateClaim(
   contradictions: Map<string, string>,
   findings: ResearchFinding[],
 ): void {
+  if (entry.status === 'accepted') return; // the PO accepted other evidence for it (ADR 0058)
   const reusedEvidence = Boolean(entry.reused_from && options.verifiedReuseReferences?.includes(entry.reused_from) && claim.sources.length);
   if (!claim.sources.length || (options.webSearchAvailable === false && !reusedEvidence)) {
+    const why = claim.sources.length
+      ? `${claim.key}: no web search available to this harness (declare a search MCP in research.web_search_servers, or record the PO's acceptance)`
+      : `${claim.key} has no source (model knowledge)`;
     addFinding(
       findings,
       highImpact ? 'RESEARCH_UNVERIFIED_HIGH_IMPACT' : 'RESEARCH_UNVERIFIED',
-      entry.id,
-      highImpact
-        ? 'high-impact decisions cannot rely on model knowledge without web evidence'
-        : `${claim.key} is unverified (model knowledge)`,
+      `${entry.id}/${claim.id}`,
+      highImpact ? `${why}; high-impact decisions need web evidence` : why,
       highImpact ? 'error' : 'info',
     );
     return;
@@ -129,8 +131,10 @@ function validateEntryDatesAndStatus(entry: ResearchEntry, options: ResearchVali
   if (entry.expires < (options.today ?? new Date().toISOString().slice(0, 10)))
     addFinding(findings, 'RESEARCH_EXPIRED', entry.id, `evidence expired on ${entry.expires}`);
   if (entry.status === 'open') addFinding(findings, 'RESEARCH_OPEN', entry.id, 'research question is still open');
-  if (entry.status === 'resolved' && (!entry.decision || !entry.rationale))
-    addFinding(findings, 'RESEARCH_DECISION_MISSING', entry.id, 'a resolved entry needs both a decision and rationale');
+  if (entry.status !== 'open' && (!entry.decision || !entry.rationale))
+    addFinding(findings, 'RESEARCH_DECISION_MISSING', entry.id, `a ${entry.status} entry needs both a decision and rationale`);
+  if (entry.status === 'accepted' && (!entry.accepted_by || !entry.reason || !entry.evidence))
+    addFinding(findings, 'RESEARCH_ACCEPTANCE_INCOMPLETE', entry.id, 'an accepted entry needs accepted_by, reason and evidence');
 }
 
 function validateEntry(entry: ResearchEntry, options: ResearchValidationOptions, findings: ResearchFinding[]): void {
@@ -148,7 +152,7 @@ function validateEntry(entry: ResearchEntry, options: ResearchValidationOptions,
     if (!claimIds.has(claimId))
       addFinding(findings, 'RESEARCH_CONTRADICTION_UNUSED', `${entry.id}/${claimId}`, 'contradiction references a missing claim');
   }
-  if (highImpact && !entry.claims.length)
+  if (highImpact && !entry.claims.length && entry.status !== 'accepted')
     addFinding(findings, 'RESEARCH_UNVERIFIED_HIGH_IMPACT', entry.id, 'high-impact decisions need at least one sourced claim');
 }
 
@@ -170,6 +174,16 @@ export function researchGateFindings(markdowns: string[], document: unknown, opt
   const findings = validateResearch(document, options);
   const parsed = researchDocumentSchema.safeParse(document);
   if (!parsed.success) return findings;
+  for (const entry of parsed.data.entries) {
+    const evidence = entry.status === 'accepted' ? entry.evidence : undefined;
+    if (evidence && !markdowns.some((text) => new RegExp(`(^|[^\\w-])${evidence}(?![\\w-])`, 'm').test(text)))
+      findings.push({
+        code: 'RESEARCH_ACCEPTANCE_UNKNOWN_EVIDENCE',
+        ref: entry.id,
+        message: `accepted on ${evidence}, which no spec document records`,
+        severity: 'error',
+      });
+  }
   const questions = researchQuestions(markdowns, options.maxQuestions ?? 5);
   for (const question of questions.questions) {
     const found = parsed.data.entries.some(

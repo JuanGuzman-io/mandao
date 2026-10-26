@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { constants as osConstants } from 'node:os';
 import { join } from 'node:path';
 import { acquireLock, readHolder, releaseLock } from '../writer/lock.js';
 import type { Budget } from './resources.js';
@@ -73,11 +74,12 @@ function streamRun(
     }, timeoutMs);
     child.on('error', () => {
       clearTimeout(timer);
-      resolve(1);
+      resolve(127); // the command could not be spawned: never a test verdict
     });
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
       clearTimeout(timer);
-      resolve(code ?? 1);
+      // A signal ends the run with no exit code: report it the way a shell does (128 + signal number).
+      resolve(code ?? 128 + (signal ? (osConstants.signals[signal] ?? 0) : 0));
     });
   });
 }
@@ -92,7 +94,12 @@ export async function runTests(
   command: string | undefined,
   budget: Budget,
   queueWaitMs = 30 * 60_000,
-  opts: { keepOutput?: boolean; env?: Record<string, string> } = {},
+  opts: {
+    keepOutput?: boolean;
+    env?: Record<string, string>;
+    /** stderr joins the kept output (red evidence reads it). */
+    withStderr?: boolean;
+  } = {},
 ): Promise<TestRun> {
   if (budget.decision === 'defer' || !command) {
     return { status: 'DEFERRED_TO_CI', workers: 0, durationMs: 0, reason: command ? budget.reason : 'no test command could be built' };
@@ -112,7 +119,8 @@ export async function runTests(
   try {
     const env = { ...process.env, ...opts.env, MANDAO_TEST_WORKERS: String(budget.workers) };
     const tail: { text: string; full?: string } = { text: '', ...(opts.keepOutput ? { full: '' } : {}) };
-    const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000, tail);
+    const spawned = opts.withStderr ? inProjectDir(command, '.') : command;
+    const exit = await streamRun(withPriority(spawned, budget.priority), root, env, budget.timeoutS * 1000, tail);
     const durationMs = Date.now() - started;
     if (exit === 'timeout')
       return { status: 'TIMEOUT', command, workers: budget.workers, durationMs, reason: `exceeded ${budget.timeoutS}s` };

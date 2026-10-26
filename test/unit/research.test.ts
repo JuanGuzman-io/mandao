@@ -35,6 +35,53 @@ const entry = (overrides: Record<string, unknown> = {}) => ({
 });
 
 describe('research evidence', () => {
+  test('an unverified claim is named with its reason (MDO-0001 R3)', () => {
+    const architecture = entry({ topic_type: 'architecture' });
+    const noSearch = validateResearch({ schema_version: 1, entries: [architecture] }, { today: '2026-10-22', webSearchAvailable: false });
+    expect(noSearch).toContainEqual(
+      expect.objectContaining({
+        code: 'RESEARCH_UNVERIFIED_HIGH_IMPACT',
+        ref: 'R1/C1',
+        message: expect.stringMatching(/server-api: no web search available to this harness .*research\.web_search_servers/),
+      }),
+    );
+    const unsourced = entry({
+      topic_type: 'architecture',
+      claims: [{ id: 'C1', key: 'server-api', kind: 'api', value: 'v2', sources: [] }],
+    });
+    expect(validateResearch({ schema_version: 1, entries: [unsourced] }, { today: '2026-10-22' })).toContainEqual(
+      expect.objectContaining({ ref: 'R1/C1', message: expect.stringMatching(/server-api has no source \(model knowledge\)/) }),
+    );
+  });
+
+  test('an entry the PO accepted with its evidence reference does not block (MDO-0001 C-7)', () => {
+    const accepted = entry({
+      topic_type: 'architecture',
+      status: 'accepted',
+      expires: '2027-10-01',
+      claims: [{ id: 'C1', key: 'server-api', kind: 'api', value: 'v2', sources: [] }],
+      accepted_by: 'PE',
+      reason: 'the premise run P2 proved it on this machine',
+      evidence: 'P2',
+    });
+    const findings = validateResearch({ schema_version: 1, entries: [accepted] }, { today: '2026-10-22', webSearchAvailable: false });
+    expect(findings.filter((f) => f.severity === 'error')).toEqual([]);
+    const gate = (evidence: string, docs: string[]) =>
+      researchGateFindings(docs, { schema_version: 1, entries: [{ ...accepted, evidence }] }, { today: '2026-10-22' });
+    expect(gate('P2', ['| P2 | sqlite loads extensions | High |'])).toEqual([]);
+    expect(gate('C-7', ['- C-7: the PE accepts the local premise run'])).toEqual([]);
+    expect(gate('P9', ['| P2 | sqlite loads extensions | High |'])).toContainEqual(
+      expect.objectContaining({ code: 'RESEARCH_ACCEPTANCE_UNKNOWN_EVIDENCE', ref: 'R1', message: expect.stringContaining('P9') }),
+    );
+    expect(validateResearch({ schema_version: 1, entries: [{ ...accepted, evidence: 'trust me' }] })).toContainEqual(
+      expect.objectContaining({ code: 'RESEARCH_SCHEMA' }),
+    );
+    const bare = entry({ status: 'accepted', accepted_by: 'PE' });
+    expect(validateResearch({ schema_version: 1, entries: [bare] }, { today: '2026-10-22' })).toContainEqual(
+      expect.objectContaining({ code: 'RESEARCH_ACCEPTANCE_INCOMPLETE', ref: 'R1' }),
+    );
+  });
+
   test('uses explicit high-impact categories and High premise links', () => {
     expect(highImpactResearch('architecture', [], [])).toBe(true);
     expect(highImpactResearch('data', [], [])).toBe(true);
@@ -60,7 +107,7 @@ describe('research evidence', () => {
         },
         { today: '2026-10-22', highPremiseIds: [] },
       ),
-    ).toContainEqual(expect.objectContaining({ code: 'RESEARCH_UNVERIFIED_HIGH_IMPACT', ref: 'R1' }));
+    ).toContainEqual(expect.objectContaining({ code: 'RESEARCH_UNVERIFIED_HIGH_IMPACT', ref: 'R1/C1' }));
   });
 
   test('without a detected search tool, sourced model claims remain unverified but valid reused evidence is accepted', () => {

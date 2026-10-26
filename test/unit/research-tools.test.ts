@@ -3,15 +3,17 @@ import { researchToolCapabilities, researchToolFindings } from '../../src/engine
 import { makeTree } from '../helpers.js';
 
 describe('research tool capability discovery', () => {
-  test('reports conditional native support without treating it as configured web search', () => {
-    const result = researchToolCapabilities(makeTree({}), ['copilot', 'opencode', 'claude', 'codex']);
+  test('the native web search of Claude Code, Codex and Antigravity counts; conditional native support does not (ADR 0058)', () => {
+    const result = researchToolCapabilities(makeTree({}), ['copilot', 'opencode', 'claude', 'codex', 'antigravity']);
     expect(result.map((item) => [item.harness, item.capability])).toEqual([
       ['copilot', 'native'],
       ['opencode', 'native'],
-      ['claude', 'none'],
-      ['codex', 'none'],
+      ['claude', 'native'],
+      ['codex', 'native'],
+      ['antigravity', 'native'],
     ]);
-    expect(result.map((item) => item.configuredWebSearchAvailable)).toEqual([false, false, false, false]);
+    expect(result.map((item) => item.configuredWebSearchAvailable)).toEqual([false, false, false, false, false]);
+    expect(result.map((item) => item.webSearchAvailable)).toEqual([false, false, true, true, true]);
   });
 
   test('requires explicit harness-matched web-search declarations for MCP servers', () => {
@@ -29,7 +31,7 @@ describe('research tool capability discovery', () => {
       ['claude:.mcp.json:web_search', 'copilot:.vscode/mcp.json:web_search'],
     );
     expect(declared[0]).toMatchObject({
-      capability: 'MCP',
+      capability: 'native + MCP',
       mcp: ['.mcp.json:web_search', '.mcp.json:code_search'],
       webSearchMcp: ['claude:.mcp.json:web_search'],
     });
@@ -38,7 +40,13 @@ describe('research tool capability discovery', () => {
   });
 
   test('doctor explains that no search leaves evidence unverified', () => {
-    expect(researchToolFindings(makeTree({}), ['claude'])[0]?.fix).toContain('research.web_search_servers');
+    expect(researchToolFindings(makeTree({}), ['copilot'])[0]?.fix).toContain('research.web_search_servers');
+  });
+
+  test('doctor reports native web search that counts, with no fix to make', () => {
+    const [claude] = researchToolFindings(makeTree({}), ['claude']);
+    expect(claude?.message).toContain('web search native (counts, ADR 0058');
+    expect(claude?.fix).toBeUndefined();
   });
 
   test('doctor reports an explicitly declared configured search MCP', () => {

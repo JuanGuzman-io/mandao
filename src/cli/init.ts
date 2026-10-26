@@ -28,6 +28,7 @@ import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
 import { offerSkills } from './init-skills.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
+import { requireTerminal } from './terminal.js';
 
 export type PolyrepoStrategy = 'workspace-repo' | 'home' | 'local';
 
@@ -284,6 +285,7 @@ function modeFlags(localOnly: boolean | undefined, opts: InitOptions): Pick<Conf
 
 export async function runInit(root: string, opts: InitOptions) {
   const interactive = !opts.yes;
+  if (interactive) requireTerminal('mandao init', '--yes');
   if (interactive) p.intro(c.bold('mandao init'));
 
   let scope = opts.scope;

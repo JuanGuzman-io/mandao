@@ -46,7 +46,8 @@ const researchEntrySchema = z.object({
   topic: z.string().trim().min(1),
   topic_type: z.enum(RESEARCH_TOPIC_TYPES),
   question: z.string().trim().min(1),
-  status: z.enum(['open', 'resolved']),
+  /** `accepted`: the PO accepted other evidence (a premise run, a clarification) for what web research could not show. */
+  status: z.enum(['open', 'resolved', 'accepted']),
   decision: z.string().trim().optional(),
   rationale: z.string().trim().optional(),
   alternatives: z.array(z.string().trim().min(1)).default([]),
@@ -56,6 +57,13 @@ const researchEntrySchema = z.object({
   claims: z.array(researchClaimSchema).default([]),
   contradictions: z.array(z.object({ claim_id: z.string().regex(/^C\d+$/), resolution: z.string().trim().min(1) })).default([]),
   reused_from: z.string().trim().min(1).optional(),
+  /** An accepted entry: who accepted it, why, and the evidence it rests on (`P2`, `C-7`). */
+  accepted_by: z.string().trim().min(1).optional(),
+  reason: z.string().trim().min(1).optional(),
+  evidence: z
+    .string()
+    .regex(/^(P\d+|C-\d+)$/, 'must be a premise run (P<n>) or a clarification (C-<n>)')
+    .optional(),
 });
 
 export const researchDocumentSchema = z.object({ schema_version: z.literal(1), entries: z.array(researchEntrySchema).default([]) });

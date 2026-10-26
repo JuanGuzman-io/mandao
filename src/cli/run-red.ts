@@ -111,8 +111,9 @@ export function registerRed(run: Command, ctx: CliContext) {
       const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
       const budget = budgetFor(root, config, project, 'unit', `${id} red`, o.force, spec.dir);
       const command = testCommand(root, project, tests, Math.max(1, budget.workers));
-      const result = await runTests(root, `${id} red`, command, budget);
-      const check = redCheck(result.status, result.exitCode);
+      const result = await runTests(root, `${id} red`, command, budget, undefined, { withStderr: true });
+      const runner = detectRunner(projectDir(root, project.path));
+      const check = redCheck(result.status, result.exitCode, runner, result.outputTail);
       if (!check.red) {
         if (result.status === 'PASS') {
           recordFirstPass(root, config, spec, task, id, tests, result, o);

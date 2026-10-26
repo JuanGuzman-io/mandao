@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, cpSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { nextFor } from '../../src/cli/approve.js';
@@ -191,6 +191,25 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: design-note.md/);
   });
 
+  test('the [x] that checkpoint --done writes in tasks.md rides with the task commit (MDO-0001)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(tasks, readFileSync(tasks, 'utf8').replace('### [ ] T2', '### [x] T2'));
+    const run = commitPending(pending(root));
+    expect(run.error).toBeUndefined();
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).toContain(`${SPEC}/tasks.md`);
+    expect(git(root, 'status', '--porcelain')).toBe('');
+  });
+
+  test('any other tasks.md edit still needs review', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(tasks, readFileSync(tasks, 'utf8').replace('### [ ] T2', '### [x] T2').replace('Register', 'Add'));
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: tasks.md/);
+  });
+
   test('tasks committed by hand after the overlap error are reconciled, not refused again', () => {
     const root = repo();
     overlapping(root);
@@ -204,6 +223,32 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(readSpec(join(root, SPEC)).progress!.pending_commits).toEqual([]);
     const next = nextFor(root, readSpec(join(root, SPEC)), config);
     expect(next.recommended.command).not.toMatch(/run commit/);
+  });
+
+  test('a task committed with its approved content stays reconciled after the next task edits its file', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    commitByHand(root, 'T2');
+    writeFileSync(join(root, 'src/b.ts'), 'export const t3 = 3;\n');
+    const queued = readSpec(join(root, SPEC)).progress!.pending_commits;
+    expect([...reconciledTasks(root, 'MDO-0001', config.commits.trailers, queued)]).toEqual(['T2']);
+  });
+
+  test('a task committed after it was queued closes its stale entry and reports what differs (MDO-0001 T1)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const dir = join(root, SPEC);
+    const spec = readSpec(dir);
+    const [entry] = spec.progress!.pending_commits;
+    writeProgress(dir, { ...spec.progress!, pending_commits: [{ ...entry!, queued_at: '2026-01-01T00:00:00.000Z' }] });
+    // A gate added mid-task changed the file in its own commit after the manifest was taken; the task was then committed.
+    writeFileSync(join(root, 'src/b.ts'), 'export const t2 = 1; // gate fix\n');
+    git(root, 'add', 'src/b.ts');
+    git(root, 'commit', '-qm', 'chore: add the build gate');
+    commitByHand(root, 'T2');
+    const run = commitPending(pending(root));
+    expect(run).toMatchObject({ committed: [], pending: [], alreadyCommitted: ['T2'], differs: { T2: ['src/b.ts'] } });
+    expect(readSpec(dir).progress!.pending_commits).toEqual([]);
   });
 
   test('one task committed by hand and one not: the script commits only the second', () => {
@@ -240,14 +285,23 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(git(root, 'show', 'HEAD:src/b.ts')).toBe('export const t2 = 2;');
   });
 
-  test('a hand commit with the trailers but other content than the approved manifest is not reconciled', () => {
-    const root = repo();
-    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
-    writeFileSync(join(root, 'src/b.ts'), 'export const sneaky = 1;\n');
-    commitByHand(root, 'T2');
-    const run = commitPending(pending(root));
-    expect(run.alreadyCommitted).toBeUndefined();
-    expect(run.error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
-    expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
-  });
+  test.each([false, true])(
+    'a hand commit with the trailers but other content than the approved manifest is not reconciled (queued_at: %s)',
+    (stamped) => {
+      const root = repo();
+      passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+      if (stamped) {
+        const dir = join(root, SPEC);
+        const spec = readSpec(dir);
+        const queued = spec.progress!.pending_commits.map((e) => ({ ...e, queued_at: '2026-01-01T00:00:00.000Z' }));
+        writeProgress(dir, { ...spec.progress!, pending_commits: queued });
+      }
+      writeFileSync(join(root, 'src/b.ts'), 'export const sneaky = 1;\n');
+      commitByHand(root, 'T2');
+      const run = commitPending(pending(root));
+      expect(run.alreadyCommitted).toBeUndefined();
+      expect(run.error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
+      expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
+    },
+  );
 });

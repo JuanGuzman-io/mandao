@@ -3,7 +3,13 @@ import { existsSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
-import { initTestRepo, makeTree, pkg } from '../helpers.js';
+import { initTestRepo, makeTree, pkg, stubTerminal } from '../helpers.js';
+
+let restoreTerminal: () => void;
+beforeEach(() => {
+  restoreTerminal = stubTerminal();
+});
+afterEach(() => restoreTerminal());
 
 const prompts = vi.hoisted(() => ({ accepted: false, calls: 0 }));
 vi.mock('@clack/prompts', () => ({
@@ -61,6 +67,18 @@ describe('worktree clean safety', () => {
     expect(existsSync(join(root, 'test-worktrees/one'))).toBe(true);
     expect(existsSync(join(root, 'test-worktrees/two'))).toBe(true);
     expect(output).toContain('Kept all worktrees.');
+  });
+
+  test('without a terminal it lists what it would remove and refuses, naming --yes (MDO-0001 close)', async () => {
+    const root = repo();
+    restoreTerminal();
+    restoreTerminal = stubTerminal(false);
+    await expect(clean(root)).rejects.toThrow(/no terminal here: re-run with --yes/);
+    expect(prompts.calls).toBe(0);
+    expect(output.join('\n')).toContain('feat/one');
+    expect(existsSync(join(root, 'test-worktrees/one'))).toBe(true);
+    await buildProgram(() => root).parseAsync(['node', 'mandao', 'worktree', 'clean', '--yes']);
+    expect(existsSync(join(root, 'test-worktrees/one'))).toBe(false);
   });
 
   test('removes only clean, confirmed worktrees and retains those with untracked files', async () => {

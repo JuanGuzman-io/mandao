@@ -75,6 +75,21 @@ describe('impact', () => {
     expect(none.notes.join(' ')).toMatch(/projects\[\]\.tests\.impacted/);
   });
 
+  test('pytest receives only test modules, never data files under tests/ (MDO-0001 T10)', () => {
+    const changed = ['src/search.py', 'tests/test_search.py', 'tests/fixtures/consultas.json', 'tests/conftest.py'];
+    expect(selectImpact({ changed, projectPath: '.', runner: 'pytest' }).files).toEqual(['tests/test_search.py']);
+    expect(selectImpact({ changed, projectPath: '.', runner: 'pytest', configured: 'uv run pytest {files}' }).files).toEqual([
+      'tests/test_search.py',
+    ]);
+    // Only a fixture changed: its tests folder runs, not the fixture file nor its own folder.
+    const fixture = selectImpact({ changed: ['tests/fixtures/consultas.json'], projectPath: '.', runner: 'pytest' });
+    expect(fixture).toMatchObject({ source: 'module', files: ['tests'] });
+    expect(
+      selectImpact({ changed: ['tests/fixtures/consultas.json'], projectPath: '.', runner: 'pytest', configured: 'uv run pytest {files}' })
+        .files,
+    ).toEqual(['tests']);
+  });
+
   test('runner detection and test file patterns', () => {
     expect(detectRunner(makeTree({ 'package.json': JSON.stringify({ devDependencies: { vitest: '5' } }) }))).toBe('vitest');
     expect(detectRunner(makeTree({ 'package.json': pkg('x'), 'nx.json': '{}' }))).toBe('nx');

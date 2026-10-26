@@ -46,7 +46,7 @@ instructions.
 
 ## 0. Gate
 
-`{{script:where}} {{arg:spec}} --harness <this harness> --first "/mandao-close {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+`{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-close {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
 <!-- mandao:if harness=claude -->
    Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
    refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
