@@ -177,7 +177,7 @@ their short JSON, and decide; never paste their full output into the conversatio
       the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
    Before step 2, stage with `git add --` every file of the reviewed diff outside the task's `files`:
    the commit must build on its own.
-   2. `{{script:commit}} {{arg:spec}} --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
+   2. `{{script:commit}} {{arg:spec}} --harness {{harness}} --trailer "<your Co-Authored-By trailer, if any>"` (it records the task's cost; add `--usd <amount>` where the harness has no readable transcript) makes one commit
       per pending task with its trailers.
 <!-- mandao:if harness=codex -->
    The Codex sandbox keeps `.git` read-only: run step 2 as a command that asks for approval to run

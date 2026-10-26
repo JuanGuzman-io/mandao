@@ -7,8 +7,10 @@ import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { budgetFor } from './budget.js';
+import { recordLogEdits, requireDiscrepancyReason } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { recordCost } from './run-cost.js';
 import { loadSpec } from './spec-context.js';
 
 /** `mandao run commit`: the pending task commits, one each, with trailers. Local only. */
@@ -17,10 +19,18 @@ export function registerCommit(run: Command, ctx: CliContext) {
     .command('commit <spec>')
     .description('Commit the tasks that passed review and wait for their commit, one commit per task (never pushes)')
     .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
-    .action(async (ref: string, opts: { trailer?: string[] }) => {
+    .option('--harness <id>', 'harness of the session, for the cost record', 'claude')
+    .option('--session <id>', 'Claude Code session id (default: $CLAUDE_CODE_SESSION_ID)')
+    .option('--usd <amount>', 'the task cost by hand, where the harness has no readable transcript')
+    .option('--basis <basis>', 'with --usd: billed | equivalent | unknown', 'unknown')
+    .option('--discrepancy-reason <text>', 'why a script-owned log was edited by hand (required then)')
+    .action(async (ref: string, opts: CommitOptions) => {
       const { config, spec } = loadSpec(ctx, ref);
       if (!spec.story || !spec.progress) throw new Error(`${spec.name} needs story.md and progress.yml`);
+      requireDiscrepancyReason(spec, opts.discrepancyReason);
       await requirePreCommitBuilds(ctx, config, spec);
+      recordLogEdits(spec, new Date().toISOString(), 'commit', opts.discrepancyReason);
+      const cost = spec.progress.pending_commits.length ? taskCost(ctx, ref, opts) : undefined;
       const result = commitPending({
         repo: repoRoot(spec.dir),
         specDir: spec.dir,
@@ -33,9 +43,33 @@ export function registerCommit(run: Command, ctx: CliContext) {
         home: ctx.root(),
       });
       const skipped = declaredNoBuild(config);
-      json(skipped.length ? { ...result, builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : result);
+      const builds = skipped.length ? { builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : {};
+      json({ ...result, ...builds, ...(cost ? { cost } : {}) });
       if (result.error) process.exitCode = 1;
     });
+}
+
+interface CommitOptions {
+  trailer?: string[];
+  harness: string;
+  session?: string;
+  usd?: string;
+  basis?: string;
+  discrepancyReason?: string;
+}
+
+/**
+ * The task's cost, recorded by the commit itself so its costs.yml rides in the task commit (phase 17; MDO-0002:
+ * the agent forgot the rule and recorded once at the end). Never blocks the commit: when nothing can be read
+ * (no session, no transcript and no `--usd`), it says so.
+ */
+function taskCost(ctx: CliContext, ref: string, o: CommitOptions) {
+  try {
+    const entry = recordCost(ctx, ref, { record: true, command: 'implement', ...o });
+    return { recorded: true, usd: entry.usd };
+  } catch (error) {
+    return { recorded: false, reason: (error as Error).message };
+  }
 }
 
 /** Projects whose pre-commit build is skipped because they declared `build: none` (recorded, never a PASS). */
