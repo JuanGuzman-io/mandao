@@ -6,7 +6,8 @@ rule: intake
 # Requirements document intake
 
 For `/mandao-story --from <file>`: one document with many requirements becomes **one proposal file**,
-`docs/product/intake/<doc>-<YYYY-MM-DD>.md`, from the template `product/intake-proposal.md` of the
+`<intake folder>/<doc>-<YYYY-MM-DD>.md` (`paths.intake` in `.mandao/config.yml`, default `docs/product/intake`),
+from the template `product/intake-proposal.md` of the
 installed profile (`.mandao/templates/<profile>/`). It is not a spec. Below, `run` means
 `node .mandao/bin/mandao.mjs run`.
 
@@ -35,10 +36,13 @@ or `§ A > B`) of the sections it comes from, exactly as `sections.json` writes 
 ref is `inferred: true`. Never renumber: IDs (`C-n`, `E-n`, `I-n`, `Q-n`) are never reused.
 
 - **Business context** (`C-n`): rules, terms and actors, each with its target (`business-rules.md`,
-  `glossary.md` or `product.md` in `docs/constitution/`), `Status: proposed`.
+  `glossary.md` or `product.md` in the constitution folder: `paths.constitution`, default `docs/constitution`),
+  `Status: proposed`.
 - **Epics and stories** (`E-n`, `I-n`): each story meets INVEST (independent, negotiable, valuable,
   estimable, small, testable) with a one-line `invest` note naming any criterion it misses; AC are
   GIVEN / WHEN / THEN; `depends_on` lists the stories it needs.
+- **Specs:** group the stories one spec should open together: dependent AC, or one deliverable for the PO
+  (rule 8 of `rules/spec-docs.md`), as `- group: G-n` on each of them. A story with no group is its own spec.
 - **Priority:** use `product-manager-toolkit` when installed (RICE or MoSCoW); otherwise MoSCoW, and
   note that the skill was missing.
 - **Ambiguity or contradiction** (inside the document, or against the constitution): a `Q-n` row,
@@ -61,10 +65,14 @@ proposal cannot be closed while any `C-n` is still `proposed`.
 
 ## 5. The PO opens stories
 
-The PO picks the stories to open; nothing is opened without that choice. For each, confirmed one by
-one:
+The PO picks the stories (or groups) to open; nothing is opened without that choice. For each, confirmed one
+by one:
 
-- **Spec:** `mandao start "<title>"`, then, in its worktree, `/mandao-story --intake <proposal>#I-n`.
+- **Spec:** `/mandao-story --intake <proposal>#I-n`, in this same session: it creates the spec, its branch and
+  the start record, and carries this proposal and the applied constitution changes with it. A group opens as
+  one spec through any of its stories. Close the intake with the next step named that way (`rules/next-step.md`).
+- **Answers:** when the PE answers an `OPEN` or `CONFLICT` row, record it at once with
+  `run intake-answer <proposal> Q-n --answer "<answer>"`; never edit the table by hand.
 - **Tracker** (MCP connected): show the exact title, description and AC; create the item only after
   confirmation, then `run intake-open <proposal> I-n --as <tracker URL>`.
 

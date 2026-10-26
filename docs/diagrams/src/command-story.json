@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "7b89b5d8a17ec00157fcd740d8fbbf63eb35e82729b760de0ad6d7c3f66f1a69"
+      "sha256": "53f64fc69fdb9aa1cd0dade1e381b35ed0b516b2cb675bf2f29118df0cf7ab33"
     },
     {
       "path": "core/commands/implement.md",
@@ -31,7 +31,7 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "5352d421511dd215c1783d72c0369515cf69e6e6897c4fee80d2a0c2d0018549"
+      "sha256": "03ed0fd9a83d6c54e0bd82fd689e267d5a8632fbfdc786372627a869fe7f1b55"
     },
     {
       "path": "core/commands/resume.md",
@@ -39,11 +39,11 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "835fe3a267cdb918cf962535b4ec5cf630be94fcd2f9244dd186736f792492a6"
+      "sha256": "e1a768894d6d0c0feaeb557b0be526d3c1aaff90f7c5effcbdad038b54cae159"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "5806e675c506b73ae623c932dfc289d031d712208d6b71c8d79f0f01b7650c48"
+      "sha256": "23e7976264f7380c07ed3fd44326f8d63e825fd4f8e42a88fd48a96b7b76f4cc"
     },
     {
       "path": "core/commands/tasks.md",
@@ -54,10 +54,10 @@
       "sha256": "567c873497b1e2385bdb334efa7c60fee43cd228cde8c9ca6472e7398fa13e52"
     }
   ],
-  "specSha256": "1dfcdc47dc6a20c5addc8c20f8edafa4e82600df253aea9f5140f015e4cdf956",
+  "specSha256": "9f40e60e55df5ccc675f4af464384ad18ca800a91d7725f5c702d5f06d5371dd",
   "svgSha256": {
-    "light": "677df055cc0246382386a409f3f33afc3a880c08adda35582a33267df4f1cb1b",
-    "dark": "98d34fa64c4921920813cdbd4a0d5c0cea97f4275b3b5e57b16638f51e76a491"
+    "light": "11e918d8f815fa218a98e42e7a1a1819122f806626f8a329653a23677d9d261c",
+    "dark": "cbf1e9d61552679588ef883a8e209045f61b53942216b3b306f7f2d95b64d490"
   },
   "spec": {
     "schema_version": 2,
@@ -114,7 +114,7 @@
         "col": 0,
         "type": "backend",
         "label": "0. From a document",
-        "sublabel": "mandao run intake-extract +2",
+        "sublabel": "mandao run intake-extract +3",
         "width": 220
       },
       {

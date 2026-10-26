@@ -16,7 +16,7 @@ outputs:
   - { path: "docs/product/intake/<doc>-<date>.md" }
 capabilities: [read, search, edit, shell, mcp]
 templates: [rules/context.md, rules/spec-docs.md, spec/story.md, rules/doc-story.md, rules/budget.md, rules/telemetry.md, rules/mockups.md, rules/intake.md, product/intake-proposal.md, rules/next-step.md]
-scripts: [next, spec-new, trace, event, mock-offer, intake-extract, intake-check, intake-story, intake-open]
+scripts: [next, spec-new, trace, event, mock-offer, intake-extract, intake-check, intake-story, intake-open, intake-answer]
 approval: required
 ---
 
@@ -44,7 +44,7 @@ in the output which skill was missing.
 <!-- mandao:if !harness=claude -->
   A PDF with `status: needs-tool`: give the `hint` (install poppler, or export to Markdown) and stop.
 <!-- mandao:endif -->
-- **`--intake <proposal>#I-n`:** run `{{script:intake-story}} <proposal> I-n`, prefill the story and its AC from it, list the document ref (path, sha256, refs) in `sources:`, and carry its `open` rows as `OPEN`. Once `story.md` is written in the spec `mandao start` created, run `{{script:intake-open}} <proposal> I-n --as <ID>`.
+- **`--intake <proposal>#I-n`:** run `{{script:intake-story}} <proposal> I-n`, prefill the story and its AC from it (and from the other stories of its `group`, which this same spec covers), list the document ref (path, sha256, refs) in `sources:`, carry its `open` rows as `OPEN` and its `resolved:` rows as decided. Open the spec as step 1 says, write `story.md` there, then run `{{script:intake-open}} <proposal> I-n --as <ID>` (it marks the whole group). When the PE answers one of its questions, record it with `{{script:intake-answer}} <proposal> Q-n --answer "<answer>"`.
 
 ## 1. Find or create the story
 
@@ -53,6 +53,23 @@ in the output which skill was missing.
 3. If there is no item, offer to create one through MCP. Show the exact title and description first;
    create it only after the user confirms. Without MCP or tracker, use the next local id from
    `{{script:spec-new}} "<title>"`.
+4. **Open the spec** when it does not exist yet (phase 16): `{{script:spec-new}} "<title>" [--id <ID>] --type <type> --create --harness {{harness}} --first "/mandao-story <ID>"`.
+   It creates the branch per `branching` (in this checkout, carrying the uncommitted intake and constitution
+   changes; a worktree only when another spec is open here, or with `--worktree` when the PE asks), records the
+   request and the baseline. Never run git yourself. Show its `issues` and stop if there are any. Write
+   `story.md` in its `dir`. With `mode: worktree`, move into `dir` first:
+   <!-- mandao:if harness=claude -->
+   call `EnterWorktree` with the worktree path (`dir`) and go on without a new session; if it is refused or fails, print
+   the `resume` field of the `spec-new` output and stop: do not go on working in the main checkout.
+   <!-- mandao:endif -->
+   <!-- mandao:if !harness=claude -->
+   print the `resume` field of the `spec-new` output (the command that opens this harness there) and stop.
+   <!-- mandao:endif -->
+   When the output lists `sharedState` (another open spec changed the constitution, the intake proposals or the
+   config and has not merged them), tell the PE which spec and files, and on one confirmation open again with
+   `--carry-from <branch>`, or go on without them.
+   A spec started by mistake: `{{script:spec-new}} <ID> --discard`
+   shows what it would remove; after the PE confirms, the same with `--yes`.
 
 ## 2. Sufficiency rubric
 

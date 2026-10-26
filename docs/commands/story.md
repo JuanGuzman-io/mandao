@@ -47,6 +47,7 @@ Yes: it stops for your approval.
 - `mandao run intake-check`
 - `mandao run intake-story`
 - `mandao run intake-open`
+- `mandao run intake-answer`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

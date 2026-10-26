@@ -16,6 +16,36 @@ const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, en
 export interface CreateOptions extends OpenOptions {
   /** A worktree instead of the branch in place: asked for, or another spec is open in this checkout. */
   worktree?: boolean;
+  /** Another open spec's branch whose unmerged shared-state changes this spec takes (`sharedState`). */
+  carryFrom?: string;
+}
+
+/** Project state every spec reads: the constitution, the intake proposals and the config. */
+const sharedPaths = (config: Config) => [config.paths.constitution, config.paths.intake, '.mandao/config.yml'];
+
+/**
+ * Other open spec branches that changed shared state since the base, with the files: a spec started now
+ * would not see them (MDO-0002 started without MDO-0001's reopened constitution and session threshold).
+ */
+function sharedStateElsewhere(root: string, config: Config, base: string, own: string) {
+  const prefixes = Object.values(branchingFor(config).prefixes).filter(Boolean);
+  const branches = git(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads'])
+    .split('\n')
+    .filter((b) => b && b !== own && prefixes.some((prefix) => b.startsWith(prefix)));
+  return branches
+    .map((branch) => ({
+      branch,
+      files: git(root, ['diff', '--name-only', `${base}...${branch}`, '--', ...sharedPaths(config)])
+        .split('\n')
+        .filter(Boolean),
+    }))
+    .filter((entry) => entry.files.length);
+}
+
+function carryShared(dir: string, from: string, files: string[]): Step {
+  if (!files.length) return { step: 'shared state', status: 'skipped', detail: `${from} changed no shared state` };
+  git(dir, ['checkout', from, '--', ...files]);
+  return { step: 'shared state', status: 'done', detail: `from ${from}: ${files.join(', ')}` };
 }
 
 /** Another spec's branch is checked out here: moving this checkout would take it from that spec. */
@@ -35,6 +65,7 @@ export async function createSpec(root: string, config: Config, title: string, pr
   const p = proposeSpec(root, config, title, proposal);
   if (p.issues.length) throw new Error(p.issues.join('; '));
   const mode = o.worktree || otherSpecHere(root, config, p.branch) ? 'worktree' : 'in-place';
+  const sharedState = sharedStateElsewhere(root, config, p.base, p.branch);
   let steps: Step[];
   if (mode === 'worktree') {
     steps = await setUp(root, config, p, o);
@@ -44,7 +75,9 @@ export async function createSpec(root: string, config: Config, title: string, pr
     steps = await openInPlace(root, config, p, o);
     recordRequest(config, p, title, o, root);
   }
-  return { ...p, mode, dir: mode === 'worktree' ? p.worktree : root, steps, ok: !steps.some((s) => s.status === 'failed') };
+  const dir = mode === 'worktree' ? p.worktree : root;
+  if (o.carryFrom) steps.push(carryShared(dir, o.carryFrom, sharedState.find((x) => x.branch === o.carryFrom)?.files ?? []));
+  return { ...p, mode, dir, steps, ...(sharedState.length ? { sharedState } : {}), ok: !steps.some((s) => s.status === 'failed') };
 }
 
 /**
@@ -86,6 +119,7 @@ interface SpecNewOptions {
   baseline: boolean;
   discard?: boolean;
   yes?: boolean;
+  carryFrom?: string;
 }
 
 /** `run spec-new`: propose a spec's id, folder, branch and worktree; `--create` and `--discard` act on it. */
@@ -103,28 +137,33 @@ export function registerSpecNew(run: Command, ctx: CliContext) {
     .option('--worktree', 'with --create: a worktree instead of the branch in this checkout')
     .option('--no-install', 'with --create --worktree: skip installing dependencies')
     .option('--no-baseline', 'with --create: skip the baseline gates')
+    .option('--carry-from <branch>', "with --create: take another open spec's unmerged constitution, intake and config changes")
     .option('--discard', 'abandon the spec whose id is given as the title: its branch and worktree (--yes to do it)')
     .option('--yes', 'with --discard: remove them')
-    .action(async (title: string[], opts: SpecNewOptions) => {
-      const { harness, first, create, worktree, install, baseline, discard, yes, ...options } = opts;
-      const config = readConfig(ctx.root());
-      if (discard) return json(discardSpec(ctx.root(), config, title.join(' '), yes));
-      if (create) {
-        const made = await createSpec(ctx.root(), config, title.join(' '), options, {
-          type: options.type,
-          install,
-          baseline,
-          worktree,
-          ...(options.hotfix ? { hotfix: true } : {}),
-          ...(options.id === 'quick' ? { quick: true } : {}),
-        });
-        if (!made.ok) process.exitCode = 1;
-        return json(made);
-      }
-      {
-        const proposal = proposeSpec(ctx.root(), config, title.join(' '), options);
-        const active = harnessOption(harness);
-        json(first ? { ...proposal, resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : proposal);
-      }
-    });
+    .action((title: string[], opts: SpecNewOptions) => specNew(ctx, title.join(' '), opts));
+}
+
+/** The `run spec-new` action: discard, create, or only propose. */
+async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
+  const { harness, first, create, worktree, install, baseline, discard, yes, carryFrom, ...options } = opts;
+  const config = readConfig(ctx.root());
+  if (discard) return json(discardSpec(ctx.root(), config, title, yes));
+  const active = harnessOption(harness);
+  if (!create) {
+    const proposal = proposeSpec(ctx.root(), config, title, options);
+    return json(first ? { ...proposal, resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : proposal);
+  }
+  const quick = options.id === 'quick';
+  const made = await createSpec(ctx.root(), config, title, options, {
+    type: options.type,
+    install,
+    baseline,
+    worktree,
+    hotfix: options.hotfix,
+    quick,
+    ...(carryFrom ? { carryFrom } : {}),
+  });
+  if (!made.ok) process.exitCode = 1;
+  const resume = made.mode === 'worktree' && first ? ADAPTERS[active].session.resume(made.worktree, first).text : undefined;
+  return json(resume ? { ...made, resume } : made);
 }

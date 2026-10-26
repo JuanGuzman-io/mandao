@@ -44,4 +44,14 @@ describe('continuous flow in the rendered commands', () => {
     for (const id of ['init', 'constitution', 'quick']) expect(skill(on, id), id).toContain('disable-model-invocation: true');
     expect(skill(files(false), 'implement')).toContain('disable-model-invocation: true');
   });
+  test('phase 16: story, specify and quick open the spec in the session; no agent command sends the user to mandao start', () => {
+    for (const c of ['story', 'specify', 'quick'])
+      expect(readFileSync(`core/commands/${c}.md`, 'utf8'), c).toMatch(/\{\{script:spec-new\}\}[^\n]*--create/);
+    for (const c of ['story', 'specify', 'clarify', 'tasks', 'implement', 'verify', 'close', 'quick', 'resume', 'constitution'])
+      expect(readFileSync(`core/commands/${c}.md`, 'utf8'), c).not.toMatch(/`mandao start\b|mandao start --quick/);
+    const intake = readFileSync('core/templates/shared/rules/intake.md', 'utf8');
+    expect(intake).not.toMatch(/mandao start/);
+    expect(intake).toMatch(/paths\.intake/);
+    expect(intake).toMatch(/run intake-answer/);
+  });
 });

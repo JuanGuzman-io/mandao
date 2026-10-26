@@ -8,7 +8,7 @@ rule: telemetry
 Use `node .mandao/bin/mandao.mjs run event` for measured commands. The script supplies timestamps and writes to the spec's
 `_log/execution.md`; do not estimate time or write telemetry by hand.
 
-- Before other work, record `command_start` for `<ID>` (or `quick`) and keep its returned `runId`.
+- Before other work, record `command_start` for `<ID>` (or `quick`; `workspace` when there is no spec yet, as in an intake) and keep its returned `runId`.
 - Call: `node .mandao/bin/mandao.mjs run event <ID|quick> command_start --command <command>`; the JSON `runId` is paired with `command_end`.
 - Before a user-facing question, call `node .mandao/bin/mandao.mjs run event <ID> asked --run <runId>
   --command <command> --question product|external|technical --subject <short-label>`; keep its returned `id`.

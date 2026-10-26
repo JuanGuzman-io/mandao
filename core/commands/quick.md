@@ -46,18 +46,17 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 
 ## 2. Branch and worktree
 
-If the session already runs in a worktree made by `mandao start --quick` (its request is in
-`{{paths.specs}}/quick/_log/start-<name>.yml`), skip this step. Otherwise, as a fallback, with **one**
-confirmation, create the branch and worktree from
-`{{script:spec-new}} "<name>" --id quick --type <story|bug> --harness {{harness}} --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
-the branching model's `base`; show its `issues` first) and install the project's dependencies inside
-the worktree (no symlinks). Then move into the worktree before any other step:
+Unless the session already runs on a quick branch, open it with
+`{{script:spec-new}} "<name>" --id quick --type <story|bug> --create --harness {{harness}} --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it
+in the name). It creates the quick's branch from the branching model's `base`, in this checkout carrying the
+uncommitted work (a worktree when another spec is open here), and records the request, so delivery finds it.
+Never run git yourself; show its `issues` and stop if there are any. With `mode: worktree`, move into `dir` first:
 <!-- mandao:if harness=claude -->
-call `EnterWorktree` with the worktree path and continue in this conversation, without asking for a new session.
-If `EnterWorktree` is refused or fails, print the `resume` field of the `spec-new` output and stop: do not go on working in the main checkout.
+call `EnterWorktree` with the worktree path (`dir`) and go on without a new session; if it is refused or fails, print
+the `resume` field of the `spec-new` output and stop: do not go on working in the main checkout.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
+print the `resume` field of the `spec-new` output (the command that opens this harness there) and stop.
 <!-- mandao:endif -->
 Skip this step when the session already runs on a quick branch.
 

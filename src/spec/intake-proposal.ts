@@ -90,6 +90,8 @@ function checkStories(p: IntakeProposal, add: Add) {
     if (s.epic !== undefined && !epics.has(s.epic)) add('unknown-epic', s.id, `${s.id} names epic ${s.epic}, which does not exist`);
     for (const d of s.depends_on) if (!stories.has(d)) add('unknown-dependency', s.id, `${s.id} depends on ${d}, which does not exist`);
   }
+  for (const s of p.stories.filter((x) => x.group !== undefined && !/^G-\d+$/.test(x.group)))
+    add('bad-group', s.id, `${s.id} names group ${s.group}: a group is G-<n>`);
   const start = cycleStart(new Map(p.stories.map((s) => [s.id, s.depends_on])));
   if (start) add('dependency-cycle', start, `the dependencies of ${start} form a cycle`);
 }
@@ -186,10 +188,17 @@ const storyOf = (p: IntakeProposal, id: string) => {
 
 /** Writes `- opened: <value>` after the story's fields. Refuses a story that does not exist or is already opened. */
 export function markStoryOpened(markdown: string, id: string, value: string): string {
-  const story = storyOf(parseIntakeProposal(markdown), id);
+  const p = parseIntakeProposal(markdown);
+  const story = storyOf(p, id);
   if (story.opened) throw new Error(`${id} is already opened as ${story.opened}`);
   const as = value.trim();
   if (!as || /[\r\n]/.test(as)) throw new Error('--as needs one spec ID or tracker URL on one line');
+  // A group opens as one spec: every story of it records the same spec.
+  const members = story.group ? p.stories.filter((s) => s.group === story.group && !s.opened && s.id !== id).map((s) => s.id) : [];
+  return [id, ...members].reduce((text, member) => insertOpened(text, member, as), markdown);
+}
+
+function insertOpened(markdown: string, id: string, as: string): string {
   const lines = markdown.split('\n');
   const head = lines.findIndex((l) => new RegExp(`^###\\s+${id}\\s*[—–-]`).test(l));
   let at = head + 1;
@@ -209,6 +218,7 @@ export interface IntakeStoryPrefill {
   ac: IntakeAc[];
   open: IntakeOpenRow[];
   source: { path?: unknown; sha256?: unknown; doc?: unknown };
+  group?: { id: string; stories: { id: string; title: string; refs: string[]; ac: IntakeAc[] }[] };
 }
 
 /** What `/mandao-story --intake <proposal>#I-n` prefills: the story, its AC, the open rows on its refs and the source. */
@@ -227,5 +237,28 @@ export function storyPrefill(markdown: string, id: string): IntakeStoryPrefill {
     ac: s.ac,
     open: p.open.filter((q) => q.refs.some((r) => s.refs.includes(r))),
     source: { path: source.path, sha256: source.sha256, doc: p.data.doc },
+    ...groupOf(p, s),
   };
+}
+
+/** The other stories of the story's group, which the same spec opens with their AC. */
+function groupOf(p: ReturnType<typeof parseIntakeProposal>, s: { id: string; group?: string }) {
+  if (!s.group) return {};
+  const stories = p.stories
+    .filter((x) => x.group === s.group && x.id !== s.id)
+    .map((x) => ({ id: x.id, title: x.title, refs: x.refs, ac: x.ac }));
+  return { group: { id: s.group, stories } };
+}
+
+/** Records the PE's answer to an `OPEN`/`CONFLICT` row: its Status becomes `resolved: <answer>` (phase 16). */
+export function markQuestionAnswered(markdown: string, id: string, answer: string): string {
+  const text = answer.trim();
+  if (!text || /[\r\n|]/.test(text)) throw new Error('--answer needs the answer on one line, without |');
+  const lines = markdown.split('\n');
+  const at = lines.findIndex((l) => new RegExp(`^\\|\\s*${id}\\s*\\|`).test(l));
+  if (at < 0) throw new Error(`${id} is not a row of Open and conflicts`);
+  const cells = lines[at]!.split('|');
+  cells[cells.length - 2] = ` resolved: ${text} `;
+  lines[at] = cells.join('|');
+  return lines.join('\n');
 }

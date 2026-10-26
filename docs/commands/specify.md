@@ -53,6 +53,7 @@ Yes: it stops for your approval.
 
 - `mandao run next`
 - `mandao run spec-new`
+- `mandao run where`
 - `mandao run trace`
 - `mandao run diagram`
 - `mandao run branching`

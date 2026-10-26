@@ -83,6 +83,21 @@ describe('run spec-new --create: the spec opens in the session, no git by the us
     expect(git(root, 'branch', '--show-current')).toBe('feat/MDO-0001-first');
   });
 
+  test('another open spec changed shared state: the new spec is warned, and --carry-from brings those files (MDO-0002 trial)', async () => {
+    const root = repo();
+    git(root, 'switch', '-q', '-c', 'feat/MDO-0001-backend');
+    writeFileSync(join(root, 'docs/constitution/product.md'), '# Product\n\nQdrant, not sqlite-vec.\n');
+    git(root, 'commit', '-qam', 'reopen the constitution');
+    git(root, 'switch', '-q', 'main');
+    const warned = await run(root, 'spec-new', 'frontend', '--create', '--no-baseline');
+    expect(warned.sharedState).toEqual([{ branch: 'feat/MDO-0001-backend', files: ['docs/constitution/product.md'] }]);
+    expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).not.toContain('Qdrant');
+    git(root, 'switch', '-q', 'main');
+    const carried = await run(root, 'spec-new', 'frontend two', '--create', '--no-baseline', '--carry-from', 'feat/MDO-0001-backend');
+    expect(carried.steps).toContainEqual(expect.objectContaining({ step: 'shared state', status: 'done' }));
+    expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).toContain('Qdrant');
+  });
+
   test('--discard says what it would remove, and with --yes removes the branch and returns this checkout to the base', async () => {
     const root = repo();
     const r = await run(root, 'spec-new', 'by mistake', '--create', '--no-baseline');

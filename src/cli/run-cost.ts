@@ -9,6 +9,10 @@ import { logPath, readApprovalLog, specKeepsState } from '../scripts/spec-log.js
 import { type CostEntry, parseCosts, renderCosts, sessionDelta, sessionModelTotals, specBudget, summarizeCosts } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
+
+/** Commands that belong to no spec yet (an intake): their log lives under `.mandao/log/`, never in the spec tree (phase 16). */
+const WORKSPACE_LOG = 'workspace';
+
 import { json } from './json.js';
 
 interface CostOptions {
@@ -57,7 +61,11 @@ const mainRole = (command: string) => (command === 'implement' ? 'leader' : comm
 /** `quick` has no spec: its costs go to `<specs>/quick/_log/costs.yml`. */
 function costsDir(ctx: CliContext, ref: string): string {
   const config = readConfig(ctx.root());
-  return ref === 'quick' ? join(ctx.root(), config.paths.specs, 'quick') : findSpec(ctx.root(), config, ref);
+  return ref === 'quick'
+    ? join(ctx.root(), config.paths.specs, 'quick')
+    : ref === WORKSPACE_LOG
+      ? join(ctx.root(), '.mandao', 'log')
+      : findSpec(ctx.root(), config, ref);
 }
 
 /** Every costs.yml under the specs folder (quick included): a session's baseline is whatever any of them recorded. */

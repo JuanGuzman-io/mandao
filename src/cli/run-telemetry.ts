@@ -5,6 +5,10 @@ import { findSpec } from '../scripts/spec.js';
 import { appendTelemetryEvent, telemetryId } from '../scripts/telemetry.js';
 import { type TelemetryEvent, telemetryEventSchema } from '../spec/telemetry.js';
 import type { CliContext } from './context.js';
+
+/** Commands that belong to no spec yet (an intake): their log lives under `.mandao/log/`, never in the spec tree (phase 16). */
+const WORKSPACE_LOG = 'workspace';
+
 import { json } from './json.js';
 
 const TYPES: TelemetryEvent['type'][] = [
@@ -45,7 +49,12 @@ function recordEvent(ctx: CliContext, ref: string, inputType: string, options: E
   const type = telemetryEventSchema.shape.type.parse(inputType);
   if (!TYPES.includes(type)) throw new Error(`unknown telemetry event: ${inputType}`);
   const config = readConfig(ctx.root());
-  const dir = ref === 'quick' ? join(ctx.root(), config.paths.specs, 'quick') : findSpec(ctx.root(), config, ref);
+  const dir =
+    ref === 'quick'
+      ? join(ctx.root(), config.paths.specs, 'quick')
+      : ref === WORKSPACE_LOG
+        ? join(ctx.root(), '.mandao', 'log')
+        : findSpec(ctx.root(), config, ref);
   const spec = { name: basename(dir), dir };
   const { run, id } = eventIds(type, options);
   const question = options.question ? telemetryEventSchema.shape.question.parse(options.question) : undefined;

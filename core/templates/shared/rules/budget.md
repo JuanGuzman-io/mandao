@@ -5,7 +5,7 @@ rule: budget
 
 # Budget and cost
 
-At the first step, record `node .mandao/bin/mandao.mjs run event <ID|quick> command_start --command <this mandao>` before the budget check.
+At the first step, record `node .mandao/bin/mandao.mjs run event <ID|quick|workspace> command_start --command <this mandao>` before the budget check (`workspace` while there is no spec yet).
 
 Cost-conscious by design (ADR 0036): every command knows what the spec has spent and records its own
 spend.
