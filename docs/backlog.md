@@ -673,7 +673,7 @@ reason, an entry can be `accepted` with `accepted_by`, `reason` and a reference,
 blockers as `approve` and reports how many; (3) a `{{harness}}` token renders the harness id, the shared
 templates list the valid ids, the error lists them, and `claude-code` is an alias of `claude`; (4) the
 reconcile step compares a committed task's manifest against its own commit, and checkpoint prunes
-reconciled entries; (5) `run commit` accepts a `tasks.md` diff that is exactly the `[x]` of queued tasks
+reconciled entries (not done, by decision: see the review below); (5) `run commit` accepts a `tasks.md` diff that is exactly the `[x]` of queued tasks
 (`--done` belongs to checkpoint, not to `run commit`); (6) the pytest command receives only `test_*.py` /
 `*_test.py`; (7) a shared confirm helper refuses without a TTY and without `--yes` (exit 1, says what it
 would do), `deliver` derives a quick's branch, base and lane when the start record is missing, and `spec-new`
@@ -692,6 +692,9 @@ Independent review (2026-10-26, FAIL with 9 findings, fixed or decided here):
   that keeps a hand-committed entry with undeclared files pending.
 - **Accepted (low):** reconcile compares author times, so a rebase that resets author dates could close a
   rework entry early; the branch-reuse check looks only at `origin`, like `branchExists`.
+- **Second review (PASS), accepted (low):** the reconcile difference check works per path, so further
+  unreviewed edits to a path another commit also changed close the entry (they show in `differs`); an
+  accepted entry's evidence is checked as text in the spec documents, not against `premises.md`.
 
 1. **A missing runner is not red evidence (severe; MDO-0001 T17).** `run red` recorded a red run whose
    only failure was `pytest: command not found` (exit 127). An infrastructure failure was accepted as TDD
