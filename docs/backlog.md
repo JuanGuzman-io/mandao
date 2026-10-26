@@ -52,7 +52,7 @@ scope, product behavior, security or irreversible actions.
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | agreed; next |
-| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15; worktree and chaining decisions | agreed; PE decisions pending |
+| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | plan approved (PE, 2026-10-26); after phase 15 |
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | agreed |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
@@ -716,9 +716,49 @@ research exception, gate added mid-task, `--done`) runs without a hand edit or a
 
 ## Phase 16 — Continuous flow without manual git
 
-**Agreed (PE, 2026-10-26); after phase 15. Pending PE decisions before the plan:** whether the worktree
-is required or optional (see "Worktree policy" below), and whether commands chain only when the PE asks or
-by default.
+**Agreed (PE, 2026-10-26); after phase 15.**
+
+**Decisions (PE, 2026-10-26).** "Mandao must handle all of it; the user does not intervene in these
+processes."
+
+1. **No new commands.** The existing commands are enough; each one does what its name says and carries the
+   work on to the next. Wherever this section asks for a new step (abandon or restart a spec, record an
+   answer), it goes into an existing command or `mandao run` script.
+2. **The branch is always created automatically.** Whichever of `story` or `specify` creates the spec also
+   creates its branch per `branching`, with no question and no git by the user, and carries the pending
+   files onto it. The **worktree is optional**: by default the spec continues on its branch in the same
+   checkout and session; a worktree is used when the PE asks for it or another spec is already open. The
+   rest of the commands (`implement`, `next`, `doctor`) accept both, so the contradiction in "Worktree
+   policy" below is resolved this way (ADR 0015 is updated).
+3. **Commands chain by default.** `story` → `specify` → `clarify` when there are open questions, or
+   straight on → `tasks` and `implement` as the depth requires, without the PE typing the next command.
+   The chain stops only where a decision belongs to the PE (approvals, scope, product questions, push and
+   merge) or a context limit forces a cut. Example of the target behavior: once `session.cut_min_savings`
+   was raised to 50, `implement` ran task after task with no intervention. The default is "straight on";
+   a config key turns chaining off. In Claude Code this means dropping `disable-model-invocation: true`
+   from the rendered commands; other harnesses chain as far as they allow.
+4. **Every stop says what follows, complete.** When a command finishes or the chain stops, the output says
+   it is done and names the next step with the spec ID and story, ready to copy; for example "Specify is
+   done for MDO-0003 (story I-2). Next: `/mandao-clarify MDO-0003`, or `/clear` and
+   `/mandao-implement MDO-0003`".
+5. **`mandao start` leaves the flow.** It is a terminal command that agent commands told the user to run.
+   Its steps (branch, worktree, env files, dependencies, setup hooks, graph, baseline, start record) move
+   to a script that `story` and `specify` call (`run spec-new --create`); `start` stays as a deprecated
+   thin wrapper for beta users and disappears from the README, the guide and every agent command.
+6. **Terminal commands are classified and documented.** Of the 78 registered commands: the ones the user
+   types (`init`, `doctor`, `update`, `sync`, `harness add`, `skills`, `models`, `approve`, `deliver`,
+   `worktree`, `intake close/clean`, `run cost`, `run version-notes`) go in the README and the installed
+   guide; the internal `mandao run *` scripts the agent commands call go in their own section of
+   `docs/cli.md`, which is derived from the CLI definitions with a check; a command with no caller (`run
+   impact`) is removed once that is confirmed.
+
+**Plan approved (PE, 2026-10-26).** Saved with this phase's PR as the plan file: in-session spec creation
+through `run spec-new --create` (in place by default, worktree when asked or another spec is open,
+`--discard` to abandon), intake as state for `story` and `specify`, one branch/worktree policy in `run
+where` (new ADR replacing ADR 0015's worktree part), complete `next` invocations and a shared closing
+rule, `flow.chain` on by default (Claude commands without `disable-model-invocation`), session cuts by
+cost basis, `deliver` with non-interactive flags, a shared-state warning for parallel specs, the CLI
+classification above, and an end-to-end test intake → implement in both modes. Runs after phase 15.
 
 **Intake to the first story in the same session (maintainer, 2026-10-23).**
 
@@ -772,7 +812,7 @@ Evidence: the steps the maintainer had to run by hand in the trial, each a gap t
 | Decide between `mandao start`, a hand-made branch or working on `main` | the intake's next step did not say where the spec's branch comes from | one documented path: the command that opens the spec creates the branch per `branching` |
 | `git stash` in `main`, `git stash pop` in the worktree | `start` cut the worktree from the last commit, without the intake's uncommitted proposal and constitution changes | carry the intake's pending files onto the spec branch, or refuse with the exact step it will take |
 | Cancel `/mandao-specify --depth lite` that `start` opened | `start` did not hand over to `story --intake` | `start` (or the in-session path) opens the intake story |
-| `git worktree remove --force` and `git branch -D` | there is no Mandao command to abandon or restart a spec that was started by mistake | a command to abandon or restart a started spec, which removes its worktree and branch after confirmation and frees or keeps the ID explicitly |
+| `git worktree remove --force` and `git branch -D` | there is no Mandao command to abandon or restart a spec that was started by mistake | an existing command (`story` or `specify` on a spec started by mistake, through `run spec-new --discard`) offers to abandon or restart it, removes its worktree and branch after confirmation and frees or keeps the ID explicitly; no new command |
 | `git switch -c feat/MDO-0001-…` with the same name | to keep the spec ID and carry the pending changes in the same checkout | the in-session spec creation of item 1 |
 | Editing the proposal to close an open question by hand | the agent asked the PO, but there is no step that records the answer | `intake-check` or the story command records PO answers in the proposal |
 
@@ -787,7 +827,8 @@ spec branch, or stay without a worktree (with the warning that `implement` may r
 disagree: ADR 0015 and `specify` say later commands refuse to work outside the worktree, and `implement`
 checks `run where` and refuses; item 1 above asks for the worktree to be optional. Decide one policy,
 record it in one place (ADR 0015 and the guide), and make `start`, `story`, `specify`, `implement`,
-`next` and `doctor` follow it the same way.
+`next` and `doctor` follow it the same way. **Decided (PE, 2026-10-26):** the branch is mandatory and
+automatic, the worktree optional (decision 2 above).
 
 Rules for every command, so these inconsistencies stop:
 
@@ -815,8 +856,8 @@ implement to verify "without stopping between steps"; the agent answered that it
 `/mandao-implement` itself ("it is a command you have to run"), so every step hands control back to the PE.
 With two specs in parallel this doubles the PE's turns. Fix: a command may continue into the next one
 `run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
-session, stopping only at the decisions the process reserves to the PE. In Claude Code this means
-revisiting `disable-model-invocation: true` on the rendered commands.
+session, stopping only at the decisions the process reserves to the PE. **Decided (PE, 2026-10-26):**
+chaining is the default, not something the PE asks for (decision 3 above).
 
 **One task per session is too slow (PE, 2026-10-23).** "Imagine, I have only just finished 1 of 11." T1
 of MDO-0001 took the whole session and ended with a second session cut (135k tokens; "saving" $2.41), after
@@ -967,7 +1008,9 @@ Done when a stack choice cannot be approved without a recorded run on the projec
 
 ## Phase 19 — Command documentation
 
-**Agreed (PE, 2026-10-26); after phase 16, which fixes the syntax `next` and the hand-overs use.**
+**Agreed (PE, 2026-10-26); after phase 16, which fixes the syntax `next` and the hand-overs use.** Phase
+16 takes the derived `docs/cli.md` and its check, and the terminal commands in the installed guide; this
+phase keeps the agent command pages' arguments and the single command index.
 
 **Command arguments are not documented in the project (maintainer, 2026-10-23).** `mandao start` suggested
 `--depth lite` and the user could not tell what `--depth` does or which values exist. The per-command
