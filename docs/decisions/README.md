@@ -64,3 +64,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0055](0055-commitlint-conflict-check.md) | Commitlint conflict check | Accepted (Phase 12) |
 | [0056](0056-ui-mocks-before-implementation.md) | UI mocks before implementation | Accepted (Phase 13) |
 | [0057](0057-requirements-document-intake.md) | Requirements document intake | Accepted (Phase 14) |
+| [0058](0058-native-web-search-counts.md) | The harness's native web search counts as research evidence | Accepted (Phase 15) |

@@ -3,7 +3,26 @@ import { join } from 'node:path';
 import type { HarnessId } from '../schemas/index.js';
 import type { Finding } from './doctor.js';
 
-const NATIVE_SEARCH: Partial<Record<HarnessId, { source: string; condition: string }>> = {
+/**
+ * Native web search per harness. `counts`: the PE decided its research counts as web evidence (ADR 0058); the others
+ * stay conditional on account policy or provider and are not proof.
+ */
+const NATIVE_SEARCH: Partial<Record<HarnessId, { source: string; condition: string; counts?: true }>> = {
+  claude: {
+    source: 'https://code.claude.com/docs/en/tools-reference#websearch-tool-behavior',
+    condition: 'built-in WebSearch tool; permission rules may deny it',
+    counts: true,
+  },
+  codex: {
+    source: 'https://learn.chatgpt.com/docs/codex/cli',
+    condition: 'live web search per run (`codex --search`)',
+    counts: true,
+  },
+  antigravity: {
+    source: 'https://antigravity.google/docs/ide/browser',
+    condition: 'browser subagent reads documentation sources; Browser Tools can be turned off',
+    counts: true,
+  },
   copilot: {
     source: 'https://docs.github.com/en/copilot/how-tos/copilot-in-your-ide/chat-with-copilot/chat-in-ide',
     condition: 'web search depends on account and organization policy',
@@ -37,7 +56,7 @@ function mcpServers(root: string, file: string): string[] {
   }
 }
 
-/** Uses only explicit, harness-matched declarations; server names and possible native support are not proof. */
+/** Explicit, harness-matched MCP declarations, plus native search the PE counts (ADR 0058); server names are not proof. */
 export function researchToolCapabilities(root: string, harnesses: HarnessId[], declaredWebSearchServers: string[] = []) {
   return harnesses.map((harness) => {
     const files = MCP_FILES[harness] ?? [];
@@ -54,17 +73,26 @@ export function researchToolCapabilities(root: string, harnesses: HarnessId[], d
       webSearchMcp,
       capability: NATIVE_SEARCH[harness] ? (webSearchMcp.length ? 'native + MCP' : 'native') : webSearchMcp.length ? 'MCP' : 'none',
       configuredWebSearchAvailable: webSearchMcp.length > 0,
+      /** A declared search MCP, or native search that counts (ADR 0058): the research gate's source of web evidence. */
+      webSearchAvailable: webSearchMcp.length > 0 || Boolean(NATIVE_SEARCH[harness]?.counts),
     };
   });
+}
+
+function searchState(item: ReturnType<typeof researchToolCapabilities>[number]): string {
+  const native = item.native;
+  if (item.configuredWebSearchAvailable) return `declared${native ? `; native: ${native.condition} (${native.source})` : ''}`;
+  if (native?.counts) return `native (counts, ADR 0058: ${native.condition}; ${native.source})`;
+  return `not declared${native ? `; native support is conditional (${native.condition}; ${native.source})` : ''}`;
 }
 
 /** Adds an informational doctor row per configured harness with its source of web research. */
 export function researchToolFindings(root: string, harnesses: HarnessId[], declaredWebSearchServers: string[] = []): Finding[] {
   return researchToolCapabilities(root, harnesses, declaredWebSearchServers).map((item) => ({
     level: 'info',
-    message: `harness ${item.harness}: web search ${item.configuredWebSearchAvailable ? 'declared' : 'not declared'}${item.native ? `; native support is conditional (${item.native.condition}; ${item.native.source})` : ''}${item.mcp.length ? `; MCP servers: ${item.mcp.join(', ')}` : ''}`,
-    ...(!item.configuredWebSearchAvailable
-      ? { fix: 'declare a confirmed web-search MCP in research.web_search_servers; possible native support does not count' }
+    message: `harness ${item.harness}: web search ${searchState(item)}${item.mcp.length ? `; MCP servers: ${item.mcp.join(', ')}` : ''}`,
+    ...(!item.webSearchAvailable
+      ? { fix: 'declare a confirmed web-search MCP in research.web_search_servers; conditional native support does not count' }
       : {}),
   }));
 }

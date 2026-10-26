@@ -44,7 +44,7 @@ describe('research context before delegation', () => {
       research: { max_questions: 1 },
     });
     const result = researchContext(root, config, 'MDO-0002');
-    expect(result).toMatchObject({ max_questions: 1, needs_priority: true, dispatchable: [], unverified_without_search: true });
+    expect(result).toMatchObject({ max_questions: 1, needs_priority: true, dispatchable: [], unverified_without_search: false });
     expect(researchContext(root, config, 'MDO-0002', ['Q99'])).toMatchObject({
       needs_priority: true,
       selection_issues: ['unknown research question IDs: Q99'],

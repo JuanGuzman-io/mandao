@@ -155,7 +155,7 @@ describe('mandao approve: no model session', () => {
     const otherHarness = await approve(root, 'MDO-0001', 'design', '--harness', 'copilot');
     expect(otherHarness).toMatchObject({
       approved: false,
-      problems: [expect.stringContaining('high-impact decisions cannot rely on model knowledge')],
+      problems: [expect.stringMatching(/^R1\/C1: authorization-layer: no web search available to this harness/)],
     });
   });
 

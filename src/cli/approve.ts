@@ -65,7 +65,7 @@ function researchIssuesFor(
       .map((premise) => premise.id),
     maxQuestions: config.research.max_questions,
     expiryMonths: config.research.expires_months,
-    webSearchAvailable: researchToolCapabilities(root, [harness], config.research.web_search_servers)[0]?.configuredWebSearchAvailable,
+    webSearchAvailable: researchToolCapabilities(root, [harness], config.research.web_search_servers)[0]?.webSearchAvailable,
     verifiedReuseReferences: verifiedReuseReferences(root, config, spec.dir, document),
   };
   return researchGateFindings(
@@ -217,7 +217,8 @@ export function nextFor(
   const report = join(spec.dir, 'verify-report.md');
   const verdict = existsSync(report) ? frontmatterOf(readFileSync(report, 'utf8')).data.verdict : undefined;
   const delivery = spec.story?.meta.status === 'closed' ? deliveryOf(spec, config) : undefined;
-  const researchIssues = researchIssuesFor(root, spec, config, harness);
+  // The same design gates `approve design|spec` applies, so `next` never points past what approval refuses.
+  const researchIssues = [...specPremiseFindings(spec.dir).map((f) => f.message), ...researchIssuesFor(root, spec, config, harness)];
   return nextStep(spec, {
     ...(typeof tasksStatus === 'string' ? { tasksStatus } : {}),
     ...(typeof verdict === 'string' ? { verifyVerdict: verdict } : {}),
