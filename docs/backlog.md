@@ -51,8 +51,8 @@ scope, product behavior, security or irreversible actions.
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after phase 20 |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
-| [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | agreed; next |
-| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | plan approved (PE, 2026-10-26); after phase 15 |
+| [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
+| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | plan approved (PE, 2026-10-26); in progress on `perf/phase-16` |
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | agreed |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
@@ -659,7 +659,7 @@ Not product work; kept here so they are not lost.
 
 ## Phase 15 — Blocking bugs and false evidence
 
-**Agreed (PE, 2026-10-26); plan approved (PE, 2026-10-26); in progress on `perf/phase-15`.** Small
+**Complete:** PR #27 merged into `main` (`e3bc296`). Plan approved (PE, 2026-10-26). Small
 fixes, each with its test.
 
 **Decision (PE, 2026-10-26): the harness's native web search counts.** "Any research that Claude Code,
