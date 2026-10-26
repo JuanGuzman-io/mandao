@@ -21,9 +21,41 @@ export interface RedCheck {
   problem?: string;
 }
 
-/** Red means the runner ran and the tests failed: a pass, a timeout or a deferred run is not red. */
-export function redCheck(status: string, exitCode: number | undefined): RedCheck {
-  if (status === 'FAIL') return { red: true };
+const NOT_RUN = /command not found|is not recognized as an internal or external command/i;
+
+const PYTEST_EXITS: Record<number, string> = {
+  2: 'pytest was interrupted or failed to collect the tests',
+  3: 'pytest hit an internal error',
+  4: 'pytest reported a usage error',
+  5: 'no tests were collected',
+};
+
+const JS_NO_TESTS = /No test files found|No tests found/;
+const JS_NOT_LOADED = /Failed to load|Test suite failed to run/;
+
+/** Why a failing run is not failing tests: the runner did not run, collected nothing or could not load the files. */
+function notTestFailure(exitCode: number | undefined, runner?: string, output = ''): string | undefined {
+  if (exitCode === 126 || exitCode === 127 || NOT_RUN.test(output))
+    return `the test runner could not run (exit ${exitCode ?? 'unknown'}): install it or use the project's test command`;
+  if (runner === 'pytest' && exitCode !== undefined && PYTEST_EXITS[exitCode])
+    return `${PYTEST_EXITS[exitCode]} (exit ${exitCode}); a collection error is not a failing test: add a stub so the test runs and fails on its assertion`;
+  if (runner === 'vitest' || runner === 'jest') {
+    if (JS_NO_TESTS.test(output)) return 'the runner found no test files';
+    if (JS_NOT_LOADED.test(output))
+      return 'the runner could not load the test file; add a stub so the test runs and fails on its assertion';
+  }
+  return undefined;
+}
+
+/**
+ * Red means the runner ran and the tests failed: a pass, a timeout, a deferred run, a missing runner or a
+ * collection error is not red (MDO-0001 T17: `pytest: command not found` was recorded as red).
+ */
+export function redCheck(status: string, exitCode: number | undefined, runner?: string, output?: string): RedCheck {
+  if (status === 'FAIL') {
+    const problem = notTestFailure(exitCode, runner, output);
+    return problem ? { red: false, problem } : { red: true };
+  }
   if (status === 'PASS') return { red: false, problem: 'the tests pass before any implementation: they do not prove the scenario' };
   return { red: false, problem: `the tests did not run to a verdict (${status}${exitCode !== undefined ? `, exit ${exitCode}` : ''})` };
 }
