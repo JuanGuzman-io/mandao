@@ -28,30 +28,36 @@ scope, product behavior, security or irreversible actions.
 | Phase / item | Historical reference | Depends on | Status |
 |---|---|---|---|
 | [0 — Documentation and backlog](#phase-0--documentation-and-backlog) | MDO-0011 / ADR 0040–0041 | current code and decisions | complete; see the design reconciliation audit |
-| [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete |
+| [1 — Security before beta](#security-quick-before-the-beta) | ADR 0043 | phase 0 | complete; PR #7 merged (`c34d1c2`) |
 | [2 — Measurement](#phase-2--measurement) | latency audit / ADR 0044 | phase 0 | complete; PR #8 merged (`d17ba2c`) |
 | [3 — Context and rework](#phase-3--context-and-rework) | latency audit | phase 0 | complete; PR #9 merged (`c315d3c`) |
 | [3b — Gated design principles](#phase-3b--gated-design-principles) | Spec Kit Constitution Check | phase 3 | complete; PR #11 merged (`075cd2a`) |
 | [4 — Repetition and autonomy](#phase-4--repetition-and-autonomy) | launcher; commit manifest | phases 2–3 | complete; PR #10 merged (`0448a80`) |
-| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 (CI green) |
+| [5 — Script-enforced rules](#rules-enforced-by-script) | former rules spec | phases 2–4 | complete; PR #12 merged (`25c30dc`) |
 | [6 — Delivery](#mdo-0012--delivery-and-research) | delivery part of MDO-0012 | phases 2–5 | complete; PR #13 merged (`efc5f4f`) |
 | [7 — User CI security gates](#security-gates-from-the-users-ci) | former security-gates spec | phase 6 delivery | complete; PR #14 merged (`774ccfd`) |
 | [8 — Research in specify](#mdo-0012--delivery-and-research) | research part of MDO-0012 | phase 0 layout manifest | complete; PR #15 merged (`7cb5a68`) |
 | [9a — Deliveries inside a spec](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phases 2–6 | complete; PR #16 merged (`fcbc813`) |
 | [9b — Parallel tasks](#mdo-0014--parallel-tasks) | MDO-0014 | phase 9a; Kaizen evidence | pending evidence; outside the current program |
-| [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; backlog |
-| [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; backlog |
+| [Stacked PR per delivery](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | phase 9a | agreed; after phase 20 |
+| [Tracker sub-tasks](#mdo-0013--deliveries-inside-a-spec) | MDO-0013 | tracker push | agreed; blocked: tracker push does not exist |
 | [10 — Version release notes](#phase-10--version-release-notes) | — | phase 6 release-status | complete; PR #17 merged (`5d00295`) |
 | [11 — Beta preparation](#phase-11--beta-preparation) | — | phases 0–10 | complete; PR #19 merged (`76f3649`) |
 | [12 — Commitlint conflict check](#phase-12--commitlint-conflict-check) | — | doctor and commit policy | complete; PR #18 merged (`3f48ae0`) |
 | [13 — UI mocks before implementation](#phase-13--ui-mocks-before-implementation) | — | story, specify | complete; PR #20 merged (`91919de`) |
-| [13b — Phase 13 trial fixes](#phase-13b--phase-13-trial-fixes) | phase 13 trial | phase 13 | complete in the PR of `perf/phase-13b` |
+| [13b — Phase 13 trial fixes](#phase-13b--phase-13-trial-fixes) | phase 13 trial | phase 13 | complete; PR #23 merged (`626a450`) |
 | [14 — Requirements document intake in story](#requirements-document-intake-in-story) | — | story; constitution product docs | complete; PR #22 merged (`57e60dc`); table trial pending |
-| [Task change manifest redesign](#task-change-manifest-redesign) | phase 4 commit manifest | phase 11 trial | agreed; backlog |
-| [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; outside phases 0–10, blocked on evidence |
-| [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after the beta |
+| [Migrate MDO-0008 to MDO-0010](#migrate-mdo-0008-to-mdo-0010-to-layout-v2) | excluded from MDO-0011 | layout v2 proven on a real spec | agreed; may be unblocked: layout v2 ran on the beta trial's specs (to confirm) |
+| [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after phase 20 |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
-| [Intake to first story in the same session](#intake-to-first-story-in-the-same-session) | beta trial (asistente-asesores) | phase 14 | agreed; backlog; inconsistent hand-overs between intake, start, story and specify |
+| [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
+| [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | agreed; next |
+| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15; worktree and chaining decisions | agreed; PE decisions pending |
+| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | agreed |
+| [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
+| [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
+| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
+| [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
 
 ## Phase 0 — Documentation and backlog
 
@@ -118,7 +124,7 @@ Acceptance criteria:
 
 ## Phase 3b — Gated design principles
 
-**Agreed, pending phase plan approval. Modelled on Spec Kit.**
+**Complete:** PR #11 merged (`075cd2a`). Modelled on Spec Kit.
 
 **Origin:** Spec Kit uses neither SOLID nor ACID, but its plan goes through a "Constitution Check"
 with concrete questions and justifies exceptions in a "Complexity Tracking" table; its articles VII
@@ -189,8 +195,8 @@ Acceptance criteria:
 
 ## MDO-0012 — Delivery and research
 
-**Historical spec proposal, now executed without a new spec: delivery in phase 6, research in
-phase 8. Both agreed, pending their phase plans.**
+**Historical spec proposal, executed without a new spec: delivery in phase 6 (PR #13), research in
+phase 8 (PR #15). Both complete.**
 
 **Delivery after close or quick** (new ADR; updates `MANDAO-DESIGN.md`). "Never push" becomes "push
 and PR only with confirmation".
@@ -377,7 +383,7 @@ Approved plan:
 
 ## Requirements document intake in story
 
-**Agreed (maintainer, 2026-10-22); backlog.** `/mandao-story --from <file>` (PDF, DOCX or Markdown) for
+**Agreed (maintainer, 2026-10-22); complete as phase 14 (PR #22).** `/mandao-story --from <file>` (PDF, DOCX or Markdown) for
 documents that carry many requirements:
 
 1. Separate the business context (rules, glossary, actors) and propose it for the product context
@@ -433,15 +439,6 @@ documents reading a local PDF by page range, read 2026-10-22).
 pending: poppler (`pdftotext`) is not installed on the maintainer's machine. It runs once poppler is
 available, to check that `pdftotext -layout` keeps table rows readable.
 
-## Task change manifest redesign
-
-**Agreed (maintainer, 2026-10-22); backlog.** Found in the phase 11 trial: a task's Reviewer-approved
-manifest records every change in the working tree at review time, so unrelated changes (a Mandao upgrade
-mid-spec, another task's pending files) enter it; two tasks then share files and `run commit` refuses.
-Phase 11 adds only the minimal brake (a commit stops on files that are neither declared by the task nor in
-the diff the Reviewer saw). The redesign scopes the manifest to the task: declared files plus the
-reviewed out-of-list files, with unrelated changes kept out of the review pack and the commit.
-
 ## Migrate MDO-0008 to MDO-0010 to layout v2
 
 Taken out of MDO-0011 before implement (MDO-0011 C-5). It runs once layout v2 has been proven on a
@@ -449,7 +446,7 @@ real spec; until then the scripts read both layouts by the story's `schema_versi
 
 ## Security quick before the beta
 
-**Phase 1; implemented in `perf/fase-1`.**
+**Phase 1; complete, PR #7 merged (`c34d1c2`).**
 
 Before the beta is published.
 
@@ -627,10 +624,103 @@ Maintainer steps:
 If `npm dist-tag add` is refused, run the command the script prints. A published version is never
 republished: a fix ships as `0.1.0-beta.1`.
 
-## Intake to first story in the same session
+## Post-beta program
 
-**Agreed (maintainer, 2026-10-23); backlog.** Found running the beta on a real technical test
-(`/mandao-story --from` over an 8-page PDF, constitution in a custom `paths.constitution`).
+**Scope and order reviewed (PE, 2026-10-26).** The findings from running the beta on a real project
+(`/mandao-story --from` over an 8-page PDF, constitution in a custom `paths.constitution`, specs MDO-0001
+and MDO-0002) are grouped below by what Mandao can fix, in this order: bugs that block or falsify evidence
+first (cheap, and they cost time in every spec), then the continuous flow (the main cause of the slowness),
+then gates and commits, constitution and research, command documentation and minor fixes. Each phase
+follows the [phase execution policy](#phase-execution-policy).
+
+### Outside Mandao
+
+Not product work; kept here so they are not lost.
+
+| Item | Why it is not fixed in Mandao |
+|---|---|
+| Trusted publishing on npm | Configured by hand on npmjs.com ([beta release](#beta-release-010-beta0), step 7) |
+| Phase 14 trial with a PDF that has tables | Needs poppler installed on the maintainer's machine |
+| `sqlite-vec` not loading on Python 3.13 / 3.15 | The project's environment; Mandao only enforces the check (phase 18) |
+| Transitive licenses and the 35 CVEs in pillow | The project's policy; Mandao only improves the template and the record (phase 18) |
+| `format` and `lint` not covering `tests/web/` | That project's gate configuration |
+| Asserting the PE's turns in an end-to-end test | A deterministic test cannot simulate the PE; it asserts hand-overs and required questions instead |
+
+### Partly in Mandao
+
+- **Command chaining:** in Claude Code Mandao itself blocks it (`disable-model-invocation: true` on every
+  command, `src/adapters/claude.ts`), which can change; Codex and Copilot depend on each harness.
+- **A small Leader context:** prompts and personas; Kaizen can measure it, nothing can guarantee it.
+- **A reopened constitution:** listing the spec documents that cite the changed items is deterministic;
+  detecting a contradiction in meaning is not.
+- **The first task passing its own gates:** checkable for `test`; heuristic for `build` entry files.
+- **Reference fixes at close:** `trace` can flag inconsistent IDs across documents; the fix stays with the
+  model.
+
+## Phase 15 — Blocking bugs and false evidence
+
+**Agreed (PE, 2026-10-26); next.** Small fixes, each with its test.
+
+1. **A missing runner is not red evidence (severe; MDO-0001 T17).** `run red` recorded a red run whose
+   only failure was `pytest: command not found` (exit 127). An infrastructure failure was accepted as TDD
+   red evidence; the agent noticed and recorded it again. A red run must count only test failures
+   (collected tests that fail), never a missing runner, exit 127, a collection error or a crash. This is
+   a regression of phase 5's rule on `NOT_INSTALLED`.
+2. **The research gate blocks without a declared web-search MCP.** In MDO-0001 the gate kept research item
+   R3 blocked because no web-search MCP server is declared, although Claude Code has native web search
+   (`doctor` says "possible native support does not count") and a premise run on the machine (P2) had
+   already proved the point. The user had to be told to type an explicit acceptance. Fix: the gate offers,
+   as one of its own options, accepting a recorded premise run as the evidence (recorded as the PO's
+   decision), and says plainly what declaring a web-search server would change. Once that exception is
+   recorded, the gate and `run next` must treat the item as resolved: today the gate keeps flagging R3/R5
+   and `next` keeps recommending `/mandao-specify` after the PO accepted the local evidence (C-7), so the
+   user has to ignore the recommended step to approve. After 15 of 15 tasks, `next` still pointed back to
+   `/mandao-specify`, saying R3 relies on model knowledge without web evidence, although R3 in
+   `research.md` cites sqlite.org; the gate must name the exact claim it rejects and why the cited source
+   does not count.
+3. **`<this harness>` is never filled in.** The installed Claude Code commands say `--harness <this
+   harness>` 23 times across 9 commands (clarify, close, implement, quick, resume, specify, story, tasks,
+   verify); the adapter knows the harness but leaves the placeholder. The agent guesses `--harness
+   claude-code`, Mandao answers `Unknown harness "claude-code"` (`src/cli/spec-context.ts:19`, without
+   listing the valid ids, unlike `init`), and that error became the title of the PE's Claude Code tabs.
+   Fix: each adapter renders the placeholder as its own id (`claude`, `codex`, `copilot`, …), with a
+   content test that no rendered file keeps `<this harness>`; the error lists the valid ids; consider
+   accepting `claude-code` as an alias.
+4. **A stale pending commit blocks the next task.** In MDO-0001, T1 was committed (`b3ad4ed`) after the
+   `build: none` gate was added in its own commit (`de1b081`). `_log/state.yml` kept T1's earlier
+   `pending_commits` entry, whose manifest (taken before `.mandao/config.yml` and the lock changed) no
+   longer matches HEAD; no Mandao script can remove it, and T2 could not start because it touches a file
+   of that entry. The only way on was a hand edit of `state.yml`, recorded as a discrepancy. Fix: `run
+   commit` (or a reconcile step in `checkpoint`) recognises an entry whose task is already committed, by
+   its `Task:` trailer, and closes it, reporting the files that differ; a gate added mid-task refreshes the
+   pending manifest instead of leaving it stale.
+5. **`run commit` refuses its own `--done` box.** It refuses the `[x]` box that its own `--done` writes in
+   `tasks.md`; the agent committed it separately in every task of MDO-0001.
+6. **The `test` gate passes data files to the runner.** It passed `tests/fixtures/consultas.json` to
+   pytest, which exits 4 ("no tests collected"); the agent validated T10 by running the suite by hand.
+   Gates must pass only test files.
+7. **Git commands that stop or skip:**
+   - `mandao worktree clean`, run from an agent session after the merge, listed MDO-0001 as "merged clean"
+     but stopped at an interactive confirmation it could not get (no terminal) and removed nothing; the
+     worktree was removed with `git` by hand. Without a TTY it needs a `--yes` path or a refusal that says
+     so.
+   - `mandao deliver quick/<slug>` failed for a UI quick change made on its own branch and worktree,
+     committed with its quick-log row and cost and reviewed (PASS), because the quick had no start record.
+     Either `quick` creates the start record when it creates the branch, or `deliver` works from the
+     quick-log row and the branch.
+   - `run spec-new` proposed `MDO-0002` because the branch `feat/MDO-0001-…` already existed, so the agent
+     set the ID by hand: an existing spec branch with no spec must be reused, not skipped.
+
+Done when each item has a regression test and MDO-0001's sequence (red with a missing runner, accepted
+research exception, gate added mid-task, `--done`) runs without a hand edit or a manual commit.
+
+## Phase 16 — Continuous flow without manual git
+
+**Agreed (PE, 2026-10-26); after phase 15. Pending PE decisions before the plan:** whether the worktree
+is required or optional (see "Worktree policy" below), and whether commands chain only when the PE asks or
+by default.
+
+**Intake to the first story in the same session (maintainer, 2026-10-23).**
 
 1. **Continue in the same chat.** After `/mandao-story --from` writes the proposal, the user expects to
    go on with the first story in that same session. Today the next step is `mandao start` in a terminal,
@@ -686,10 +776,8 @@ Evidence: the steps the maintainer had to run by hand in the trial, each a gap t
 | `git switch -c feat/MDO-0001-…` with the same name | to keep the spec ID and carry the pending changes in the same checkout | the in-session spec creation of item 1 |
 | Editing the proposal to close an open question by hand | the agent asked the PO, but there is no step that records the answer | `intake-check` or the story command records PO answers in the proposal |
 
-Also seen while writing the first story in place: `run spec-new` proposed `MDO-0002` because the branch
-`feat/MDO-0001-…` already existed, so the agent set the ID by hand (an existing spec branch with no spec
-must be reused, not skipped); and the run's cost and telemetry went to `quick` because the spec did not
-exist when the command started (they must move to the spec once it is created).
+Also seen while writing the first story in place: the run's cost and telemetry went to `quick` because the
+spec did not exist when the command started (they must move to the spec once it is created).
 
 **Worktree policy is contradictory (maintainer, 2026-10-23).** After the worktree `start` made was
 removed and the spec continued on its branch in the main checkout (advice given in the trial, without
@@ -722,6 +810,165 @@ one shared closing rule in a template every command loads (the recommended comma
 then the options, each complete, and a new-session action first when needed); tests that `next` never
 returns a slash command without the ID when there is a spec.
 
+**Commands cannot chain (PE, 2026-10-23).** The PE asked MDO-0001's session to go from clarify to
+implement to verify "without stopping between steps"; the agent answered that it cannot launch
+`/mandao-implement` itself ("it is a command you have to run"), so every step hands control back to the PE.
+With two specs in parallel this doubles the PE's turns. Fix: a command may continue into the next one
+`run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
+session, stopping only at the decisions the process reserves to the PE. In Claude Code this means
+revisiting `disable-model-invocation: true` on the rendered commands.
+
+**One task per session is too slow (PE, 2026-10-23).** "Imagine, I have only just finished 1 of 11." T1
+of MDO-0001 took the whole session and ended with a second session cut (135k tokens; "saving" $2.41), after
+the first cut before T1. On a subscription those savings are list-price equivalents, not money, while every
+cut costs the PE time. Fixes: the session-cut advice weighs the cost basis (on a subscription, cut only
+for context limits, not for equivalent savings) and `init` asks for `session.cut_min_savings` instead of
+defaulting to $1; the Leader keeps its own context small (delegates reading and gate output to
+subagents) so one session covers several tasks; `implement` continues from task to task without stopping
+unless a decision is needed. Evidence: after the PE raised `session.cut_min_savings` to 50, `implement`
+ran several tasks in a row and the PE noticed the speed-up at once.
+
+**Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
+implement spec 1." From the constitution to the first `implement` of the trial took many turns, most of
+them spent on the flow defects of this program (intake hand-over, `start`, the worktree, reopened
+constitution, research gate, undeclared gates) and on manual corrections between commands. Measure it:
+count the PE's turns and the minutes from `story --from` to the first `implement` on this trial, and set a
+target that Kaizen reports against; the end-to-end test asserts the hand-overs and the required questions.
+Pending constitution adjustments, gates and approvals should batch into one step when they can.
+
+**Delivery inside the session (2026-10-23).** At MDO-0001's close, delivery had to be handed to the PE as
+a terminal command (`mandao deliver` asks interactively), once more breaking the in-session flow; it should
+run inside the session with its questions asked there.
+
+**Parallel specs do not share the project's current state (2026-10-23).** The PE started MDO-0002 (the
+frontend) in parallel with MDO-0001. `mandao start` cut it from `main`, so it lacked everything MDO-0001 had
+changed in shared files: the reopened constitution (Qdrant, the error table, "Fuente" with excerpt), the
+intake proposal, and `.mandao/config.yml` (the session-cut threshold the PE raised for speed, the gates,
+`build: none`). Its sessions ran with the old threshold and its Reviewer would check against the old
+constitution; the agent had to copy those files from the other branch by hand. Fix: shared project state
+(constitution, `.mandao/config.yml`, intake proposals) changes through its own short path to `main`
+(e.g. a `chore` PR that `start` and `constitution` propose when a spec edits them), and `start` warns
+when another open spec branch holds unmerged changes to those files, offering to carry them.
+
+**Internal logs in the project's spec tree (2026-10-23).** The intake's cost and telemetry went to
+`<paths.specs>/quick/_log/` because no spec existed yet; next to `MDO-0001-…` it reads as a third feature
+named "quick". Mandao's own logs that belong to no spec should live outside `paths.specs` (e.g. under
+`.mandao/`).
+
+Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
+outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
+
+## Phase 17 — Gates and commits
+
+**Agreed (PE, 2026-10-26); after phase 15.**
+
+**Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
+leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks
+them up: MDO-0001's tasks were written with "no gate commands declared, each task is verified with its own
+`uv run pytest …`", so the first implementation would run with no lint, format or typecheck gate. Fix: the
+task that creates the manifest declares the gates (proposed from the stack in `standards.md`, approved by
+the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
+project whose constitution lists gates as OPEN. The proposal must include every gate a later command
+requires: in MDO-0001 the PE approved four gates in T1, and `run commit` then stopped asking for a `build`
+gate (answered `build: none`); that question belongs in the same approval. Later, delivery 1's checkpoint
+stopped on `SECURITY_GAPS` (tasks tagged security, no secrets or SAST gate): the constitution had already
+recorded secrets and SAST as `unknown` but proposed no gate, so the PE had to configure `secrets`, `sast`
+and `audit` mid-implementation. The constitution proposes them with the other gates.
+In MDO-0002 (frontend), `tasks` planned T1 so that its own `build` gate could not pass: `index.html` loads
+`src/main.tsx`, which the plan gave to T3, and the agent had to ask how to handle it. `tasks` must check
+that the first task's declared files satisfy every gate it will run (entry files for `build`, a test for
+`test`), adding the minimal file to that task's list.
+
+**An `eval` gate.** There is no `eval` gate: the PE's approved evaluation gate (`uv run pytest -m eval`,
+real embeddings model) went into the `metrics` slot in MDO-0001. Model and quality evaluations need their
+own named gate.
+
+**Red runs and tests in the project's folder.**
+- The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
+  agent had to put `.venv/bin` on `PATH`. Red runs must use the project's declared test gate command.
+- In MDO-0002, tests ran from the repository root, where the `web` project's Vitest config never loads; the
+  agent had to add `tests.impacted` for `web`. In a monorepo, test commands run from each project's folder,
+  as gates do.
+
+**Deferred e2e (MDO-0002).** One deferred e2e run was logged three times (once per checkpoint). Then verify
+stayed `blocked` only because T4's e2e were "deferred to CI" and the repository has no CI, although the
+same e2e had just passed locally against the real backend (4/4, in the same report). A recorded local run of
+the deferred suite must clear the deferral, and a project without CI must not be blocked forever by one.
+
+**Task change manifest redesign (maintainer, 2026-10-22).** Found in the phase 11 trial: a task's
+Reviewer-approved manifest records every change in the working tree at review time, so unrelated changes (a
+Mandao upgrade mid-spec, another task's pending files) enter it; two tasks then share files and `run commit`
+refuses. Phase 11 adds only the minimal brake (a commit stops on files that are neither declared by the
+task nor in the diff the Reviewer saw). The redesign scopes the manifest to the task: declared files plus
+the reviewed out-of-list files, with unrelated changes kept out of the review pack and the commit. Evidence
+from the beta trial that the same redesign must cover:
+- Each task of MDO-0002 needed an extra `docs` commit for its `tasks.md` edits (status moves, file lists
+  the Reviewer asked for, a kind change), because the commit script refuses spec changes it did not record
+  itself. Spec bookkeeping the process itself causes belongs in the task's commit.
+- The commit script refused `.mandao/mandao.lock` inside MDO-0001 T1's commit, so the lock went in a
+  separate `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs
+  with it.
+
+**Per-task cost depends on the agent remembering (2026-10-23).** In MDO-0002 the agent did not record the
+cost before each task commit, as the rule asks, and recorded it once at the end. Cost recording must be
+part of the script the commit already runs (`run commit` records it or refuses), not a step the agent can
+skip. This is a gap in phase 5's "each command records its cost before its last commit".
+
+**A discrepancy carries its reason.** The hand edit of `state.yml` in MDO-0001 was flagged as a
+discrepancy but its reason was not recorded; the reason had to go in a commit message. A recorded
+discrepancy must carry the PE's reason.
+
+Done when a new project gets every gate a later command requires in one approval, a task commit includes
+the bookkeeping and cost the process caused, and a monorepo runs each project's tests from its folder.
+
+## Phase 18 — Constitution and research
+
+**Agreed (PE, 2026-10-26); after phase 15.**
+
+**The constitution approves stack choices without checking them in the environment (maintainer,
+2026-10-23).** During `/mandao-constitution` the maintainer and the agent chose `sqlite-vec` as the vector
+store, checked only against PyPI (version, license, date). `/mandao-specify` then checked it on the
+machine: the pyenv Python 3.13.4 cannot load SQLite extensions (`AttributeError`), and the embeddings
+dependency has no build for Python 3.15. The approved architecture had to be reopened (`sqlite-vec` →
+Qdrant local mode) in the middle of the first spec, through `/mandao-constitution` in active mode. Fix: the
+constitution verifies every stack choice it writes the way specify's Premise Ledger does (install or import
+it on the project's runtime, record the command, its output and the runtime version), states the runtime it
+was checked on and pins it (`.python-version`, `engines`, …), and marks an unchecked choice `UNVERIFIED`
+so approval shows it. Portability across the runtimes teammates or CI may use is part of the check
+when the project must run locally.
+
+**A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
+(active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
+clarification C-3, `design.md` (D4, D11) and `data-model.md`; the agent pointed at `/mandao-clarify` by
+hand. Fix: a constitution change made from inside a spec lists the spec documents it contradicts (from the
+spec's references to the changed constitution items) and `next` recommends the update before approval,
+with the exact command.
+
+**Roles assume a team; a solo maintainer is a PE (maintainer, 2026-10-23).** The constitution templates
+set `owner: PO` (product, business rules) and `owner: tech lead` (architecture), and the commands ask "the
+PO decides" or "the tech lead decides". The maintainer works alone and signs every decision as PE
+(Product Engineer); the agent only wrote "PE" because it was told. Fix: a configurable role map (e.g.
+`roles: { po: PE, tech_lead: PE }` in `.mandao/config.yml`, asked at `init`), used by the templates'
+`owner`, the questions and every recorded attribution.
+
+**Dependency policy and audit on a real stack (2026-10-23).** In MDO-0001's T3 the constitution's rule
+"only MIT, Apache-2.0 or BSD" stopped the task on transitive dependencies every Python stack carries
+(certifi, tqdm, pathspec under MPL-2.0; typing_extensions under PSF-2.0; py_rust_stemmers with no license
+metadata, MIT in its repository). The PE had to grant an exception for the whole spec. Then the first
+`pip-audit`, run only because the PE chose it, found 35 CVEs in a transitive (pillow 12.3.0 via fastembed),
+accepted as unreachable with a review trigger. Fixes: the constitution template separates direct from
+transitive dependencies and lists the usual weak-copyleft and PSF licenses for unmodified transitives;
+the proposed gates include `audit` (e.g. `pip-audit`, `npm audit`) next to format, lint, typecheck and
+test (phase 17); an accepted vulnerability is recorded with its reachability reason and review trigger,
+and close carries it to the delivery notes.
+
+Done when a stack choice cannot be approved without a recorded run on the project's runtime or an
+`UNVERIFIED` mark, and a constitution change from inside a spec makes `next` name the documents to update.
+
+## Phase 19 — Command documentation
+
+**Agreed (PE, 2026-10-26); after phase 16, which fixes the syntax `next` and the hand-overs use.**
+
 **Command arguments are not documented in the project (maintainer, 2026-10-23).** `mandao start` suggested
 `--depth lite` and the user could not tell what `--depth` does or which values exist. The per-command
 pages (`docs/commands/<command>.md`: arguments, values, defaults, outputs, steps) live only in the GitHub
@@ -745,224 +992,37 @@ prose. The agent commands' pages (`docs/commands/<command>.md`) list arguments l
 - Each agent command page lists its arguments and flags one per line: syntax as typed (`--depth lite`),
   values, default, an example; one syntax used everywhere (pages, hand-overs, `next`).
 - One index in the docs with every agent command and every CLI command, linking their pages; the installed
-  guide carries the same index (see the item above).
+  guide carries the same index.
 
-**The constitution approves stack choices without checking them in the environment (maintainer,
-2026-10-23).** During `/mandao-constitution` the maintainer and the agent chose `sqlite-vec` as the vector
-store, checked only against PyPI (version, license, date). `/mandao-specify` then checked it on the
-machine: the pyenv Python 3.13.4 cannot load SQLite extensions (`AttributeError`), and the embeddings
-dependency has no build for Python 3.15. The approved architecture had to be reopened (`sqlite-vec` →
-Qdrant local mode) in the middle of the first spec, through `/mandao-constitution` in active mode. Fix: the
-constitution verifies every stack choice it writes the way specify's Premise Ledger does (install or import
-it on the project's runtime, record the command, its output and the runtime version), states the runtime it
-was checked on and pins it (`.python-version`, `engines`, …), and marks an unchecked choice `UNVERIFIED`
-so approval shows it. Portability across the runtimes evaluators or teammates may use is part of the check
-when the project must run locally.
+Done when the derived-docs check fails on an undocumented command or flag and the installed guide lists
+every command's arguments.
 
-**The research gate blocks without a declared web-search MCP (2026-10-23).** In MDO-0001 the gate kept
-research item R3 blocked because no web-search MCP server is declared, although Claude Code has native web
-search (`doctor` says "possible native support does not count") and a premise run on the machine (P2) had
-already proved the point. The user had to be told to type an explicit acceptance. Fix: the gate offers, as
-one of its own options, accepting a recorded premise run as the evidence (recorded as the PO's decision),
-and says plainly what declaring a web-search server would change. Once that exception is recorded, the gate
-and `run next` must treat the item as resolved: today the gate keeps flagging R3/R5 and `next` keeps
-recommending `/mandao-specify` after the PO accepted the local evidence, so the user has to ignore the
-recommended step to approve. After 15 of 15 tasks, `next` still pointed back to `/mandao-specify`, saying
-R3 relies on model knowledge without web evidence, although R3 in `research.md` cites sqlite.org; the gate
-must name the exact claim it rejects and why the cited source does not count.
+## Phase 20 — Minor fixes
 
-**A reopened constitution leaves the spec contradicting it (2026-10-23).** After `/mandao-constitution`
-(active mode) replaced `sqlite-vec` with Qdrant, MDO-0001 still described in-memory similarity in its
-clarification C-3, `design.md` (D4, D11) and `data-model.md`; the agent pointed at `/mandao-clarify` by
-hand. Fix: a constitution change made from inside a spec lists the spec documents it contradicts (from the
-spec's references to the changed constitution items) and `next` recommends the update before approval,
-with the exact command.
+**Agreed (PE, 2026-10-26).** Independent of phases 16–19; can go in any free slot.
 
-**Roles assume a team; a solo maintainer is a PE (maintainer, 2026-10-23).** The constitution templates
-set `owner: PO` (product, business rules) and `owner: tech lead` (architecture), and the commands ask "the
-PO decides" or "the tech lead decides". The maintainer works alone and signs every decision as PE
-(Product Engineer); the agent only wrote "PE" because it was told. Fix: a configurable role map (e.g.
-`roles: { po: PE, tech_lead: PE }` in `.mandao/config.yml`, asked at `init`), used by the templates'
-`owner`, the questions and every recorded attribution.
+- **The quick log says "this commit" instead of a hash.** Each row of `quick/quick-log.md` is written inside
+  the commit it records, so its Commit column reads "this commit"; for a reader of the table it identifies
+  nothing. Fix: readers derive the hash from git (the commit that added the row), or the row is completed
+  with the hash right after the commit.
+- **PR sizing counts lockfiles.** The PR plan of MDO-0002 proposed 4 stacked PRs from 4,766 changed lines,
+  most of them `package-lock.json`. Line counts for PR sizing must leave out lockfiles and generated files.
+- **Low-severity findings are lost.** The Reviewers' low-severity findings in MDO-0002 were not logged as
+  advisories ("Mandao logged none"); they live only in the review files, so the summary cannot list them.
+  Every open finding, whatever its severity, must reach the spec's record and the closing summary.
+- **A task closed by evidence alone.** MDO-0001's T11 and T12 needed no new code (their evidence is an
+  independent inspection and recorded mutations), and Mandao recorded them as "implemented by the Leader"
+  (`self`), which reads as if the Leader wrote code. Such a task needs its own label.
+- **Reference fixes apply to the whole spec.** At MDO-0001's close, the swapped spec references (security
+  vs interface IDs) were fixed only in `story.md`; `design.md`, `data-model.md` and `tasks.md` kept the
+  wrong IDs because the PE's answer "only covered the story". A reference fix applies to every document of
+  the spec that carries it; `trace` flags IDs that differ across documents.
 
-**Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
-leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks
-them up: MDO-0001's tasks were written with "no gate commands declared, each task is verified with its own
-`uv run pytest …`", so the first implementation would run with no lint, format or typecheck gate. Fix: the
-task that creates the manifest declares the gates (proposed from the stack in `standards.md`, approved by
-the PE), and `tasks`/`implement` refuse to start, or say so plainly, while `projects[].gates` is empty on a
-project whose constitution lists gates as OPEN. The proposal must include every gate a later command
-requires: in MDO-0001 the PE approved four gates in T1, and `run commit` then stopped asking for a `build`
-gate (answered `build: none`); that question belongs in the same approval. Later, delivery 1's checkpoint
-stopped on `SECURITY_GAPS` (tasks tagged security, no secrets or SAST gate): the constitution had already
-recorded secrets and SAST as `unknown` but proposed no gate, so the PE had to configure `secrets`, `sast`
-and `audit` mid-implementation. The constitution proposes them with the other gates.
-In MDO-0002 (frontend), `tasks` planned T1 so that its own `build` gate could not pass: `index.html` loads
-`src/main.tsx`, which the plan gave to T3, and the agent had to ask how to handle it. `tasks` must check
-that the first task's declared files satisfy every gate it will run (entry files for `build`, a test for
-`test`), adding the minimal file to that task's list.
+## Infrastructure lane
 
-**Too slow to reach implementation (maintainer, 2026-10-23).** "I need agility: we are only now going to
-implement spec 1. Depending on how this ends, if it is still this slow I move to Spec Kit." From the
-constitution to the first `implement` of a technical test took many turns, most of them spent on the flow
-defects above (intake hand-over, `start`, the worktree, reopened constitution, research gate, undeclared
-gates) and on manual corrections between commands. Measure it: count the PE's turns and the minutes from
-`story --from` to the first `implement` on this trial, set a target, and make the end-to-end test of this
-section assert it. Pending constitution adjustments, gates and approvals should batch into one step when
-they can.
-
-**Deliver with an externally required structure (PE, 2026-10-23).** The technical test requires, per
-feature, `especificaciones/001-caracteristica/especificacion.md` (context, objective, scope, functional and
-non-functional requirements, risks, Gherkin AC), `plan.md` (architecture, components, testing strategy) and
-`tareas.md`. Mandao writes `story.md`, `requirements.md`, `design.md`, `data-model.md` and `tasks.md`,
-with those sections spread across them; only the folders could be renamed (`paths`). Decision for the
-trial: keep Mandao's files and, at close, write in each spec folder short files with the required names
-that point to the file and section holding each required point. Fix in Mandao: a configurable delivery
-view (`deliverables:` mapping required file names and sections to Mandao's documents) that `close` writes
-and `verify` checks for completeness, so a required section with no source shows up before delivery.
-
-**A stale pending commit blocks the next task (2026-10-23).** In MDO-0001, T1 was committed (`b3ad4ed`)
-after the `build: none` gate was added in its own commit (`de1b081`). `_log/state.yml` kept T1's earlier
-`pending_commits` entry, whose manifest (taken before `.mandao/config.yml` and the lock changed) no longer
-matches HEAD; no Mandao script can remove it, and T2 could not start because it touches a file of that
-entry. The only way on was a hand edit of `state.yml`, recorded as a discrepancy. Fix: `run commit` (or a
-reconcile step in `checkpoint`) recognises an entry whose task is already committed, by its `Task:`
-trailer, and closes it, reporting the files that differ; a gate added mid-task refreshes the pending
-manifest instead of leaving it stale.
-
-**One task per session is too slow (PE, 2026-10-23).** "Imagine, I have only just finished 1 of 11." T1
-of MDO-0001 took the whole session and ended with a second session cut (135k tokens; "saving" $2.41), after
-the first cut before T1. On a subscription those savings are list-price equivalents, not money, while every
-cut costs the PE time. Fixes: the session-cut advice weighs the cost basis (on a subscription, cut only
-for context limits, not for equivalent savings) and `init` asks for `session.cut_min_savings` instead of
-defaulting to $1; the Leader keeps its own context small (delegates reading and gate output to
-subagents) so one session covers several tasks; `implement` continues from task to task without stopping
-unless a decision is needed. Evidence: after the PE raised `session.cut_min_savings` to 50, `implement`
-ran several tasks in a row and the PE noticed the speed-up at once.
-
-**Friction seen in T1 (2026-10-23):**
-- The red runs and the test gate called bare `pytest` although the approved gate is `uv run pytest`; the
-  agent had to put `.venv/bin` on `PATH`. Red runs must use the project's declared test gate command.
-  **Severe (MDO-0001 T17):** `run red` recorded a red run whose only failure was `pytest: command not found`
-  (exit 127). An infrastructure failure was accepted as TDD red evidence; the agent noticed and recorded it
-  again. A red run must count only test failures (collected tests that fail), never a missing runner,
-  exit 127, a collection error or a crash.
-- The commit script refused `.mandao/mandao.lock` inside the task commit, so the lock went in a separate
-  `chore` commit (`de1b081`); a lock change caused by the task's own approved gate change belongs with it.
-- The hand edit of `state.yml` was flagged as a discrepancy but its reason was not recorded; the reason
-  had to go in a commit message. A recorded discrepancy must carry the PE's reason.
-
-**The PE moved to Spec Kit in parallel (PE, 2026-10-23).** "It took too long. I think in parallel with
-Spec Kit." State when it happened: MDO-0001 had 1 of 12 tasks committed (T1) and T2 in progress, after the
-constitution, an intake, a story, a standard spec with a reopened constitution, and two session cuts in the
-first task. The same technical test is now run with Spec Kit in a separate folder, reusing the approved
-decisions. Use it as a benchmark: time and PE interventions to the first implemented task, cost, and
-coverage of the test's requirements in both runs; record the numbers here and make the items above
-(hand-overs, manual git, session cuts, gates) the first phase after the beta.
-
-**Dependency policy and audit on a real stack (2026-10-23).** In MDO-0001's T3 the constitution's rule
-"only MIT, Apache-2.0 or BSD" stopped the task on transitive dependencies every Python stack carries
-(certifi, tqdm, pathspec under MPL-2.0; typing_extensions under PSF-2.0; py_rust_stemmers with no license
-metadata, MIT in its repository). The PE had to grant an exception for the whole spec. Then the first
-`pip-audit`, run only because the PE chose it, found 35 CVEs in a transitive (pillow 12.3.0 via fastembed),
-accepted as unreachable with a review trigger. Fixes: the constitution template separates direct from
-transitive dependencies and lists the usual weak-copyleft and PSF licenses for unmodified transitives;
-the proposed gates include `audit` (e.g. `pip-audit`, `npm audit`) next to format, lint, typecheck and
-test; an accepted vulnerability is recorded with its reachability reason and review trigger, and close
-carries it to the delivery notes.
-
-**Internal logs in the deliverable tree (2026-10-23).** The intake's cost and telemetry went to
-`especificaciones/quick/_log/` because no spec existed yet; next to `MDO-0001-…` it reads as a third
-feature named "quick" in a tree an evaluator inspects. Mandao's own logs that belong to no spec should
-live outside `paths.specs` (e.g. under `.mandao/`).
-
-**Parallel specs do not share the project's current state (2026-10-23).** The PE started MDO-0002 (the
-frontend) in parallel with MDO-0001. `mandao start` cut it from `main`, so it lacked everything MDO-0001 had
-changed in shared files: the reopened constitution (Qdrant, the error table, "Fuente" with excerpt), the
-intake proposal, and `.mandao/config.yml` (the session-cut threshold the PE raised for speed, the gates,
-`build: none`). Its sessions ran with the old threshold and its Reviewer would check against the old
-constitution; the agent had to copy those files from the other branch by hand. Fix: shared project state
-(constitution, `.mandao/config.yml`, intake proposals) changes through its own short path to `main`
-(e.g. a `chore` PR that `start` and `constitution` propose when a spec edits them), and `start` warns
-when another open spec branch holds unmerged changes to those files, offering to carry them.
-
-**`<this harness>` is never filled in (PE, 2026-10-23).** The installed Claude Code commands say
-`--harness <this harness>` 23 times across 9 commands (clarify, close, implement, quick, resume, specify,
-story, tasks, verify); the adapter knows the harness but leaves the placeholder. The agent guesses
-`--harness claude-code`, Mandao answers `Unknown harness "claude-code"` (`src/cli/spec-context.ts:19`,
-without listing the valid ids, unlike `init`), and that error became the title of the PE's Claude Code
-tabs. Fix: each adapter renders the placeholder as its own id (`claude`, `codex`, `copilot`, …), with a
-content test that no rendered file keeps `<this harness>`; the error lists the valid ids; consider
-accepting `claude-code` as an alias.
-
-**Seen at the end of MDO-0002's implement (2026-10-23):**
-- The Reviewers' low-severity findings were not logged as advisories ("Mandao logged none"); they live only
-  in the review files, so the summary cannot list them. Every open finding, whatever its severity, must
-  reach the spec's record and the closing summary.
-- Each task needed an extra `docs` commit for its `tasks.md` edits (status moves, file lists the Reviewer
-  asked for, a kind change), because the commit script refuses spec changes it did not record itself.
-  Spec bookkeeping the process itself causes belongs in the task's commit.
-- Tests ran from the repository root, where the `web` project's Vitest config never loads; the agent had to
-  add `tests.impacted` for `web`. In a monorepo, test commands run from each project's folder, as gates do.
-  The `format` and `lint` gates did not cover `tests/web/` either.
-- One deferred e2e run was logged three times (once per checkpoint). Then verify stayed `blocked` only
-  because T4's e2e were "deferred to CI" and the repository has no CI, although the same e2e had just
-  passed locally against the real backend (4/4, in the same report). A recorded local run of the deferred
-  suite must clear the deferral, and a project without CI must not be blocked forever by one.
-- The PR plan proposed 4 stacked PRs from 4,766 changed lines, most of them `package-lock.json`. Line
-  counts for PR sizing must leave out lockfiles and generated files.
-
-**Seen at the end of MDO-0001's implement (2026-10-23):**
-- `run commit` refuses the `[x]` box that its own `--done` writes in `tasks.md`; the agent committed it
-  separately in every task.
-- The `test` gate passed a data file (`tests/fixtures/consultas.json`) to pytest, which exits 4 ("no tests
-  collected"); the agent validated T10 by running the suite by hand. Gates must pass only test files.
-- There is no `eval` gate: the PE's approved evaluation gate (`uv run pytest -m eval`, real embeddings
-  model) went into the `metrics` slot. Model and quality evaluations need their own named gate.
-- T11 and T12 needed no new code (their evidence is an independent inspection and recorded mutations), and
-  Mandao recorded them as "implemented by the Leader" (`self`), which reads as if the Leader wrote code.
-  A task closed by evidence alone needs its own label.
-- After 12 of 12 tasks, `run next` still recommends `/mandao-specify` for research gate R3, which the PE had
-  accepted in C-7 (already listed above: an accepted exception must clear `next`).
-
-**Commands cannot chain (PE, 2026-10-23).** The PE asked MDO-0001's session to go from clarify to
-implement to verify "without stopping between steps"; the agent answered that it cannot launch
-`/mandao-implement` itself ("it is a command you have to run"), so every step hands control back to the PE.
-With two specs in parallel this doubles the PE's turns. Fix: a command may continue into the next one
-`run next` recommends when the PE asked for it (an explicit "chain" answer or flag), within the same
-session, stopping only at the decisions the process reserves to the PE.
-
-**Per-task cost depends on the agent remembering (2026-10-23).** In MDO-0002 the agent did not record the
-cost before each task commit, as the rule asks, and recorded it once at the end. Cost recording must be
-part of the script the commit already runs (`run commit` records it or refuses), not a step the agent can
-skip.
-
-**Seen at MDO-0001's close (2026-10-23):**
-- Close fixed the swapped spec references (security vs interface IDs) only in `story.md`; `design.md`,
-  `data-model.md` and `tasks.md` kept the wrong IDs because the PE's answer "only covered the story". A
-  reference fix applies to every document of the spec that carries it.
-- Delivery had to be handed to the PE as a terminal command (`mandao deliver` asks interactively), once
-  more breaking the in-session flow; it should run inside the session with its questions asked there.
-- `mandao worktree clean`, run from an agent session after the merge, listed MDO-0001 as "merged clean"
-  but stopped at an interactive confirmation it could not get (no terminal) and removed nothing; the
-  worktree was removed with `git` by hand. Without a TTY it needs a `--yes` path or a refusal that says so.
-
-**No light lane for an infrastructure change (PE, 2026-10-23).** Adding a GitHub Actions workflow (the
-project's existing gates in CI) was refused by `/mandao-quick`: it touches the constitution's CI status,
-adds pinned third-party actions and spans backend and frontend. The proposed path was a full spec, so the PE
-implemented CI outside Mandao. Fix: an infrastructure lane for changes that wire existing gates into CI (or
-similar tooling) with a short checklist (pin actions, licence check, update `infrastructure.md` with
-approval) instead of the spec cycle.
-
-**`deliver` refuses a quick created without `start --quick` (2026-10-23).** A UI quick change was made
-on its own branch and worktree, committed with its quick-log row and cost, reviewed (PASS), and then
-`mandao deliver quick/<slug>` failed because the quick had no start record. Either `quick` creates the
-start record when it creates the branch, or `deliver` works from the quick-log row and the branch.
-
-**The quick log says "this commit" instead of a hash (PE, 2026-10-23).** Each row of
-`quick/quick-log.md` is written inside the commit it records, so its Commit column reads "this commit";
-for a reader of the table it identifies nothing. Fix: readers derive the hash from git (the commit that
-added the row), or the row is completed with the hash right after the commit.
-
-Done when the end-to-end test (intake → first story → specify → implement) passes with no git command
-outside Mandao, for both the in-place and the worktree path, and the guide documents no manual git step.
+**Agreed (PE, 2026-10-23); after phase 20.** Adding a GitHub Actions workflow (the project's existing gates
+in CI) was refused by `/mandao-quick`: it touches the constitution's CI status, adds pinned third-party
+actions and spans backend and frontend. The proposed path was a full spec, so the PE implemented CI outside
+Mandao. Fix: an infrastructure lane for changes that wire existing gates into CI (or similar tooling) with
+a short checklist (pin actions, licence check, update `infrastructure.md` with approval) instead of the spec
+cycle.
