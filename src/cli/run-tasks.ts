@@ -5,12 +5,14 @@ import { docPath, LITE_DOC } from '../scripts/spec-log.js';
 import {
   blockingMarkers,
   deliveryReport,
+  parseTasks,
   planTasks,
   TASK_KINDS,
   taskGateIssues,
   taskIndex,
   taskLayoutIssues,
   withIndex,
+  withTaskFields,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
@@ -52,5 +54,22 @@ export function registerTasks(run: Command, ctx: CliContext) {
           ...taskGateIssues(spec.tasks, config.projects),
         ],
       });
+    });
+
+  run
+    .command('task-files <spec> <task>')
+    .description("Add files to a task's declared files and set its kind in tasks.md (rides with the task commit)")
+    .option('--add <paths...>', 'files to add to the task')
+    .option('--kind <kind>', `the task's kind (${TASK_KINDS.join(' | ')})`)
+    .action((ref: string, id: string, o: { add?: string[]; kind?: string }) => {
+      if (!o.add?.length && o.kind === undefined) throw new Error('give --add <paths...> or --kind <kind>');
+      const { spec } = loadSpec(ctx, ref);
+      const file = docPath(spec.dir, 'tasks');
+      writeText(
+        file,
+        withTaskFields(readFileSync(file, 'utf8'), id, { ...(o.add ? { add: o.add } : {}), ...(o.kind ? { kind: o.kind } : {}) }),
+      );
+      const task = parseTasks(readFileSync(file, 'utf8')).tasks.find((t) => t.id === id)!;
+      json({ task: id, files: task.files, kind: task.kind });
     });
 }

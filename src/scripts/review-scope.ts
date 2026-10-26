@@ -47,7 +47,8 @@ const contentSource = (p: string) => p === '.mandao/config.yml' || /^(core|\.man
  *   when any Mandao content source (`core/`, `.mandao/overrides/`, `.mandao/config.yml`) is declared or
  *   reviewed in the same task (command and persona renders embed shared rules and blocks). A Mandao upgrade
  *   that changed no source (only the version) leaves its regenerated files out of scope.
- * - the lock (`home` is the workspace root): in scope only when an in-scope generated file changed with it.
+ * - the lock (`home` is the workspace root): in scope when an in-scope generated file changed with it, or when
+ *   the task declares or changed `.mandao/config.yml`.
  */
 export function outOfScope(files: string[], declared: string[], scope: ReviewScope, repo: string, home: string): string[] {
   const homeInRepo = posixPath(relative(repo, home));
@@ -67,8 +68,10 @@ export function outOfScope(files: string[], declared: string[], scope: ReviewSco
     });
   const generated = new Set(scope.receipts.filter((r) => anyContent || originSources(r.origin).some(sourceChanged)).map((r) => r.path));
   const lock = lockPath(repo, home);
-  const generatedInScope = files.some((f) => generated.has(f));
-  return files.filter((f) => !(isDeclared(f) || reviewed.has(f) || generated.has(f) || (f === lock && generatedInScope))).sort();
+  // The lock rides with an in-scope generated file, or with the task's own config change (phase 17; MDO-0001
+  // T1 had to put the lock of its build gate in a separate chore commit).
+  const lockInScope = files.some((f) => generated.has(f)) || sourceChanged('.mandao/config.yml');
+  return files.filter((f) => !(isDeclared(f) || reviewed.has(f) || generated.has(f) || (f === lock && lockInScope))).sort();
 }
 
 /**

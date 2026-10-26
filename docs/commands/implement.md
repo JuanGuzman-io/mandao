@@ -38,6 +38,7 @@ No approval step of its own.
 
 ## Scripts (no tokens)
 
+- `mandao run task-files`
 - `mandao run where`
 - `mandao run next`
 - `mandao run models`

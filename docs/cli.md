@@ -52,6 +52,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 | `mandao run spec-new <title...>` | `--id <id>` · `--type <type>` (default: story) · `--project <name>` · `--hotfix` · `--harness <id>` (default: claude) · `--first <command>` · `--create` · `--worktree` · `--no-install` · `--no-baseline` · `--carry-from <branch>` · `--discard` · `--yes` | Propose the id, folder, branch, base and worktree for a new spec |
 | `mandao run branching` | `--project <name>` | The branching model in force, and the model the existing branches suggest (ADR 0023) |
 | `mandao run tasks <spec>` | `--index` · `--write` | Validate tasks.md, compute waves and the next eligible task; --index prints the generated Overview |
+| `mandao run task-files <spec> <task>` | `--add <paths...>` · `--kind <kind>` | Add files to a task's declared files and set its kind in tasks.md (rides with the task commit) |
 | `mandao run trace <spec>` | — | AC → FR → scenario → task → test matrix and structural findings |
 | `mandao run brief <spec> <task>` | `--harness <id>` (default: claude) | Scoped brief for one task: clauses, files, exemplar, gates, skills, models, lenses, impacted tests |
 | `mandao run loop <spec> <task>` | `--harness <id>` (default: claude) | The Leader's next step for a task: implement, review, rework, commit, halt |

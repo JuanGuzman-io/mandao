@@ -21,7 +21,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
-scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
+scripts: [task-files, where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -140,7 +140,9 @@ their short JSON, and decide; never paste their full output into the conversatio
    step 4 results (a read-only reviewer cannot run tests) and the active lenses
    (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`):
    `{{script:review-pack}} {{arg:spec}} <Tn>` writes all of it to one file, covering only the task's changes (its declared
-   files; name any other file of this task with `--include <paths>`; changes of other tasks stay out); send the Reviewer only its
+   files; name any other file of this task with `--include <paths>`; changes of other tasks stay out). When the Reviewer asks to
+   declare a file or change the kind, run `{{script:task-files}} {{arg:spec}} <Tn> --add <paths> [--kind <kind>]`, never edit tasks.md by
+   hand: the edit rides with the task commit. Send the Reviewer only its
    path. Who reviews comes from `loop`:
    - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
      and records itself: save the brief to a file, then

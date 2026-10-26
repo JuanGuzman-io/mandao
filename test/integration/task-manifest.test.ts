@@ -104,4 +104,22 @@ describe("a task's manifest covers the task only (phase 17)", () => {
     const { pack } = await run(root, 'review-pack', 'MDO-0001', 'T2', '--include', 'src/cli/format.ts');
     expect(packManifest(root, pack)).toEqual(['src/cli/format.ts', 'src/cli/skills.ts']);
   });
+  test('a task that declares the config takes the lock its approved change regenerates (MDO-0001 T1: build none)', async () => {
+    const root = workspace();
+    await run(root, 'task-files', 'MDO-0001', 'T2', '--add', '.mandao/config.yml');
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'mandao', path: '.', gates: { build: 'none', lint: 'true' } }],
+      harnesses: ['claude'],
+      diagrams: { engine: 'mermaid' },
+    });
+    syncProject(root);
+    put(root, { 'notes/unrelated.md': 'someone else\n' });
+    const { pack } = await run(root, 'review-pack', 'MDO-0001', 'T2');
+    const paths = packManifest(root, pack);
+    expect(paths).toContain('.mandao/config.yml');
+    expect(paths).toContain('.mandao/mandao.lock');
+    expect(paths).not.toContain('notes/unrelated.md');
+  });
 });
