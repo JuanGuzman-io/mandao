@@ -204,6 +204,8 @@ export interface SpecProposal {
   command: string;
   /** Problems to show the user before confirming (e.g. the base branch does not exist). */
   issues: string[];
+  /** The explicit id's branch already exists with no spec or worktree: `command` checks it out instead of creating it. */
+  reusesBranch?: true;
 }
 
 export interface ProposalOptions {
@@ -227,6 +229,10 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
   const issues = branchExists(root, base)
     ? []
     : [`base branch "${base}" does not exist here: create it, or set branching.base in .mandao/config.yml (model ${b.model})`];
+  const existing = opts.id && branchExists(root, branch) ? existingBranch(root, config, branch, opts.id) : undefined;
+  if (existing === 'taken')
+    issues.push(`branch "${branch}" already exists with a spec or a worktree: resume that spec or pick another --id`);
+  const reuse = existing === 'reusable';
   return {
     id,
     slug,
@@ -234,9 +240,24 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
     branch,
     base,
     worktree,
-    command: `git worktree add -b ${branch} ${JSON.stringify(worktree)} ${base}`,
+    command: reuse
+      ? `git worktree add ${JSON.stringify(worktree)} ${branch}`
+      : `git worktree add -b ${branch} ${JSON.stringify(worktree)} ${base}`,
     issues,
+    ...(reuse ? { reusesBranch: true as const } : {}),
   };
+}
+
+/**
+ * An explicit id's branch that already exists: reusable when it holds no spec folder for the id and no worktree
+ * has it out (a spec started by hand, MDO-0001 trial), else taken. Allocation without --id still skips it.
+ */
+function existingBranch(root: string, config: Config, branch: string, id: string): 'reusable' | 'taken' {
+  const ref = gitLines(root, ['rev-parse', '--verify', '--quiet', branch]).length ? branch : `origin/${branch}`;
+  const folders = gitLines(root, ['ls-tree', '-d', '--name-only', ref, '--', `${config.paths.specs}/`]);
+  const hasSpec = folders.some((f) => basename(f) === id || basename(f).startsWith(`${id}-`));
+  const checkedOut = gitLines(root, ['worktree', 'list', '--porcelain']).includes(`branch refs/heads/${branch}`);
+  return hasSpec || checkedOut ? 'taken' : 'reusable';
 }
 
 /** Allowed status moves; `abandoned` is reachable from anything but `closed`. */
