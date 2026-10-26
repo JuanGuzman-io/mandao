@@ -27,7 +27,7 @@ import {
   withStatus,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
-import { currentHashes, withConstitution } from './approval-hashes.js';
+import { approver, budgetTo, currentHashes, withConstitution } from './approval-record.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { frontField, taskBlockers, withInvocations } from './next-invocations.js';
@@ -35,18 +35,6 @@ import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
 import { implementSession } from './session-advice.js';
 import { harnessOption } from './spec-context.js';
-
-/** Who approves: the person at the terminal, as git knows them; never a model. */
-function approver(cwd: string, by?: string): string {
-  if (by) return by;
-  try {
-    const name = execFileSync('git', ['config', 'user.name'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
-    if (name) return name;
-  } catch {
-    // no git identity: fall back to the OS user
-  }
-  return process.env.USER ?? process.env.USERNAME ?? 'unknown';
-}
 
 function researchIssuesFor(
   root: string,
@@ -142,13 +130,9 @@ interface ApproveOptions {
   revoke?: boolean;
   annul?: string;
   reason?: string;
-}
-
-function budgetTo(to: string | undefined): number | 'none' {
-  if (to === 'none') return 'none';
-  const n = Number(to);
-  if (!(n > 0)) throw new Error('budget needs --to <USD> (the total this spec may spend) or --to none (no cap)');
-  return n;
+  package?: string;
+  id?: string;
+  review?: string;
 }
 
 const readApprovals = (spec: SpecFolder) => readApprovalLog(spec.dir);
@@ -221,7 +205,8 @@ export function nextFor(
 /** Appends the approval to the spec's approvals and returns it. */
 function recordApproval(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder, step: ApprovalStep, o: ApproveOptions) {
   const docs = documentsFor(spec, step).map((f) => f.slice(spec.dir.length + 1));
-  const note = step === 'security-gaps' ? o.reason : o.byRunning ? `approved by running ${o.byRunning}` : o.note;
+  const note =
+    step === 'security-gaps' || step === 'vulnerability' ? o.reason : o.byRunning ? `approved by running ${o.byRunning}` : o.note;
   const design = step === 'design' || step === 'spec';
   const own = currentHashes(spec.dir, design ? [...docs, MOCKUPS_DIR] : docs);
   const hashes = design ? withConstitution(root, config, spec, own) : own;
@@ -234,6 +219,7 @@ function recordApproval(root: string, config: ReturnType<typeof readConfig>, spe
       ...(o.words ? { words: o.words } : {}),
       ...(Object.keys(hashes).length ? { sha256: hashes } : {}),
       ...(step === 'budget' ? { to: budgetTo(o.to) } : {}),
+      ...(step === 'vulnerability' ? { vulnerability: { package: o.package!, id: o.id!, review: o.review! } } : {}),
     },
     o.by,
   );
@@ -376,6 +362,9 @@ export function registerApprove(program: Command, ctx: CliContext) {
     .option('--by-running <command>', 'approve because the person ran this command; asks first when something is open or changed')
     .option('--words <text>', 'with --by-running: what the person wrote next to the command, recorded verbatim')
     .option('--harness <id>', 'the harness running this session (default: claude)')
+    .option('--package <name>', 'vulnerability: the affected package and version')
+    .option('--id <id>', 'vulnerability: the advisory id (CVE, GHSA, PYSEC)')
+    .option('--review <trigger>', 'vulnerability: when to review the acceptance again')
     .action((ref: string, step: string, o: ApproveOptions) => {
       if (o.revoke && o.annul) throw new Error('--revoke and --annul are mutually exclusive');
       if (!o.annul && !(APPROVAL_STEPS as readonly string[]).includes(step))
@@ -384,6 +373,8 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const s = step as ApprovalStep;
       if (s === 'security-gaps' && !o.reason?.trim()) throw new Error('security-gaps approval needs --reason <why>');
+      if (s === 'vulnerability' && !o.revoke && ![o.package, o.id, o.reason, o.review].every((v) => v?.trim()))
+        throw new Error('vulnerability approval needs --package, --id, --reason and --review');
       if (approvalEvent(spec, config, s, o)) return;
       approveStep(ctx.root(), config, spec, s, o);
     });

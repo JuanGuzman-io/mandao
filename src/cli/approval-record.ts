@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { constitutionHash } from '../engine/constitution-hash.js';
@@ -19,4 +20,23 @@ export function currentHashes(dir: string, only?: string[]): Record<string, stri
 export function withConstitution(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder, hashes: Record<string, string>) {
   const hash = constitutionHash(root, config, spec.story?.meta.projects ?? []);
   return hash ? { ...hashes, [CONSTITUTION]: hash } : hashes;
+}
+
+/** Who approves: the person at the terminal, as git knows them; never a model. */
+export function approver(cwd: string, by?: string): string {
+  if (by) return by;
+  try {
+    const name = execFileSync('git', ['config', 'user.name'], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    if (name) return name;
+  } catch {
+    // no git identity: fall back to the OS user
+  }
+  return process.env.USER ?? process.env.USERNAME ?? 'unknown';
+}
+
+export function budgetTo(to: string | undefined): number | 'none' {
+  if (to === 'none') return 'none';
+  const n = Number(to);
+  if (!(n > 0)) throw new Error('budget needs --to <USD> (the total this spec may spend) or --to none (no cap)');
+  return n;
 }

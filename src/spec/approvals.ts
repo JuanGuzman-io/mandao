@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { sha256 } from '../util/hash.js';
 
 /** What a human approves without a model session (cost-conscious design, `mandao approve`). */
-export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close', 'budget', 'security-gaps'] as const;
+export const APPROVAL_STEPS = ['story', 'design', 'spec', 'tasks', 'close', 'budget', 'security-gaps', 'vulnerability'] as const;
 export type ApprovalStep = (typeof APPROVAL_STEPS)[number];
 
 export const approvalSchema = z
@@ -21,6 +21,8 @@ export const approvalSchema = z
     sha256: z.record(z.string(), z.string()).optional(),
     /** budget: the spend (USD) the person authorizes for this spec, or `none` to remove its cap (ADR 0036). */
     to: z.union([z.number().positive(), z.literal('none')]).optional(),
+    /** vulnerability: a known vulnerability accepted with its reachability reason (`note`) and when to review it (phase 18). */
+    vulnerability: z.object({ package: z.string().min(1), id: z.string().min(1), review: z.string().min(1) }).optional(),
     target_at: z.string().optional(),
     target_step: z.enum(APPROVAL_STEPS).optional(),
   })
@@ -30,6 +32,8 @@ export const approvalSchema = z
     if (row.step === 'revocation' && !row.target_step) ctx.addIssue({ code: 'custom', message: 'a revocation row needs target_step' });
     if (row.step === 'security-gaps' && !row.note?.trim())
       ctx.addIssue({ code: 'custom', message: 'security-gaps approval needs a reason in note' });
+    if (row.step === 'vulnerability' && (!row.vulnerability || !row.note?.trim()))
+      ctx.addIssue({ code: 'custom', message: 'vulnerability approval needs package, id, review and a reason in note' });
   });
 export type Approval = z.infer<typeof approvalSchema>;
 
@@ -76,4 +80,13 @@ export function specBudget(approvals: Approval[], perSpec: number | undefined): 
     .at(-1)?.to;
   if (last === 'none') return undefined;
   return last ?? perSpec;
+}
+
+/** The vulnerabilities accepted and still active, as the close summary records them (phase 18). */
+export function acceptedRisks(approvals: Approval[]) {
+  return activeApprovals(approvals).flatMap((a) =>
+    a.step === 'vulnerability' && a.vulnerability
+      ? [{ package: a.vulnerability.package, id: a.vulnerability.id, reason: a.note ?? '', review: a.vulnerability.review }]
+      : [],
+  );
 }

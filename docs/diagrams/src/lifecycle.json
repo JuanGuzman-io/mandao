@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "84801f186b7640fa0075be50518ced280249fc4b8401180f234aa817b9ad79c1"
+      "sha256": "0d65768698bf00ad7eecad124f09560f8eff4c0c7083b9333144ddbefcbf97d6"
     },
     {
       "path": "src/schemas/common.ts",

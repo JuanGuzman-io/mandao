@@ -33,6 +33,10 @@ export const closeSummarySchema = z.object({
     .default([]),
   /** Files outside the spec folder that close applied with approval; the close commit stages them (MDO-0011 D6). */
   applied: z.array(z.string().min(1)).default([]),
+  /** Known vulnerabilities accepted for this spec (`mandao approve <spec> vulnerability`), for the delivery notes (phase 18). */
+  accepted_risks: z
+    .array(z.object({ package: z.string().min(1), id: z.string().min(1), reason: z.string().min(1), review: z.string().min(1) }))
+    .default([]),
 });
 export type CloseSummary = z.infer<typeof closeSummarySchema>;
 
@@ -110,6 +114,7 @@ function deliveryLines(s: CloseSummary, links: CloseLink[]): string[] {
     ...(s.environments.length ? [`- Environments: ${joined(s.environments.map((e) => `${e.name} (${e.source}, ${e.at})`))}`] : []),
     ...(s.published.length ? [`- Published: ${joined(s.published.map((p) => `${p.target} ${p.kind} ${p.id}`))}`] : []),
     ...(s.applied.length ? [`- Applied: ${joined(s.applied.map((a) => `\`${a}\``))}`] : []),
+    ...s.accepted_risks.map((r) => `- Accepted risk: ${r.package} ${r.id} — ${r.reason} (review: ${r.review})`),
     ...links.map((l) => `- [${l.label}](${l.href})`),
   ];
 }

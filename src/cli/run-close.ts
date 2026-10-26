@@ -6,7 +6,7 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { resolveModels } from '../models/resolve.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitsSize, fixCommitsAfter, forcedRunCount, releaseBranchesContaining } from '../scripts/close.js';
-import { commitState, repoRoot, taskCommits, taskCommitTimes } from '../scripts/commits.js';
+import { repoRoot, taskCommits, taskCommitTimes } from '../scripts/commits.js';
 import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { measureSessions } from '../scripts/session-turns.js';
@@ -15,11 +15,8 @@ import { docPath, dropLogCache, hasExecutionLog, logPath, specLogInCache } from 
 import { specSpend } from '../scripts/spend.js';
 import { readTelemetryEvents } from '../scripts/telemetry.js';
 import {
-  acStatus,
   type BugsAfterMerge,
-  type CloseLink,
   type CloseSummary,
-  changelogLine,
   compareTdd,
   correctHistoricalCosts,
   costKaizen,
@@ -30,19 +27,17 @@ import {
   parseCosts,
   planTasks,
   prPlan,
-  renderCloseDocument,
   renderCloseSummary,
   sessionCutKaizen,
   specMetrics,
   splitDeliveries,
   summarizeTelemetry,
   unresolvedPremises,
-  upsertChangelog,
-  verifyResults,
   withEnvironment,
   withPublication,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
+import { closeLinks, writeCloseDocument } from './close-document.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerReleaseStatus } from './release-status.js';
@@ -233,46 +228,6 @@ function updatedSummary(config: ReturnType<typeof readConfig>, spec: SpecFolder,
     s = withEnvironment(s, o.env, o.source, now);
   }
   return s;
-}
-
-/** Links to what the close produced, only for files that exist, relative to the spec folder. */
-function closeLinks(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder): CloseLink[] {
-  const id = spec.story?.meta.id ?? spec.name;
-  // A version 2 close is the summary itself: no per-spec release or Kaizen document to point to (MDO-0011 D5).
-  const perSpec = specLogInCache(spec.dir)
-    ? []
-    : [
-        { label: 'Release notes', file: join(root, config.paths.releases, id, 'release-notes.md') },
-        { label: 'Technical notes', file: join(root, config.paths.releases, id, 'technical.md') },
-        { label: 'Kaizen', file: join(root, 'docs', 'kaizen', `${id}.md`) },
-      ];
-  const candidates = [
-    ...perSpec,
-    { label: 'Verify report', file: join(spec.dir, 'verify-report.md') },
-    { label: 'Quickstart', file: join(spec.dir, 'quickstart.md') },
-  ];
-  return candidates
-    .filter((c) => existsSync(c.file))
-    .map((c) => ({ label: c.label, href: relative(spec.dir, c.file).split(sep).join('/') }));
-}
-
-/** The Outcome section: each criterion as `release-status` reports it, never upgraded by hand. */
-function outcomeOf(config: ReturnType<typeof readConfig>, spec: SpecFolder): string[] {
-  if (!spec.story) return [];
-  const committed = commitState(spec, config.commits.trailers).committed;
-  const verify = verifyResults(readIf(join(spec.dir, 'verify-report.md')));
-  return acStatus(spec.story, spec.tasks, spec.execution, committed, verify).map((c) => `- ${c.ref}: ${c.status} (${c.why})`);
-}
-
-/** A version 2 close writes the document and, once closed, the spec's one CHANGELOG line (MDO-0011 D5). */
-function writeCloseDocument(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder, summary: CloseSummary) {
-  const file = join(spec.dir, 'close-summary.md');
-  writeText(file, renderCloseDocument(summary, readIf(file), outcomeOf(config, spec), closeLinks(root, config, spec)));
-  if (!summary.closed_at || !spec.story) return;
-  const log = join(root, 'docs', 'CHANGELOG.md');
-  const href = `${relative(join(root, 'docs'), spec.dir).split(sep).join('/')}/`;
-  const line = changelogLine(spec.story.meta.id, spec.story.title, spec.story.meta.type, summary.closed_at, href);
-  writeText(log, upsertChangelog(readIf(log), spec.story.meta.id, line));
 }
 
 function registerSummary(run: Command, ctx: CliContext) {
