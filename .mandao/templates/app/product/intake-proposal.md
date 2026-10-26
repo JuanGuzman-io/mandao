@@ -12,7 +12,7 @@ status: proposed         # proposed | closed (mandao intake close)
 
 ## Business context
 
-Applied to `docs/constitution/` item by item, only after approval. A contradiction is `CONFLICT`, never
+Applied to the constitution folder (`paths.constitution`) item by item, only after approval. A contradiction is `CONFLICT`, never
 an overwrite.
 
 | ID | Kind | Proposal | Target | Ref | Status |
@@ -31,6 +31,7 @@ an overwrite.
 - refs: [p. 1]
 - priority: Must
 - depends_on: []
+- group: G-1          # optional: stories of one group open as one spec
 - invest: <short note>
 #### AC-1 — <name>
 - GIVEN … / WHEN … / THEN …

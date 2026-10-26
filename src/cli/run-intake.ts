@@ -1,5 +1,5 @@
 import type { Command } from 'commander';
-import { checkIntake, extractIntake, intakeStory, openIntakeStory } from '../scripts/intake.js';
+import { answerIntakeQuestion, checkIntake, extractIntake, intakeStory, openIntakeStory } from '../scripts/intake.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 
@@ -54,6 +54,13 @@ export function registerIntakeScripts(run: Command, ctx: CliContext) {
     .description('Record the spec ID or tracker URL an intake story was opened as (JSON)')
     .requiredOption('--as <ref>', 'spec ID or tracker URL')
     .action((proposal: string, story: string, o: { as: string }) => json(openIntakeStory(ctx.root(), proposal, story, o.as)));
+  run
+    .command('intake-answer <proposal> <question>')
+    .description("Record the PE's answer to an OPEN or CONFLICT row of the proposal: its status becomes resolved (JSON)")
+    .requiredOption('--answer <text>', 'the answer, on one line')
+    .action((proposal: string, question: string, o: { answer: string }) =>
+      json(answerIntakeQuestion(ctx.root(), proposal, question, o.answer)),
+    );
   run
     .command('intake-story <proposal> <story>')
     .description('Prefill for /mandao-story --intake: the story, its AC, its open rows and the source (JSON)')

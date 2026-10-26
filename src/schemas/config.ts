@@ -165,6 +165,8 @@ export const configSchema = z
         specs: relPath.default('specs'),
         constitution: relPath.default('docs/constitution'),
         releases: relPath.default('docs/releases'),
+        /** Intake proposals of `/mandao-story --from` (phase 14; configurable since phase 16). */
+        intake: relPath.default('docs/product/intake'),
         /** Where spec worktrees live, relative to the workspace root; may sit outside it. `{repo}` = the root folder name. */
         worktrees: z.string().min(1).default('../{repo}.worktrees'),
       })
@@ -199,6 +201,8 @@ export const configSchema = z
     budget: z.object({ per_spec: z.number().positive().optional() }).prefault({}),
     /** Session cuts (ADR 0038): inside implement the Leader stops to suggest one only above this saving (USD). */
     session: z.object({ cut_min_savings: z.number().nonnegative().optional() }).prefault({}),
+    /** Phase 16: a command continues into the next one `run next` names unless a decision of the PE stops it. */
+    flow: z.object({ chain: z.boolean().default(true) }).prefault({}),
     /** Research evidence freshness and per-spec dispatch budget (Phase 8). */
     research: researchConfigSchema,
     /** Diagram engine is an explicit project choice; Archify is required by default. */

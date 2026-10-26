@@ -18,8 +18,11 @@ For a question that cannot be verified on the web, record a claim with no source
 `unverified (model knowledge)`. This evidence must not support a high-impact decision: architecture, data,
 security, public contracts, or a decision linked to a High premise.
 
-Each entry records its question, status (`open` or `resolved`), decision, rationale, alternatives,
+Each entry records its question, status (`open`, `resolved` or `accepted`), decision, rationale, alternatives,
 premise IDs, `checked_on`, `expires`, claims, and any contradictions. Keep the YAML frontmatter valid.
+Native web search of Claude Code, Codex and Antigravity counts as web search (ADR 0058); cite what it found.
+When the web cannot show a point and the PO accepts other evidence (a premise run `P<n>` or a clarification
+`C-<n>`), set `status: accepted` with `accepted_by`, `reason` and `evidence`; never mark it without the PO.
 
 Example entry shape (copy into the `entries` frontmatter list and replace every value):
 

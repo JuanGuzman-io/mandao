@@ -39,6 +39,7 @@
     "check": "npm run typecheck && npm run lint && npm test && npm run diagrams:check",
     "diagrams": "node scripts/diagrams/build.mjs",
     "diagrams:check": "node scripts/diagrams/check.mjs",
+    "docs:cli": "MANDAO_WRITE_CLI_DOCS=1 vitest run test/unit/cli-reference.test.ts",
     "changeset": "changeset",
     "release": "npm run build && node scripts/publish-tag.mjs",
     "prepublishOnly": "npm run check && npm run build",

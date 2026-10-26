@@ -23,7 +23,7 @@ import {
 } from '../schemas/index.js';
 import { type DetectedProject, type DetectedWorkspace, detectWorkspace } from '../workspace/detect.js';
 import { offerArchify } from './init-archify.js';
-import { chooseBudget } from './init-budget.js';
+import { chooseBudget, chooseCutThreshold } from './init-budget.js';
 import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
 import { offerSkills } from './init-skills.js';
@@ -48,6 +48,7 @@ export interface InitOptions {
   shadow?: boolean;
   /** USD per spec; `none` for no cap. Never defaulted: a person sets it (ADR 0036). */
   budget?: string;
+  cutMinSavings?: string;
   /** Copy the accepted skills' executable scripts too (C-2); off by default. */
   withScripts?: boolean;
 }
@@ -324,6 +325,7 @@ export async function runInit(root: string, opts: InitOptions) {
   const business = await chooseLanguage('business', opts.languageBusiness, opts.yes);
   const technical = await chooseLanguage('technical', opts.languageTechnical, opts.yes);
   const budget = await chooseBudget(opts.budget, opts.yes);
+  const cut = await chooseCutThreshold(opts.cutMinSavings, opts.yes);
 
   let home = '.';
   let localOnly: boolean | undefined;
@@ -349,6 +351,7 @@ export async function runInit(root: string, opts: InitOptions) {
     })),
     harnesses,
     ...budget,
+    ...cut,
   };
   const models = await chooseModels(root, harnesses, opts);
   const parsed = configSchema.safeParse(config);

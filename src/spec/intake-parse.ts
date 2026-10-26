@@ -36,6 +36,8 @@ export interface IntakeStory {
   depends_on: string[];
   invest?: string;
   opened?: string;
+  /** Stories of one group open as one spec (dependent AC, one deliverable; phase 16). */
+  group?: string;
   ac: IntakeAc[];
 }
 
@@ -128,6 +130,7 @@ function readStory(s: Section): IntakeStory | undefined {
     depends_on: parseIds(f.get('depends_on') ?? ''),
     ...optional('invest'),
     ...optional('opened'),
+    ...optional('group'),
     ac,
   };
 }

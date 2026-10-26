@@ -33,9 +33,10 @@ import {
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { frontField, withInvocations } from './next-invocations.js';
 import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
-import { newSessionAdvice } from './session-advice.js';
+import { implementSession } from './session-advice.js';
 import { harnessOption } from './spec-context.js';
 
 /** Who approves: the person at the terminal, as git knows them; never a model. */
@@ -212,14 +213,13 @@ export function nextFor(
   config: ReturnType<typeof readConfig>,
   harness: ReturnType<typeof harnessOption> = 'claude',
 ) {
-  const tasks = join(spec.dir, 'tasks.md');
-  const tasksStatus = existsSync(tasks) ? frontmatterOf(readFileSync(tasks, 'utf8')).data.status : undefined;
-  const report = join(spec.dir, 'verify-report.md');
-  const verdict = existsSync(report) ? frontmatterOf(readFileSync(report, 'utf8')).data.verdict : undefined;
+  const tasksStatus = frontField(spec.dir, 'tasks.md', 'status');
+  const verdict = frontField(spec.dir, 'verify-report.md', 'verdict');
   const delivery = spec.story?.meta.status === 'closed' ? deliveryOf(spec, config) : undefined;
   // The same design gates `approve design|spec` applies, so `next` never points past what approval refuses.
   const researchIssues = [...specPremiseFindings(spec.dir).map((f) => f.message), ...researchIssuesFor(root, spec, config, harness)];
-  return nextStep(spec, {
+  const next = nextStep(spec, {
+    chain: config.flow.chain,
     ...(typeof tasksStatus === 'string' ? { tasksStatus } : {}),
     ...(typeof verdict === 'string' ? { verifyVerdict: verdict } : {}),
     ...(delivery ? { delivery } : {}),
@@ -228,6 +228,7 @@ export function nextFor(
     hashes: currentHashes(spec.dir),
     ...(researchIssues.length ? { researchIssues } : {}),
   });
+  return withInvocations(next, spec.story?.meta.id ?? spec.name, harness);
 }
 
 /** Appends the approval to the spec's approvals and returns it. */
@@ -359,7 +360,7 @@ function approveStep(
   const statusChanged = approveDocuments(spec, step);
   const record = recordApproval(spec, step, options, docs);
   const commit = commitApproval(config, spec, step);
-  const newSession = step === 'spec' || step === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
+  const newSession = implementSession(config, harness, spec, step);
   const next = nextFor(root, readSpec(spec.dir), config, harness);
   json({
     ...(options.byRunning ? { result: 'go' } : {}),

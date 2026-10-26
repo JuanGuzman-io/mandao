@@ -37,6 +37,8 @@ export interface HarnessSession {
   newConversation?: string;
   /** Pure: the exact command that opens the harness in the worktree with the first mandao; `launch` when `--open` can run it. */
   resume(worktree: string, first: string): { text: string; launch?: string[] };
+  /** How a person or the agent types a mandao in this harness: `mandao-implement MDO-1` → `/mandao-implement MDO-1`. */
+  invoke(command: string): string;
 }
 
 /** A pure function from resolved canonical content to harness files. No I/O. */

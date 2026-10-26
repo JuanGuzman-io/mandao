@@ -45,6 +45,7 @@ export const copilotAdapter: Adapter = {
   id: 'copilot',
   name: 'GitHub Copilot',
   session: {
+    invoke: (command) => `/${command}`,
     enterWorktree: false,
     newConversation: 'New chat (⌘N / Ctrl+N)',
     resume: (worktree, first) => ({ text: `code ${JSON.stringify(worktree)}   # then run ${first} in Copilot Chat` }),

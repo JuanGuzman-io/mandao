@@ -47,11 +47,18 @@ const syntax: TokenSyntax = {
   command: (id) => `/${commandName(id)}`,
 };
 
+/** The spec-flow commands one may chain into the next (`run next` names them); the rest stay user-invoked. */
+const CHAINED = new Set(['story', 'specify', 'clarify', 'tasks', 'implement', 'verify', 'close']);
+
+/** `true` (frontmatter `disable-model-invocation`) unless the command is chained under flow.chain. */
+const userInvoked = (input: AdapterInput, id: string) => (input.config.flow.chain && CHAINED.has(id) ? undefined : true);
+
 /** Claude Code: commands become user-invoked skills, personas become subagents. */
 export const claudeAdapter: Adapter = {
   id: 'claude',
   name: 'Claude Code',
   session: {
+    invoke: (command) => `/${command}`,
     enterWorktree: true,
     newConversation: '/clear',
     resume: (worktree, first) => ({ text: `cd ${JSON.stringify(worktree)} && claude ${JSON.stringify(first)}`, launch: ['claude', first] }),
@@ -69,8 +76,8 @@ export const claudeAdapter: Adapter = {
         'argument-hint': argumentHint(cmd),
         arguments: cmd.meta.arguments.length ? cmd.meta.arguments.map((a) => a.name) : undefined,
         'allowed-tools': mapCapabilities(cmd.meta.capabilities, TOOLS).join(', ') || undefined,
-        // Mandaos are given explicitly; the model should not trigger them on its own.
-        'disable-model-invocation': true,
+        // Mandaos are given explicitly; with flow.chain the model may invoke the next flow command itself (phase 16).
+        'disable-model-invocation': userInvoked(input, cmd.meta.id),
         ...cmd.meta.harness.claude,
       });
       files.push({

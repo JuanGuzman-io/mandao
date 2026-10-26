@@ -27,8 +27,11 @@ Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite k
 `spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
 open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
 
-1. **Gate.** Run `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id} --harness <this harness> --first "/mandao-tasks ${input:spec:Spec folder or id}"`: if `inWorktree` is false, move into the worktree before any other step.
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+1. **Gate.** Run `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id} --harness copilot --first "/mandao-tasks ${input:spec:Spec folder or id}"`: go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
    Run
    `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}`: a critical `OPEN` or critical Consistency Check finding blocks this
    mandao — stop and recommend /mandao-clarify.
@@ -70,8 +73,8 @@ open version 1 spec it warns and does not convert it; the migration goes through
 7. **Check:** `node .mandao/bin/mandao.mjs run tasks ${input:spec:Spec folder or id}` must show no issues, no cycles and no delivery issue (they are reported inside `issues`);
    `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}` must show no `UNPLANNED` or `BROKEN_REF`. Fix and re-run.
 8. **Approve:** show the overview and the first eligible task, then record what was shown with
-   `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --shown --harness <this harness>`. The user may approve from the terminal instead (`mandao approve ${input:spec:Spec folder or id} tasks --harness <this harness>`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs /mandao-implement while `tasks.md` is still `draft`, that command runs
-   `node .mandao/bin/mandao.mjs approve --by-running /mandao-implement --harness <this harness> ${input:spec:Spec folder or id} tasks` and relays its one question. On approval in the session set `status: approved` and
+   `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --shown --harness copilot`. The user may approve from the terminal instead (`mandao approve ${input:spec:Spec folder or id} tasks --harness copilot`, no model session): when they say so, the status and `_log/approvals.yml` already show it, and the commit is made; do not ask again. When the person runs /mandao-implement while `tasks.md` is still `draft`, that command runs
+   `node .mandao/bin/mandao.mjs approve --by-running /mandao-implement --harness copilot ${input:spec:Spec folder or id} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness <this harness>` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.
+   available yet. End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness copilot`, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038).

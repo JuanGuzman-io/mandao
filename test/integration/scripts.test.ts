@@ -50,7 +50,7 @@ describe('spec proposal and status', () => {
     expect(whereAmI(p.worktree, { branch: p.branch, worktree: p.worktree }).inWorktree).toBe(true);
     expect(proposeSpec(p.worktree, config, 'fix login', { type: 'bug', id: 'PROJ-12' }).worktree).toBe(p.worktree);
     const away = whereAmI(root, { branch: p.branch, worktree: p.worktree });
-    expect(away).toMatchObject({ inWorktree: false, message: `not in the spec worktree: open ${p.worktree} (branch ${p.branch})` });
+    expect(away).toMatchObject({ inWorktree: false, ready: false, message: `not on the spec branch ${p.branch}` });
   });
 
   test('status transitions and the CI gate for deferred runs', () => {

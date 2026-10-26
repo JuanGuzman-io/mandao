@@ -16,7 +16,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
   - { path: "<project>/{{paths.specs}}/<ID>/spec-ref.md", description: polyrepo slices }
 capabilities: [read, search, edit, shell]
-templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md, rules/telemetry.md]
+templates: [rules/spec-docs.md, spec/tasks.md, rules/test-policy.md, rules/traceability.md, rules/review.md, rules/doc-tasks.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
 scripts: [where, next, trace, tasks, commit-spec, event]
 approval: required
 ---
@@ -37,13 +37,17 @@ Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite k
 `spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
 open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
 
-1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-tasks {{arg:spec}}"`: go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
 <!-- mandao:if harness=claude -->
-   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
-   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+   Call `EnterWorktree` with that worktree path and go on without a new session. Otherwise run the same `where`
+   command with `--switch`: it moves this checkout onto the spec branch (never run git yourself); go on when it
+   reports `ready`. If either fails, print the `resume` field and stop.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 <!-- mandao:endif -->
    Run
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this
@@ -97,4 +101,4 @@ open version 1 spec it warns and does not convert it; the migration goes through
    `{{mandao}} approve --by-running /mandao-implement --harness {{harness}} {{arg:spec}} tasks` and relays its one question. On approval in the session set `status: approved` and
    commit the spec documents on their own: `{{script:commit-spec}} {{arg:spec}} tasks` (a `docs` commit
    with `Refs: <ID>` and a fixed subject; never pushed). Pushing subtasks to the tracker is not
-   available yet. Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038) and, if that conversation would not be inside the worktree, the step back into it.
+   available yet. End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`, with the new-conversation action first when `newSession` from `mandao approve` says so (ADR 0038).

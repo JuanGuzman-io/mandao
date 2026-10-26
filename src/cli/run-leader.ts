@@ -315,7 +315,7 @@ function registerImplementSummary(run: Command, ctx: CliContext) {
     .action((ref: string, o: { harness?: string }) => {
       const { config, spec } = loadSpec(ctx, ref);
       const state = commitState(spec, config.commits.trailers);
-      const cut = verifyCut(spec, harnessOption(o.harness));
+      const cut = verifyCut(spec, harnessOption(o.harness), undefined, config);
       const history = timeline(spec.execution, readApprovalLog(spec.dir));
       json({ ...implementSummary(spec, state.committed, state.pending), timeline: history, ...(cut ? { session: cut } : {}) });
     });

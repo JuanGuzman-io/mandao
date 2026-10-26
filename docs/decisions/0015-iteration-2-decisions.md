@@ -1,6 +1,6 @@
 # 0015 — Iteration 2 decisions: tasks format, Leader, MCP scope, branches, agent settings
 
-**Status:** Accepted · 2026-10-20
+**Status:** Accepted · 2026-10-20; the worktree policy (branch and worktree on every spec) is superseded by [ADR 0059](0059-continuous-flow.md)
 
 ## Decisions
 

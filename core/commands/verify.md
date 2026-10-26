@@ -26,6 +26,7 @@ templates:
   - rules/doc-quickstart.md
   - rules/budget.md
   - rules/telemetry.md
+  - rules/next-step.md
 scripts: [where, next, verify-plan, security-scanning, tests, build, status, trace, commit-spec, event]
 ---
 
@@ -41,13 +42,17 @@ You verify that what was built is what the spec asked for, with evidence. Write 
 
 ## 1. Plan
 
-1. `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-verify {{arg:spec}}"` — if `inWorktree` is false, move into the worktree before any other step.
+1. `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-verify {{arg:spec}}"` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
 <!-- mandao:if harness=claude -->
-   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
-   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+   Call `EnterWorktree` with that worktree path and go on without a new session. Otherwise run the same `where`
+   command with `--switch`: it moves this checkout onto the spec branch (never run git yourself); go on when it
+   reports `ready`. If either fails, print the `resume` field and stop.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 <!-- mandao:endif -->
 2. `{{script:verify-plan}} {{arg:spec}}` gives the suites per project (unit over the files the spec's
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
@@ -104,4 +109,4 @@ report.
 - Either way, commit the report on its own: `{{script:commit-spec}} {{arg:spec}} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`.

@@ -20,7 +20,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
-templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md]
+templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
 scripts: [where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
@@ -38,13 +38,17 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 
 ## 0. Before the first task
 
-1. `{{script:where}} {{arg:spec}} --harness {{harness}}` — if `inWorktree` is false, move into the worktree before any other step.
+1. `{{script:where}} {{arg:spec}} --harness {{harness}}` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
 <!-- mandao:if harness=claude -->
-   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
-   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout. Mandao never creates branches here.
+   Call `EnterWorktree` with that worktree path and go on without a new session. Otherwise run the same `where`
+   command with `--switch`: it moves this checkout onto the spec branch (never run git yourself); go on when it
+   reports `ready`. If either fails, print the `resume` field and stop.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop. Mandao never creates branches here.
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 <!-- mandao:endif -->
 2. `{{script:models}} --harness {{harness}}` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
@@ -197,9 +201,8 @@ block, so the user must see them.
 Then `{{script:pr-plan}} {{arg:spec}}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `{{script:next}} {{arg:spec}} --harness {{harness}}` names the command that follows. When it returns
-`autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
-return control to the user with verification merely suggested. Report the implementation and verify
-results together. If the implementation summary has `session.cut: true`, start the recommended fresh
-conversation first and continue with verify there, inside the worktree (ADR 0038). Any verification
-blocker or question that requires the user still pauses normally.
+End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --harness {{harness}}`. Verify always
+follows implement in this same session (`autoContinue`); report the implementation and verify results
+together. If the implementation summary has `session.cut: true`, start the recommended fresh conversation
+first and continue with verify there (ADR 0038). Any verification blocker or question that requires the
+user still pauses normally.

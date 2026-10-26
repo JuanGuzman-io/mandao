@@ -1,4 +1,5 @@
 import { posix } from 'node:path';
+import { USER_COMMANDS } from '../schemas/cli-commands.js';
 import { wrapBlock } from '../writer/blocks.js';
 import { commandName, selectCommands } from './shared.js';
 import type { AdapterInput, AdapterOutput, GeneratedFile } from './types.js';
@@ -66,6 +67,12 @@ function guide(input: AdapterInput): string {
     '',
     ...stable.map((c) => `- \`/${commandName(c.meta.id)}\` — ${c.meta.description}`),
     ...(stubs.length ? ['', `Not implemented yet: ${stubs.map((c) => `\`/${commandName(c.meta.id)}\``).join(', ')}.`] : []),
+    '',
+    '## Terminal commands',
+    '',
+    'The commands above run every other script themselves. These are the ones you type (`mandao <command> --help` lists the flags; `docs/cli.md` in the Mandao repository has the full index):',
+    '',
+    ...USER_COMMANDS.map((c) => `- \`mandao ${c.path}\` — ${c.summary}`),
     '',
     '## Rules',
     '',

@@ -12,5 +12,6 @@ graphify-out/
 .mandao/run.lock
 .mandao/cli.log
 .mandao/cache/
+.mandao/log/
 .claude/settings.local.json
 # mandao:end

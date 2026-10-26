@@ -4,7 +4,8 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFi
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
-import { openCommand, parseRequest } from '../../src/cli/start.js';
+import { openCommand } from '../../src/cli/spec-open.js';
+import { parseRequest } from '../../src/cli/start.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { dependencyInstalls } from '../../src/scripts/worktree-setup.js';
 import { parseState } from '../../src/spec/state.js';

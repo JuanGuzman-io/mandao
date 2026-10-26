@@ -11,6 +11,7 @@ import {
   intakeSourceType,
   intakeStopped,
   markdownParts,
+  markQuestionAnswered,
   markStoryOpened,
   NEEDS_PDFTOTEXT,
   pdfParts,
@@ -156,6 +157,13 @@ export function openIntakeStory(root: string, proposal: string, id: string, as: 
   const { abs, text } = readProposal(root, proposal);
   writeText(abs, markStoryOpened(text, id, as));
   return { proposal, id, opened: as.trim() };
+}
+
+/** `run intake-answer`: records the PE's answer to an OPEN or CONFLICT row of the proposal (phase 16). */
+export function answerIntakeQuestion(root: string, proposal: string, id: string, answer: string) {
+  const { abs, text } = readProposal(root, proposal);
+  writeText(abs, markQuestionAnswered(text, id, answer));
+  return { proposal, id, status: `resolved: ${answer.trim()}` };
 }
 
 /** `run intake-story`: the prefill of one story. */

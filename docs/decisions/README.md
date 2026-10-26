@@ -21,7 +21,7 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0012](0012-dogfooding-corrections.md) | Corrections from the first dogfooding run | Accepted |
 | [0013](0013-impacted-tests-and-resource-budget.md) | Impacted tests and a resource budget | Accepted |
 | [0014](0014-pin-claude-5-5-models.md) | Pin the Claude 5.5 family by model ID | Accepted |
-| [0015](0015-iteration-2-decisions.md) | Iteration 2 decisions: tasks format, Leader, MCP scope, branches, agent settings | Accepted |
+| [0015](0015-iteration-2-decisions.md) | Iteration 2 decisions: tasks format, Leader, MCP scope, branches, agent settings | Accepted; worktree policy superseded by [0059](0059-continuous-flow.md) |
 | [0018](0018-multi-harness-and-handoff.md) | Real multi-harness: switch harness mid-work without reinstalling | Accepted |
 | [0016](0016-codex-adapter.md) | Codex adapter (OpenAI) | Accepted for iteration 2 |
 | [0017](0017-opencode-adapter.md) | OpenCode adapter (provider-agnostic) | Accepted for iteration 2 |
@@ -43,7 +43,7 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0034](0034-specify-data-model-and-diagram-by-change.md) | specify: a conditional data model, and the diagram chosen by what is built | Accepted |
 | [0035](0035-readable-specs-and-cost-levers.md) | Readable spec documents, a real lite, Leader scripts, approvals and recorded premises | Accepted |
 | [0036](0036-cost-conscious-by-design.md) | Cost-conscious by design | Accepted |
-| [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted |
+| [0037](0037-mandao-start-and-worktree-setup.md) | `mandao start` and the worktree setup | Accepted; superseded by [0059](0059-continuous-flow.md) (start deprecated, worktree optional) |
 | [0038](0038-session-cut-at-task-boundaries.md) | Cut the session at a task boundary when a new one is cheaper | Accepted |
 | [0039](0039-rules-enforced-by-scripts.md) | Rules the scripts enforce, not the text | Accepted |
 | [0040](0040-approval-by-running-the-next-command.md) | Approval by running the next command, unless something is open | Accepted |
@@ -65,3 +65,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0056](0056-ui-mocks-before-implementation.md) | UI mocks before implementation | Accepted (Phase 13) |
 | [0057](0057-requirements-document-intake.md) | Requirements document intake | Accepted (Phase 14) |
 | [0058](0058-native-web-search-counts.md) | The harness's native web search counts as research evidence | Accepted (Phase 15) |
+| [0059](0059-continuous-flow.md) | Continuous flow: the spec's branch in the session, chaining by default | Accepted (Phase 16) |

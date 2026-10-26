@@ -51,8 +51,8 @@ scope, product behavior, security or irreversible actions.
 | [13c — Mock skill scope, after the beta](#phase-13c--after-the-beta) | phase 13 trial | beta published | agreed; after phase 20 |
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
-| [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | agreed; next |
-| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | plan approved (PE, 2026-10-26); after phase 15 |
+| [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
+| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | implemented on `perf/phase-16`; review PASS; PR pending |
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | agreed |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
@@ -659,7 +659,7 @@ Not product work; kept here so they are not lost.
 
 ## Phase 15 — Blocking bugs and false evidence
 
-**Agreed (PE, 2026-10-26); plan approved (PE, 2026-10-26); in progress on `perf/phase-15`.** Small
+**Complete:** PR #27 merged into `main` (`e3bc296`). Plan approved (PE, 2026-10-26). Small
 fixes, each with its test.
 
 **Decision (PE, 2026-10-26): the harness's native web search counts.** "Any research that Claude Code,
@@ -794,6 +794,24 @@ where` (new ADR replacing ADR 0015's worktree part), complete `next` invocations
 rule, `flow.chain` on by default (Claude commands without `disable-model-invocation`), session cuts by
 cost basis, `deliver` with non-interactive flags, a shared-state warning for parallel specs, the CLI
 classification above, and an end-to-end test intake → implement in both modes. Runs after phase 15.
+
+**Delivered on `perf/phase-16` (2026-10-26),** ADR 0059: `run spec-new --create` / `--discard` / `--carry-from`
+(`src/cli/spec-create.ts`, `spec-open.ts`), `run where` `ready` / `mode` / `--switch`, `run next` invocations and
+`autoContinue` with `flow.chain`, `rules/next-step.md`, Claude flow commands without `disable-model-invocation`,
+cost-basis cuts and `init --cut-min-savings`, `deliver --list/--target/--scope`, intake groups and `run
+intake-answer`, `paths.intake`, the `workspace` log, the derived `docs/cli.md` index and the guide's terminal
+commands, `mandao start` deprecated, `run impact` removed; `test/integration/flow-intake-to-implement.test.ts`
+covers the done-when in both modes. Deviations from the plan: the derived-docs check is a test
+(`test/unit/cli-reference.test.ts`, `npm run docs:cli` rewrites it) rather than part of `diagrams:check`; the
+events a command records under `workspace` are not moved into the spec it then creates (Kaizen treats that run
+as incomplete); worktree mode moves the carried files by copy and restore rather than through `git stash`.
+
+Independent review (2026-10-26): FAIL with 9 findings (carry-from over uncommitted edits, sharedState only after
+creating, in-place cleanup after a merge, `--switch` and the worktree carry moving another spec's work, quoted
+paths, `--discard` matching any branch, answers on any row, the promotion message), all fixed with tests; a
+second pass found the workspace log blocking the dirty-tree checks (now git-ignored) and three low items, fixed;
+third pass PASS. Accepted (low): the ignore of `.mandao/log/` is tested by the block's text, not by an intake
+followed by `--switch`.
 
 **Intake to the first story in the same session (maintainer, 2026-10-23).**
 

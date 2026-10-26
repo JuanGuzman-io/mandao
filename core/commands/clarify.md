@@ -15,7 +15,7 @@ inputs:
 outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
 capabilities: [read, edit, shell, mcp]
-templates: [rules/context.md, rules/consistency-check.md, rules/spec-docs.md, rules/doc-requirements.md, rules/budget.md, rules/telemetry.md]
+templates: [rules/context.md, rules/consistency-check.md, rules/spec-docs.md, rules/doc-requirements.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
 scripts: [next, trace, diagram, commit-spec, event]
 approval: required
 ---
@@ -50,7 +50,7 @@ Follow `{{template:rules/context.md}}` and `{{template:rules/consistency-check.m
 5. Re-run `{{script:trace}} {{arg:spec}}`. A critical finding still open keeps blocking
    {{command:tasks}}; say so.
 
-End by recording what was shown with `{{script:next}} {{arg:spec}} --shown --harness {{harness}}` and give the command it names.
+End with `{{template:rules/next-step.md}}`: `{{script:next}} {{arg:spec}} --shown --harness {{harness}}` (it records what was shown).
 
 If an answer changes `design.md` and `{{script:diagram}} <ID>` then reports `stale: true`, regenerate the
 approval diagram as `/mandao-specify` step 7 describes before asking for approval again.

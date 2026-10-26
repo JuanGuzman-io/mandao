@@ -3,10 +3,12 @@ import { cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'no
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
+import { carriedPaths } from '../../src/cli/spec-open.js';
 import { writeYaml } from '../../src/engine/files.js';
 import { configSchema } from '../../src/schemas/index.js';
 import { commitsSize } from '../../src/scripts/close.js';
 import { commitSpecDocs } from '../../src/scripts/commits.js';
+import type { SpecProposal } from '../../src/scripts/spec.js';
 import { nextLocalId, readSpec } from '../../src/scripts/spec.js';
 import { impactItems, readClauses, verifyResults } from '../../src/spec/index.js';
 import { initTestRepo, makeTree, pkg } from '../helpers.js';
@@ -167,10 +169,15 @@ describe('content defects found by MDO-0004', () => {
     expect(core('commands/implement.md')).toMatch(/`<subject>` is \*\*only the subject\*\*/);
   });
 
-  test('#4 specify moves a story written before the worktree into it', () => {
-    expect(core('commands/specify.md')).toMatch(
-      /move the whole spec folder\s+into\s+the worktree|move the whole spec folder into\s+the worktree/,
-    );
+  test('#4 a story written before the worktree travels into it: run spec-new --create carries the spec folder (phase 16)', () => {
+    expect(core('commands/specify.md')).toMatch(/\{\{script:spec-new\}\}[^\n]*--create/);
+    const config = configSchema.parse({
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'a', path: '.' }],
+      harnesses: ['claude'],
+    });
+    expect(carriedPaths(config, { folder: 'specs/MDO-0004-x' } as SpecProposal)).toContain('specs/MDO-0004-x');
   });
 
   test('#5 the verify report asks for the bare AC id in the first column', () => {

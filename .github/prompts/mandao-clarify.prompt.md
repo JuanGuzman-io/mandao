@@ -40,7 +40,7 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
 5. Re-run `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}`. A critical finding still open keeps blocking
    /mandao-tasks; say so.
 
-End by recording what was shown with `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --shown --harness <this harness>` and give the command it names.
+End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --shown --harness copilot` (it records what was shown).
 
 If an answer changes `design.md` and `node .mandao/bin/mandao.mjs run diagram <ID>` then reports `stale: true`, regenerate the
 approval diagram as `/mandao-specify` step 7 describes before asking for approval again.

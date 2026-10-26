@@ -31,6 +31,8 @@ export interface NextFacts {
   delivery?: 'unpushed' | 'pushed' | 'merged';
   /** Deterministic research gate findings (read and validated by the caller). */
   researchIssues?: string[];
+  /** `flow.chain`: steps that need no decision of the PE continue without handing control back (phase 16). */
+  chain?: boolean;
 }
 
 export interface NextStep {
@@ -177,5 +179,16 @@ export function nextStep(spec: NextSpec, facts: NextFacts): NextStep {
   const allTasksDone = spec.tasks.length > 0 && spec.tasks.every((task) => task.done);
   if (next.recommended.command === '/mandao-verify' && allTasksDone && !facts.pendingCommits?.length && facts.verifyVerdict !== 'blocked')
     return { ...next, autoContinue: true };
+  if (facts.chain && chainable(next)) return { ...next, autoContinue: true };
   return next;
+}
+
+/** Steps that do the work the spec already decided; clarify, approvals, story and delivery wait for the PE. */
+const CHAINABLE = ['/mandao-specify', '/mandao-tasks', '/mandao-implement', '/mandao-verify', '/mandao-close'];
+
+/** Whether a step can follow without the PE: a chainable command, or the commit script, never at a delivery boundary. */
+function chainable(next: NextStep): boolean {
+  if (next.delivery?.checkpoint !== undefined) return false; // a recommended new session
+  const command = next.recommended.command;
+  return CHAINABLE.includes(command) || command.startsWith('mandao run commit ');
 }

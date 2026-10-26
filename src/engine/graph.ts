@@ -51,6 +51,8 @@ export function gitIgnoreBlock(childRepos: string[], version: string): Generated
       '.mandao/cli.log',
       // Each spec's local bulk: Reviewer packs, full gate output, probes, mutations, integrity (MDO-0011 D3).
       '.mandao/cache/',
+      // Commands with no spec yet (an intake) log here; local like the cache, never a change to commit (phase 16).
+      '.mandao/log/',
       // Machine-specific agent settings (ADR 0015).
       '.claude/settings.local.json',
       ...childRepos.map((p) => `/${p}/`),

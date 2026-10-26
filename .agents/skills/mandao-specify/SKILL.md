@@ -27,9 +27,9 @@ in the output which skill was missing.
 
 ## 1. Resolve the spec
 
-1. **From `mandao start`** (the default): session runs in its worktree and
-   the `start` section of `specs/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the
-   branch/worktree exist; skip the worktree step below.
+1. **Already opened** (by $mandao-story, or by this command earlier): the `start` section of
+   `specs/<ID>-<slug>/_log/state.yml` holds the request (id, title, type, lane). Use it; the branch exists;
+   skip the opening step below.
 2. **From a story**: if `<ref>` names a folder in `specs/` with `story.md`, inherit its
    frontmatter (tracker, type, id, projects). Ask nothing.
 3. **From an argument**: a tracker id or URL. The tracker comes from `.mandao/sources.yml`, which wins
@@ -37,25 +37,24 @@ in the output which skill was missing.
 4. **Nothing given**: ask once — *I have the ID* (validate and fetch) · *Create it* (via MCP, after
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
-The folder is `specs/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
-`node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type> --harness <this harness> --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
-and, with **one** confirmation, run the
-`command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
-from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues`
-before asking. This is the fallback when the session started in the main checkout
-(`mandao start` does it as a script, §14.5): after creating it, move into the worktree first, because later commands refuse to work outside it:
-print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
-Then go on. **A story written before the worktree** (by $mandao-story,
-untracked in the current checkout) does not exist in the new worktree: move the whole spec folder into
-the worktree, check the copy is identical, then remove the original, so there is only one. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`. Write every artifact inside that worktree. Install dependencies **inside the worktree** (e.g. `npm ci`), never
-a symlink to another checkout. Skip this when the session already runs in the worktree. If there is no `story.md`, write one from
+The folder is `specs/<ID>-<slug>/`. **Branch** (ADR 0059): when the spec does not exist yet, open it
+with `node .mandao/bin/mandao.mjs run spec-new "<title>" --id <ID> --type <type> --create --harness codex --first "/mandao-specify <ID>"` (add `--hotfix` when the request says
+`--hotfix`), exactly as $mandao-story does: the branch per the team's branching model (its `base` is the PR
+target), in this checkout or, when another spec is open here, a worktree; never run git yourself. Show its
+`issues` and stop if there are any. With `mode: worktree`, move into `dir` first:
+print the `resume` field of the `spec-new` output (the command that opens this harness there) and stop.
+When the spec exists but this session is not on its branch,
+`node .mandao/bin/mandao.mjs run where <ID> --harness codex --switch`. With `--hotfix`, follow `.mandao/templates/app/rules/hotfix.md`.
+**No story yet:** look for an open intake proposal in `docs/product/intake/` with an unopened story for this
+request; when there is one, continue with $mandao-story `--intake <proposal>#I-n` instead of eliciting from
+scratch. If there is no `story.md`, write one from
 `.mandao/templates/app/spec/story.md` with what the item says, marking gaps `OPEN` (critical ones block specify).
 
 When the story's `type` is not `story`, follow `.mandao/templates/app/rules/spec-types.md`.
 
 ## 2. Research
 
-Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness <this harness>`;
+Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness codex`;
 reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `.mandao/templates/app/spec/research.md`; create one subagent task for every uncovered question, parallelize
@@ -138,8 +137,8 @@ When `node .mandao/bin/mandao.mjs run diagram <ID>` says the spec needs one, or 
 - `[NEEDS CLARIFICATION]` items or findings → recommend $mandao-clarify, listed by impact; a critical
   one blocks $mandao-tasks.
 - Otherwise ask for approval of requirements and design, showing the diagram when there is one. The user
-  may approve from the terminal instead (`mandao approve <ref> design --harness <this harness>`): the status,
+  may approve from the terminal instead (`mandao approve <ref> design --harness codex`): the status,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `node .mandao/bin/mandao.mjs run commit-spec <ref> specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
-  `node .mandao/bin/mandao.mjs run next <ID> --shown --harness <this harness>` (it records what was shown) and give the command it names as the next mandao.
+  `node .mandao/bin/mandao.mjs run next <ID> --shown --harness codex` (it records what was shown), then end with `.mandao/templates/app/rules/next-step.md`.

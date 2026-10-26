@@ -155,31 +155,37 @@ mandao doctor
 
 ### The recommended flow
 
-```bash
-mandao start "add a remember-me option to login"   # branch + worktree + setup, no model tokens
-```
+Everything happens in your agent's session; you never create branches or run git by hand
+([ADR 0059](docs/decisions/0059-continuous-flow.md)).
 
-1. Open your agent **inside the worktree** (`mandao start` prints the exact command; `--open` launches it).
-2. Run `/mandao-specify` — at lite depth, one session writes the story, the spec and the tasks. When the spec touches a UI and the story has no UX references, it offers a visual mock once ([ADR 0056](docs/decisions/0056-ui-mocks-before-implementation.md)). A long requirements document (Markdown or PDF) goes through `/mandao-story --from <file>` first: one proposal of referenced stories, from which the PO opens the ones to build ([ADR 0057](docs/decisions/0057-requirements-document-intake.md)).
-3. Approve from the terminal: `mandao approve <ID> spec` — no model session, no tokens. It prints the command for the next step.
-4. Clear the conversation in the same window (`/clear` in Claude Code, `/new` in Codex and OpenCode, a new chat in Copilot and Antigravity) and run, from the worktree, `/mandao-implement`, then `/mandao-verify` and `/mandao-close`. A fresh context costs less than re-reading the whole specify context on every turn ([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)); `mandao approve` prints the exact action for your harness.
+1. Run `/mandao-story` (or `/mandao-specify` at lite depth, where one session writes the story, the spec and
+   the tasks). The command that creates the spec also creates its branch per your branching model, in this
+   checkout (a worktree only when another spec is already open here or you ask for one), and carries your
+   uncommitted work. A long requirements document (Markdown or PDF) goes through `/mandao-story --from <file>`
+   first: one proposal of referenced stories, from which the PO opens the ones to build, in the same session
+   ([ADR 0057](docs/decisions/0057-requirements-document-intake.md)). When the spec touches a UI and the story has
+   no UX references, it offers a visual mock once ([ADR 0056](docs/decisions/0056-ui-mocks-before-implementation.md)).
+2. Commands chain: story → specify → clarify when there are open questions → tasks → implement → verify →
+   close, stopping only where a decision is yours (an approval, a product question, push and merge).
+   `flow.chain: false` in `.mandao/config.yml` turns it off.
+3. Every stop names the next step complete, with the spec ID, ready to copy (`/mandao-implement MDO-0003`).
+4. Delivery happens in the session too: close asks you once for the destination and the level, then pushes
+   and opens the PR.
 
-Started from the main checkout by mistake? Mandao creates the worktree anyway and tells you how to resume there.
+On a subscription, Mandao does not cut the session to save list-price equivalents; set
+`session.cut_min_savings` (`mandao init --cut-min-savings`) if you want those cuts
+([ADR 0038](docs/decisions/0038-session-cut-at-task-boundaries.md)).
 
 ## Your first mandao in 5 minutes
 
-```bash
-mandao start --quick "fix the label on the checkout button"
-```
-
-Then, in your agent inside the worktree: `/mandao-quick`.
+In your agent: `/mandao-quick fix the label on the checkout button`. It creates its own branch.
 
 What you'll see:
 
 1. A **gate check**: is this really small? (one module, no contracts or public interfaces, no risky areas such as auth, payments or migrations). If not, Mandao suggests a spec instead.
 2. The change, lint and the impacted tests — never the whole suite on your laptop.
 3. An **independent review**.
-4. One local commit, in the team's format. Nothing is pushed until you confirm it with `mandao deliver`.
+4. One local commit, in the team's format. Nothing is pushed until you confirm the delivery it offers.
 
 ```
 🐛 fix(web): correct checkout button label
@@ -258,7 +264,7 @@ marked applicable, while data writes require declared ACID handling and a task-l
 test. Existing constitutions are never rewritten automatically; `doctor` reports when principles are
 not yet declared. See [ADR 0047](docs/decisions/0047-gated-design-principles-and-data-write-validation.md).
 
-From the terminal, no model needed: `mandao start`, `mandao approve`, `mandao doctor`, `mandao models`.
+From the terminal, no model needed: `mandao approve`, `mandao doctor`, `mandao models` (every terminal command in [docs/cli.md](docs/cli.md#command-index); `mandao start` is deprecated).
 
 CLI reference (`init`, `sync`, `doctor`, `models`, `skills`, `run`…): [docs/cli.md](docs/cli.md).
 

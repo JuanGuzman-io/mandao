@@ -192,6 +192,30 @@ describe('mandao deliver manual-provider path', () => {
   });
 });
 
+describe('mandao deliver inside an agent session (no terminal, phase 16)', () => {
+  test('--list names the destinations; --target and --scope deliver without any prompt', async () => {
+    promptState.groups = 0;
+    const { root, remote } = quickRepo();
+    restoreTerminal();
+    restoreTerminal = stubTerminal(false);
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+    const localBin = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    vi.stubEnv('PATH', localBin);
+
+    await run(root, 'quick/fix-typo', '--list');
+    expect(JSON.parse(logs.at(-1)!)).toMatchObject({ targets: [expect.objectContaining({ branch: 'main', default: true })] });
+    await expect(run(root, 'quick/fix-typo')).rejects.toThrow(/--target <branch> --scope/);
+    await expect(run(root, 'quick/fix-typo', '--scope', 'everything')).rejects.toThrow(/--scope must be all, push-pr or nothing/);
+
+    await run(root, 'quick/fix-typo', '--target', 'main', '--scope', 'push-pr');
+    expect(promptState.groups).toBe(0);
+    expect(git(remote, 'show-ref', '--verify', 'refs/heads/feat/quick-fix-typo')).toBeTruthy();
+    expect(logs.join('\n')).toContain('Open a PR manually from feat/quick-fix-typo into main');
+  });
+});
+
 describe('mandao deliver quick without a start record', () => {
   test('derives the branch, base and lane from the configuration (quick made without start --quick)', async () => {
     promptState.groups = 0;
@@ -256,6 +280,34 @@ describe('mandao deliver GitHub merge path', () => {
       pr_url: 'https://github.com/org/repo/pull/42',
     });
     expect(result.delivery.report).toMatch(/^released on main, PR #42, merge [a-f0-9]{7}$/);
+  });
+
+  test('in place (phase 16): after the merge the main checkout moves to the target and the merged branch is deleted', async () => {
+    promptState.groups = 0;
+    const { root, remote } = repo('github');
+    const branch = 'feat/MDO-0009-delivery';
+    const localBin = makeTree({});
+    const mergeDir = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    // GitHub merges on its side: a separate clone, never the local checkout.
+    writeFileSync(
+      join(localBin, 'gh'),
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$4" = "--json" ]; then echo \'[{"name":"gitleaks / scan","workflow":"Secrets"}]\'; fi ;;\n  merge) git clone -q -b main "$TEST_REMOTE" "$MERGE_DIR/c" && git -C "$MERGE_DIR/c" -c user.name=t -c user.email=t@t merge --no-ff -q -m "Merge pull request #42" "origin/$3" && git -C "$MERGE_DIR/c" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
+      { mode: 0o755 },
+    );
+    vi.stubEnv('PATH', `${localBin}:${process.env.PATH}`);
+    vi.stubEnv('TEST_REMOTE', remote);
+    vi.stubEnv('MERGE_DIR', mergeDir);
+    restoreTerminal();
+    restoreTerminal = stubTerminal(false);
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+
+    await run(root, 'MDO-0009', '--target', 'main', '--scope', 'all');
+
+    expect(logs.join('\n')).toContain('Merged into main.');
+    expect(git(root, 'branch', '--show-current')).toBe('main');
+    expect(() => git(root, 'show-ref', '--verify', `refs/heads/${branch}`)).toThrow();
   });
 
   test('does not merge or clean up when GitHub reports failing checks', async () => {
