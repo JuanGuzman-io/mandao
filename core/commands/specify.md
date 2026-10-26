@@ -89,7 +89,7 @@ in the output which skill was missing.
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
 The folder is `{{paths.specs}}/<ID>-<slug>/`. **Branch and worktree** (ADR 0015): run
-`{{script:spec-new}} "<title>" --id <ID> --type <type> --harness <this harness> --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
+`{{script:spec-new}} "<title>" --id <ID> --type <type> --harness {{harness}} --first "/mandao-specify <ID>"` (add `--hotfix` when the request says `--hotfix`)
 and, with **one** confirmation, run the
 `command` it returns (`git worktree add -b <branch> <path> <base>`): the branch name and its `base` come
 from the team's branching model (ADR 0023), and the PR will target that `base`. Show its `issues`
@@ -112,7 +112,7 @@ When the story's `type` is not `story`, follow `{{template:rules/spec-types.md}}
 
 ## 2. Research
 
-Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec> --harness <this harness>`;
+Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec> --harness {{harness}}`;
 reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `{{template:spec/research.md}}`; create one subagent task for every uncovered question, parallelize
@@ -208,8 +208,8 @@ When `{{script:diagram}} <ID>` says the spec needs one, or it changes data, foll
 - `[NEEDS CLARIFICATION]` items or findings → recommend {{command:clarify}}, listed by impact; a critical
   one blocks {{command:tasks}}.
 - Otherwise ask for approval of requirements and design, showing the diagram when there is one. The user
-  may approve from the terminal instead (`mandao approve {{arg:ref}} design --harness <this harness>`): the status,
+  may approve from the terminal instead (`mandao approve {{arg:ref}} design --harness {{harness}}`): the status,
   `_log/approvals.yml` and the commit then exist already; do not ask again. Approved in the session: set
   `status: approved` in both (and in a `draft` story) and run `{{script:commit-spec}} {{arg:ref}} specify`.
 - Summarize: depth, FR/NFR counts, AC coverage, `UNVERIFIED` premises, risk tags. Then run
-  `{{script:next}} <ID> --shown --harness <this harness>` (it records what was shown) and give the command it names as the next mandao.
+  `{{script:next}} <ID> --shown --harness {{harness}}` (it records what was shown) and give the command it names as the next mandao.

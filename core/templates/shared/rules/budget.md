@@ -17,7 +17,7 @@ spend.
   the command's external or irreversible actions; stop if the answer is no, and stop too when no person
   can answer (a headless run). A yes is recorded with `mandao approve <ID> budget --to <usd>`: the new
   cap for this spec (`--to none` removes it). The budget is off by default. Inside implement, `mandao run step` returns `await-budget` and no brief until it is.
-- **Before the final commit:** `mandao run cost <ID> --record --command <this mandao> --harness <this harness>`
+- **Before the final commit:** `mandao run cost <ID> --record --command <this mandao> --harness <claude|codex|copilot|opencode|antigravity>`
   (`quick` for quick changes). Claude Code: the script reads this session's own record. Other harnesses:
   add `--usd <amount>` when the harness shows the session's cost; otherwise say the cost was not
   recorded. Report the amount and the spec's total in one line, with its `basis`: `billed` (API key,

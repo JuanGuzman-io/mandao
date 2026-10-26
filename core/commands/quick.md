@@ -49,7 +49,7 @@ Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-g
 If the session already runs in a worktree made by `mandao start --quick` (its request is in
 `{{paths.specs}}/quick/_log/start-<name>.yml`), skip this step. Otherwise, as a fallback, with **one**
 confirmation, create the branch and worktree from
-`{{script:spec-new}} "<name>" --id quick --type <story|bug> --harness <this harness> --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
+`{{script:spec-new}} "<name>" --id quick --type <story|bug> --harness {{harness}} --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
 the branching model's `base`; show its `issues` first) and install the project's dependencies inside
 the worktree (no symlinks). Then move into the worktree before any other step:
 <!-- mandao:if harness=claude -->
@@ -88,10 +88,10 @@ Run `{{script:quick-check}}` and read its JSON.
 
 ## 6. Record and commit
 
-1. Record the cost first: `{{script:cost}} quick --record --command quick --harness <this harness>` (it holds only what was spent
+1. Record the cost first: `{{script:cost}} quick --record --command quick --harness {{harness}}` (it holds only what was spent
    from the quick's start), so that it is committed with the quick.
 2. Record the row with `{{script:quick-log}} <name> --gates "<gate results>" --verdict <PASS|FAIL>
-   --reviewer <agent you invoked> --harness <this harness>` (`self` when the review ran in your own
+   --reviewer <agent you invoked> --harness {{harness}}` (`self` when the review ran in your own
    context; add `--reduced-independence` when the reviewer ran on your model). The script measures files
    and lines from the diff, reads the reviewer's model from its agent file and puts every review note in
    the Review column: never type a model name or a review note into the log. Pass what the reviewer said about itself, verbatim,

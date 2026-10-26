@@ -66,6 +66,7 @@ The token language is closed. An unknown token fails validation.
 | `{{script:x}}` | Shell command that runs the Mandao script `x`. |
 | `{{paths.specs}}`, `{{paths.constitution}}`, `{{paths.releases}}` | Configured paths. |
 | `{{command:x}}` | How to invoke another mandao in this harness, e.g. `/mandao-tasks`. |
+| `{{harness}}` | The id of the harness the file is rendered for (`claude`, `codex`, …), for `--harness`. Shared templates are not rendered per harness and list the ids instead. |
 | `{{version}}` | Installed Mandao version. |
 | `{{language.business}}`, `{{language.technical}}` | Configured content languages (ADR 0011). |
 
@@ -78,6 +79,7 @@ How each harness renders them:
 | `{{template:x}}` | `.mandao/templates/<profile>/x` | same |
 | `{{script:x}}` | `npx -y mandao@<version> run x` | same |
 | `{{command:x}}` | `/mandao-x` | `/mandao-x` |
+| `{{harness}}` | `claude` | `copilot` |
 
 ## Conditional blocks
 

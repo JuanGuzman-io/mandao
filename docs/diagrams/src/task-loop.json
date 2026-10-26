@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "010cda61c65b9ad105524f8aabb76b2e5a3a1c538b1430923664abf5aebbba8b"
+      "sha256": "1e514aba79ec669a8cf4d0a305cf6ff2e85e25e9402ccddcd52fee8542e9bd75"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "62285b9d4a89820b9b98746a62077028315f4c381017fb5d35dc4c1ac0c8d03b"
+      "sha256": "db88f668480e00370fa0740d860b8839607091638dd284c8eb4b6ebeb9c49a4b"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "4cce20ef92e4f66a646922f6f62f5833ba043788299992dee1195b6955dc03c2"
+      "sha256": "ba80ff5da65a997c70e76a13eeb5b40130d2db2a638cd73a096a9358bd06e5c7"
     },
     {
       "path": "core/commands/init.md",
@@ -31,27 +31,27 @@
     },
     {
       "path": "core/commands/quick.md",
-      "sha256": "9788b50d3751698e60e3119ded24f99c793625478ed786a98f1e622d2a1fec78"
+      "sha256": "2865854331366c05a1465c232b2f34382aec24d73b38e43cb6d4827a8b4ca0d5"
     },
     {
       "path": "core/commands/resume.md",
-      "sha256": "af3f149b4856107eb8a4f7b0e08b6d3dec06614db419920e4ec4d60e98464a8c"
+      "sha256": "4c62d7734d20fbb8df2b21b87ec713229ae4a83a835ce883c969f0a24f39b193"
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "9a486ba01d67acdf88042815e449c627fac34753a60171b57988415ec7747bf3"
+      "sha256": "706f0b8c018958abd069aa1c0c847cc114e93d9cc62a5e762364436056c97ce0"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "f24e3e300e0714f69b95a2b2da28145ebab351400ed35639a2ed6dd833c2d151"
+      "sha256": "d0111434f3c1de3bddf3668954a7c54cc701730d755fec0716a9bb25daff0045"
     },
     {
       "path": "core/commands/tasks.md",
-      "sha256": "bc1ec1a2ce9089eeb8c413de7287c5aa70274234f751699be7f52429435e9335"
+      "sha256": "824ebb0a0e6f2deb477e4a5223f2611c50e1a016f79bdeaca1cf9017050ad06f"
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "693d2b04dceab6aac9dd69b0a474a4c031becde9a466955e4f5a451c021e8175"
+      "sha256": "5720ff0cf344a7269b2cf23241b0ab27438bd4ea558e39b8dea69cff9f102ad6"
     },
     {
       "path": "src/spec/loop.ts",
