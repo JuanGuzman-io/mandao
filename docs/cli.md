@@ -86,6 +86,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 | `mandao run review-pack <spec> <task>` | `--harness <id>` (default: claude) · `--include <paths...>` | Write the brief, gates and diff the Reviewer reads; print the pack path |
 | `mandao run implement-summary <spec>` | `--harness <id>` (default: claude) | The end-of-implement report from the log and git: per task verdicts, FAIL reasons, identities, commits |
 | `mandao run premise <spec> <premise> <command...>` | `--timeout <s>` (default: 120) · `--force` | Run the command that proves a High premise (read-only, timeout, resource queue) and record the run |
+| `mandao run stack-check <check> <command...>` | `--project <name>` · `--runtime <command>` · `--timeout <s>` (default: 300) · `--force` | Run the command that proves a stack choice on the project runtime and record it (constitution) |
 | `mandao run archify [args...]` | — | Run the project-pinned Archify skill |
 | `mandao run event <spec> <type>` | `--command <name>` · `--run <id>` · `--id <id>` · `--question <class>` · `--subject <text>` | Record a script-timestamped lifecycle event for Kaizen |
 | `mandao run security-scanning` | — | Detect per-project secret and SAST coverage from gates, CI files and GitHub APIs (JSON on stdout) |

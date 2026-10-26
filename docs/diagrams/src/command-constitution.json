@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "9a01a42eb78843abf418ad9e27f1930967bc99decc1601bf12782067387ccc85"
+      "sha256": "70561eca521cdfe72c8a1fb9ae3b902315b91c8e3c2ca2adf3631310b64f9ca9"
     },
     {
       "path": "core/commands/implement.md",
@@ -51,13 +51,13 @@
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "36883b6b457372bac3cb722a70935e4cf132deff63d3333228cc7c5b7bf324e7"
+      "sha256": "ca72739f6146e3556d34792f814977caaa97ed73f6f0cca22e4d0b28a57c5c30"
     }
   ],
-  "specSha256": "12d6bf198c2947fe9627d7116739a9027645c1cfde1bc805bd577dcf93b60434",
+  "specSha256": "5ce41a1dd1d26c21b43f3a7c0d64ef95a635846fa30d93bdcfadd222319388c9",
   "svgSha256": {
-    "light": "00308b3d1e4861471f9808a66810a7bc90f3febe7c05f6c42a7c19db2342e33b",
-    "dark": "4ddeaa7f3f010de3b605173d17e00c22f32310ddd6108c28ae33edcb34c5f5cc"
+    "light": "8da5fe83b2073d13e37cd9c534e9c2c13cce3f28751a6c3318d87a9cfe9632f0",
+    "dark": "e54fb69f043eac73854ca3356de03931d8d4cd25375dd792cbac92a6fae160c3"
   },
   "spec": {
     "schema_version": 2,
@@ -130,8 +130,8 @@
         "col": 2,
         "type": "backend",
         "label": "3. Technical constitution",
-        "sublabel": "mandao run security-scanning +1",
-        "width": 241
+        "sublabel": "mandao run stack-check +2",
+        "width": 199
       },
       {
         "id": "s3",

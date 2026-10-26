@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join, relative, resolve } from 'node:path';
 import type { Command } from 'commander';
+import type { Config, ProjectConfig } from '../schemas/index.js';
 import { repoRoot } from '../scripts/commits.js';
 import { excerpt } from '../scripts/gates.js';
 import { runTests } from '../scripts/run-tests.js';
@@ -62,7 +63,7 @@ export function pathsOutside(words: string[], root: string): string[] {
   });
 }
 
-const sha = (dir: string) => {
+export const sha = (dir: string) => {
   try {
     return execFileSync('git', ['rev-parse', '--short', 'HEAD'], {
       cwd: dir,
@@ -92,6 +93,36 @@ export function shellJoin(words: string[], platform: NodeJS.Platform = process.p
   return words.map((w) => shellQuote(w, platform)).join(' ');
 }
 
+/** A read-only probe: run with a timeout, through the resource queue, with its temporary files and HOME kept in `work`. */
+export async function runProbe(o: {
+  root: string;
+  cwd: string;
+  config: Config;
+  project?: ProjectConfig;
+  label: string;
+  command: string;
+  timeoutS: number;
+  work: string;
+  scratchId: string;
+  force?: boolean;
+  specDir?: string;
+}) {
+  const budget = budgetFor(o.root, o.config, o.project ?? o.config.projects[0], 'unit', o.label, o.force, o.specDir);
+  const scratch = join(o.work, 'tmp', o.scratchId);
+  const home = join(o.work, 'tmp', `${o.scratchId}-home`);
+  ensureDir(scratch);
+  ensureDir(home);
+  try {
+    return await runTests(o.cwd, o.label, `${o.command} 2>&1`, { ...budget, timeoutS: o.timeoutS }, undefined, {
+      keepOutput: true,
+      // HOME too: a probe that writes to `~` from its own code lands in the log, not the real home.
+      env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch, HOME: home, USERPROFILE: home },
+    });
+  } finally {
+    removeScratchDir(join(o.work, 'tmp'), o.work);
+  }
+}
+
 /**
  * `mandao run premise <spec> <Pn> -- <command>`: runs the command that proves a High premise in the
  * spec's worktree, with a timeout and through the queue and the resource budget, and records the run.
@@ -117,24 +148,18 @@ export function registerPremise(run: Command, ctx: CliContext) {
         throw new Error(
           `the command names paths outside the worktree (${outside.join(', ')}): put probes in ${relative(cwd, probesDir(spec.dir))}/`,
         );
-      const project = config.projects[0]!;
-      const budget = budgetFor(ctx.root(), config, project, 'unit', `${id} premise`, o.force, spec.dir);
-      // Temporary files the probe makes go inside the spec's log (version 2: its local cache), removed after the run.
-      const work = premiseWorkDir(spec.dir);
-      const scratch = join(work, 'tmp', id);
-      const home = join(work, 'tmp', `${id}-home`);
-      ensureDir(scratch);
-      ensureDir(home);
-      let result: Awaited<ReturnType<typeof runTests>>;
-      try {
-        result = await runTests(cwd, `${id} premise`, `${command} 2>&1`, { ...budget, timeoutS: Number(o.timeout) }, undefined, {
-          keepOutput: true,
-          // HOME too: a probe that writes to `~` from its own code lands in the spec's log, not the real home.
-          env: { TMPDIR: scratch, TMP: scratch, TEMP: scratch, HOME: home, USERPROFILE: home },
-        });
-      } finally {
-        removeScratchDir(join(work, 'tmp'), work);
-      }
+      const result = await runProbe({
+        root: ctx.root(),
+        cwd,
+        config,
+        label: `${id} premise`,
+        command,
+        timeoutS: Number(o.timeout),
+        work: premiseWorkDir(spec.dir),
+        scratchId: id,
+        force: o.force,
+        specDir: spec.dir,
+      });
       if (result.status !== 'PASS' && result.status !== 'FAIL') {
         json({ premise: id, recorded: false, status: result.status, reason: result.reason });
         process.exitCode = 1;

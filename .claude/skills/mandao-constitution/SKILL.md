@@ -79,6 +79,14 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 
 - Derive conventions and thresholds from what the code actually does; cite files. Where the code is
   inconsistent, write the dominant convention and record the exceptions as `CONFLICT`.
+- **Verify every stack choice on the runtime** (phase 18), never only against a registry: for each row of
+  `## Stack` write a `### S<n>` check in `## Stack verification` and prove it with
+  `node .mandao/bin/mandao.mjs run stack-check S<n> -- <command>` (install or import the library on the project's runtime; the
+  command is read-only beyond the project's own environment). A failing run is the answer: change the choice
+  before the user approves it. A choice that cannot be checked here (a paid service, credentials, production
+  only) says `UNVERIFIED: <why>`, shown in the approval summary. Pin the runtime the checks ran on
+  (`.python-version`, `.nvmrc`, `engines`, `requires-python`…) and name the file in the Runtime column; when
+  teammates or CI run the project, check their runtimes too. `node .mandao/bin/mandao.mjs doctor` warns on an unchecked choice.
 - Name one **exemplar file** per kind of module (controller, service, component…) in `standards.md`.
 - **Gates, every one in one approval** (phase 17): propose per project format, lint, typecheck, test,
   `build` (or `none` when nothing builds), secrets, sast and audit, plus `eval` when the project evaluates a
@@ -142,7 +150,10 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 ## 7. Clarify and approve
 
 - One round of questions, at most 5, each with a proposed default.
-- In **active** mode, show a diff per file and apply only what is approved, with a `CHANGELOG.md` entry.
+- In **active** mode, show a diff per file and apply only what is approved, with a `CHANGELOG.md` entry
+  whose `- Affects:` line names the open specs that relied on what changed. Those specs' approvals recorded the
+  constitution as it was: `node .mandao/bin/mandao.mjs run next <ID>` now recommends `/mandao-specify <ID>` to update their
+  approved documents, then their approval.
 - **From inside a spec** (its branch is checked out): the constitution and `.mandao/config.yml` are shared by
   every spec, so the approved change also needs its own short path to the base: propose a `chore` commit of
   only those files and, after one confirmation, its PR through the same delivery flow (phase 16). Other open

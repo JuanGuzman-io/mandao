@@ -34,6 +34,9 @@ You verify that what was built is what the spec asked for, with evidence. Write 
    local `secrets` and `sast` gates. If coverage exists only in CI, report it as pending PR CI and do
    not claim that it passed. If a task has the `security` risk tag and neither type has verified
    coverage, stop until the person records `mandao approve <spec> security-gaps --reason <why>`.
+   An `audit` finding that cannot be fixed in this spec is accepted only by the person, with
+   `mandao approve <spec> vulnerability --package <p> --id <advisory> --reason <reachability> --review <trigger>`;
+   close carries it to the delivery notes.
    Offer either a confirmed local-tool installation (with an OS-specific command) or a quick that
    adds the scan to CI. A declared scanner is labeled declared, not detected; unknown is not none.
    For each security-tagged task, require an executed PASS in its `_log/gates/` receipt for the

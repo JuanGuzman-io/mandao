@@ -19,6 +19,7 @@ import { registerQuickLog } from './run-quick.js';
 import { registerResearch } from './run-research.js';
 import { registerSecurityScanning } from './run-security-scanning.js';
 import { registerSpecScripts, registerSpecWriters } from './run-spec.js';
+import { registerStackCheck } from './run-stack-check.js';
 import { registerTelemetry } from './run-telemetry.js';
 import { registerVersionNotes } from './run-version-notes.js';
 
@@ -31,6 +32,7 @@ export function registerRun(program: Command, ctx: CliContext) {
   registerResearch(run, ctx);
   registerLeader(run, ctx);
   registerPremise(run, ctx);
+  registerStackCheck(run, ctx);
   registerCost(run, ctx);
   registerArchify(run, ctx);
   registerTelemetry(run, ctx);
