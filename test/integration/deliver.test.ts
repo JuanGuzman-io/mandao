@@ -63,11 +63,16 @@ function repo(provider: 'other' | 'github' = 'other', extraConfig = '') {
   return { root, remote };
 }
 
-function quickRepo() {
+function quickRepo(startRecord = true) {
   const root = makeTree({
     'package.json': '{"name":"quick-delivery-test"}',
     '.mandao/config.yml': 'schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n',
-    'specs/quick/_log/start-fix-typo.yml': 'id: quick\ntitle: Fix typo\ntype: bug\nlane: normal\nbranch: feat/quick-fix-typo\nbase: main\n',
+    ...(startRecord
+      ? {
+          'specs/quick/_log/start-fix-typo.yml':
+            'id: quick\ntitle: Fix typo\ntype: bug\nlane: normal\nbranch: feat/quick-fix-typo\nbase: main\n',
+        }
+      : {}),
     'specs/quick/quick-log.md': '# Quick log\n\n| Date | Name | Project | Files | Lines | Gates | Review | Commit |\n',
     'source.txt': 'base\n',
   });
@@ -182,6 +187,23 @@ describe('mandao deliver manual-provider path', () => {
     await run(root, 'quick/fix-typo');
 
     expect(promptState.groups).toBe(1);
+    expect(git(remote, 'show-ref', '--verify', 'refs/heads/feat/quick-fix-typo')).toBeTruthy();
+    expect(logs.join('\n')).toContain('Open a PR manually from feat/quick-fix-typo into main');
+  });
+});
+
+describe('mandao deliver quick without a start record', () => {
+  test('derives the branch, base and lane from the configuration (quick made without start --quick)', async () => {
+    promptState.groups = 0;
+    const { root, remote } = quickRepo(false);
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+    const localBin = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    vi.stubEnv('PATH', localBin);
+
+    await run(root, 'quick/fix-typo');
+
     expect(git(remote, 'show-ref', '--verify', 'refs/heads/feat/quick-fix-typo')).toBeTruthy();
     expect(logs.join('\n')).toContain('Open a PR manually from feat/quick-fix-typo into main');
   });

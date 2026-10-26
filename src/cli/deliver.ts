@@ -7,7 +7,7 @@ import { parse as parseYaml } from 'yaml';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
 import type { Config } from '../schemas/index.js';
-import { branchingFor } from '../scripts/branching.js';
+import { branchingFor, specBranch, startPoint } from '../scripts/branching.js';
 import {
   canDeleteMergedBranch,
   hasSecurityCheck,
@@ -83,6 +83,18 @@ function startRecord(dir: string, quick = false, quickName?: string): StartRecor
   return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
 }
 
+/**
+ * A quick change made without `mandao start --quick` has no start record: its branch, base and lane follow
+ * from the configuration, the current branch winning when it is that quick's (`…quick-<slug>`).
+ */
+function derivedQuickStart(config: Config, dir: string, slug: string): StartRecord {
+  const b = branchingFor(config);
+  const current = git(dir, ['branch', '--show-current']);
+  const branch = current.endsWith(`quick-${slug}`) ? current : specBranch(config, b, { id: 'quick', slug });
+  const hotfix = branch.startsWith(b.prefixes.hotfix);
+  return { id: 'quick', title: slug, branch, base: startPoint(b, hotfix), lane: hotfix ? 'hotfix' : 'normal' };
+}
+
 function quickPullRequestBody(title: string, quickDir: string, repo: string): string {
   const href = relative(repo, quickDir).split(sep).join('/');
   return `## Outcome\n\n${title}\n\n## For developers\n\nSee the quick log for measured files, gates and review evidence.\n\nQuick log: [quick-log.md](${href}/quick-log.md)`;
@@ -96,7 +108,8 @@ function loadDeliveryContext(root: string, ref: string): DeliveryContext {
   const realFoundDir = realpathSync(foundDir);
   const repo = mainCheckout(realFoundDir);
   const invocationRoot = realpathSync(root);
-  const start = startRecord(realFoundDir, quick, quickName);
+  const recorded = startRecord(realFoundDir, quick, quickName);
+  const start = quickName && !recorded.branch ? derivedQuickStart(config, realFoundDir, quickName) : recorded;
   if (!start.branch) throw new Error(`start record for ${ref} is missing its source branch`);
   const branch = start.branch;
   const worktree = findWorktree(repo, branch) ?? root;
