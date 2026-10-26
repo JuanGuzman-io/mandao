@@ -6,7 +6,7 @@ import { readConfig } from '../engine/files.js';
 import { researchToolCapabilities } from '../engine/research-tools.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitSpecDocs, commitState, repoRoot, taskCommits } from '../scripts/commits.js';
-import { MOCKUPS_DIR, mockupBlockers, mockupHashes, privateLinkBlockers } from '../scripts/mockups.js';
+import { MOCKUPS_DIR, mockupBlockers, privateLinkBlockers } from '../scripts/mockups.js';
 import { verifiedReuseReferences } from '../scripts/research.js';
 import { expectedPlace, findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { appendApprovalLog, docPath, LITE_DOC, readApprovalLog } from '../scripts/spec-log.js';
@@ -16,7 +16,6 @@ import {
   type ApprovalStep,
   activeApprovals,
   changedSince,
-  docHash,
   emojiPrefix,
   frontmatterOf,
   type NextFacts,
@@ -28,6 +27,7 @@ import {
   withStatus,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
+import { currentHashes, withConstitution } from './approval-hashes.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { frontField, taskBlockers, withInvocations } from './next-invocations.js';
@@ -108,8 +108,10 @@ function stepDocuments(spec: SpecFolder, step: ApprovalStep): string[] {
   // Design approval confirms the story too, even when a previous story approval already changed its status.
   const story = spec.story ? [own('story.md')] : [];
   if (step === 'story') return [own('story.md')];
-  if (step === 'design') return [...story, docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design'), own('research.md')];
-  if (step === 'spec') return [...story, own(LITE_DOC), own('research.md'), ...(existsSync(own('tasks.md')) ? [own('tasks.md')] : [])];
+  if (step === 'design')
+    return [...story, docPath(spec.dir, 'requirements'), docPath(spec.dir, 'design'), own('data-model.md'), own('research.md')];
+  if (step === 'spec')
+    return [...story, own(LITE_DOC), own('data-model.md'), own('research.md'), ...(existsSync(own('tasks.md')) ? [own('tasks.md')] : [])];
   if (step === 'tasks') return [docPath(spec.dir, 'tasks')];
   return [];
 }
@@ -147,15 +149,6 @@ function budgetTo(to: string | undefined): number | 'none' {
   const n = Number(to);
   if (!(n > 0)) throw new Error('budget needs --to <USD> (the total this spec may spend) or --to none (no cap)');
   return n;
-}
-
-const APPROVABLE = ['story.md', 'requirements.md', 'design.md', 'spec.md', 'research.md'];
-
-/** The hash of each approvable document by file name, plus every `mockups/` file unless `only` leaves it out. tasks.md is left out: its checkboxes change. */
-export function currentHashes(dir: string, only?: string[]): Record<string, string> {
-  const files = APPROVABLE.filter((f) => (!only || only.includes(f)) && existsSync(join(dir, f)));
-  const docs = Object.fromEntries(files.map((f) => [f, docHash(readFileSync(join(dir, f), 'utf8'))]));
-  return !only || only.includes(MOCKUPS_DIR) ? { ...docs, ...mockupHashes(dir) } : docs;
 }
 
 const readApprovals = (spec: SpecFolder) => readApprovalLog(spec.dir);
@@ -219,16 +212,19 @@ export function nextFor(
     ...(delivery ? { delivery } : {}),
     pendingCommits: commitState(spec, config.commits.trailers).pending,
     approvals: readApprovals(spec),
-    hashes: currentHashes(spec.dir),
+    hashes: withConstitution(root, config, spec, currentHashes(spec.dir)),
     ...(researchIssues.length ? { researchIssues } : {}),
   });
   return withInvocations(next, spec.story?.meta.id ?? spec.name, harness);
 }
 
 /** Appends the approval to the spec's approvals and returns it. */
-function recordApproval(spec: SpecFolder, step: ApprovalStep, o: ApproveOptions, docs: string[]) {
+function recordApproval(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder, step: ApprovalStep, o: ApproveOptions) {
+  const docs = documentsFor(spec, step).map((f) => f.slice(spec.dir.length + 1));
   const note = step === 'security-gaps' ? o.reason : o.byRunning ? `approved by running ${o.byRunning}` : o.note;
-  const hashes = currentHashes(spec.dir, step === 'design' || step === 'spec' ? [...docs, MOCKUPS_DIR] : docs);
+  const design = step === 'design' || step === 'spec';
+  const own = currentHashes(spec.dir, design ? [...docs, MOCKUPS_DIR] : docs);
+  const hashes = design ? withConstitution(root, config, spec, own) : own;
   return appendApproval(
     spec,
     {
@@ -350,9 +346,8 @@ function approveStep(
     json({ result: 'ask', approved: false, step, reason: question });
     return;
   }
-  const docs = documentsFor(spec, step).map((f) => f.slice(spec.dir.length + 1));
   const statusChanged = approveDocuments(spec, step);
-  const record = recordApproval(spec, step, options, docs);
+  const record = recordApproval(root, config, spec, step, options);
   const commit = commitApproval(config, spec, step);
   const newSession = implementSession(config, harness, spec, step);
   const next = nextFor(root, readSpec(spec.dir), config, harness);

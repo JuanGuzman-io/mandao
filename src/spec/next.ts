@@ -125,10 +125,30 @@ function settle(spec: NextSpec, facts: NextFacts, lite: boolean): NextStep | und
     );
   const draft = draftStep(spec, lite, facts.tasksStatus);
   if (draft) return rec(approve(id, draft), `the ${draft === 'story' ? 'story' : 'spec'} is still draft`, '/mandao-clarify');
+  return changedAfterApproval(id, facts, lite);
+}
+
+/** A document, or the constitution, changed after the spec's approval. */
+function changedAfterApproval(id: string, facts: NextFacts, lite: boolean): NextStep | undefined {
   const approvals = activeApprovals(facts.approvals ?? []).filter((a) => a.step !== 'shown');
   const changed = changedSince(approvals, facts.hashes);
   if (!changed.length) return undefined;
-  return rec(approve(id, lite ? 'spec' : 'design'), `${changed.join(', ')} changed after its approval`, '/mandao-clarify');
+  const step = approve(id, lite ? 'spec' : 'design');
+  const docs = changed.filter((f) => f !== CONSTITUTION);
+  if (docs.length) return rec(step, `${docs.join(', ')} changed after its approval`, '/mandao-clarify');
+  return rec('/mandao-specify', constitutionChanged(approvals, step), '/mandao-clarify');
+}
+
+/** The key under which an approval records the hash of the constitution it was approved against (phase 18). */
+export const CONSTITUTION = 'constitution';
+
+/** The constitution moved after the approval: the approved documents may contradict it (MDO-0001: sqlite-vec → Qdrant). */
+function constitutionChanged(approvals: Approval[], step: string): string {
+  const approved = [...new Set(approvals.flatMap((a) => Object.keys(a.sha256 ?? {})))].filter(
+    (f) => f !== CONSTITUTION && !f.startsWith(MOCKUPS_FOLDER),
+  );
+  const docs = approved.length ? approved.join(', ') : 'the approved documents';
+  return `the constitution changed after this spec's approval: update ${docs} to match it, then \`${step}\``;
 }
 
 /** Where an approved, settled spec stands: tasks, commits, verify, close. */
