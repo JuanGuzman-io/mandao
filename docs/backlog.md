@@ -53,7 +53,7 @@ scope, product behavior, security or irreversible actions.
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
 | [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
-| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | plan approved (PE, 2026-10-26); in progress on `perf/phase-17` |
+| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | implemented on `perf/phase-17`; review and PR pending |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
 | [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
@@ -969,6 +969,14 @@ accepts; unrelated changes stay out and do not block; `tasks.md` `files`/`kind` 
 `run task-files` ride with the commit; the lock rides with its task's approved config change; (F) `run commit`
 records the cost (`--usd` where there is no transcript; never blocks); (G) a checkpoint or commit after a hand
 edit of a script log needs `--discrepancy-reason` (PE decision: refuse, not warn), recorded with the row.
+
+**Delivered on `perf/phase-17` (2026-10-26),** ADR 0060: `taskGateIssues` in `approve tasks` / `run tasks`; the
+constitution's one-approval gate rule; the `eval` gate and `run tests --eval`; red and mutation runs through the
+project command from its folder; deferred runs deduplicated, `run tests --spec --deferred`, the no-CI blocker;
+`taskScope` for the review pack, PASS and `run review --via`, `run review-pack --include`, commits compared on
+approved paths only; `onlyTaskBookkeeping` and `run task-files`; the lock with the task's config change; cost in
+`run commit`; `--discrepancy-reason` at checkpoint and commit. Deviation: the build entry-file check of the first
+task is a planner rule (`rules/doc-tasks.md`), not a refusal.
 
 **Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
 leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks

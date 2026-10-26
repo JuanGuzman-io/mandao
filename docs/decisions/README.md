@@ -66,3 +66,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0057](0057-requirements-document-intake.md) | Requirements document intake | Accepted (Phase 14) |
 | [0058](0058-native-web-search-counts.md) | The harness's native web search counts as research evidence | Accepted (Phase 15) |
 | [0059](0059-continuous-flow.md) | Continuous flow: the spec's branch in the session, chaining by default | Accepted (Phase 16) |
+| [0060](0060-gates-and-task-scoped-commits.md) | Gates from the start, task-scoped commits | Accepted (Phase 17) |

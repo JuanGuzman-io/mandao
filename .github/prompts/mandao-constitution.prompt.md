@@ -82,9 +82,17 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 - Derive conventions and thresholds from what the code actually does; cite files. Where the code is
   inconsistent, write the dominant convention and record the exceptions as `CONFLICT`.
 - Name one **exemplar file** per kind of module (controller, service, component…) in `standards.md`.
-- Propose gate commands per project (format, lint, typecheck, test, secrets, audit, sast, metrics)
-  from existing scripts; the user approves them into `projects[].gates` in `.mandao/config.yml`. A gate
-  command runs from the project folder (`projects[].path`), so write its paths relative to that folder.
+- **Gates, every one in one approval** (phase 17): propose per project format, lint, typecheck, test,
+  `build` (or `none` when nothing builds), secrets, sast and audit, plus `eval` when the project evaluates a
+  model or a quality metric (verify runs it, never the task gates) and `metrics` when it measures performance.
+  Take them from existing scripts, else from the stack in `standards.md` (e.g. `uv run ruff check`,
+  `uv run pytest`, `pip-audit`). Ask about everything a later command needs in this same approval: `run commit`
+  needs `build` or `build: none`, and security-tagged tasks need `secrets` and `sast`. The user approves them
+  into `projects[].gates` in `.mandao/config.yml`. **No manifest yet** (no `package.json`, `pyproject.toml`…):
+  write the approved commands in the `## Gates` section of `standards.md` as proposed; the task that creates the
+  manifest declares `.mandao/config.yml` in its files and sets them (`approve tasks` refuses a plan where no
+  task does). A gate command runs from the project folder (`projects[].path`), so write its paths relative to
+  that folder.
 - Inspect local security gates and every project CI definition for secret scanners and SAST. Run
   `node .mandao/bin/mandao.mjs run security-scanning` for deterministic detection and, when a GitHub remote and `gh` are
   available, read-only provider API evidence. Present each result as detected, user-declared or
