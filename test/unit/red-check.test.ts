@@ -9,6 +9,11 @@ describe('redCheck: only failing tests are red evidence', () => {
     expect(redCheck('FAIL', 1, undefined, "'pytest' is not recognized as an internal or external command").red).toBe(false);
   });
 
+  test('a runner killed by a signal (exit above 128) is a crash, not red', () => {
+    expect(redCheck('FAIL', 137, 'pytest').problem).toMatch(/runner crashed or was killed \(exit 137\)/);
+    expect(redCheck('FAIL', 139, 'vitest').red).toBe(false);
+  });
+
   test('pytest exits other than 1 are not failing tests', () => {
     expect(redCheck('FAIL', 1, 'pytest')).toEqual({ red: true });
     expect(redCheck('FAIL', 2, 'pytest').problem).toMatch(/interrupted or failed to collect/);

@@ -112,6 +112,10 @@ async function baseline(root: string, config: Config, worktree: string, log: Spe
 
 function createWorktree(root: string, p: SpecProposal): Step {
   if (existsSync(p.worktree)) throw new Error(`${p.worktree} already exists: open it, or remove it with \`mandao worktree clean\``);
+  if (p.reusesBranch) {
+    git(root, ['worktree', 'add', p.worktree, p.branch]);
+    return { step: 'worktree', status: 'done', detail: `existing ${p.branch} at ${p.worktree}` };
+  }
   git(root, ['worktree', 'add', '-b', p.branch, p.worktree, p.base]);
   return { step: 'worktree', status: 'done', detail: `${p.branch} from ${p.base} at ${p.worktree}` };
 }

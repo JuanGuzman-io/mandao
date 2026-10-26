@@ -223,6 +223,15 @@ describe('mandao start (§14.5, ADR 0037)', () => {
     expect(q.open).toContain('claude "/mandao-quick fix the typo"');
   });
 
+  test('a tracker id whose branch already exists with no spec is checked out, not created again', async () => {
+    const root = repo();
+    git(root, 'branch', 'feat/PROJ-12');
+    await cli(root, 'start', 'PROJ-12', '--no-install', '--no-baseline', '--json');
+    const r = lastJson();
+    expect(r).toMatchObject({ id: 'PROJ-12', branch: 'feat/PROJ-12' });
+    expect(git(r.worktree, 'rev-parse', '--abbrev-ref', 'HEAD')).toBe('feat/PROJ-12');
+  });
+
   test('worktree list and clean: only merged, clean worktrees are removed', async () => {
     const root = repo();
     await cli(root, 'start', 'PROJ-1', '--no-install', '--no-baseline', '--json');

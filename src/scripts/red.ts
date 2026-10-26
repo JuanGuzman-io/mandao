@@ -37,6 +37,7 @@ const JS_NOT_LOADED = /Failed to load|Test suite failed to run/;
 function notTestFailure(exitCode: number | undefined, runner?: string, output = ''): string | undefined {
   if (exitCode === 126 || exitCode === 127 || NOT_RUN.test(output))
     return `the test runner could not run (exit ${exitCode ?? 'unknown'}): install it or use the project's test command`;
+  if (exitCode !== undefined && exitCode > 128) return `the runner crashed or was killed (exit ${exitCode}): a crash is not a failing test`;
   if (runner === 'pytest' && exitCode !== undefined && PYTEST_EXITS[exitCode])
     return `${PYTEST_EXITS[exitCode]} (exit ${exitCode}); a collection error is not a failing test: add a stub so the test runs and fails on its assertion`;
   if (runner === 'vitest' || runner === 'jest') {

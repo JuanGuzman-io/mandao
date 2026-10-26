@@ -60,7 +60,10 @@ const researchEntrySchema = z.object({
   /** An accepted entry: who accepted it, why, and the evidence it rests on (`P2`, `C-7`). */
   accepted_by: z.string().trim().min(1).optional(),
   reason: z.string().trim().min(1).optional(),
-  evidence: z.string().trim().min(1).optional(),
+  evidence: z
+    .string()
+    .regex(/^(P\d+|C-\d+)$/, 'must be a premise run (P<n>) or a clarification (C-<n>)')
+    .optional(),
 });
 
 export const researchDocumentSchema = z.object({ schema_version: z.literal(1), entries: z.array(researchEntrySchema).default([]) });

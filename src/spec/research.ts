@@ -13,7 +13,7 @@ export interface ResearchValidationOptions {
   highPremiseIds?: string[];
   expiryMonths?: Partial<Record<ResearchTopicType, number>>;
   maxQuestions?: number;
-  /** A configured search integration is available; possible native support is not proof. */
+  /** A declared search MCP, or native search that counts (ADR 0058), is available to the active harness. */
   webSearchAvailable?: boolean;
   /** Exact prior-entry references independently verified by the caller. */
   verifiedReuseReferences?: string[];
@@ -174,6 +174,16 @@ export function researchGateFindings(markdowns: string[], document: unknown, opt
   const findings = validateResearch(document, options);
   const parsed = researchDocumentSchema.safeParse(document);
   if (!parsed.success) return findings;
+  for (const entry of parsed.data.entries) {
+    const evidence = entry.status === 'accepted' ? entry.evidence : undefined;
+    if (evidence && !markdowns.some((text) => new RegExp(`(^|[^\\w-])${evidence}(?![\\w-])`, 'm').test(text)))
+      findings.push({
+        code: 'RESEARCH_ACCEPTANCE_UNKNOWN_EVIDENCE',
+        ref: entry.id,
+        message: `accepted on ${evidence}, which no spec document records`,
+        severity: 'error',
+      });
+  }
   const questions = researchQuestions(markdowns, options.maxQuestions ?? 5);
   for (const question of questions.questions) {
     const found = parsed.data.entries.some(

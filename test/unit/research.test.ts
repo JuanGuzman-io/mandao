@@ -66,6 +66,16 @@ describe('research evidence', () => {
     });
     const findings = validateResearch({ schema_version: 1, entries: [accepted] }, { today: '2026-10-22', webSearchAvailable: false });
     expect(findings.filter((f) => f.severity === 'error')).toEqual([]);
+    const gate = (evidence: string, docs: string[]) =>
+      researchGateFindings(docs, { schema_version: 1, entries: [{ ...accepted, evidence }] }, { today: '2026-10-22' });
+    expect(gate('P2', ['| P2 | sqlite loads extensions | High |'])).toEqual([]);
+    expect(gate('C-7', ['- C-7: the PE accepts the local premise run'])).toEqual([]);
+    expect(gate('P9', ['| P2 | sqlite loads extensions | High |'])).toContainEqual(
+      expect.objectContaining({ code: 'RESEARCH_ACCEPTANCE_UNKNOWN_EVIDENCE', ref: 'R1', message: expect.stringContaining('P9') }),
+    );
+    expect(validateResearch({ schema_version: 1, entries: [{ ...accepted, evidence: 'trust me' }] })).toContainEqual(
+      expect.objectContaining({ code: 'RESEARCH_SCHEMA' }),
+    );
     const bare = entry({ status: 'accepted', accepted_by: 'PE' });
     expect(validateResearch({ schema_version: 1, entries: [bare] }, { today: '2026-10-22' })).toContainEqual(
       expect.objectContaining({ code: 'RESEARCH_ACCEPTANCE_INCOMPLETE', ref: 'R1' }),

@@ -680,6 +680,19 @@ would do), `deliver` derives a quick's branch, base and lane when the start reco
 with an explicit `--id` reuses an existing branch that has no spec folder or worktree. Running red with the
 gate's command from the project's folder stays in phase 17.
 
+Independent review (2026-10-26, FAIL with 9 findings, fixed or decided here):
+- **Fixed:** a hand commit of content nobody reviewed is never reconciled: a difference from the queued
+  manifest closes the entry only when another commit changed that path after it was queued (the gate commit
+  of MDO-0001 T1); a runner killed by a signal (exit above 128) or one that could not be spawned is not red;
+  `mandao start` checks out an existing branch the proposal reuses; `deliver` finds a bug or hotfix quick's
+  own branch (`fix/quick-<slug>`) from any checkout; an accepted research entry's `evidence` must be `P<n>`
+  or `C-<n>` and appear in a spec document; ADR 0052 and a code comment say ADR 0058 amends them.
+- **Not done, by decision:** checkpoint does not prune reconciled entries. `run commit` closes them (and `next`
+  recommends it whenever entries are pending), and pruning at checkpoint would skip the out-of-scope brake
+  that keeps a hand-committed entry with undeclared files pending.
+- **Accepted (low):** reconcile compares author times, so a rebase that resets author dates could close a
+  rework entry early; the branch-reuse check looks only at `origin`, like `branchExists`.
+
 1. **A missing runner is not red evidence (severe; MDO-0001 T17).** `run red` recorded a red run whose
    only failure was `pytest: command not found` (exit 127). An infrastructure failure was accepted as TDD
    red evidence; the agent noticed and recorded it again. A red run must count only test failures

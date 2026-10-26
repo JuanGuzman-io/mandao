@@ -63,7 +63,7 @@ function repo(provider: 'other' | 'github' = 'other', extraConfig = '') {
   return { root, remote };
 }
 
-function quickRepo(startRecord = true) {
+function quickRepo(startRecord = true, branch = 'feat/quick-fix-typo') {
   const root = makeTree({
     'package.json': '{"name":"quick-delivery-test"}',
     '.mandao/config.yml': 'schema_version: 1\nworkspace: single\nprojects:\n  - name: app\n    path: .\nharnesses: [codex]\n',
@@ -79,13 +79,13 @@ function quickRepo(startRecord = true) {
   initTestRepo(root, '-q', '-b', 'main');
   git(root, 'add', '.');
   git(root, 'commit', '-qm', 'base');
-  git(root, 'checkout', '-qb', 'feat/quick-fix-typo');
+  git(root, 'checkout', '-qb', branch);
   writeFileSync(join(root, 'source.txt'), 'typo fixed\n');
   git(root, 'commit', '-qam', 'quick fix');
   const remote = makeTree({});
   initTestRepo(remote, '--bare', '-q');
   git(root, 'remote', 'add', 'origin', remote);
-  git(root, 'push', '-q', 'origin', 'main', 'feat/quick-fix-typo');
+  git(root, 'push', '-q', 'origin', 'main', branch);
   return { root, remote };
 }
 
@@ -206,6 +206,25 @@ describe('mandao deliver quick without a start record', () => {
 
     expect(git(remote, 'show-ref', '--verify', 'refs/heads/feat/quick-fix-typo')).toBeTruthy();
     expect(logs.join('\n')).toContain('Open a PR manually from feat/quick-fix-typo into main');
+  });
+
+  test('finds a bug quick on its own fix/ branch in a worktree when run from the main checkout', async () => {
+    promptState.groups = 0;
+    const { root } = quickRepo(false, 'fix/quick-fix-typo');
+    git(root, 'checkout', '-q', 'main');
+    const worktree = join(root, 'test-worktrees', 'quick');
+    mkdirSync(join(root, 'test-worktrees'));
+    git(root, 'worktree', 'add', '-q', worktree, 'fix/quick-fix-typo');
+    writeFileSync(join(root, '.git', 'info', 'exclude'), 'test-worktrees/\n');
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+    const localBin = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    vi.stubEnv('PATH', localBin);
+
+    await run(root, 'quick/fix-typo');
+
+    expect(logs.join('\n')).toContain('Open a PR manually from fix/quick-fix-typo into main');
   });
 });
 

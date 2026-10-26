@@ -1,6 +1,6 @@
 # 0052 — Verified search for research approval
 
-**Status:** Accepted (Phase 8)
+**Status:** Accepted (Phase 8); amended by [ADR 0058](0058-native-web-search-counts.md): the native web search of Claude Code, Codex and Antigravity counts.
 
 ## Context
 

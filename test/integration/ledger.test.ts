@@ -241,8 +241,10 @@ describe('commits found by trailers (ADR 0021)', () => {
     const spec = readSpec(dir);
     const [entry] = spec.progress!.pending_commits;
     writeProgress(dir, { ...spec.progress!, pending_commits: [{ ...entry!, queued_at: '2026-01-01T00:00:00.000Z' }] });
-    // A gate added mid-task changed the file after the manifest was taken; the task was then committed.
+    // A gate added mid-task changed the file in its own commit after the manifest was taken; the task was then committed.
     writeFileSync(join(root, 'src/b.ts'), 'export const t2 = 1; // gate fix\n');
+    git(root, 'add', 'src/b.ts');
+    git(root, 'commit', '-qm', 'chore: add the build gate');
     commitByHand(root, 'T2');
     const run = commitPending(pending(root));
     expect(run).toMatchObject({ committed: [], pending: [], alreadyCommitted: ['T2'], differs: { T2: ['src/b.ts'] } });
@@ -283,14 +285,23 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(git(root, 'show', 'HEAD:src/b.ts')).toBe('export const t2 = 2;');
   });
 
-  test('a hand commit with the trailers but other content than the approved manifest is not reconciled', () => {
-    const root = repo();
-    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
-    writeFileSync(join(root, 'src/b.ts'), 'export const sneaky = 1;\n');
-    commitByHand(root, 'T2');
-    const run = commitPending(pending(root));
-    expect(run.alreadyCommitted).toBeUndefined();
-    expect(run.error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
-    expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
-  });
+  test.each([false, true])(
+    'a hand commit with the trailers but other content than the approved manifest is not reconciled (queued_at: %s)',
+    (stamped) => {
+      const root = repo();
+      passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+      if (stamped) {
+        const dir = join(root, SPEC);
+        const spec = readSpec(dir);
+        const queued = spec.progress!.pending_commits.map((e) => ({ ...e, queued_at: '2026-01-01T00:00:00.000Z' }));
+        writeProgress(dir, { ...spec.progress!, pending_commits: queued });
+      }
+      writeFileSync(join(root, 'src/b.ts'), 'export const sneaky = 1;\n');
+      commitByHand(root, 'T2');
+      const run = commitPending(pending(root));
+      expect(run.alreadyCommitted).toBeUndefined();
+      expect(run.error).toMatch(/working tree differs from the Reviewer-approved manifest: src\/b.ts/);
+      expect(readSpec(join(root, SPEC)).progress!.pending_commits.map((p) => p.task)).toEqual(['T2']);
+    },
+  );
 });

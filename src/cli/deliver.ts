@@ -84,13 +84,17 @@ function startRecord(dir: string, quick = false, quickName?: string): StartRecor
 }
 
 /**
- * A quick change made without `mandao start --quick` has no start record: its branch, base and lane follow
- * from the configuration, the current branch winning when it is that quick's (`…quick-<slug>`).
+ * A quick change made without `mandao start --quick` has no start record: its branch is the current or the one
+ * local branch named `…quick-<slug>`, else the configured name; base and lane follow from its prefix.
  */
 function derivedQuickStart(config: Config, dir: string, slug: string): StartRecord {
   const b = branchingFor(config);
+  const own = (name: string) => name.endsWith(`quick-${slug}`);
   const current = git(dir, ['branch', '--show-current']);
-  const branch = current.endsWith(`quick-${slug}`) ? current : specBranch(config, b, { id: 'quick', slug });
+  const local = git(dir, ['for-each-ref', '--format=%(refname:short)', 'refs/heads']).split('\n').filter(own);
+  // The quick's own branch, whatever its prefix (fix/, hotfix/): the current one, else the one local match.
+  const found = own(current) ? current : local.length === 1 ? local[0] : undefined;
+  const branch = found ?? specBranch(config, b, { id: 'quick', slug });
   const hotfix = branch.startsWith(b.prefixes.hotfix);
   return { id: 'quick', title: slug, branch, base: startPoint(b, hotfix), lane: hotfix ? 'hotfix' : 'normal' };
 }
