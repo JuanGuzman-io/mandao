@@ -2,7 +2,7 @@ import { ADAPTERS } from '../adapters/index.js';
 import { readRecommendations } from '../models/load.js';
 import type { Config, HarnessId } from '../schemas/index.js';
 import { repoRoot } from '../scripts/commits.js';
-import { findClaudeTranscript } from '../scripts/session-cost.js';
+import { claudeCostBasis, findClaudeTranscript } from '../scripts/session-cost.js';
 import {
   type CutAdvice,
   cutAdvice,
@@ -47,6 +47,14 @@ export function newSessionAdvice(harness: string, spec: SpecFolder, command: str
   return sessionAdvice(harness, repoRoot(spec.dir), `/mandao-${command} ${specId(spec)}`);
 }
 
+/**
+ * After `approve spec|tasks`: with flow.chain implement follows in this session (phase 16); otherwise the
+ * advice to start it in a new one (ADR 0038).
+ */
+export function implementSession(config: Config, harness: string, spec: SpecFolder, step: string): { newSession?: SessionAdvice } {
+  return (step === 'spec' || step === 'tasks') && !config.flow.chain ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
+}
+
 export type StepCut = CutAdvice & { stop: boolean; minSavings: number; advice?: SessionAdvice };
 
 /**
@@ -59,7 +67,7 @@ export function stepCut(config: Config, spec: SpecFolder, id: string, harness: s
   if (!s) return undefined;
   const left = tasksLeft(spec);
   const advice = cutAdvice(s.context, left, s.price, now.getTime());
-  const minSavings = cutMinSavings(config);
+  const minSavings = cutMinSavings(config, claudeCostBasis());
   const candidate = advice.cut && advice.savings >= minSavings;
   const decision = candidate ? 'stop: suggest a new session' : advice.cut ? `go on: below ${minSavings}` : 'stay';
   const stop = recordCutEstimate(spec.dir, {
@@ -76,9 +84,11 @@ export function stepCut(config: Config, spec: SpecFolder, id: string, harness: s
 }
 
 /** Between implement and verify (a human pause anyway): the rule alone decides, with the command to go on. */
-export function verifyCut(spec: SpecFolder, harness: string, now = new Date()) {
+export function verifyCut(spec: SpecFolder, harness: string, now = new Date(), config?: Config) {
   const s = claudeSession(harness);
   if (!s) return undefined;
+  // On a subscription with no threshold, implement goes on into verify in this session (phase 16).
+  if (config && cutMinSavings(config, claudeCostBasis()) === Number.POSITIVE_INFINITY) return undefined;
   const advice = cutAdvice(s.context, 0, s.price, now.getTime());
   const suggested = recordCut(spec, 'verify', s.context, advice, now);
   if (!advice.cut) return advice;

@@ -36,7 +36,7 @@ import { json } from './json.js';
 import { frontField, withInvocations } from './next-invocations.js';
 import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
-import { newSessionAdvice } from './session-advice.js';
+import { implementSession } from './session-advice.js';
 import { harnessOption } from './spec-context.js';
 
 /** Who approves: the person at the terminal, as git knows them; never a model. */
@@ -360,7 +360,7 @@ function approveStep(
   const statusChanged = approveDocuments(spec, step);
   const record = recordApproval(spec, step, options, docs);
   const commit = commitApproval(config, spec, step);
-  const newSession = step === 'spec' || step === 'tasks' ? { newSession: newSessionAdvice(harness, spec, 'implement') } : {};
+  const newSession = implementSession(config, harness, spec, step);
   const next = nextFor(root, readSpec(spec.dir), config, harness);
   json({
     ...(options.byRunning ? { result: 'go' } : {}),

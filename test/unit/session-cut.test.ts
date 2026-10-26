@@ -64,4 +64,11 @@ describe('session cut at a task boundary', () => {
     expect(cutMinSavings({ session: {}, budget: { per_spec: 20 } })).toBe(1);
     expect(cutMinSavings({ session: { cut_min_savings: 0 }, budget: { per_spec: 4 } })).toBe(0);
   });
+
+  test('on a subscription the savings are list-price equivalents: no cut for them unless a threshold is set (phase 16)', () => {
+    expect(cutMinSavings({ session: {}, budget: {} }, 'equivalent')).toBe(Number.POSITIVE_INFINITY);
+    expect(cutMinSavings({ session: {}, budget: {} }, 'billed')).toBe(1);
+    expect(cutMinSavings({ session: {}, budget: {} }, 'unknown')).toBe(1);
+    expect(cutMinSavings({ session: { cut_min_savings: 5 }, budget: {} }, 'equivalent')).toBe(5);
+  });
 });

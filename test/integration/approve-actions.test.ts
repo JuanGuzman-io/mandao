@@ -118,11 +118,10 @@ describe('mandao approve: no model session', () => {
     expect(r).toMatchObject({
       approved: true,
       commit: { committed: true },
-      next: { recommended: { command: '/mandao-implement' } },
+      next: { recommended: { command: '/mandao-implement' }, autoContinue: true },
     });
-    expect(r.newSession.action).toBe('/clear');
-    expect(r.newSession.then).toBe('/mandao-implement MDO-0001');
-    expect(r.newSession.fallback).toBe(`cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`);
+    // Phase 16: with flow.chain (the default) implement follows in this session.
+    expect(r.newSession).toBeUndefined();
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 spec');
   });
 

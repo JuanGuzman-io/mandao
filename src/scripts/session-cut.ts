@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import type { Config, ModelPrice } from '../schemas/index.js';
 import { writeText } from '../writer/files.js';
+import type { CostBasis } from './session-cost.js';
 import { logPath, specKeepsState, updateState } from './spec-log.js';
 
 /**
@@ -133,9 +134,14 @@ export function cutAdvice(session: SessionContext, tasksLeft: number, price: Mod
 const DEFAULT_MIN_SAVINGS = 1;
 const BUDGET_SHARE = 0.15;
 
-/** Above this estimated saving the Leader stops mid-implement to suggest the cut; below it goes on. */
-export function cutMinSavings(config: Pick<Config, 'session' | 'budget'>): number {
+/**
+ * Above this estimated saving the Leader stops mid-implement to suggest the cut; below it goes on. On a
+ * subscription (`equivalent`) the saving is a list-price equivalent, not money, while every cut costs the PE
+ * time: with no threshold set there is no cut for it (phase 16; the harness still compacts a full context).
+ */
+export function cutMinSavings(config: Pick<Config, 'session' | 'budget'>, basis?: CostBasis): number {
   if (config.session.cut_min_savings !== undefined) return config.session.cut_min_savings;
+  if (basis === 'equivalent') return Number.POSITIVE_INFINITY;
   const share = config.budget.per_spec !== undefined ? config.budget.per_spec * BUDGET_SHARE : Number.POSITIVE_INFINITY;
   return Math.min(DEFAULT_MIN_SAVINGS, share);
 }

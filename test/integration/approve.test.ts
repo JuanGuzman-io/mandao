@@ -227,17 +227,14 @@ describe('mandao approve: no model session', () => {
 
   test('a lite spec is approved under its own subject (MDO-0007)', async () => {
     const root = repo();
-    expect(await approve(root, 'MDO-0001', 'spec')).toMatchObject({
+    const result = await approve(root, 'MDO-0001', 'spec');
+    expect(result).toMatchObject({
       approved: true,
       commit: { committed: true },
-      next: { recommended: { command: '/mandao-implement' } },
-      // ADR 0038: implement starts in a new session from the worktree, not in the specify one.
-      newSession: {
-        action: '/clear',
-        then: '/mandao-implement MDO-0001',
-        fallback: `cd ${JSON.stringify(root)} && claude "/mandao-implement MDO-0001"`,
-      },
+      // Phase 16: with flow.chain (the default) implement follows in this session; no new-session advice.
+      next: { recommended: { command: '/mandao-implement', invocation: '/mandao-implement MDO-0001' }, autoContinue: true },
     });
+    expect(result.newSession).toBeUndefined();
     expect(git(root, 'log', '-1', '--format=%s')).toBe('📝 docs(mandao): approve the MDO-0001 spec');
   });
 

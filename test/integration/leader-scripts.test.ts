@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { chmodSync, cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { appendFileSync, chmodSync, cpSync, existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { checkReview } from '../../src/cli/checkpoint-guards.js';
@@ -250,8 +250,9 @@ describe('Leader scripts', () => {
     expect(await run(root, 'tests', 'mandao', '--full', '--reason', 'CI is down')).toMatchObject({ impact: 'full suite' });
     expect(readFileSync(logPath(join(root, SPEC), 'full-runs.md'), 'utf8')).toMatch(/· mandao · \w+ · CI is down/);
   });
-  test('S-3.1: approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback', async () => {
+  test('S-3.1 (flow.chain off): approve in Claude Code advises /clear, then the next command, with the worktree command as the fallback', async () => {
     const root = repo();
+    appendFileSync(join(root, '.mandao/config.yml'), 'flow:\n  chain: false\n');
     vi.stubEnv('CLAUDE_CODE_SESSION_ID', 'approve-session');
     await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec']);
     // ASSUMPTION: the advice shape { action, then, fallback } (spec D4) replaces approve's `newSession` string.
@@ -262,8 +263,9 @@ describe('Leader scripts', () => {
     });
   });
 
-  test('S-3.1: the active harness (--harness), not config.harnesses[0], picks the action', async () => {
+  test('S-3.1 (flow.chain off): the active harness (--harness), not config.harnesses[0], picks the action', async () => {
     const root = repo();
+    appendFileSync(join(root, '.mandao/config.yml'), 'flow:\n  chain: false\n');
     await buildProgram(() => root).parseAsync(['node', 'mandao', 'approve', 'MDO-0001', 'spec', '--harness', 'codex']);
     expect(JSON.parse(out.at(-1)!).newSession).toMatchObject({ action: '/new' });
   });
@@ -327,6 +329,7 @@ describe('Leader scripts', () => {
     const root = repo();
     const cfg = join(root, '.mandao/config.yml');
     writeFileSync(cfg, readFileSync(cfg, 'utf8').replace(/harnesses:\n\s*- claude/, 'harnesses:\n  - codex\n  - claude'));
+    appendFileSync(cfg, 'flow:\n  chain: false\n');
     expect(readFileSync(cfg, 'utf8')).toMatch(/- codex\n\s*- claude/);
     vi.stubEnv('CLAUDE_CODE_SESSION_ID', 'x');
     delete process.env.CLAUDE_CODE_SESSION_ID; // unstubAllEnvs restores the original value

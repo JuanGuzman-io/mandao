@@ -78,4 +78,16 @@ describe('init and the budget (ADR 0036)', () => {
       /--budget must be a positive number/,
     );
   });
+
+  test("the session cut threshold is the person's too: --cut-min-savings sets it, none leaves the cost-basis default (phase 16)", async () => {
+    const plain = fresh();
+    await run(plain, 'init', '--yes', '--harness', 'claude');
+    expect(config(plain)).not.toMatch(/cut_min_savings/);
+    const set = fresh();
+    await run(set, 'init', '--yes', '--harness', 'claude', '--cut-min-savings', '50');
+    expect(config(set)).toMatch(/cut_min_savings: 50/);
+    await expect(run(fresh(), 'init', '--yes', '--harness', 'claude', '--cut-min-savings', 'lots')).rejects.toThrow(
+      /--cut-min-savings must be a number of USD/,
+    );
+  });
 });
