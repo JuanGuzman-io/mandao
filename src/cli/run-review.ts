@@ -6,7 +6,15 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import { appendExecutionRow, writeProgress } from '../scripts/checkpoint.js';
 import { changeManifest, renderChangeManifest, repoRoot } from '../scripts/commits.js';
 import { type Identity, identityCell } from '../scripts/identity.js';
-import { isReviewProcess, REVIEW_PROCESSES, reviewerInstructions, reviewPack, reviewPrompt, runReview } from '../scripts/review.js';
+import {
+  isReviewProcess,
+  REVIEW_PROCESSES,
+  reviewerInstructions,
+  reviewPack,
+  reviewPrompt,
+  runReview,
+  taskScope,
+} from '../scripts/review.js';
 import type { ReviewScope } from '../scripts/review-scope.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
@@ -68,9 +76,11 @@ function processReview(ctx: CliContext, loadSpec: SpecLoader, ref: string, task:
   const reviewer = resolveWorkspaceModels(ctx.root(), config, readRecommendations())[opts.via]?.reviewer;
   if (!reviewer) throw new Error(`No reviewer model for ${opts.via}: run \`mandao models\``);
   for (const f of [opts.gates, opts.brief]) if (!existsSync(f)) throw new Error(`${f} does not exist`);
-  const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
-  // One classification of the tree feeds both the diff the Reviewer reads and the scope recorded with the PASS.
-  const pack = reviewPack(repoRoot(spec.dir), spec.dir, ctx.root());
+  const declared = spec.tasks.find((t) => t.id === task)?.files ?? [];
+  const scope = taskScope(repoRoot(spec.dir), spec.dir, declared, [], ctx.root());
+  const manifest = changeManifest(repoRoot(spec.dir), spec.dir, [], scope);
+  // One classification of the task's changes feeds both the diff the Reviewer reads and the scope recorded with the PASS.
+  const pack = reviewPack(repoRoot(spec.dir), spec.dir, ctx.root(), scope);
   const prompt = reviewPrompt(
     reviewerInstructions(ctx.root(), opts.via),
     JSON.parse(readFileSync(opts.brief, 'utf8')),

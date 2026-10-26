@@ -11,7 +11,7 @@ import { fillCommand, isTestFile, unmarkedScanners } from '../scripts/impact.js'
 import { mockupLink, mockupPackSection } from '../scripts/mockups.js';
 import { deletedTests } from '../scripts/red.js';
 import { decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
-import { reviewDiff } from '../scripts/review.js';
+import { reviewDiff, taskScope } from '../scripts/review.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { securityGateCommand } from '../scripts/security-gates.js';
 import type { SpecFolder } from '../scripts/spec.js';
@@ -253,12 +253,13 @@ function registerReviewPack(run: Command, ctx: CliContext) {
     .command('review-pack <spec> <task>')
     .description('Write the brief, gates and diff the Reviewer reads; print the pack path')
     .option('--harness <id>', 'harness running the Leader', 'claude')
-    .action((ref: string, id: string, o: { harness?: string }) => {
-      json(createReviewPack(ctx, ref, id, o.harness));
+    .option('--include <paths...>', "changed files outside the task's declared files that belong to this task")
+    .action((ref: string, id: string, o: { harness?: string; include?: string[] }) => {
+      json(createReviewPack(ctx, ref, id, o.harness, o.include ?? []));
     });
 }
 
-function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHarness?: string) {
+function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHarness?: string, include: string[] = []) {
   const { config, spec } = loadSpec(ctx, ref);
   const task = taskOf(spec, id);
   const harness = harnessOption(requestedHarness);
@@ -276,7 +277,9 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     loopContext(ctx, spec, id, harness, task.project),
     mockSkillNames(ctx.root(), config),
   );
-  const manifest = changeManifest(repoRoot(spec.dir), spec.dir);
+  // Only the task's changes (phase 17): unrelated work in the tree is neither reviewed nor committed with it.
+  const scope = taskScope(repoRoot(spec.dir), spec.dir, task.files, include, ctx.root());
+  const manifest = changeManifest(repoRoot(spec.dir), spec.dir, [], scope);
   const removedTests = deletedTests(repoRoot(spec.dir), spec.progress, id);
   const deletionReason = [...spec.execution]
     .reverse()
@@ -291,7 +294,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
     removedTests,
     deletionReason,
     gates,
-    reviewDiff(repoRoot(spec.dir), spec.dir, ctx.root()),
+    reviewDiff(repoRoot(spec.dir), spec.dir, ctx.root(), scope),
     mockupPackSection(ctx.root(), brief.mockup, reviewRuleFor(ctx.root(), config, task.project)),
   );
   // No claude.ai address reaches the Reviewer from the story, spec, tasks, diff or mock files (trial 13 D6).

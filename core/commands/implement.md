@@ -139,7 +139,8 @@ their short JSON, and decide; never paste their full output into the conversatio
    (its `graph` field is the code-graph context: the Reviewer has no shell for `graphify query`), the
    step 4 results (a read-only reviewer cannot run tests) and the active lenses
    (`{{template:rules/review.md}}`, `{{template:rules/clean-code.md}}`):
-   `{{script:review-pack}} {{arg:spec}} <Tn>` writes all of it to one file; send the Reviewer only its
+   `{{script:review-pack}} {{arg:spec}} <Tn>` writes all of it to one file, covering only the task's changes (its declared
+   files; name any other file of this task with `--include <paths>`; changes of other tasks stay out); send the Reviewer only its
    path. Who reviews comes from `loop`:
    - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
      and records itself: save the brief to a file, then

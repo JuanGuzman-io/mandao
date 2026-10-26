@@ -9,7 +9,7 @@ import type { HarnessId } from '../schemas/index.js';
 import type { CrossReviewer } from '../spec/index.js';
 import { changedFiles } from './commits.js';
 import type { Identity } from './identity.js';
-import { lockPath, posixPath, type ReviewScope } from './review-scope.js';
+import { lockPath, outOfScope, posixPath, type ReviewScope } from './review-scope.js';
 
 /** Harnesses Mandao can launch as a read-only reviewer process (ADR 0021). */
 export const REVIEW_PROCESSES = ['codex', 'claude', 'opencode'] as const;
@@ -150,11 +150,29 @@ function classifyChanges(repo: string, files: string[], home: string) {
 }
 
 /** The scope of a review (see `outOfScope` in review-scope.ts for how it is judged), from the pack's one classification. */
-export const reviewScope = (repo: string, specDir: string, home: string = repo): ReviewScope => reviewPack(repo, specDir, home).scope;
+export const reviewScope = (repo: string, specDir: string, home: string = repo, only?: string[]): ReviewScope =>
+  reviewPack(repo, specDir, home, only).scope;
 
-/** The review pack's diff text and the scope it implies, from one classification of the working tree. */
-export function reviewPack(repo: string, specDir: string, home: string = repo): { diff: string; scope: ReviewScope } {
-  const files = changedFiles(repo, specDir);
+/**
+ * The changed paths a task's review and commit cover (phase 17): what the task declares, the out-of-list files
+ * the Leader names (`include`), and the generated files and lock the phase 11 brake accepts with them. Anything
+ * else changed in the tree (a Mandao upgrade, another task's pending files) stays out and blocks nothing.
+ */
+export function taskScope(repo: string, specDir: string, declared: string[], include: string[], home: string = repo): string[] {
+  const changed = changedFiles(repo, specDir);
+  const named = new Set(include.map((p) => posixPath(p).replace(/^\.\//, '')));
+  const { included, receipts } = classifyChanges(repo, changed, home);
+  const none = { reviewed: [], receipts: [] };
+  const reviewed = included.filter((f) => named.has(f) || !outOfScope([f], declared, none, repo, home).length);
+  const stray = new Set(
+    outOfScope(changed, declared, { reviewed, receipts: receipts.map(({ path, origin }) => ({ path, origin })) }, repo, home),
+  );
+  return changed.filter((f) => !stray.has(f));
+}
+
+/** The review pack's diff text and the scope it implies, from one classification of the working tree (or of `only`). */
+export function reviewPack(repo: string, specDir: string, home: string = repo, only?: string[]): { diff: string; scope: ReviewScope } {
+  const files = only ? changedFiles(repo, specDir).filter((f) => only.includes(f)) : changedFiles(repo, specDir);
   if (!files.length) return { diff: '(no changes)', scope: { reviewed: [], receipts: [] } };
   const git = (args: string[]) => execFileSync('git', args, { cwd: repo, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   const untracked = new Set(
@@ -184,7 +202,8 @@ export function reviewPack(repo: string, specDir: string, home: string = repo): 
 }
 
 /** Source diff plus verifiable receipts for generated harness copies and source-derived diagrams. */
-export const reviewDiff = (repo: string, specDir: string, home: string = repo): string => reviewPack(repo, specDir, home).diff;
+export const reviewDiff = (repo: string, specDir: string, home: string = repo, only?: string[]): string =>
+  reviewPack(repo, specDir, home, only).diff;
 
 export function reviewPrompt(instructions: string, brief: unknown, diff: string, gates: string): string {
   return [

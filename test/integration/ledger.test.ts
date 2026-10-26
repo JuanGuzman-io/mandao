@@ -170,11 +170,13 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(commitPending(pending(root)).error).toMatch(/no Reviewer-approved change manifest/);
   });
 
-  test('refuses any changed file that was not in the approved manifest', () => {
+  test('a changed file outside the approved manifest stays out of the commit and does not block it (phase 17)', () => {
     const root = repo();
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
     writeFileSync(join(root, 'unreviewed.txt'), 'extra change\n');
-    expect(commitPending(pending(root)).error).toMatch(/working tree differs from the Reviewer-approved manifest: unreviewed.txt/);
+    expect(commitPending(pending(root))).toMatchObject({ committed: [{ task: 'T2' }] });
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).not.toContain('unreviewed.txt');
+    expect(git(root, 'status', '--porcelain')).toContain('unreviewed.txt');
   });
 
   test('refuses a file whose contents changed after the Reviewer passed', () => {

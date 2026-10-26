@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type ChangeManifestEntry, changedFiles, changeManifest, repoRoot } from '../scripts/commits.js';
 import { deletedTests, testsWithoutRed } from '../scripts/red.js';
-import { parseVerdict, reviewScope } from '../scripts/review.js';
+import { parseVerdict, reviewScope, taskScope } from '../scripts/review.js';
 import type { ReviewScope } from '../scripts/review-scope.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { cachePath, logPath, specLogInCache, writeLogSection } from '../scripts/spec-log.js';
@@ -103,18 +103,35 @@ export function checkReview(
   if (specLogInCache(spec.dir)) writeLogSection(spec.dir, 'reviews.md', `${o.task} — attempt ${attempt}`, text);
   else writeText(join(logPath(spec.dir, 'reviews'), `${o.task}-${attempt}-review.md`), text);
   if (o.verdict !== 'PASS') return {};
-  const manifest = approvedReviewManifest(spec, o.task, attempt);
-  // The tree equals the pack's manifest here, so the same classification the pack used says what was a diff.
-  return { manifest, scope: reviewScope(repoRoot(spec.dir), spec.dir, home) };
+  const manifest = approvedReviewManifest(spec, o.task, attempt, home);
+  // The task's paths equal the pack's manifest here, so the same classification the pack used says what was a diff.
+  return {
+    manifest,
+    scope: reviewScope(
+      repoRoot(spec.dir),
+      spec.dir,
+      home,
+      manifest.map((m) => m.path),
+    ),
+  };
 }
 
-function approvedReviewManifest(spec: SpecFolder, task: string, attempt: number): ChangeManifestEntry[] {
+function approvedReviewManifest(spec: SpecFolder, task: string, attempt: number, home: string): ChangeManifestEntry[] {
   const manifest = manifestFromPack(spec, task, attempt);
   if (!manifest)
     throw new Error(
       `${task}: no matching review pack manifest; run \`mandao run review-pack ${spec.name} ${task}\` and have the Reviewer use it`,
     );
-  const current = changeManifest(repoRoot(spec.dir), spec.dir);
+  // The task's changes now, with the pack's out-of-list files still named: unrelated work does not count (phase 17).
+  const declared = spec.tasks.find((t) => t.id === task)?.files ?? [];
+  const scope = taskScope(
+    repoRoot(spec.dir),
+    spec.dir,
+    declared,
+    manifest.map((m) => m.path),
+    home,
+  );
+  const current = changeManifest(repoRoot(spec.dir), spec.dir, [], scope);
   if (JSON.stringify(current) !== JSON.stringify(manifest)) {
     const expected = new Map(manifest.map((item) => [item.path, item]));
     const actual = new Map(current.map((item) => [item.path, item]));

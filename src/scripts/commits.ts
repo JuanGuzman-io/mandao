@@ -22,8 +22,8 @@ export interface ChangeManifestEntry {
   sha256: string;
 }
 
-/** Hashes every changed path and records its porcelain status; deleted files use a stable sentinel hash. */
-export function changeManifest(repo: string, exclude?: string, omit: string[] = []): ChangeManifestEntry[] {
+/** Hashes every changed path (or only those of `only`) and records its porcelain status; deleted files use a stable sentinel hash. */
+export function changeManifest(repo: string, exclude?: string, omit: string[] = [], only?: string[]): ChangeManifestEntry[] {
   const status = git(repo, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
   const skip = exclude ? relative(repo, exclude).replace(/\\/g, '/') : '';
   const omitted = new Set(omit);
@@ -35,7 +35,7 @@ export function changeManifest(repo: string, exclude?: string, omit: string[] = 
     const state = record.slice(0, 2);
     const path = record.slice(3);
     if (state[0] === 'R' || state[0] === 'C') i++;
-    if (omitted.has(path) || (skip && (path === skip || path.startsWith(`${skip}/`)))) continue;
+    if (omitted.has(path) || (only && !only.includes(path)) || (skip && (path === skip || path.startsWith(`${skip}/`)))) continue;
     const full = join(repo, path);
     const sha256 = existsSync(full)
       ? createHash('sha256').update(readFileSync(full)).digest('hex')
@@ -314,13 +314,10 @@ function validatePendingManifest(input: PendingInput, queue: Progress['pending_c
     .filter((path) => !scriptLedgerPath(path) && !onlyDoneBoxes(input.repo, `${specPrefix}${path}`, queued));
   if (unapprovedSpec.length)
     return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
-  const current = allCurrent.filter((item) => !item.path.startsWith(specPrefix));
-  if (JSON.stringify(current) !== JSON.stringify(approved)) {
-    const expected = new Map(approved.map((item) => [item.path, item]));
-    const actual = new Map(current.map((item) => [item.path, item]));
-    const changed = [...new Set([...expected.keys(), ...actual.keys()])]
-      .filter((path) => JSON.stringify(expected.get(path)) !== JSON.stringify(actual.get(path)))
-      .sort();
+  // Only the approved paths are compared (phase 17): unrelated changes in the tree stay out of the commit.
+  const actual = new Map(allCurrent.map((item) => [item.path, item]));
+  const changed = approved.filter((item) => JSON.stringify(actual.get(item.path)) !== JSON.stringify(item)).map((item) => item.path);
+  if (changed.length) {
     return {
       error: `working tree differs from the Reviewer-approved manifest: ${changed.join(', ') || 'manifest mismatch'}; review again before committing`,
       specChanges: [],

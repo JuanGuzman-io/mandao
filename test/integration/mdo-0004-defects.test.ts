@@ -82,10 +82,11 @@ describe('defects found by MDO-0004', () => {
       review,
     );
     const progress = readSpec(join(root, SPEC)).progress!;
-    expect(progress.pending_commits[0]!.files).toEqual(['src/cli/extensions.ts', 'src/other-task.ts']);
+    // Phase 17: another task's work in progress is not this task's: it stays out of the manifest and the commit.
+    expect(progress.pending_commits[0]!.files).toEqual(['src/cli/extensions.ts']);
     // Phase 11: the scope the Reviewer was shown is recorded with the approval and copied into the queued commit.
-    expect(progress.approved_manifests[0]).toMatchObject({ reviewed: ['src/cli/extensions.ts', 'src/other-task.ts'], receipts: [] });
-    expect(progress.pending_commits[0]).toMatchObject({ reviewed: ['src/cli/extensions.ts', 'src/other-task.ts'], receipts: [] });
+    expect(progress.approved_manifests[0]).toMatchObject({ reviewed: ['src/cli/extensions.ts'], receipts: [] });
+    expect(progress.pending_commits[0]).toMatchObject({ reviewed: ['src/cli/extensions.ts'], receipts: [] });
   });
 
   test('#2 the size of a PR leaves out what is not code', () => {
