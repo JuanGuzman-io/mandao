@@ -191,9 +191,15 @@ describe('logs are written by scripts only', () => {
     await checkpoint(root, '--verdict', 'REPORTED');
     const file = logPath(join(root, SPEC), 'execution.md');
     writeFileSync(file, readFileSync(file, 'utf8').replace('REPORTED', 'PASS'));
-    const r = await checkpoint(root, '--phase', 'awaiting-review');
-    expect(r.discrepancy).toBe('log edited outside the scripts: execution.md');
-    expect(readFileSync(logPath(join(root, SPEC), 'discrepancies.md'), 'utf8')).toMatch(/execution\.md/);
+    // Phase 17 (MDO-0001: state.yml edited by hand, the reason only in a commit message): the reason is required.
+    await expect(checkpoint(root, '--phase', 'awaiting-review')).rejects.toThrow(
+      /edited outside the scripts \(execution\.md\): pass --discrepancy-reason/,
+    );
+    const r = await checkpoint(root, '--phase', 'awaiting-review', '--discrepancy-reason', 'fixed a typo the PE asked for');
+    expect(r.discrepancy).toBe('log edited outside the scripts: execution.md · reason: fixed a typo the PE asked for');
+    expect(readFileSync(logPath(join(root, SPEC), 'discrepancies.md'), 'utf8')).toMatch(
+      /execution\.md · reason: fixed a typo the PE asked for/,
+    );
     expect((await checkpoint(root, '--phase', 'awaiting-review')).discrepancy).toBeUndefined();
   });
 

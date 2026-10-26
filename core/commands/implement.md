@@ -165,7 +165,7 @@ their short JSON, and decide; never paste their full output into the conversatio
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
    Logs (`_log/`, `progress.yml`, `execution.md`) are written only by the scripts. Never edit them by
-   hand: `checkpoint` records any such edit as a discrepancy. When a script refuses, fix the input
+   hand: `checkpoint` records any such edit as a discrepancy, and refuses until it has the PE's reason: ask the PE why and pass it with `--discrepancy-reason "<why>"`. When a script refuses, fix the input
    (for example a shorter `--pending-commit` subject), never the log.
 7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
    the script refuses). Hashes are never recorded: the commit is

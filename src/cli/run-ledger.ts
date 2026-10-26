@@ -3,28 +3,35 @@ import { join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { LOCK_FILE, readConfig, readLock } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
-import { buildCommand, type Config, declaresNoBuild, type HarnessId } from '../schemas/index.js';
+import type { HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
-import { type ChangeManifestEntry, changedFiles, commitPending, commitSpecDocs, reconciledTasks, repoRoot } from '../scripts/commits.js';
-import { runWithGateReceipt } from '../scripts/gate-receipts.js';
+import { type ChangeManifestEntry, changedFiles, commitSpecDocs, repoRoot } from '../scripts/commits.js';
 import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
 import type { ReviewScope } from '../scripts/review-scope.js';
-import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { specLogInCache } from '../scripts/spec-log.js';
 import { type ExecutionRow, emojiPrefix, NOTE_FLAGS, type Progress, parseCloseSummary, taskAttempt, VERDICTS } from '../spec/index.js';
-import { budgetFor } from './budget.js';
-import { checkPendingSubject, checkReview, recordLogEdits, requireRedFirst, requireTestDeletionReason } from './checkpoint-guards.js';
+import {
+  checkPendingSubject,
+  checkReview,
+  recordLogEdits,
+  requireDiscrepancyReason,
+  requireRedFirst,
+  requireTestDeletionReason,
+} from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { registerClose } from './run-close.js';
+import { declaredNoBuild, registerCommit, requirePreCommitBuilds } from './run-commit.js';
 import { registerDiagram } from './run-diagram.js';
 import { registerMutation } from './run-mutation.js';
 import { registerRed } from './run-red.js';
 import { registerReview } from './run-review.js';
 import { registerTestReview } from './run-test-review.js';
+
+export { declaredNoBuild, requirePreCommitBuilds };
 
 function loadSpec(ctx: CliContext, ref: string) {
   const config = readConfig(ctx.root());
@@ -33,6 +40,8 @@ function loadSpec(ctx: CliContext, ref: string) {
 
 export interface CheckpointOptions {
   task?: string;
+  /** Why a script-owned log was edited by hand: required when one was (phase 17). */
+  discrepancyReason?: string;
   nextTask?: string;
   phase?: string;
   harness?: string;
@@ -160,6 +169,7 @@ function currentTask(ctx: CliContext, o: CheckpointOptions) {
 function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
+  requireDiscrepancyReason(spec, o.discrepancyReason);
   requireRedFirst(spec, o.task, o.verdict);
   requireTestDeletionReason(spec, o.task, o.verdict, o.testDeletionReason);
   const review = checkReview(spec, o, ctx.root());
@@ -172,7 +182,7 @@ function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions)
 export function writeCheckpoint(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   const now = new Date().toISOString();
   const { pending, reviewNote, manifest, scope } = checkedPending(ctx, spec, o);
-  const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim());
+  const edited = recordLogEdits(spec, now, `checkpoint ${o.task ?? ''} ${o.verdict ?? o.phase ?? ''}`.trim(), o.discrepancyReason);
   const notes = [o.notes, reviewNote, edited].filter(Boolean).join('; ');
   if (o.verdict) appendExecutionRow(spec.dir, spec.name, checkpointRow(ctx.root(), spec, { ...o, notes }, now));
   if (o.done) markTask(spec.dir, o.done, true);
@@ -223,6 +233,7 @@ export function withCheckpointOptions(cmd: Command): Command {
     .option('--notes <text>', 'notes for the row (advisories, deferred tests…)', '')
     .option('--reason <text>', 'why the Reviewer failed the task: its first blocking finding (required with FAIL)')
     .option('--test-deletion-reason <text>', 'why test cases were removed; recorded for the Reviewer')
+    .option('--discrepancy-reason <text>', 'why a script-owned log was edited by hand (required then); recorded with the row')
     .option(
       '--review <file|->',
       "with a Reviewer's PASS or FAIL: its whole answer (a file, or - for stdin), checked and kept in _log/reviews/ (version 2: a section of _log/reviews.md)",
@@ -321,68 +332,6 @@ function registerCommitSpec(run: Command, ctx: CliContext) {
       json({ ...result, header });
       if (!result.committed && result.reason !== 'nothing to commit in the spec folder') process.exitCode = 1;
     });
-}
-
-/** `mandao run commit`: the pending task commits, one each, with trailers. Local only. */
-function registerCommit(run: Command, ctx: CliContext) {
-  run
-    .command('commit <spec>')
-    .description('Commit the tasks that passed review and wait for their commit, one commit per task (never pushes)')
-    .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
-    .action(async (ref: string, opts: { trailer?: string[] }) => {
-      const { config, spec } = loadSpec(ctx, ref);
-      if (!spec.story || !spec.progress) throw new Error(`${spec.name} needs story.md and progress.yml`);
-      await requirePreCommitBuilds(ctx, config, spec);
-      const result = commitPending({
-        repo: repoRoot(spec.dir),
-        specDir: spec.dir,
-        config,
-        story: spec.story,
-        tasks: spec.tasks,
-        progress: spec.progress,
-        trailers: opts.trailer ?? [],
-        protectedBranches: branchingFor(config).protected,
-        home: ctx.root(),
-      });
-      const skipped = declaredNoBuild(config);
-      json(skipped.length ? { ...result, builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : result);
-      if (result.error) process.exitCode = 1;
-    });
-}
-
-/** Projects whose pre-commit build is skipped because they declared `build: none` (recorded, never a PASS). */
-export const declaredNoBuild = (config: Config): string[] => config.projects.filter(declaresNoBuild).map((p) => p.name);
-
-export async function requirePreCommitBuilds(ctx: CliContext, config: Config, spec: SpecFolder): Promise<void> {
-  if (!spec.progress?.pending_commits.length) return;
-  const reconciled = reconciledTasks(
-    repoRoot(spec.dir),
-    spec.story?.meta.id ?? spec.name,
-    config.commits.trailers,
-    spec.progress.pending_commits,
-  );
-  if (spec.progress.pending_commits.every((e) => reconciled.has(e.task))) return;
-  const projects = config.projects.filter((project) => buildCommand(project));
-  if (!projects.length && !declaredNoBuild(config).length)
-    throw new Error('run commit needs a configured build gate: configure a build command or `build: none` in .mandao/config.yml');
-  for (const project of projects) {
-    const command = buildCommand(project)!;
-    const budget = budgetFor(ctx.root(), config, project, 'build', `${project.name} pre-commit build`, false, spec.dir);
-    const result = await runWithGateReceipt(
-      {
-        root: ctx.root(),
-        project: project.name,
-        gate: 'build',
-        command,
-        configuration: config,
-        selectedTests: [],
-        budget,
-        projectRoot: join(ctx.root(), project.path),
-      },
-      () => runTests(ctx.root(), `${project.name} build`, inProjectDir(command, project.path), budget),
-    );
-    if (result.status !== 'PASS') throw new Error(`${project.name} build is ${result.status}: ${result.reason ?? 'commit refused'}`);
-  }
 }
 
 /** Scripts that write the ledger (checkpoint), commit (commit) or launch a reviewer (review): ADR 0021. */

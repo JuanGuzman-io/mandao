@@ -133,15 +133,26 @@ function approvedReviewManifest(spec: SpecFolder, task: string, attempt: number)
  * `_log/discrepancies.md` and returned as a note for this checkpoint's row; the current content then
  * becomes the reference, so one edit is reported once.
  */
-export function recordLogEdits(spec: SpecFolder, at: string, context: string): string | undefined {
+export function recordLogEdits(spec: SpecFolder, at: string, context: string, reason?: string): string | undefined {
   const edited = logDiscrepancies(spec.dir);
   if (!edited.length) return undefined;
+  const why = reason?.trim() ? ` · reason: ${reason.trim().replace(/\s+/g, ' ')}` : '';
   // Version 2: the row's note is the committed record; the list itself stays in the local cache.
   const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'discrepancies.md') : logPath(spec.dir, 'discrepancies.md');
   const before = existsSync(file) ? readFileSync(file, 'utf8') : '# Discrepancies (logs edited outside the scripts)\n\n';
-  writeText(file, `${before}- ${at} · ${context} · ${edited.join(', ')}\n`);
+  writeText(file, `${before}- ${at} · ${context} · ${edited.join(', ')}${why}\n`);
   acceptLogs(spec.dir, edited);
-  return `${NOTE_FLAGS.logEdited}: ${edited.join(', ')}`;
+  return `${NOTE_FLAGS.logEdited}: ${edited.join(', ')}${why}`;
+}
+
+/**
+ * A log edited outside the scripts is accepted only with the PE's reason, recorded with it (phase 17; MDO-0001:
+ * a hand edit of state.yml was flagged, and its reason ended up only in a commit message). Checked before any write.
+ */
+export function requireDiscrepancyReason(spec: SpecFolder, reason: string | undefined): void {
+  const edited = logDiscrepancies(spec.dir);
+  if (edited.length && !reason?.trim())
+    throw new Error(`logs edited outside the scripts (${edited.join(', ')}): pass --discrepancy-reason "<why>"`);
 }
 
 /** A queued task commit is checked when it is queued, not when it is made (MDO-0008: subjects over 72). */

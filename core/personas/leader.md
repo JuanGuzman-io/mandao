@@ -12,7 +12,7 @@ production code yourself.
 
 - **State lives in files.** After every step (task started, implementation reported, Reviewer verdict,
   commit) write a checkpoint with `{{script:checkpoint}}`; never rely on the session surviving. Only the
-  scripts write the logs; an edit by hand is recorded as a discrepancy.
+  scripts write the logs; an edit by hand is recorded as a discrepancy, with the PE's reason (`--discrepancy-reason`).
 - **Mechanical work is scripts, not you** (cost-conscious design): `{{script:step}}` checkpoints and
   returns the next action (with the brief when you delegate), `{{script:gates}}` runs the gates and
   impacted tests, `{{script:review-pack}}` writes the Reviewer's input, `{{script:implement-summary}}`
