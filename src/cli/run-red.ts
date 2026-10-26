@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
@@ -7,7 +8,7 @@ import { repoRoot } from '../scripts/commits.js';
 import { agentIdentity, type Identity, identityCell } from '../scripts/identity.js';
 import { detectRunner, fillCommand, projectDir, RUNNER_COMMANDS } from '../scripts/impact.js';
 import { redCheck, redFile } from '../scripts/red.js';
-import { runTests, type TestRun } from '../scripts/run-tests.js';
+import { inProjectDir, runTests, type TestRun } from '../scripts/run-tests.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
 import { type Task, taskAttempt, testWriter } from '../spec/index.js';
 import { budgetFor } from './budget.js';
@@ -21,11 +22,29 @@ interface RedOptions {
   harness?: string;
 }
 
-/** The command that runs exactly these test files for the project: configured, or the runner's. */
-export function testCommand(root: string, project: { path: string; tests: { impacted?: string } }, files: string[], workers: number) {
+/**
+ * The command that runs exactly these test files for the project, run from its folder (as the gates are): the
+ * configured `tests.impacted`, else the test gate when it runs the detected runner (`uv run pytest`), else the
+ * runner's own command. `command` is what the log shows; `shell` is what runs (phase 17: MDO-0001 ran a bare
+ * `pytest`, MDO-0002 ran vitest from the root, where the web project's config never loaded).
+ */
+export function testCommand(
+  root: string,
+  project: { path: string; gates?: Partial<Record<string, string>>; tests: { impacted?: string } },
+  files: string[],
+  workers: number,
+): { command: string; shell: string } | undefined {
   const runner = detectRunner(projectDir(root, project.path));
-  const template = project.tests.impacted ?? (runner ? RUNNER_COMMANDS[runner].module : undefined);
-  return template ? fillCommand(template, files, workers) : undefined;
+  const gate = project.gates?.test;
+  // The gate only when it takes the files, or ends with the runner itself (`uv run pytest`): options after it
+  // (a coverage threshold, a fixed folder) would fail or widen a red run (review F8).
+  const endsWithRunner = runner && gate && new RegExp(`(^|\\s)${runner}(\\s+run)?\\s*$`).test(gate);
+  const viaGate = gate?.includes('{files}') ? gate : endsWithRunner ? `${gate} {files}` : undefined;
+  const template = project.tests.impacted ?? viaGate ?? (runner ? RUNNER_COMMANDS[runner].module : undefined);
+  if (!template) return undefined;
+  const inProject = files.map((f) => (project.path === '.' ? f : posix.relative(project.path, f)));
+  const command = fillCommand(template, inProject, workers);
+  return { command, shell: inProjectDir(command, project.path) };
 }
 
 /**
@@ -111,7 +130,7 @@ export function registerRed(run: Command, ctx: CliContext) {
       const project = config.projects.find((p) => p.name === task.project) ?? config.projects[0]!;
       const budget = budgetFor(root, config, project, 'unit', `${id} red`, o.force, spec.dir);
       const command = testCommand(root, project, tests, Math.max(1, budget.workers));
-      const result = await runTests(root, `${id} red`, command, budget, undefined, { withStderr: true });
+      const result = { ...(await runTests(root, `${id} red`, command?.shell, budget)), ...(command ? { command: command.command } : {}) };
       const runner = detectRunner(projectDir(root, project.path));
       const check = redCheck(result.status, result.exitCode, runner, result.outputTail);
       if (!check.red) {

@@ -109,7 +109,8 @@ export function registerMutation(run: Command, ctx: CliContext) {
       applyPatch(repo, patchFile);
       let result: TestRun;
       try {
-        result = await runTests(root, `${id} mutation`, testCommand(root, project, tests, Math.max(1, budget.workers)), budget);
+        const command = testCommand(root, project, tests, Math.max(1, budget.workers));
+        result = { ...(await runTests(root, `${id} mutation`, command?.shell, budget)), ...(command ? { command: command.command } : {}) };
       } finally {
         applyPatch(repo, patchFile, true);
       }

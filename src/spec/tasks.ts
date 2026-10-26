@@ -133,3 +133,36 @@ export function parseTasks(markdown: string, file = 'tasks.md'): { tasks: Task[]
 export function setTaskDone(markdown: string, id: string, done: boolean): string {
   return markdown.replace(new RegExp(`^(###\\s+\\[)[ xX](\\]\\s+${id}\\s*[—–-])`, 'm'), `$1${done ? 'x' : ' '}$2`);
 }
+
+const unquote = (item: string) => item.trim().replace(/^(["'])(.*)\1$/, '$2');
+
+/** A flow-list item as YAML reads it back: plain when safe, double-quoted otherwise (`**`, `&`, `:`…). */
+const yamlScalar = (value: string) => (/^[\w./@-][\w./@ -]*$/.test(value) && !value.endsWith(' ') ? value : JSON.stringify(value));
+
+/**
+ * Adds files to one task and sets its kind, in its YAML block; everything else is left byte for byte. What
+ * `run task-files` writes when the Reviewer asks to declare a file or a kind changes (phase 17), so the edit
+ * is made by a script and rides with the task commit.
+ */
+export function withTaskFields(markdown: string, id: string, change: { add?: string[]; kind?: string }): string {
+  if (change.kind !== undefined && !(TASK_KINDS as readonly string[]).includes(change.kind))
+    throw new Error(`kind must be one of ${TASK_KINDS.join(', ')}, not "${change.kind}"`);
+  const start = markdown.search(new RegExp(`^###\\s+\\[[ xX]\\]\\s+${id}\\s*[—–-]`, 'm'));
+  if (start < 0) throw new Error(`no ${id} in tasks.md`);
+  const rest = markdown.slice(start + 1).search(/^###\s+\[[ xX]\]\s+T\d+\s*[—–-]/m);
+  const end = rest < 0 ? markdown.length : start + 1 + rest;
+  let block = markdown.slice(start, end);
+  if (change.add?.length) {
+    const files = /^files:\s*\[(.*)\]\s*$/m.exec(block);
+    if (!files && /^files:/m.test(block)) throw new Error(`the files of ${id} are not an inline list: edit them in a reviewed change`);
+    const current = files ? files[1]!.split(',').map(unquote).filter(Boolean) : [];
+    const merged = [...current, ...change.add.filter((f) => !current.includes(f))];
+    const line = `files: [${merged.map(yamlScalar).join(', ')}]`;
+    block = files ? block.replace(files[0], line) : block.replace(/^(project:.*)$/m, `$1\n${line}`);
+  }
+  if (change.kind !== undefined) {
+    const kind = `kind: ${change.kind}`;
+    block = /^kind:.*$/m.test(block) ? block.replace(/^kind:.*$/m, kind) : block.replace(/^(project:.*)$/m, `$1\n${kind}`);
+  }
+  return markdown.slice(0, start) + block + markdown.slice(end);
+}

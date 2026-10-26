@@ -15,11 +15,11 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "53f64fc69fdb9aa1cd0dade1e381b35ed0b516b2cb675bf2f29118df0cf7ab33"
+      "sha256": "9e6172aff53fe42a5a1ec6b3bfad7bfafb1a2a74bf4d8c619d8c1419a03aaa0f"
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "96d1bffc4dbcc3f17d4a59d83f6316156e1e533222dbd032ddc7bbf05c054eeb"
+      "sha256": "bb8910b2eb2fd377e734c34ac646f838a5f910f71504e97271b1d3d4f5232a71"
     },
     {
       "path": "core/commands/init.md",
@@ -51,13 +51,13 @@
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "567c873497b1e2385bdb334efa7c60fee43cd228cde8c9ca6472e7398fa13e52"
+      "sha256": "36883b6b457372bac3cb722a70935e4cf132deff63d3333228cc7c5b7bf324e7"
     }
   ],
-  "specSha256": "c33af928ba2ca96224dc6a69cf0257997ea4c5ab1e570fd831f82e446d650f94",
+  "specSha256": "c4b5eeb7f86c9312c1ab8155d2a9ba3e2b5f1f1661413a905fdd7e32f3bc35cb",
   "svgSha256": {
-    "light": "f848cbb4fc6505fa9bf79a72d0104f76c2f0eb0b41e1a0adbce62f8485087ebe",
-    "dark": "eb731dc89f206d88dd8a2b189d9656ead0a19998aec7f6cff01f9e9295622fce"
+    "light": "0d5cc9ef78ad6b959a82cf7f9578709f9adfd7388b47c76db20d877f1b5282ca",
+    "dark": "444a47b0acce41ba0a947573c86d03725b8b333dc855d9a3133603e81a8b3ec9"
   },
   "spec": {
     "schema_version": 2,
@@ -118,7 +118,7 @@
         "col": 1,
         "type": "backend",
         "label": "1. For each task",
-        "sublabel": "mandao run tasks +12",
+        "sublabel": "mandao run tasks +13",
         "width": 164
       },
       {

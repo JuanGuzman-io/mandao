@@ -23,6 +23,8 @@ spend.
   recorded. Report the amount and the spec's total in one line, with its `basis`: `billed` (API key,
   cloud provider) or `equivalent` (a Claude subscription: the same tokens at API list prices, not what
   was charged).
-- In `implement`, record before each task commit, including the last one. In `quick`, record before its
-  code commit. The cost write and the lifecycle end event must be included in the final commit.
+- In `implement`, `mandao run commit` records each task's cost itself and commits it with the task (pass
+  `--harness <id>`, and `--usd <amount>` where the harness has no readable transcript); do not record it
+  separately. In `quick`, record before its code commit. The cost write and the lifecycle end event must be
+  included in the final commit.
 - Never change a model or the profile to save money; Kaizen recommends, the user decides.

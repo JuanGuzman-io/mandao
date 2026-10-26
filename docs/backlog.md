@@ -52,8 +52,8 @@ scope, product behavior, security or irreversible actions.
 | [Beta release 0.1.0-beta.0](#beta-release-010-beta0) | phase 11 item 4 | phases 0–14, 13b | published 2026-10-23 (`2053385`, tag `v0.1.0-beta.0`); trusted publishing pending |
 | [Post-beta program: scope and order](#post-beta-program) | beta trial | — | reviewed (PE, 2026-10-26) |
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
-| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | implemented on `perf/phase-16`; review PASS; PR pending |
-| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | agreed |
+| [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
+| [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | implemented on `perf/phase-17`; review PASS; PR pending |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | agreed |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
 | [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
@@ -751,7 +751,7 @@ research exception, gate added mid-task, `--done`) runs without a hand edit or a
 
 ## Phase 16 — Continuous flow without manual git
 
-**Agreed (PE, 2026-10-26); after phase 15.**
+**Complete:** PR #28 merged into `main` (`b4a7d7a`).
 
 **Decisions (PE, 2026-10-26).** "Mandao must handle all of it; the user does not intervene in these
 processes."
@@ -955,6 +955,35 @@ outside Mandao, for both the in-place and the worktree path, and the guide docum
 ## Phase 17 — Gates and commits
 
 **Agreed (PE, 2026-10-26); after phase 15.**
+
+**Plan approved (PE, 2026-10-26),** by item: (A) the constitution proposes every gate in one approval (format,
+lint, typecheck, test, build or `none`, secrets, sast, audit), written as proposed in `standards.md` when no
+manifest exists; `approve tasks` and `run tasks` refuse a project with no gates unless a task declares
+`.mandao/config.yml` to set them; the first task that runs the test gate declares a test file (build: a warning);
+(B) an `eval` gate, run only by verify and by hand, never in the task gates (PE decision); (C) `run red` uses
+`gates.test` when no `tests.impacted` is set and runs from the project folder; (D) deferred runs are not
+duplicated, a passing local run of the deferred tests clears them, and with no CI verify asks for the local run
+instead of `--ci-confirmed`; (E) the review pack, the PASS manifest and the commit cover only the task: declared
+files, out-of-list files the Leader names (`--include`, PE decision) and the generated files the phase 11 brake
+accepts; unrelated changes stay out and do not block; `tasks.md` `files`/`kind` edits of queued tasks made with
+`run task-files` ride with the commit; the lock rides with its task's approved config change; (F) `run commit`
+records the cost (`--usd` where there is no transcript; never blocks); (G) a checkpoint or commit after a hand
+edit of a script log needs `--discrepancy-reason` (PE decision: refuse, not warn), recorded with the row.
+
+**Delivered on `perf/phase-17` (2026-10-26),** ADR 0060: `taskGateIssues` in `approve tasks` / `run tasks`; the
+constitution's one-approval gate rule; the `eval` gate and `run tests --eval`; red and mutation runs through the
+project command from its folder; deferred runs deduplicated, `run tests --spec --deferred`, the no-CI blocker;
+`taskScope` for the review pack, PASS and `run review --via`, `run review-pack --include`, commits compared on
+approved paths only; `onlyTaskBookkeeping` and `run task-files`; the lock with the task's config change; cost in
+`run commit`; `--discrepancy-reason` at checkpoint and commit. Deviation: the build entry-file check of the first
+task is a planner rule (`rules/doc-tasks.md`), not a refusal.
+
+Independent review (2026-10-26): FAIL with 12 findings (two high: a task commit took whatever was staged; a
+deferred run could be cleared by a command that never ran it), all fixed with tests; a second pass reopened two
+(a refused commit accepted the discrepancy; the first-task check moved on to the next task) and found three low
+ones (a staged rename split by the path-limited commit, yml/CRLF blocks, docs), fixed; third pass PASS. Accepted
+(advisory): a long `Mandao-Discrepancy` trailer can be refused by a project's commit-msg hook (nothing is accepted
+then).
 
 **Gates are never declared on a new project (2026-10-23).** On a project with no code, the constitution
 leaves the gates `OPEN` until a manifest (`pyproject.toml`, `package.json`) exists, and no later step picks

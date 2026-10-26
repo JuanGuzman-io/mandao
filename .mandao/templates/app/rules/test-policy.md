@@ -104,4 +104,5 @@ Testers and parallel worktrees. Settings come from `resources` in `.mandao/confi
 
 If resources are short, reduce workers. If that is still not enough, mark the run `DEFERRED_TO_CI`
 and record in `execution.md` what was deferred and why. Deferred is not a PASS: the spec cannot reach
-`verified` until CI confirms those tests.
+`verified` until CI confirms those tests, or a local run of them passes (`run tests <project> --spec <ID>
+--deferred <task>`), the only way where the repository has no CI.

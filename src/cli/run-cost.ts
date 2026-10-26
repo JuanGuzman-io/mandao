@@ -11,7 +11,7 @@ import type { CliContext } from './context.js';
 import { json } from './json.js';
 import { logDirFor } from './log-dir.js';
 
-interface CostOptions {
+export interface CostOptions {
   record?: boolean;
   command?: string;
   harness: string;
@@ -132,6 +132,15 @@ function claudeEntry(entries: CostEntry[], o: CostOptions & { command: string },
   };
 }
 
+/** Appends what this session spent since its last record (or `--usd`) to the spec's costs.yml; throws when nothing can be read. */
+export function recordCost(ctx: CliContext, ref: string, o: CostOptions): CostEntry {
+  const file = logPath(costsDir(ctx, ref), 'costs.yml');
+  const entries = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
+  const recorded = newEntry(allEntries(ctx), o, specKeepsState(costsDir(ctx, ref)));
+  writeText(file, renderCosts([...entries, recorded]));
+  return recorded;
+}
+
 /**
  * `mandao run cost <spec>`: what the spec has spent per command and role, against `budget.per_spec`.
  * `--record --command <c>` adds what this session spent since its last record (Claude Code reads its
@@ -150,11 +159,9 @@ export function registerCost(run: Command, ctx: CliContext) {
     .option('--basis <basis>', 'with --usd: billed (charged) | equivalent (subscription at list prices) | unknown', 'unknown')
     .action((ref: string, o: CostOptions) => {
       const config = readConfig(ctx.root());
+      const recorded = o.record ? recordCost(ctx, ref, o) : undefined;
       const file = logPath(costsDir(ctx, ref), 'costs.yml');
-      const entries = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-      const recorded = o.record ? newEntry(allEntries(ctx), o, specKeepsState(costsDir(ctx, ref))) : undefined;
-      if (recorded) writeText(file, renderCosts([...entries, recorded]));
-      const all = recorded ? [...entries, recorded] : entries;
+      const all = parseCosts(existsSync(file) ? readFileSync(file, 'utf8') : undefined);
       json({
         ...(recorded ? { recorded: { command: recorded.command, usd: recorded.usd, roles: recorded.roles } } : {}),
         ...summarizeCosts(

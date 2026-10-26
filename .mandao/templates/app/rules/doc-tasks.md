@@ -26,6 +26,10 @@ Applies the principles in `spec-docs.md`.
     `risk_tags`, `partial_failure_tests` (test names for ACID partial-failure coverage), `decisions`
     (linked `D<n>` ids), `depends_on`, `parallel_safe`, `verify`, and optionally `delivery` (a number; all tasks or none, no gaps,
     never depending on a later delivery, each delivery meeting at least one AC).
+- **Gates the plan can pass** (phase 17; `approve tasks` refuses otherwise): a project with no gates in
+  `.mandao/config.yml` needs the task that creates its manifest to declare `.mandao/config.yml` and set the gates
+  the constitution proposed; the first code task of a project with a test gate declares a test file, and the
+  entry files its build needs.
 - Use the `security` risk tag when a task changes a security boundary, credential handling, scanning,
   authorization or a vulnerability remediation.
 - The title is the result, never a file path. Concrete test names are chosen by whoever writes the

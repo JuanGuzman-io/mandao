@@ -45,7 +45,7 @@ function repo(version: 1 | 2) {
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
     workspace: 'single',
-    projects: [{ name: 'mandao', path: '.' }],
+    projects: [{ name: 'mandao', path: '.', gates: { lint: 'true' } }],
     harnesses: ['claude'],
   });
   syncProject(root);

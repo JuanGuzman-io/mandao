@@ -108,6 +108,23 @@ function scopeTo(all: Task[], delivery: number | undefined) {
  * What verify must run and what blocks `verified` (design §16): every task done, every structural trace
  * finding that matters resolved, every passed task committed, deferred runs confirmed by CI.
  */
+/** A deferred run waits for CI, or, where there is none, for the local run that clears it (phase 17). */
+function deferredBlocker(deferred: { task: string }[], ciAvailable: boolean | undefined, id: string, all: Task[]): string {
+  const tasks = deferred.map((d) => d.task).join(', ');
+  if (ciAvailable === false) {
+    // The exact runs, one per deferring task, with its project and the spec id (review F11).
+    const runs = [
+      ...new Set(
+        deferred.map(
+          (d) => `\`mandao run tests ${all.find((t) => t.id === d.task)?.project ?? '<project>'} --spec ${id} --deferred ${d.task}\``,
+        ),
+      ),
+    ];
+    return `${deferred.length} run(s) deferred to CI (${tasks}), and this repository has no CI: run them here with ${runs.join(', ')}`;
+  }
+  return `${deferred.length} run(s) deferred to CI wait for CI (${tasks})`;
+}
+
 export function verifyPlan(input: {
   story: Story;
   requirements: Requirements;
@@ -118,6 +135,8 @@ export function verifyPlan(input: {
   changed: string[];
   commits: CommitState;
   ciConfirmed?: boolean;
+  /** False when the repository has no CI configuration: a deferred run then names its local run (phase 17). */
+  ciAvailable?: boolean;
   designFindings?: DesignFinding[];
   securityCoverage?: ProjectSecurityCoverage[];
   securityGapsApproved?: boolean;
@@ -166,9 +185,7 @@ export function verifyPlan(input: {
   const checks = [
     ...tasks.filter((t) => !t.done).map((t) => `${t.id} is not done`),
     ...findings.filter((f) => BLOCKING.has(f.type)).map((f) => `${f.type} ${f.ref}: ${f.message}`),
-    ...(deferred.length && !input.ciConfirmed
-      ? [`${deferred.length} run(s) deferred to CI wait for CI (${deferred.map((d) => d.task).join(', ')})`]
-      : []),
+    ...(deferred.length && !input.ciConfirmed ? [deferredBlocker(deferred, input.ciAvailable, input.story.meta.id, all)] : []),
     ...findings
       .filter((f) => f.type === 'SECURITY_GAPS')
       .map((f) => `SECURITY_GAPS ${f.ref}: ${f.message}; record mandao approve <spec> security-gaps --reason <why> to accept the gap`),

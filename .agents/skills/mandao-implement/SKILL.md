@@ -102,7 +102,10 @@ their short JSON, and decide; never paste their full output into the conversatio
    (its `graph` field is the code-graph context: the Reviewer has no shell for `graphify query`), the
    step 4 results (a read-only reviewer cannot run tests) and the active lenses
    (`.mandao/templates/app/rules/review.md`, `.mandao/templates/app/rules/clean-code.md`):
-   `node .mandao/bin/mandao.mjs run review-pack <spec> <Tn>` writes all of it to one file; send the Reviewer only its
+   `node .mandao/bin/mandao.mjs run review-pack <spec> <Tn>` writes all of it to one file, covering only the task's changes (its declared
+   files; name any other file of this task with `--include <paths>`; changes of other tasks stay out). When the Reviewer asks to
+   declare a file or change the kind, run `node .mandao/bin/mandao.mjs run task-files <spec> <Tn> --add <paths> [--kind <kind>]`, never edit tasks.md by
+   hand: the edit rides with the task commit. Send the Reviewer only its
    path. Who reviews comes from `loop`:
    - `crossReview` present → another installed harness reviews, as a read-only process Mandao launches
      and records itself: save the brief to a file, then
@@ -126,7 +129,7 @@ their short JSON, and decide; never paste their full output into the conversatio
      checkpoint `--verdict PIVOT`, and wait for the user's sign-off. No retries are consumed.
    - **PASS** → commit (step 7). Advisories go to `## Advisories` and never reopen the loop.
    Logs (`_log/`, `progress.yml`, `execution.md`) are written only by the scripts. Never edit them by
-   hand: `checkpoint` records any such edit as a discrepancy. When a script refuses, fix the input
+   hand: `checkpoint` records any such edit as a discrepancy, and refuses until it has the PE's reason: ask the PE why and pass it with `--discrepancy-reason "<why>"`. When a script refuses, fix the input
    (for example a shorter `--pending-commit` subject), never the log.
 7. **Commit** locally, no confirmation needed, never push, never on a protected branch (`branching.protected`;
    the script refuses). Hashes are never recorded: the commit is
@@ -138,7 +141,7 @@ their short JSON, and decide; never paste their full output into the conversatio
       the PASS row, leave out `--verdict` and `--reviewer`: `--done <Tn> --pending-commit "<subject>"`.
    Before step 2, stage with `git add --` every file of the reviewed diff outside the task's `files`:
    the commit must build on its own.
-   2. `node .mandao/bin/mandao.mjs run commit <spec> --trailer "<your Co-Authored-By trailer, if any>"` makes one commit
+   2. `node .mandao/bin/mandao.mjs run commit <spec> --harness codex --trailer "<your Co-Authored-By trailer, if any>"` (it records the task's cost; add `--usd <amount>` where the harness has no readable transcript) makes one commit
       per pending task with its trailers.
    The Codex sandbox keeps `.git` read-only: run step 2 as a command that asks for approval to run
    outside the sandbox (`.codex/rules/mandao.rules` makes Codex prompt for exactly this command in a

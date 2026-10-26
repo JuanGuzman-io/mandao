@@ -16,7 +16,6 @@ import {
   type ApprovalStep,
   activeApprovals,
   changedSince,
-  deliveryIssues,
   docHash,
   emojiPrefix,
   frontmatterOf,
@@ -25,15 +24,13 @@ import {
   openItems,
   parseCloseSummary,
   parsePremises,
-  planTasks,
   researchGateFindings,
-  taskLayoutIssues,
   withStatus,
 } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
-import { frontField, withInvocations } from './next-invocations.js';
+import { frontField, taskBlockers, withInvocations } from './next-invocations.js';
 import { SPEC_STEPS } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
 import { implementSession } from './session-advice.js';
@@ -94,13 +91,10 @@ function blockers(
     const documents = [...specPremiseFindings(spec.dir).map((f) => f.message), ...mock];
     return [...open, ...documents, ...researchIssuesFor(root, spec, config, harness)];
   }
-  if (step === 'tasks') {
-    if (!spec.tasks.length) return [...open, 'no tasks to approve'];
-    const file = docPath(spec.dir, 'tasks');
-    const layout = taskLayoutIssues(readFileSync(file, 'utf8'), spec.tasks, spec.story, { inline: file.endsWith(LITE_DOC) });
-    const cycles = planTasks(spec.tasks).cycles.map((c) => `dependency cycle: ${c.join(' → ')}`);
-    return [...open, ...cycles, ...layout, ...spec.issues, ...deliveryIssues(spec.tasks), ...privateLinkBlockers(spec.dir)];
-  }
+  if (step === 'tasks')
+    return spec.tasks.length
+      ? [...open, ...taskBlockers(spec, config), ...privateLinkBlockers(spec.dir)]
+      : [...open, 'no tasks to approve'];
   return [];
 }
 

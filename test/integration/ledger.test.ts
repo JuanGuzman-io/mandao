@@ -4,6 +4,8 @@ import { chmodSync, cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { nextFor } from '../../src/cli/approve.js';
+import { buildProgram } from '../../src/cli/program.js';
+import { writeYaml } from '../../src/engine/files.js';
 import { configSchema } from '../../src/schemas/index.js';
 import { appendExecutionRow, writeProgress } from '../../src/scripts/checkpoint.js';
 import { changedFiles, changeManifest, commitPending, commitState, reconciledTasks, taskCommits } from '../../src/scripts/commits.js';
@@ -170,11 +172,13 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(commitPending(pending(root)).error).toMatch(/no Reviewer-approved change manifest/);
   });
 
-  test('refuses any changed file that was not in the approved manifest', () => {
+  test('a changed file outside the approved manifest stays out of the commit and does not block it (phase 17)', () => {
     const root = repo();
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
     writeFileSync(join(root, 'unreviewed.txt'), 'extra change\n');
-    expect(commitPending(pending(root)).error).toMatch(/working tree differs from the Reviewer-approved manifest: unreviewed.txt/);
+    expect(commitPending(pending(root))).toMatchObject({ committed: [{ task: 'T2' }] });
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).not.toContain('unreviewed.txt');
+    expect(git(root, 'status', '--porcelain')).toContain('unreviewed.txt');
   });
 
   test('refuses a file whose contents changed after the Reviewer passed', () => {
@@ -200,6 +204,73 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(run.error).toBeUndefined();
     expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).toContain(`${SPEC}/tasks.md`);
     expect(git(root, 'status', '--porcelain')).toBe('');
+  });
+
+  test('the files and kind edits of a queued task ride with its commit too (phase 17, MDO-0002)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    const edited = readFileSync(tasks, 'utf8')
+      .replace('### [ ] T2', '### [x] T2')
+      .replace('files: [src/cli/extensions.ts, src/cli/skills.ts]', 'files: [src/cli/extensions.ts, src/cli/skills.ts, src/b.ts]')
+      .replace(
+        'project: mandao\ntier: standard\nfiles: [src/cli/extensions.ts, src/cli/skills.ts, src/b.ts]',
+        'project: mandao\nkind: feat\ntier: standard\nfiles: [src/cli/extensions.ts, src/cli/skills.ts, src/b.ts]',
+      );
+    writeFileSync(tasks, edited);
+    expect(commitPending(pending(root)).error).toBeUndefined();
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).toContain(`${SPEC}/tasks.md`);
+  });
+
+  test('run task-files writes the edit, and it rides with the task commit (phase 17)', async () => {
+    const root = repo();
+    writeYaml(join(root, '.mandao/config.yml'), {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'mandao', path: '.' }],
+      harnesses: ['claude'],
+    });
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    await buildProgram(() => root).parseAsync([
+      'node',
+      'mandao',
+      'run',
+      'task-files',
+      'MDO-0001',
+      'T2',
+      '--add',
+      'src/b.ts',
+      '--kind',
+      'feat',
+    ]);
+    expect(readSpec(join(root, SPEC)).tasks.find((t) => t.id === 'T2')).toMatchObject({
+      kind: 'feat',
+      files: expect.arrayContaining(['src/b.ts']),
+    });
+    expect(commitPending(pending(root)).error).toBeUndefined();
+  });
+
+  test('a prose line that starts with files: or kind: is not bookkeeping (review F12)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(
+      tasks,
+      readFileSync(tasks, 'utf8').replace(
+        '### [ ] T2 — Register `skills list`\n',
+        '### [ ] T2 — Register `skills list`\n\nkind: a note someone added\n',
+      ),
+    );
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: tasks.md/);
+  });
+
+  test('an edit to another task, or to a queued task beyond its files, kind and box, still needs review', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(tasks, readFileSync(tasks, 'utf8').replace('Format pinned skills', 'Format every skill'));
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: tasks.md/);
   });
 
   test('any other tasks.md edit still needs review', () => {

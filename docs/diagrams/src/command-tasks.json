@@ -15,11 +15,11 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "53f64fc69fdb9aa1cd0dade1e381b35ed0b516b2cb675bf2f29118df0cf7ab33"
+      "sha256": "9e6172aff53fe42a5a1ec6b3bfad7bfafb1a2a74bf4d8c619d8c1419a03aaa0f"
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "96d1bffc4dbcc3f17d4a59d83f6316156e1e533222dbd032ddc7bbf05c054eeb"
+      "sha256": "bb8910b2eb2fd377e734c34ac646f838a5f910f71504e97271b1d3d4f5232a71"
     },
     {
       "path": "core/commands/init.md",
@@ -51,7 +51,7 @@
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "567c873497b1e2385bdb334efa7c60fee43cd228cde8c9ca6472e7398fa13e52"
+      "sha256": "36883b6b457372bac3cb722a70935e4cf132deff63d3333228cc7c5b7bf324e7"
     }
   ],
   "specSha256": "88ab5cd368f28a9d1d527e67d56049c6d27fcd2e504fc0ab9dc1718e98ac2453",

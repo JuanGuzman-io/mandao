@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
-import { onlyDoneBoxes, scriptLedgerPath } from './commit-spec-files.js';
+import { onlyTaskBookkeeping, scriptLedgerPath } from './commit-spec-files.js';
 import { reconcileEntries } from './reconcile.js';
 import { outOfScopeMessage, reconcileMessage, strayByTask } from './review-scope.js';
 import type { SpecFolder } from './spec.js';
@@ -22,8 +22,8 @@ export interface ChangeManifestEntry {
   sha256: string;
 }
 
-/** Hashes every changed path and records its porcelain status; deleted files use a stable sentinel hash. */
-export function changeManifest(repo: string, exclude?: string, omit: string[] = []): ChangeManifestEntry[] {
+/** Hashes every changed path (or only those of `only`) and records its porcelain status; deleted files use a stable sentinel hash. */
+export function changeManifest(repo: string, exclude?: string, omit: string[] = [], only?: string[]): ChangeManifestEntry[] {
   const status = git(repo, ['status', '--porcelain=v1', '-z', '--untracked-files=all']);
   const skip = exclude ? relative(repo, exclude).replace(/\\/g, '/') : '';
   const omitted = new Set(omit);
@@ -35,7 +35,7 @@ export function changeManifest(repo: string, exclude?: string, omit: string[] = 
     const state = record.slice(0, 2);
     const path = record.slice(3);
     if (state[0] === 'R' || state[0] === 'C') i++;
-    if (omitted.has(path) || (skip && (path === skip || path.startsWith(`${skip}/`)))) continue;
+    if (omitted.has(path) || (only && !only.includes(path)) || (skip && (path === skip || path.startsWith(`${skip}/`)))) continue;
     const full = join(repo, path);
     const sha256 = existsSync(full)
       ? createHash('sha256').update(readFileSync(full)).digest('hex')
@@ -249,7 +249,9 @@ export function commitPending(input: PendingInput): CommitRun {
     writeProgress(input.specDir, next);
     try {
       git(input.repo, ['add', '--', ...entry.files, ...specChanges]);
-      git(input.repo, ['commit', '-q', '-m', [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n')]);
+      // Only these paths: anything else someone staged stays staged, never in a reviewed task's commit (review F1).
+      const message = [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n');
+      git(input.repo, ['commit', '-q', '-m', message, '--', ...entry.files, ...renameSources(input.repo, entry.files), ...specChanges]);
     } catch (e) {
       writeProgress(input.specDir, progress);
       const reason = String((e as { stderr?: string }).stderr || (e as Error).message).trim();
@@ -288,6 +290,19 @@ export function reconciledTasks(
   return new Set(reconcileDetails(repo, specId, trailers, entries).keys());
 }
 
+/** The old path of every staged rename whose new path is in `files`: a path-limited commit needs both (review F13). */
+function renameSources(repo: string, files: string[]): string[] {
+  const records = git(repo, ['status', '--porcelain=v1', '-z']).split('\0');
+  const out: string[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]!;
+    if (record[0] !== 'R' && record[0] !== 'C') continue;
+    i++; // the source path follows a rename or a copy
+    if (record[0] === 'R' && files.includes(record.slice(3)) && records[i]) out.push(records[i]!);
+  }
+  return out;
+}
+
 function validatePendingManifest(input: PendingInput, queue: Progress['pending_commits']): { error?: string; specChanges: string[] } {
   if (queue.some((entry) => !entry.manifest?.length))
     return {
@@ -311,16 +326,13 @@ function validatePendingManifest(input: PendingInput, queue: Progress['pending_c
   const queued = queue.map((entry) => entry.task);
   const unapprovedSpec = specChanges
     .map((item) => item.path.slice(specPrefix.length))
-    .filter((path) => !scriptLedgerPath(path) && !onlyDoneBoxes(input.repo, `${specPrefix}${path}`, queued));
+    .filter((path) => !scriptLedgerPath(path) && !onlyTaskBookkeeping(input.repo, `${specPrefix}${path}`, queued));
   if (unapprovedSpec.length)
     return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
-  const current = allCurrent.filter((item) => !item.path.startsWith(specPrefix));
-  if (JSON.stringify(current) !== JSON.stringify(approved)) {
-    const expected = new Map(approved.map((item) => [item.path, item]));
-    const actual = new Map(current.map((item) => [item.path, item]));
-    const changed = [...new Set([...expected.keys(), ...actual.keys()])]
-      .filter((path) => JSON.stringify(expected.get(path)) !== JSON.stringify(actual.get(path)))
-      .sort();
+  // Only the approved paths are compared (phase 17): unrelated changes in the tree stay out of the commit.
+  const actual = new Map(allCurrent.map((item) => [item.path, item]));
+  const changed = approved.filter((item) => JSON.stringify(actual.get(item.path)) !== JSON.stringify(item)).map((item) => item.path);
+  if (changed.length) {
     return {
       error: `working tree differs from the Reviewer-approved manifest: ${changed.join(', ') || 'manifest mismatch'}; review again before committing`,
       specChanges: [],

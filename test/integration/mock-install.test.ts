@@ -94,7 +94,7 @@ describe('run mock-install', () => {
     write(root, 'mockups/README.md', mockReadme('source: html\nfiles: [form.html]'));
     write(root, 'mockups/form.html', '<p>');
     writeFileSync(join(root, 'src.ts'), 'export const a = 1;\n');
-    await cli(root, 'run', 'review-pack', 'MDO-0001', 'T1');
+    await cli(root, 'run', 'review-pack', 'MDO-0001', 'T1', '--include', 'src.ts');
     const pack = readFileSync(join(root, lastJson().pack), 'utf8');
     const manifest = pack.slice(pack.indexOf('## Mandao change manifest'), pack.indexOf('## Diff'));
     expect(manifest).toContain('src.ts');

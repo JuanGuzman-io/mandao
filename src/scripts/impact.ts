@@ -228,11 +228,18 @@ function uncertainImpact(runner: Runner | undefined, files: string[], graphTests
   };
 }
 
+/**
+ * One path as a shell argument: as it is when it holds only safe characters, else single-quoted, so `$()`,
+ * backticks and `;` in a file name or a deferred test never run (review F4). Windows quotes with double quotes.
+ */
+const shellArg = (f: string) => {
+  if (/^[\w./@:+,=%-]+$/.test(f)) return f;
+  return process.platform === 'win32' ? JSON.stringify(f) : `'${f.replaceAll("'", "'\\''")}'`;
+};
+
 /** Fills `{files}` and `{workers}` in a command template. */
 export function fillCommand(template: string, files: string[], workers: number): string {
-  return template
-    .replace('{files}', files.map((f) => (/\s/.test(f) ? JSON.stringify(f) : f)).join(' '))
-    .replace(/\{workers\}/g, String(workers));
+  return template.replace('{files}', files.map(shellArg).join(' ')).replace(/\{workers\}/g, String(workers));
 }
 
 export const graphFile = (root: string) => join(root, 'graphify-out', 'graph.json');
