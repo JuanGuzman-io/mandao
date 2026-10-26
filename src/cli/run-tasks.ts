@@ -2,7 +2,16 @@ import { existsSync, readFileSync } from 'node:fs';
 import type { Command } from 'commander';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { docPath, LITE_DOC } from '../scripts/spec-log.js';
-import { blockingMarkers, deliveryReport, planTasks, TASK_KINDS, taskIndex, taskLayoutIssues, withIndex } from '../spec/index.js';
+import {
+  blockingMarkers,
+  deliveryReport,
+  planTasks,
+  TASK_KINDS,
+  taskGateIssues,
+  taskIndex,
+  taskLayoutIssues,
+  withIndex,
+} from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -40,6 +49,7 @@ export function registerTasks(run: Command, ctx: CliContext) {
           ...spec.tasks.filter((t) => !t.kind).map((t) => `${t.id} declares no kind (${TASK_KINDS.join(' | ')})`),
           ...taskLayoutIssues(raw, spec.tasks, spec.story, { inline: tasksFile.endsWith(LITE_DOC) }),
           ...deliveryIssues,
+          ...taskGateIssues(spec.tasks, config.projects),
         ],
       });
     });

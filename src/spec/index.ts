@@ -27,6 +27,7 @@ export * from './research.js';
 export * from './review-findings.js';
 export * from './state.js';
 export * from './story.js';
+export * from './task-gates.js';
 export * from './task-index.js';
 export * from './tasks.js';
 export * from './telemetry.js';
