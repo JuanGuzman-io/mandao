@@ -31,13 +31,12 @@ Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templat
 
 ## 2. Branch and worktree
 
-If the session already runs in a worktree made by `mandao start --quick` (its request is in
-`specs/quick/_log/start-<name>.yml`), skip this step. Otherwise, as a fallback, with **one**
-confirmation, create the branch and worktree from
-`node .mandao/bin/mandao.mjs run spec-new "<name>" --id quick --type <story|bug> --harness <this harness> --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it in the name) (run its `command`, which starts from
-the branching model's `base`; show its `issues` first) and install the project's dependencies inside
-the worktree (no symlinks). Then move into the worktree before any other step:
-print the `resume` field of the `spec-new` output (the command that opens this harness in the worktree) and stop.
+Unless the session already runs on a quick branch, open it with
+`node .mandao/bin/mandao.mjs run spec-new "<name>" --id quick --type <story|bug> --create --harness copilot --first "/mandao-quick <change>"` (the id already says `quick`: do not repeat it
+in the name). It creates the quick's branch from the branching model's `base`, in this checkout carrying the
+uncommitted work (a worktree when another spec is open here), and records the request, so delivery finds it.
+Never run git yourself; show its `issues` and stop if there are any. With `mode: worktree`, move into `dir` first:
+print the `resume` field of the `spec-new` output (the command that opens this harness there) and stop.
 Skip this step when the session already runs on a quick branch.
 
 ## 3. Change
@@ -67,10 +66,10 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
 
 ## 6. Record and commit
 
-1. Record the cost first: `node .mandao/bin/mandao.mjs run cost quick --record --command quick --harness <this harness>` (it holds only what was spent
+1. Record the cost first: `node .mandao/bin/mandao.mjs run cost quick --record --command quick --harness copilot` (it holds only what was spent
    from the quick's start), so that it is committed with the quick.
 2. Record the row with `node .mandao/bin/mandao.mjs run quick-log <name> --gates "<gate results>" --verdict <PASS|FAIL>
-   --reviewer <agent you invoked> --harness <this harness>` (`self` when the review ran in your own
+   --reviewer <agent you invoked> --harness copilot` (`self` when the review ran in your own
    context; add `--reduced-independence` when the reviewer ran on your model). The script measures files
    and lines from the diff, reads the reviewer's model from its agent file and puts every review note in
    the Review column: never type a model name or a review note into the log. Pass what the reviewer said about itself, verbatim,
@@ -86,6 +85,7 @@ Run `node .mandao/bin/mandao.mjs run quick-check` and read its JSON.
 
    The commit lists the code files, `specs/quick/quick-log.md` and `specs/quick/_log/costs.yml`.
 4. Report: what changed, gates run, review result, commit hash.
-5. Deliver through the same grouped, confirmed flow as a spec: `mandao deliver quick/<slug>` (the slug
-   from `mandao start --quick`). A manual-provider path pushes and prints PR steps; without verifiable CI,
+5. Deliver in this session through the same grouped, confirmed flow as a spec: `node .mandao/bin/mandao.mjs deliver quick/<slug> --list`,
+   one grouped question to the PE (destination and level), then
+   `node .mandao/bin/mandao.mjs deliver quick/<slug> --target <branch> --scope <all|push-pr|nothing>`. A manual-provider path pushes and prints PR steps; without verifiable CI,
    merge remains with the user.

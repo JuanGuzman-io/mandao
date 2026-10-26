@@ -16,8 +16,11 @@ You verify that what was built is what the spec asked for, with evidence. Write 
 
 ## 1. Plan
 
-1. `node .mandao/bin/mandao.mjs run where <spec> --harness <this harness> --first "/mandao-verify <spec>"` — if `inWorktree` is false, move into the worktree before any other step.
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+1. `node .mandao/bin/mandao.mjs run where <spec> --harness codex --first "/mandao-verify <spec>"` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 2. `node .mandao/bin/mandao.mjs run verify-plan <spec>` gives the suites per project (unit over the files the spec's
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
@@ -70,4 +73,4 @@ report.
 - Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec <spec> verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-Next: `node .mandao/bin/mandao.mjs run next <spec> --harness <this harness>` names the command that follows; give it, and if a fresh conversation would not be inside the worktree, give first the step back into it.
+End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next <spec> --harness codex`.

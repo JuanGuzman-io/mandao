@@ -24,14 +24,17 @@ write production code yourself. Use `en` for notes; code and commits are English
 
 ## 0. Before the first task
 
-1. `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id} --harness <this harness>` — if `inWorktree` is false, move into the worktree before any other step.
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop. Mandao never creates branches here.
-2. `node .mandao/bin/mandao.mjs run models --harness <this harness>` — compare **your own model** with `leader`. On a mismatch,
+1. `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id} --harness copilot` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
+2. `node .mandao/bin/mandao.mjs run models --harness copilot` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
 3. **Status.** If `story.md` says `approved`, check `node .mandao/bin/mandao.mjs run status ${input:spec:Spec folder or id} in-progress` and set
    `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
    spec to `verified`.
-   When the spec is still `draft`, run `node .mandao/bin/mandao.mjs approve --by-running /mandao-implement --harness <this harness> ${input:spec:Spec folder or id} <step>`
+   When the spec is still `draft`, run `node .mandao/bin/mandao.mjs approve --by-running /mandao-implement --harness copilot ${input:spec:Spec folder or id} <step>`
    (`<step>` is `spec` for a lite draft and `tasks` for draft tasks; add `--words "<what the person wrote>"` when they wrote something next to the command): on `go` it has
    approved and recorded it, so go on; on `ask`, relay its one question and wait for the answer. Never
    approve by any other route than the person's explicit word or this call.
@@ -46,7 +49,7 @@ run its suites and report. The checkpoint passes when `scope.clear` is true: `bl
 permanent "partial plan" line, so it is never empty. When `clear` is false, rework what the other
 blockers name before the next delivery starts. Then recommend a new conversation before the next
 delivery, naming the harness's new-conversation action first (e.g. `/clear` in Claude Code). The partial plan never verifies the spec; the final verify covers every AC. Then repeat until the task is done, halted or pivoted. **One call per step:**
-`node .mandao/bin/mandao.mjs run step ${input:spec:Spec folder or id} <Tn> --harness <this harness> [checkpoint options]` writes the checkpoint
+`node .mandao/bin/mandao.mjs run step ${input:spec:Spec folder or id} <Tn> --harness copilot [checkpoint options]` writes the checkpoint
 (when you pass any), returns the next action from `loop`, and adds the brief when the action delegates
 work. The mechanical parts (gates, the review input, the final report) are scripts too: run them, read
 their short JSON, and decide; never paste their full output into the conversation.
@@ -158,9 +161,8 @@ block, so the user must see them.
 Then `node .mandao/bin/mandao.mjs run pr-plan ${input:spec:Spec folder or id}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.
-Next: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness <this harness>` names the command that follows. When it returns
-`autoContinue: true`, invoke its recommended `/mandao-verify` immediately in this same session; do not
-return control to the user with verification merely suggested. Report the implementation and verify
-results together. If the implementation summary has `session.cut: true`, start the recommended fresh
-conversation first and continue with verify there, inside the worktree (ADR 0038). Any verification
-blocker or question that requires the user still pauses normally.
+End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness copilot`. Verify always
+follows implement in this same session (`autoContinue`); report the implementation and verify results
+together. If the implementation summary has `session.cut: true`, start the recommended fresh conversation
+first and continue with verify there (ADR 0038). Any verification blocker or question that requires the
+user still pauses normally.

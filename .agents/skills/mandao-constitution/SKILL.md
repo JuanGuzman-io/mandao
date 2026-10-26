@@ -129,5 +129,9 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 
 - One round of questions, at most 5, each with a proposed default.
 - In **active** mode, show a diff per file and apply only what is approved, with a `CHANGELOG.md` entry.
+- **From inside a spec** (its branch is checked out): the constitution and `.mandao/config.yml` are shared by
+  every spec, so the approved change also needs its own short path to the base: propose a `chore` commit of
+  only those files and, after one confirmation, its PR through the same delivery flow (phase 16). Other open
+  specs see it once it is merged; until then `run spec-new --create` warns them (`sharedState`).
 - Summarize: documents written, confidence level, every `ASSUMPTION` / `OPEN` / `CONFLICT`, and the
   next step: $mandao-story for a new feature or $mandao-quick for a trivial change.

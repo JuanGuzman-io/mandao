@@ -21,10 +21,11 @@ and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_T
 
 ## With a spec id: continue
 
-1. **Place.** `node .mandao/bin/mandao.mjs run where $spec`. Outside the spec's worktree: stop and give the path.
+1. **Place.** `node .mandao/bin/mandao.mjs run where $spec --harness claude`. Not `ready`: run it again with `--switch`, or, when another worktree
+   holds the branch, give its `resume` command and stop.
 2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening (and "delivery n of m" from `run next` or `run tasks`, if any),
    in which harness and on which model, the open questions and the recorded next step.
-3. **Models.** Use `models.yml` for **this** harness: `node .mandao/bin/mandao.mjs run models --harness <this harness>`.
+3. **Models.** Use `models.yml` for **this** harness: `node .mandao/bin/mandao.mjs run models --harness claude`.
    Never assume the previous harness's models are available here.
 4. **Commits pending.** Tasks in `pending_commits` passed review; their changes are not "uncommitted
    work". Commit them first with `node .mandao/bin/mandao.mjs run commit $spec` (local, one commit per task, never
