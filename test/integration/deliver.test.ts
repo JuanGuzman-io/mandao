@@ -292,7 +292,7 @@ describe('mandao deliver GitHub merge path', () => {
     // GitHub merges on its side: a separate clone, never the local checkout.
     writeFileSync(
       join(localBin, 'gh'),
-      '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$4" = "--json" ]; then echo \'[{"name":"gitleaks / scan","workflow":"Secrets"}]\'; fi ;;\n  merge) git clone -q "$TEST_REMOTE" "$MERGE_DIR/c" && git -C "$MERGE_DIR/c" -c user.name=t -c user.email=t@t merge --no-ff -q -m "Merge pull request #42" "origin/$3" && git -C "$MERGE_DIR/c" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$4" = "--json" ]; then echo \'[{"name":"gitleaks / scan","workflow":"Secrets"}]\'; fi ;;\n  merge) git clone -q -b main "$TEST_REMOTE" "$MERGE_DIR/c" && git -C "$MERGE_DIR/c" -c user.name=t -c user.email=t@t merge --no-ff -q -m "Merge pull request #42" "origin/$3" && git -C "$MERGE_DIR/c" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
       { mode: 0o755 },
     );
     vi.stubEnv('PATH', `${localBin}:${process.env.PATH}`);
