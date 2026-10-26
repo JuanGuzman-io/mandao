@@ -51,6 +51,8 @@ export const progressSchema = z.object({
         reviewed: z.array(z.string()).optional(),
         /** Generated files the Reviewer saw only as receipts, with their origin. */
         receipts: z.array(z.object({ path: z.string(), origin: z.string() })).optional(),
+        /** When the entry was queued: a task commit after it closes the entry even if its content changed. */
+        queued_at: z.string().optional(),
       }),
     )
     .default([]),

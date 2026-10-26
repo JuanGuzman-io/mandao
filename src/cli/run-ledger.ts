@@ -130,7 +130,8 @@ function pendingEntry(
     : recorded?.reviewed
       ? { reviewed: recorded.reviewed, receipts: recorded.receipts ?? [] }
       : undefined;
-  return [{ task: o.task, subject: o.pendingCommit, files: manifest.map((f) => f.path), manifest, ...withScope(scope) }];
+  const entry = { task: o.task, subject: o.pendingCommit, files: manifest.map((f) => f.path), manifest };
+  return [{ ...entry, ...withScope(scope), queued_at: new Date().toISOString() }];
 }
 
 /** The Leader's model from models.yml for the harness, never the model's own account of itself (ADR 0021). */

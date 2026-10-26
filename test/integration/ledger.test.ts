@@ -225,6 +225,30 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(next.recommended.command).not.toMatch(/run commit/);
   });
 
+  test('a task committed with its approved content stays reconciled after the next task edits its file', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    commitByHand(root, 'T2');
+    writeFileSync(join(root, 'src/b.ts'), 'export const t3 = 3;\n');
+    const queued = readSpec(join(root, SPEC)).progress!.pending_commits;
+    expect([...reconciledTasks(root, 'MDO-0001', config.commits.trailers, queued)]).toEqual(['T2']);
+  });
+
+  test('a task committed after it was queued closes its stale entry and reports what differs (MDO-0001 T1)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const dir = join(root, SPEC);
+    const spec = readSpec(dir);
+    const [entry] = spec.progress!.pending_commits;
+    writeProgress(dir, { ...spec.progress!, pending_commits: [{ ...entry!, queued_at: '2026-01-01T00:00:00.000Z' }] });
+    // A gate added mid-task changed the file after the manifest was taken; the task was then committed.
+    writeFileSync(join(root, 'src/b.ts'), 'export const t2 = 1; // gate fix\n');
+    commitByHand(root, 'T2');
+    const run = commitPending(pending(root));
+    expect(run).toMatchObject({ committed: [], pending: [], alreadyCommitted: ['T2'], differs: { T2: ['src/b.ts'] } });
+    expect(readSpec(dir).progress!.pending_commits).toEqual([]);
+  });
+
   test('one task committed by hand and one not: the script commits only the second', () => {
     const root = repo();
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
