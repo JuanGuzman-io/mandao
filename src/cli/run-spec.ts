@@ -232,11 +232,6 @@ function registerTestRuns(run: Command, ctx: CliContext) {
     });
 
   run
-    .command('impact <project> [files...]')
-    .description('Unit tests impacted by changed files (configured command, runner selection, graph, module fallback)')
-    .action((name: string, files: string[]) => json(impactFor(ctx, projectNamed(ctx, name), files)));
-
-  run
     .command('tests <project> [files...]')
     .description('Run the impacted tests under the resource budget, one heavy run at a time (queued)')
     .option('--full', 'run the full suite (normally CI only); needs --reason, recorded in the spec log')

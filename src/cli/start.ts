@@ -46,7 +46,7 @@ export function registerStart(program: Command, ctx: CliContext) {
   program
     .command('start <request...>')
     .description(
-      'Create the spec branch and worktree and set it up (env files, dependencies, setup hooks, graph, baseline), then open the harness there',
+      'Create the spec branch and worktree and set it up (env files, dependencies, setup hooks, graph, baseline), then open the harness there. Deprecated: story and specify do this in the session',
     )
     .option('--quick', 'a quick change instead of a spec')
     .option('--hotfix', 'hotfix lane: from branching.hotfix.from')
@@ -57,6 +57,8 @@ export function registerStart(program: Command, ctx: CliContext) {
     .option('--no-baseline', 'skip the baseline gates')
     .option('--json', 'print the result as JSON')
     .action(async (words: string[], o: StartOptions) => {
+      if (!o.json)
+        console.error('mandao start is deprecated: /mandao-story and /mandao-specify open the spec and its branch in the session.');
       const root = ctx.root();
       const config = readConfig(root);
       const { id, title } = parseRequest(words);

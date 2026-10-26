@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { ADAPTERS } from '../adapters/index.js';
 import { openByHand } from '../adapters/shared.js';
@@ -12,7 +12,7 @@ import { keepsStateFile, LOG_DIR, updateState } from '../scripts/spec-log.js';
 import { dependencyInstalls, includePlan } from '../scripts/worktree-setup.js';
 import { CURRENT_LAYOUT_VERSION } from '../spec/layout.js';
 import { onPath } from '../util/which.js';
-import { copyInto, writeText } from '../writer/files.js';
+import { copyInto, removeFile, writeText } from '../writer/files.js';
 import { type BaselineLog, recordBaseline } from './baseline.js';
 import { budgetFor } from './budget.js';
 
@@ -219,7 +219,7 @@ export function carryPending(root: string, config: Config, p: SpecProposal): Ste
     const path = line.slice(3);
     if (status.includes('D')) continue; // a deletion stays in the main checkout for the user to see
     copyInto(join(root, path), join(p.worktree, path));
-    if (status === '??') rmSync(join(root, path), { recursive: true, force: true });
+    if (status === '??') removeFile(join(root, path), [root]);
     else git(root, ['restore', '--staged', '--worktree', '--', path]);
     moved.push(path);
   }

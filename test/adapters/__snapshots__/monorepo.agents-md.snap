@@ -26,6 +26,30 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 
 Not implemented yet: `/mandao-evals`, `/mandao-tasks`.
 
+## Terminal commands
+
+The commands above run every other script themselves. These are the ones you type (`mandao <command> --help` lists the flags; `docs/cli.md` in the Mandao repository has the full index):
+
+- `mandao init` — set up Mandao in a workspace
+- `mandao sync` — regenerate the harness files from `.mandao/config.yml`
+- `mandao doctor` — check the configuration, the generated files and the optional tools
+- `mandao update` — apply the installed Mandao version
+- `mandao harness add` — generate files for another harness
+- `mandao skills list` — list the pinned skills
+- `mandao skills add` — install, verify and pin catalog skills
+- `mandao models` — show the model of each role
+- `mandao models set` — choose the model of a role
+- `mandao models mode` — simple or routed models
+- `mandao models profile` — peak, balanced or economy models
+- `mandao approve` — approve a step from the terminal, without a model session
+- `mandao deliver` — push, PR and merge after green CI (the agent runs it in the session too)
+- `mandao worktree list` — the spec worktrees and whether they were merged
+- `mandao worktree clean` — remove merged worktrees that hold no work
+- `mandao intake close` — close an intake proposal
+- `mandao intake clean` — delete the extracted text of closed intakes
+- `mandao run cost` — spend per command and role
+- `mandao run version-notes` — release notes of a version
+
 ## Rules
 
 - Never invent context. Mark gaps as `ASSUMPTION`, `OPEN` or `CONFLICT`, always with the source.

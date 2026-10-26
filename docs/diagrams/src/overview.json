@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/start.ts",
-      "sha256": "37d8118d2402b625a92eebabac108a0917cd559e80a92d7c547c2894800a2e5b"
+      "sha256": "8fdf0b6b4373c8582693f7989afa853f7693ee10904f9533f9fe3a53dc6ecd62"
     },
     {
       "path": "src/spec/next.ts",

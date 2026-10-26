@@ -1,6 +1,6 @@
 # 0037 — `mandao start` and the worktree setup
 
-**Status:** Accepted · 2026-10-20, amended by MDO-0010 (the session enters the worktree in Claude Code) · design §14.5
+**Status:** Accepted · 2026-10-20, amended by MDO-0010 (the session enters the worktree in Claude Code) · design §14.5; superseded by [ADR 0059](0059-continuous-flow.md): `mandao start` is deprecated and the worktree optional
 
 MDO-0007 ran its lite session from the main checkout: `specify` created the worktree, but the session
 stayed outside it and `implement` correctly refused to work there. Claude Code can move a session into an
