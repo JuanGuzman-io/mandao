@@ -15,9 +15,9 @@ Anything you cannot back with a source is marked inline, never filled in:
 |---|---|---|
 | `ASSUMPTION` | You proceed on a belief nobody confirmed | What you assumed, why, and who can confirm |
 | `OPEN` | Information is missing and you cannot proceed safely | The question, who answers it, and whether it is **critical** |
-| `CONFLICT` | Two sources disagree (document ↔ code, workspace ↔ project, PO ↔ PO) | Both sources, quoted, and who decides |
+| `CONFLICT` | Two sources disagree (document ↔ code, workspace ↔ project, business ↔ business) | Both sources, quoted, and who decides |
 
-Write them as `ASSUMPTION(source: …): …`, `OPEN(critical, owner: PO): …`, `CONFLICT(a: …, b: …, decides: tech lead): …`.
+Write them as `ASSUMPTION(source: …): …`, `OPEN(critical, owner: {{roles.po}}): …`, `CONFLICT(a: …, b: …, decides: {{roles.tech_lead}}): …`.
 
 A critical `OPEN` blocks the next phase. Say so explicitly instead of continuing.
 
@@ -49,7 +49,7 @@ the same depth, and state the lower confidence in the output: what could not be 
 
 `.mandao/config.yml` sets two languages:
 
-- `language.business`: story, release notes, questions to the PO, product context.
+- `language.business`: story, release notes, questions to the {{roles.po}}, product context.
 - `language.technical`: requirements, design, tasks, technical docs.
 
 Only the content uses them. Section headings and keywords stay in English because parsers and the

@@ -12,6 +12,8 @@ export interface RenderContext {
   paths: Config['paths'];
   version: string;
   language: Config['language'];
+  /** Who decides (`{{roles.po}}`, `{{roles.tech_lead}}`, `{{roles.dev}}`). */
+  roles: Config['roles'];
   /** Known command ids; when set, `{{command:x}}` must reference one of them. */
   commands?: ReadonlySet<string>;
 }
@@ -35,6 +37,7 @@ export function contextFromConfig(config: Config, harness: string, version: stri
     paths: Object.fromEntries(Object.entries(config.paths).map(([k, v]) => [k, posix.join(config.home, v)])) as Config['paths'],
     version,
     language: config.language,
+    roles: config.roles,
   };
 }
 
@@ -57,7 +60,7 @@ export function templateReference(ctx: RenderContext, name: string): string {
 const IF_RE = /^[ \t]*<!--\s*mandao:if\s+(.+?)\s*-->[ \t]*\r?\n?/;
 const ENDIF_RE = /^[ \t]*<!--\s*mandao:endif\s*-->[ \t]*\r?\n?/;
 const MARKER_RE = /^[ \t]*<!--\s*mandao:(if\s+.+?|endif)\s*-->[ \t]*\r?\n?/gm;
-const TOKEN_RE = /\{\{\s*([a-zA-Z.]+)(?::([A-Za-z0-9._/-]+))?\s*\}\}/g;
+const TOKEN_RE = /\{\{\s*([a-zA-Z._]+)(?::([A-Za-z0-9._/-]+))?\s*\}\}/g;
 
 export class RenderError extends Error {}
 
@@ -111,7 +114,20 @@ export function applyConditionals(body: string, ctx: RenderContext): string {
   return out.join('');
 }
 
-/** Replaces `{{paths.*}}` and `{{version}}`. Used for frontmatter strings such as input/output paths. */
+/** One role's name, or a render error for a role the config does not have. */
+function roleOf(roles: Config['roles'], whole: string, key: string): string {
+  if (!Object.hasOwn(roles, key)) throw new RenderError(`unknown role token "${whole}"`);
+  return roles[key as keyof Config['roles']];
+}
+
+const ROLE_RE = /\{\{\s*roles\.([a-z_]+)\s*\}\}/g;
+
+/** Templates are copied as written except for `{{roles.*}}` (phase 18): their other braces are the agent's placeholders. */
+export function renderRoles(text: string, roles: Config['roles']): string {
+  return text.replace(ROLE_RE, (whole, key: string) => roleOf(roles, whole, key));
+}
+
+/** Replaces `{{paths.*}}`, `{{version}}`, `{{language.*}}` and `{{roles.*}}`. Used for frontmatter strings such as input/output paths. */
 export function renderInline(text: string, ctx: RenderContext): string {
   return text.replace(TOKEN_RE, (whole, name: string) => {
     if (name.startsWith('paths.')) {
@@ -121,6 +137,7 @@ export function renderInline(text: string, ctx: RenderContext): string {
     }
     if (name === 'version') return ctx.version;
     if (name === 'language.business' || name === 'language.technical') return ctx.language[name.slice('language.'.length) as 'business'];
+    if (name.startsWith('roles.')) return roleOf(ctx.roles, whole, name.slice('roles.'.length));
     throw new RenderError(`token "${whole}" is not allowed here`);
   });
 }

@@ -32,7 +32,7 @@ also installs these skills, named from that list only, which are **unvetted thir
   the skill if the session can, otherwise give the user `/design <brief>` to run and wait for the link.
   Optionally run `/design-sync` first to load the design system.
 
-With `/design`, **the export is mandatory**: the link is private, so the team, the PO and subagents cannot
+With `/design`, **the export is mandatory**: the link is private, so the team, the PE and subagents cannot
 open it. Ask the user to export the chosen artboard as standalone HTML or PDF into `mockups/`; a `.zip` is
 unzipped into `mockups/` and the `.zip` itself is not kept. Image export is not verified: do not claim
 `/design` exports images. Accepted extensions are `.html`, `.htm`, `.png`, `.jpg`, `.jpeg`, `.webp`, `.svg` and `.pdf`

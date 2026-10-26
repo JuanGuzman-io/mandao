@@ -24,7 +24,7 @@ reads, `.mandao/templates/app/rules/spec-docs.md`, `.mandao/templates/app/rules/
 `.mandao/templates/app/rules/doc-lite.md` and `.mandao/templates/app/rules/doc-tasks.md` at lite depth,
 `.mandao/templates/app/rules/doc-quickstart.md` when the spec has visible behavior.
 
-Write requirements and design content in `en` and anything addressed to the PO
+Write requirements and design content in `en` and anything addressed to the PE
 (story text, questions) in `en`. Headings and keywords stay in English.
 
 **Skills.** Use `brainstorming` when the story starts from nothing (no code and no tracker context) and
@@ -62,7 +62,7 @@ When the story's `type` is not `story`, follow `.mandao/templates/app/rules/spec
 ## 2. Research
 
 Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `node .mandao/bin/mandao.mjs run research <spec> --harness claude`;
-reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
+reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PE to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `.mandao/templates/app/spec/research.md`; create one subagent task for every uncovered question, parallelize
 independent ones, with the §20 safety rule in each brief.
@@ -114,7 +114,7 @@ From `.mandao/templates/app/spec/design.md`:
 
 ## 5b. quickstart.md (only with visible behavior)
 
-When the spec has behavior a user or a PO can see, write `quickstart.md` from
+When the spec has behavior a user or the PE can see, write `quickstart.md` from
 `.mandao/templates/app/spec/quickstart.md`: prerequisites in one line, 3–6 steps (command or click, and what
 appears) and the expected result; about 400 tokens at most. Not for test-only specs,
 refactors or internal infrastructure.

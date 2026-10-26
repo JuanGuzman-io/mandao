@@ -17,6 +17,7 @@ const ctx = (over: Partial<RenderContext> = {}): RenderContext => ({
   },
   version: '0.1.0',
   language: { business: 'es', technical: 'en' },
+  roles: { po: 'PO', tech_lead: 'tech lead', dev: 'dev' },
   ...over,
 });
 
@@ -146,4 +147,28 @@ test('installTemplates picks the profile variant and falls back to shared', () =
 
 test('command tokens must reference a known command when the context lists them', () => {
   expect(() => renderBody(meta, '{{command:ghost}}', ctx({ commands: new Set(['tasks']) }), syntax)).toThrow('unknown command');
+});
+
+describe('roles (phase 18): who decides, as the project names them', () => {
+  const solo = { po: 'PE', tech_lead: 'PE', dev: 'PE' };
+
+  test('a command renders {{roles.*}} from the config', () => {
+    const body = 'Ask the {{roles.po}}; the {{roles.tech_lead}} decides; route to the {{roles.dev}}.';
+    expect(renderBody(meta, body, ctx(), syntax)).toBe('Ask the PO; the tech lead decides; route to the dev.');
+    expect(renderBody(meta, body, ctx({ roles: solo }), syntax)).toBe('Ask the PE; the PE decides; route to the PE.');
+  });
+
+  test('an unknown role is refused', () => {
+    expect(() => renderInline('{{roles.cto}}', ctx())).toThrow('unknown role token');
+  });
+
+  test('installed templates render only the role tokens and keep every other brace as written', () => {
+    const t = {
+      key: 'shared/product.md',
+      content: 'owner: {{roles.po}}\n{{paths.specs}} {{ID}}',
+      origin: { kind: 'core' as const, id: 'core', patchedBy: [] },
+    };
+    const [out] = installTemplates([t], ['app'], solo);
+    expect(out?.content).toBe('owner: PE\n{{paths.specs}} {{ID}}');
+  });
 });

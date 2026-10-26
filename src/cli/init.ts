@@ -26,6 +26,7 @@ import { offerArchify } from './init-archify.js';
 import { chooseBudget, chooseCutThreshold } from './init-budget.js';
 import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
+import { chooseRoles } from './init-roles.js';
 import { offerSkills } from './init-skills.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 import { requireTerminal } from './terminal.js';
@@ -39,6 +40,8 @@ export interface InitOptions {
   defaultProfile?: Profile;
   languageBusiness?: string;
   languageTechnical?: string;
+  /** `team`, `solo`, `solo=<name>` or `po=…,tech_lead=…,dev=…` (phase 18). */
+  roles?: string;
   modelsMode?: ModelMode;
   modelProfile?: ModelProfile;
   polyrepo?: PolyrepoStrategy;
@@ -324,6 +327,7 @@ export async function runInit(root: string, opts: InitOptions) {
   const projects = await confirmProjects(ws, defaultProfile, opts);
   const business = await chooseLanguage('business', opts.languageBusiness, opts.yes);
   const technical = await chooseLanguage('technical', opts.languageTechnical, opts.yes);
+  const roles = await chooseRoles(opts.roles, opts.yes);
   const budget = await chooseBudget(opts.budget, opts.yes);
   const cut = await chooseCutThreshold(opts.cutMinSavings, opts.yes);
 
@@ -343,6 +347,7 @@ export async function runInit(root: string, opts: InitOptions) {
     ...modeFlags(localOnly, opts),
     default_profile: defaultProfile,
     language: { business, technical },
+    ...roles,
     projects: projects.map((pr) => ({
       name: pr.name,
       path: pr.path,

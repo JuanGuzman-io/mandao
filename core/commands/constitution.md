@@ -43,7 +43,7 @@ approval: required
 Arguments: {{args}}
 
 Build the foundation every other mandao relies on: how the system is built (technical constitution,
-owned by the tech lead) and what it does and for whom (product context, owned by the PO). Keep them in
+owned by the {{roles.tech_lead}}) and what it does and for whom (product context, owned by the {{roles.po}}). Keep them in
 separate files: different people approve them.
 
 For a new or legacy constitution, propose stack-specific design principles in `standards.md` for user
@@ -147,7 +147,7 @@ Write the workspace level in `{{paths.constitution}}/` from the templates, and a
   30%"), each capability with evidence in code.
 - With `--product` or `ingest <source>`: read the sources in `.mandao/sources.yml` through their MCP
   servers. Distill rules with link and date; never copy documents or transcripts; strip names and
-  personal data. Cross-check documents against code and mark mismatches as `CONFLICT` for the PO.
+  personal data. Cross-check documents against code and mark mismatches as `CONFLICT` for the {{roles.po}}.
 - Without sources, the product layer contains only what code proves, and says so.
 
 ## 5. AGENTS.md hierarchy

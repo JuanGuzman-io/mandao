@@ -78,7 +78,7 @@ function guide(input: AdapterInput): string {
     '',
     '- Never invent context. Mark gaps as `ASSUMPTION`, `OPEN` or `CONFLICT`, always with the source.',
     '- If a code graph exists (e.g. graphify), query it before searching files.',
-    `- Write business content (story, release notes, questions to the PO, product context) in \`${config.language.business}\` and technical content (requirements, design, tasks, technical docs) in \`${config.language.technical}\`. Section headings, keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n) and markers stay in English. Code and commits are always in English.`,
+    `- Write business content (story, release notes, questions to the ${config.roles.po}, product context) in \`${config.language.business}\` and technical content (requirements, design, tasks, technical docs) in \`${config.language.technical}\`. Section headings, keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n) and markers stay in English. Code and commits are always in English.`,
     '- Spec status: `draft → approved → in-progress → blocked → verified → closed | abandoned`.',
     '- A human approves every significant change and anything published outside the repository.',
     `- Templates live in \`${posix.join(workspaceRelative(config.home, '.'), '.mandao/templates/<profile>/')}\`; use the profile of the project you are working on.`,

@@ -11,7 +11,7 @@ How they fit together: the [overview in the README](../../README.md#how-it-works
 | [`/mandao-constitution`](constitution.md) | Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills. | yes | 🟢 stable |
 | [`/mandao-story`](story.md) | Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags. | yes | 🟢 stable |
 | [`/mandao-specify`](specify.md) | Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session. | yes | 🟢 stable |
-| [`/mandao-clarify`](clarify.md) | Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev. | yes | 🟢 stable |
+| [`/mandao-clarify`](clarify.md) | Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision. | yes | 🟢 stable |
 | [`/mandao-tasks`](tasks.md) | Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies. | yes | 🟢 stable |
 | [`/mandao-implement`](implement.md) | Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS. | no | 🟢 stable |
 | [`/mandao-verify`](verify.md) | Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full. | no | 🟢 stable |

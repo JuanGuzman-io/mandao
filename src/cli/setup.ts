@@ -43,6 +43,7 @@ export function registerSetup(program: Command, ctx: CliContext) {
     .option('--default-profile <profile>', 'workspace default profile')
     .option('--language-business <lang>', 'language of business content (story, release notes, PO questions)')
     .option('--language-technical <lang>', 'language of technical content (requirements, design, tasks)')
+    .option('--roles <roles>', 'who decides: team | solo | solo=<name> | po=<name>,tech_lead=<name>,dev=<name>')
     .option('--models-mode <mode>', 'simple | routed')
     .option('--model-profile <profile>', 'peak | balanced | economy (default: peak)')
     .option('--polyrepo <strategy>', 'workspace-repo | home | local (polyrepo only)')

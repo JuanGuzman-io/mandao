@@ -186,6 +186,17 @@ export const configSchema = z
         technical: z.string().min(2).default('en'),
       })
       .prefault({}),
+    /**
+     * Who decides, as the project names them (phase 18): templates' `owner`, the questions and attributions.
+     * A solo maintainer is one person in every role, e.g. `PE` (Product Engineer).
+     */
+    roles: z
+      .object({
+        po: z.string().min(1).default('PO'),
+        tech_lead: z.string().min(1).default('tech lead'),
+        dev: z.string().min(1).default('dev'),
+      })
+      .prefault({}),
     projects: z.array(project).min(1),
     /** Thresholds on the real diff: quick post-check and PR splitting (ADR 0028). */
     size_limits: sizeLimitsSchema.default({}),

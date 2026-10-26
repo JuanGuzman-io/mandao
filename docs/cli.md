@@ -15,7 +15,7 @@ Every command and flag the CLI defines. A test fails when this index and the CLI
 
 | Command | Options | What it does |
 |---|---|---|
-| `mandao init [dir]` | `--scope <scope>` · `--harness <ids...>` · `--profile <profile>` · `--default-profile <profile>` · `--language-business <lang>` · `--language-technical <lang>` · `--models-mode <mode>` · `--model-profile <profile>` · `--polyrepo <strategy>` · `--home <path>` · `--budget <usd>` · `--cut-min-savings <usd>` · `--with-scripts` · `-y, --yes` · `--force` · `--shadow` | Set up Mandao in this workspace (or in [dir], created with git init if needed), or install /mandao-init globally |
+| `mandao init [dir]` | `--scope <scope>` · `--harness <ids...>` · `--profile <profile>` · `--default-profile <profile>` · `--language-business <lang>` · `--language-technical <lang>` · `--roles <roles>` · `--models-mode <mode>` · `--model-profile <profile>` · `--polyrepo <strategy>` · `--home <path>` · `--budget <usd>` · `--cut-min-savings <usd>` · `--with-scripts` · `-y, --yes` · `--force` · `--shadow` | Set up Mandao in this workspace (or in [dir], created with git init if needed), or install /mandao-init globally |
 | `mandao sync` | `--force` · `--dry-run` · `-v, --verbose` | Regenerate harness files from .mandao/config.yml |
 | `mandao doctor` | `--json` | Check configuration, generated files and optional tools |
 | `mandao update` | `--force` | Re-resolve content with the installed Mandao version (overrides and model choices are never touched) |

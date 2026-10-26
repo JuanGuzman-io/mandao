@@ -2,7 +2,7 @@
 schema_version: 1
 level: workspace
 last_reviewed:
-owner: tech lead
+owner: PE
 ---
 
 # Architecture (TRD)

@@ -21,8 +21,8 @@ security, public contracts, or a decision linked to a High premise.
 Each entry records its question, status (`open`, `resolved` or `accepted`), decision, rationale, alternatives,
 premise IDs, `checked_on`, `expires`, claims, and any contradictions. Keep the YAML frontmatter valid.
 Native web search of Claude Code, Codex and Antigravity counts as web search (ADR 0058); cite what it found.
-When the web cannot show a point and the PO accepts other evidence (a premise run `P<n>` or a clarification
-`C-<n>`), set `status: accepted` with `accepted_by`, `reason` and `evidence`; never mark it without the PO.
+When the web cannot show a point and the PE accepts other evidence (a premise run `P<n>` or a clarification
+`C-<n>`), set `status: accepted` with `accepted_by`, `reason` and `evidence`; never mark it without the PE.
 
 Example entry shape (copy into the `entries` frontmatter list and replace every value):
 
