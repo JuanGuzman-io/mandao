@@ -89,3 +89,33 @@ export function branchAgeDays(root: string, branch: string, base: string, now = 
     return undefined;
   }
 }
+
+/** The worktree that has `branch` checked out, if any. */
+export function worktreeHolding(cwd: string, branch: string): string | undefined {
+  try {
+    return git(cwd, ['worktree', 'list', '--porcelain'])
+      .split('\n\n')
+      .find((block) => block.split('\n').includes(`branch refs/heads/${branch}`))
+      ?.match(/^worktree (.+)$/m)?.[1];
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Moves this checkout onto the spec's branch so the user never runs git (phase 16). Never takes a branch
+ * another worktree holds (that worktree is where to go); a missing branch is created by the spec's own
+ * command, not here. Uncommitted changes travel with the switch, and git refuses when they would be lost.
+ */
+export function switchToSpecBranch(cwd: string, branch: string, spec: string): { done: boolean; message?: string } {
+  if (currentBranch(cwd) === branch) return { done: false };
+  const holder = worktreeHolding(cwd, branch);
+  if (holder) return { done: false, message: `${branch} is checked out in ${holder}: enter that worktree` };
+  if (!branchExists(cwd, branch)) throw new Error(`${spec} has no branch ${branch}: create the spec with /mandao-story or /mandao-specify`);
+  try {
+    execFileSync('git', ['switch', '--quiet', branch], { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch (e) {
+    throw new Error(`could not switch to ${branch}: ${String((e as { stderr?: string }).stderr ?? e).trim()}`);
+  }
+  return { done: true };
+}

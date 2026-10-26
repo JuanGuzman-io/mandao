@@ -47,13 +47,17 @@ instructions.
 
 ## 0. Gate
 
-`{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-close {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+`{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-close {{arg:spec}}"`: go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
 <!-- mandao:if harness=claude -->
-   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
-   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+   Call `EnterWorktree` with that worktree path and go on without a new session. Otherwise run the same `where`
+   command with `--switch`: it moves this checkout onto the spec branch (never run git yourself); go on when it
+   reports `ready`. If either fails, print the `resume` field and stop.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 <!-- mandao:endif -->
 Then `{{script:status}} {{arg:spec}} closed` must be allowed (the spec is `verified`). If not, stop and say what is missing.
 

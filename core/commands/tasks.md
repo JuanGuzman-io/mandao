@@ -37,13 +37,17 @@ Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite k
 `spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
 open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
 
-1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-tasks {{arg:spec}}"`: if `inWorktree` is false, move into the worktree before any other step.
+1. **Gate.** Run `{{script:where}} {{arg:spec}} --harness {{harness}} --first "/mandao-tasks {{arg:spec}}"`: go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+   the `where` message says another worktree holds the branch:
 <!-- mandao:if harness=claude -->
-   Call `EnterWorktree` with the worktree path (`expected.worktree` in the `where` output) and go on without a new session; if it is
-   refused or fails, print the `resume` field of that output and stop: do not go on working in the main checkout.
+   Call `EnterWorktree` with that worktree path and go on without a new session. Otherwise run the same `where`
+   command with `--switch`: it moves this checkout onto the spec branch (never run git yourself); go on when it
+   reports `ready`. If either fails, print the `resume` field and stop.
 <!-- mandao:endif -->
 <!-- mandao:if !harness=claude -->
-   Print the `resume` field of the `where` output (the command that opens this harness in the worktree) and stop.
+   Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
+   stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
+   (never run git yourself); go on when it reports `ready`.
 <!-- mandao:endif -->
    Run
    `{{script:trace}} {{arg:spec}}`: a critical `OPEN` or critical Consistency Check finding blocks this

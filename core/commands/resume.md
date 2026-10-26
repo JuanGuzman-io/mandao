@@ -33,7 +33,8 @@ and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_T
 
 ## With a spec id: continue
 
-1. **Place.** `{{script:where}} {{arg:spec}}`. Outside the spec's worktree: stop and give the path.
+1. **Place.** `{{script:where}} {{arg:spec}} --harness {{harness}}`. Not `ready`: run it again with `--switch`, or, when another worktree
+   holds the branch, give its `resume` command and stop.
 2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening (and "delivery n of m" from `run next` or `run tasks`, if any),
    in which harness and on which model, the open questions and the recorded next step.
 3. **Models.** Use `models.yml` for **this** harness: `{{script:models}} --harness {{harness}}`.

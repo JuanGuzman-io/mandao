@@ -289,6 +289,9 @@ export function checkTransition(from: SpecStatus, to: string, progress: Progress
 
 export interface WhereReport {
   inWorktree: boolean;
+  /** On the spec's branch, in its worktree or in place in the main checkout: later commands may go on (phase 16). */
+  ready: boolean;
+  mode?: 'worktree' | 'in-place';
   cwd: string;
   branch?: string;
   expected: { branch: string; worktree: string };
@@ -297,7 +300,7 @@ export interface WhereReport {
   message: string;
 }
 
-/** Is this session inside the spec's worktree, on its branch? `implement` warns when it is not. */
+/** Is this session on the spec's branch, in its worktree or in place? The flow commands go on only when it is. */
 export function whereAmI(cwd: string, expected: { branch: string; worktree: string }, resume?: string): WhereReport {
   let top: string | undefined;
   let branch: string | undefined;
@@ -311,14 +314,19 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
   } catch {
     // not a git checkout
   }
-  const inWorktree = Boolean(top && resolve(top) === resolve(expected.worktree) && branch === expected.branch);
+  const ready = branch === expected.branch;
+  const inWorktree = Boolean(top && resolve(top) === resolve(expected.worktree) && ready);
   return {
     inWorktree,
+    ready,
+    ...(ready ? { mode: inWorktree ? ('worktree' as const) : ('in-place' as const) } : {}),
     cwd,
     ...(branch ? { branch } : {}),
     expected,
     ...(resume ? { resume } : {}),
-    message: inWorktree ? 'in the spec worktree' : `not in the spec worktree: open ${expected.worktree} (branch ${expected.branch})`,
+    message: ready
+      ? `on the spec branch ${expected.branch}${inWorktree ? ' in its worktree' : ' in place'}`
+      : `not on the spec branch ${expected.branch}`,
   };
 }
 

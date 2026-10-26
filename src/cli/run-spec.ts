@@ -5,7 +5,7 @@ import { ADAPTERS } from '../adapters/index.js';
 import { principlesForProjects } from '../engine/constitution-principles.js';
 import { readConfig } from '../engine/files.js';
 import { declaresNoBuild } from '../schemas/config.js';
-import { branchingFor, branchNames, currentBranch, detectBranching } from '../scripts/branching.js';
+import { branchingFor, branchNames, currentBranch, detectBranching, switchToSpecBranch } from '../scripts/branching.js';
 import { composeBrief } from '../scripts/brief.js';
 import { commitState } from '../scripts/commits.js';
 import { activeSpecDir, recordFullRun } from '../scripts/forced.js';
@@ -213,15 +213,22 @@ function registerState(run: Command, ctx: CliContext) {
     .description('Is this session inside the spec worktree, on its branch? `resume` opens the active harness there')
     .option('--harness <id>', 'the harness running the session', 'claude')
     .option('--first <command>', 'the mandao to run first in the worktree (default: /mandao-implement <spec>)')
-    .action((ref: string, opts: { harness?: string; first?: string }) => {
+    .option('--switch', 'when not on the spec branch, switch this checkout to it (never one another worktree holds)')
+    .action((ref: string, opts: { harness?: string; first?: string; switch?: boolean }) => {
       const harness = harnessOption(opts.harness);
       const { config, spec } = loadSpec(ctx, ref);
-      const branch = currentBranch(process.cwd());
-      const isProtected = Boolean(branch && branchingFor(config).protected.includes(branch));
       const expected = expectedPlace(ctx.root(), config, spec);
       const first = opts.first ?? `/mandao-implement ${ref}`;
       const resume = ADAPTERS[harness].session.resume(expected.worktree, first).text;
-      json({ ...whereAmI(process.cwd(), expected, resume), protected: isProtected });
+      const switched = opts.switch ? switchToSpecBranch(process.cwd(), expected.branch, ref) : undefined;
+      const branch = currentBranch(process.cwd());
+      const isProtected = Boolean(branch && branchingFor(config).protected.includes(branch));
+      const report = whereAmI(process.cwd(), expected, resume);
+      json({
+        ...report,
+        protected: isProtected,
+        ...(switched ? { switched: switched.done, message: switched.message ?? report.message } : {}),
+      });
     });
 }
 
