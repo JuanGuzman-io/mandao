@@ -249,7 +249,9 @@ export function commitPending(input: PendingInput): CommitRun {
     writeProgress(input.specDir, next);
     try {
       git(input.repo, ['add', '--', ...entry.files, ...specChanges]);
-      git(input.repo, ['commit', '-q', '-m', [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n')]);
+      // Only these paths: anything else someone staged stays staged, never in a reviewed task's commit (review F1).
+      const message = [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n');
+      git(input.repo, ['commit', '-q', '-m', message, '--', ...entry.files, ...specChanges]);
     } catch (e) {
       writeProgress(input.specDir, progress);
       const reason = String((e as { stderr?: string }).stderr || (e as Error).message).trim();

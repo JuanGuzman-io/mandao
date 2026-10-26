@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 import { readConfig } from '../engine/files.js';
 import { writeProgress } from '../scripts/checkpoint.js';
 import { recordFullRun } from '../scripts/forced.js';
@@ -22,16 +22,20 @@ export async function runDeferred(ctx: CliContext, name: string, ref: string, ta
   const spec = readSpec(findSpec(root, config, ref));
   const entries = (spec.progress?.deferred_to_ci ?? []).filter((d) => d.task === task);
   if (!entries.length) throw new Error(`${spec.name} has no run deferred by ${task}`);
-  const template = project.tests.e2e ?? project.gates.test;
-  if (!template) throw new Error(`${name} has no tests.e2e or test gate to run the deferred tests with`);
+  const owner = spec.tasks.find((t) => t.id === task)?.project;
+  if (owner && owner !== name) throw new Error(`${task} belongs to project ${owner}: run its deferred tests there`);
+  // Only a command that runs the deferred tests may clear them (review F2): the project's e2e suite, or a test
+  // gate that takes the files. A gate that ignores them would pass on other tests.
+  const template = project.tests.e2e ?? (project.gates.test?.includes('{files}') ? project.gates.test : undefined);
+  if (!template)
+    throw new Error(
+      `${name} cannot run exactly the deferred tests: set projects[].tests.e2e, or a test gate with {files}, in .mandao/config.yml`,
+    );
   const budget = budgetFor(root, config, project, 'e2e', `${task} deferred`, opts.force, spec.dir);
-  const command = template.includes('{files}')
-    ? fillCommand(
-        template,
-        entries.flatMap((e) => e.tests),
-        budget.workers,
-      )
-    : template;
+  // Paths are relative to the project, which the command runs from (as red does; review F3).
+  const inProject = (t: string) => (project.path !== '.' && t.startsWith(`${project.path}/`) ? posix.relative(project.path, t) : t);
+  const tests = entries.flatMap((e) => e.tests).map(inProject);
+  const command = template.includes('{files}') ? fillCommand(template, tests, budget.workers) : template;
   const result = await runTests(root, `${task} deferred`, inProjectDir(command, project.path), budget, Number(opts.queueWait) * 1000);
   const cleared = result.status === 'PASS' ? [task] : [];
   if (cleared.length && spec.progress)

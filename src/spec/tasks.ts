@@ -134,6 +134,11 @@ export function setTaskDone(markdown: string, id: string, done: boolean): string
   return markdown.replace(new RegExp(`^(###\\s+\\[)[ xX](\\]\\s+${id}\\s*[—–-])`, 'm'), `$1${done ? 'x' : ' '}$2`);
 }
 
+const unquote = (item: string) => item.trim().replace(/^(["'])(.*)\1$/, '$2');
+
+/** A flow-list item as YAML reads it back: plain when safe, double-quoted otherwise (`**`, `&`, `:`…). */
+const yamlScalar = (value: string) => (/^[\w./@-][\w./@ -]*$/.test(value) && !value.endsWith(' ') ? value : JSON.stringify(value));
+
 /**
  * Adds files to one task and sets its kind, in its YAML block; everything else is left byte for byte. What
  * `run task-files` writes when the Reviewer asks to declare a file or a kind changes (phase 17), so the edit
@@ -149,14 +154,10 @@ export function withTaskFields(markdown: string, id: string, change: { add?: str
   let block = markdown.slice(start, end);
   if (change.add?.length) {
     const files = /^files:\s*\[(.*)\]\s*$/m.exec(block);
-    const current = files
-      ? files[1]!
-          .split(',')
-          .map((f) => f.trim())
-          .filter(Boolean)
-      : [];
+    if (!files && /^files:/m.test(block)) throw new Error(`the files of ${id} are not an inline list: edit them in a reviewed change`);
+    const current = files ? files[1]!.split(',').map(unquote).filter(Boolean) : [];
     const merged = [...current, ...change.add.filter((f) => !current.includes(f))];
-    const line = `files: [${merged.join(', ')}]`;
+    const line = `files: [${merged.map(yamlScalar).join(', ')}]`;
     block = files ? block.replace(files[0], line) : block.replace(/^(project:.*)$/m, `$1\n${line}`);
   }
   if (change.kind !== undefined) {

@@ -28,4 +28,12 @@ describe('taskGateIssues (phase 17, MDO-0001: a first implementation with no lin
       ),
     ).toEqual([]);
   });
+  test('build: none or eval alone is no check gate; ./ paths count; a finished task is not reported again (review F10)', () => {
+    const issue = /project api has no gates/;
+    expect(taskGateIssues([task('T1', ['src/app.py'])], [{ name: 'api', gates: { build: 'none' } }])[0]).toMatch(issue);
+    expect(taskGateIssues([task('T1', ['src/app.py'])], [{ name: 'api', gates: { eval: 'x' } }])[0]).toMatch(issue);
+    expect(taskGateIssues([task('T1', ['./.mandao/config.yml', 'tests/test_a.py'])], [{ name: 'api', gates: {} }])).toEqual([]);
+    const gated = [{ name: 'api', gates: { test: 'uv run pytest' } }];
+    expect(taskGateIssues([task('T1', ['src/app.py'], { done: true }), task('T2', ['tests/test_b.py'])], gated)).toEqual([]);
+  });
 });

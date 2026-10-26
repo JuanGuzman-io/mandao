@@ -303,10 +303,16 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
   const name = `${id}-${attempt}-pack.md`;
   const file = specLogInCache(spec.dir) ? cachePath(spec.dir, 'reviews', name) : join(logPath(spec.dir, 'reviews'), name);
   writeText(file, pack);
+  // What the pack leaves out, and the names that matched nothing, are said so a task's own file is never missed (F9).
+  const changed = changedFiles(repoRoot(spec.dir), spec.dir);
+  const leftOut = changed.filter((f) => !scope.includes(f));
+  const unmatched = include.filter((f) => !changed.includes(f));
   return {
     pack: relative(ctx.root(), file).split('\\').join('/'),
     bytes: Buffer.byteLength(pack),
     gatesRecorded: recorded.table !== undefined,
+    ...(leftOut.length ? { leftOut } : {}),
+    ...(unmatched.length ? { unmatched } : {}),
   };
 }
 

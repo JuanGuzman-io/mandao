@@ -32,4 +32,18 @@ describe('testCommand: red and mutation runs use the project command, from the p
       'make t FILES=t/a.py',
     );
   });
+  test('a gate with extra options (coverage thresholds, fixed folders) is not reused: a red run would fail on them (review F8)', () => {
+    const vitest = makeTree({ 'package.json': JSON.stringify({ devDependencies: { vitest: '5' } }) });
+    expect(testCommand(vitest, project('.', { test: 'npx vitest run --coverage' }), ['a.test.ts'], 1)?.command).toBe(
+      'npx vitest run a.test.ts --maxWorkers=1',
+    );
+    expect(testCommand(vitest, project('.', { test: 'npx vitest run' }), ['a.test.ts'], 1)?.command).toBe('npx vitest run a.test.ts');
+    const py = makeTree({ 'pyproject.toml': '' });
+    expect(testCommand(py, project('.', { test: 'uv run pytest tests/unit --cov-fail-under=80' }), ['t/test_a.py'], 1)?.command).toBe(
+      'pytest t/test_a.py',
+    );
+    expect(testCommand(py, project('.', { test: 'uv run pytest {files} -q' }), ['t/test_a.py'], 1)?.command).toBe(
+      'uv run pytest t/test_a.py -q',
+    );
+  });
 });

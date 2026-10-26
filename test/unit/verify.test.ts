@@ -40,8 +40,10 @@ describe('verifyPlan', () => {
     expect(plan.blockers).toContain('1 run(s) deferred to CI wait for CI (T1)');
     expect(verifyPlan({ ...base(), progress, ciConfirmed: true }).blockers.some((b) => b.includes('deferred'))).toBe(false);
     // No CI here (MDO-0002): never ask for a CI that does not exist; name the local run that clears it (phase 17).
-    expect(verifyPlan({ ...base(), progress, ciAvailable: false }).blockers).toContain(
-      '1 run(s) deferred to CI (T1), and this repository has no CI: run them here with `mandao run tests <project> --spec <ID> --deferred <task>`',
+    expect(verifyPlan({ ...base(), progress, ciAvailable: false }).blockers).toContainEqual(
+      expect.stringMatching(
+        /^1 run\(s\) deferred to CI \(T1\), and this repository has no CI: run them here with `mandao run tests \S+ --spec \S+ --deferred T1`$/,
+      ),
     );
   });
 

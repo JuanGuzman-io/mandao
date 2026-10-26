@@ -109,10 +109,19 @@ function scopeTo(all: Task[], delivery: number | undefined) {
  * finding that matters resolved, every passed task committed, deferred runs confirmed by CI.
  */
 /** A deferred run waits for CI, or, where there is none, for the local run that clears it (phase 17). */
-function deferredBlocker(deferred: { task: string }[], ciAvailable: boolean | undefined): string {
+function deferredBlocker(deferred: { task: string }[], ciAvailable: boolean | undefined, id: string, all: Task[]): string {
   const tasks = deferred.map((d) => d.task).join(', ');
-  if (ciAvailable === false)
-    return `${deferred.length} run(s) deferred to CI (${tasks}), and this repository has no CI: run them here with \`mandao run tests <project> --spec <ID> --deferred <task>\``;
+  if (ciAvailable === false) {
+    // The exact runs, one per deferring task, with its project and the spec id (review F11).
+    const runs = [
+      ...new Set(
+        deferred.map(
+          (d) => `\`mandao run tests ${all.find((t) => t.id === d.task)?.project ?? '<project>'} --spec ${id} --deferred ${d.task}\``,
+        ),
+      ),
+    ];
+    return `${deferred.length} run(s) deferred to CI (${tasks}), and this repository has no CI: run them here with ${runs.join(', ')}`;
+  }
   return `${deferred.length} run(s) deferred to CI wait for CI (${tasks})`;
 }
 
@@ -176,7 +185,7 @@ export function verifyPlan(input: {
   const checks = [
     ...tasks.filter((t) => !t.done).map((t) => `${t.id} is not done`),
     ...findings.filter((f) => BLOCKING.has(f.type)).map((f) => `${f.type} ${f.ref}: ${f.message}`),
-    ...(deferred.length && !input.ciConfirmed ? [deferredBlocker(deferred, input.ciAvailable)] : []),
+    ...(deferred.length && !input.ciConfirmed ? [deferredBlocker(deferred, input.ciAvailable, input.story.meta.id, all)] : []),
     ...findings
       .filter((f) => f.type === 'SECURITY_GAPS')
       .map((f) => `SECURITY_GAPS ${f.ref}: ${f.message}; record mandao approve <spec> security-gaps --reason <why> to accept the gap`),

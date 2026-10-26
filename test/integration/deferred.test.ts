@@ -22,13 +22,16 @@ afterEach(() => {
   process.exitCode = undefined;
 });
 
-function workspace(e2e: string) {
-  const root = realpathSync(makeTree({ 'package.json': pkg('shop') }));
+function workspace(e2e?: string, gates: Record<string, string> = {}) {
+  const root = realpathSync(makeTree({ 'package.json': pkg('root'), 'app/package.json': pkg('app'), 'api/package.json': pkg('api') }));
   initTestRepo(root, '-q');
   writeYaml(join(root, '.mandao/config.yml'), {
     schema_version: 1,
-    workspace: 'single',
-    projects: [{ name: 'shop', path: '.', tests: { e2e } }],
+    workspace: 'monorepo',
+    projects: [
+      { name: 'mandao', path: 'app', tests: e2e ? { e2e } : {}, gates },
+      { name: 'api', path: 'api', tests: { e2e: 'node -e "process.exit(0)"' } },
+    ],
     harnesses: ['claude'],
     diagrams: { engine: 'mermaid' },
   });
@@ -65,32 +68,49 @@ describe('runs deferred to CI (phase 17, MDO-0002)', () => {
   test('a passing local run of the deferred suite clears it, and a failing one keeps it', async () => {
     const failing = workspace('node -e "process.exit(1)"');
     await checkpoint(failing);
-    await run(failing, 'tests', 'shop', '--spec', 'MDO-0001', '--deferred', 'T2');
+    await run(failing, 'tests', 'mandao', '--spec', 'MDO-0001', '--deferred', 'T2');
     expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'FAIL', cleared: [] });
     expect(readSpec(join(failing, SPEC)).progress!.deferred_to_ci).toHaveLength(1);
     process.exitCode = undefined;
 
     const passing = workspace('node -e "process.exit(0)"');
     await checkpoint(passing);
-    await run(passing, 'tests', 'shop', '--spec', 'MDO-0001', '--deferred', 'T2');
+    await run(passing, 'tests', 'mandao', '--spec', 'MDO-0001', '--deferred', 'T2');
     expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'PASS', cleared: ['T2'] });
     expect(readSpec(join(passing, SPEC)).progress!.deferred_to_ci).toEqual([]);
+  });
+});
+
+describe('only a run of the deferred tests clears them (review F2, F3)', () => {
+  test('a test gate that cannot be given the deferred tests does not clear them', async () => {
+    const root = workspace(undefined, { test: 'node -e "process.exit(0)"' });
+    await checkpoint(root);
+    await expect(run(root, 'tests', 'mandao', '--spec', 'MDO-0001', '--deferred', 'T2')).rejects.toThrow(
+      /cannot run exactly the deferred tests/,
+    );
+    expect(readSpec(join(root, SPEC)).progress!.deferred_to_ci).toHaveLength(1);
+  });
+
+  test("another project's passing run never clears the task's deferral", async () => {
+    const root = workspace('node -e "process.exit(0)"');
+    await checkpoint(root);
+    await expect(run(root, 'tests', 'api', '--spec', 'MDO-0001', '--deferred', 'T2')).rejects.toThrow(/T2 belongs to project/);
   });
 });
 
 describe('run tests --eval (phase 17)', () => {
   test('runs the eval gate from the project folder and records it; without one it says so', async () => {
     const root = workspace('node -e "process.exit(0)"');
-    await expect(run(root, 'tests', 'shop', '--eval')).rejects.toThrow(/no eval gate/);
+    await expect(run(root, 'tests', 'mandao', '--eval')).rejects.toThrow(/no eval gate/);
     const config = join(root, '.mandao/config.yml');
     writeYaml(config, {
       schema_version: 1,
-      workspace: 'single',
-      projects: [{ name: 'shop', path: '.', gates: { eval: 'node -e "process.exit(0)"' } }],
+      workspace: 'monorepo',
+      projects: [{ name: 'mandao', path: 'app', gates: { eval: 'node -e "process.exit(0)"' } }],
       harnesses: ['claude'],
       diagrams: { engine: 'mermaid' },
     });
-    await run(root, 'tests', 'shop', '--eval', '--spec', 'MDO-0001');
+    await run(root, 'tests', 'mandao', '--eval', '--spec', 'MDO-0001');
     expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'PASS', gate: 'eval' });
   });
 });

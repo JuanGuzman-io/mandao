@@ -65,11 +65,15 @@ export function registerTasks(run: Command, ctx: CliContext) {
       if (!o.add?.length && o.kind === undefined) throw new Error('give --add <paths...> or --kind <kind>');
       const { spec } = loadSpec(ctx, ref);
       const file = docPath(spec.dir, 'tasks');
-      writeText(
-        file,
-        withTaskFields(readFileSync(file, 'utf8'), id, { ...(o.add ? { add: o.add } : {}), ...(o.kind ? { kind: o.kind } : {}) }),
-      );
-      const task = parseTasks(readFileSync(file, 'utf8')).tasks.find((t) => t.id === id)!;
+      const next = withTaskFields(readFileSync(file, 'utf8'), id, {
+        ...(o.add ? { add: o.add } : {}),
+        ...(o.kind ? { kind: o.kind } : {}),
+      });
+      // Checked before anything is written (review F5): the task must still parse, with the change in it.
+      const task = parseTasks(next).tasks.find((t) => t.id === id);
+      if (!task || !(o.add ?? []).every((f) => task.files.includes(f)))
+        throw new Error(`${id} would not parse after the edit: nothing written`);
+      writeText(file, next);
       json({ task: id, files: task.files, kind: task.kind });
     });
 }

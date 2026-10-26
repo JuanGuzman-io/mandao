@@ -36,7 +36,10 @@ export function testCommand(
 ): { command: string; shell: string } | undefined {
   const runner = detectRunner(projectDir(root, project.path));
   const gate = project.gates?.test;
-  const viaGate = runner && gate?.includes(runner) ? (gate.includes('{files}') ? gate : `${gate} {files}`) : undefined;
+  // The gate only when it takes the files, or ends with the runner itself (`uv run pytest`): options after it
+  // (a coverage threshold, a fixed folder) would fail or widen a red run (review F8).
+  const endsWithRunner = runner && gate && new RegExp(`(^|\\s)${runner}(\\s+run)?\\s*$`).test(gate);
+  const viaGate = gate?.includes('{files}') ? gate : endsWithRunner ? `${gate} {files}` : undefined;
   const template = project.tests.impacted ?? viaGate ?? (runner ? RUNNER_COMMANDS[runner].module : undefined);
   if (!template) return undefined;
   const inProject = files.map((f) => (project.path === '.' ? f : posix.relative(project.path, f)));

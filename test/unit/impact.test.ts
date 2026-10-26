@@ -52,6 +52,12 @@ describe('impact', () => {
     expect(fillCommand(s.command!, s.files, 3)).toBe('go test -p 3 ./pkg/svc/...');
   });
 
+  test.skipIf(process.platform === 'win32')('a path never reaches the shell unquoted (review F4)', () => {
+    expect(fillCommand('pytest {files}', ['tests/test_a.py', '$(id).test.ts', "it's.py", 'x;rm -rf y'], 1)).toBe(
+      "pytest tests/test_a.py '$(id).test.ts' 'it'\\''s.py' 'x;rm -rf y'",
+    );
+  });
+
   test('only files inside the project count, relative to it', () => {
     expect(selectImpact({ changed: ['apps/web/src/x.ts', 'apps/api/y.ts'], projectPath: 'apps/web', runner: 'jest' }).files).toEqual([
       'src/x.ts',

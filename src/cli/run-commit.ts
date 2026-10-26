@@ -1,15 +1,20 @@
+import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Command } from 'commander';
+import { readConfig } from '../engine/files.js';
 import { buildCommand, type Config, declaresNoBuild } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { commitPending, reconciledTasks, repoRoot } from '../scripts/commits.js';
 import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
+import { logPath } from '../scripts/spec-log.js';
+import { removeFile, writeText } from '../writer/files.js';
 import { budgetFor } from './budget.js';
 import { recordLogEdits, requireDiscrepancyReason } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
+import { logDirFor } from './log-dir.js';
 import { recordCost } from './run-cost.js';
 import { loadSpec } from './spec-context.js';
 
@@ -29,7 +34,8 @@ export function registerCommit(run: Command, ctx: CliContext) {
       if (!spec.story || !spec.progress) throw new Error(`${spec.name} needs story.md and progress.yml`);
       requireDiscrepancyReason(spec, opts.discrepancyReason);
       await requirePreCommitBuilds(ctx, config, spec);
-      recordLogEdits(spec, new Date().toISOString(), 'commit', opts.discrepancyReason);
+      const discrepancy = discrepancyTrailers(spec, opts.discrepancyReason);
+      const costs = costsFile(ctx, ref);
       const cost = spec.progress.pending_commits.length ? taskCost(ctx, ref, opts) : undefined;
       const result = commitPending({
         repo: repoRoot(spec.dir),
@@ -38,13 +44,13 @@ export function registerCommit(run: Command, ctx: CliContext) {
         story: spec.story,
         tasks: spec.tasks,
         progress: spec.progress,
-        trailers: opts.trailer ?? [],
+        trailers: [...(opts.trailer ?? []), ...discrepancy],
         protectedBranches: branchingFor(config).protected,
         home: ctx.root(),
       });
-      const skipped = declaredNoBuild(config);
-      const builds = skipped.length ? { builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : {};
-      json({ ...result, ...builds, ...(cost ? { cost } : {}) });
+      // Nothing committed: the cost goes back, so a retry never records it twice (review F7).
+      if (cost?.recorded && !result.committed.length) costs.restore();
+      json({ ...result, ...skippedBuilds(config), ...(cost ? { cost } : {}) });
       if (result.error) process.exitCode = 1;
     });
 }
@@ -63,6 +69,25 @@ interface CommitOptions {
  * the agent forgot the rule and recorded once at the end). Never blocks the commit: when nothing can be read
  * (no session, no transcript and no `--usd`), it says so.
  */
+/** A log edited by hand, as a commit trailer: version 2 keeps the list in the git-ignored cache (review F6). */
+function discrepancyTrailers(spec: SpecFolder, reason: string | undefined): string[] {
+  const edited = recordLogEdits(spec, new Date().toISOString(), 'commit', reason);
+  return edited ? [`Mandao-Discrepancy: ${edited.replace(/^[^:]*:\s*/, '').replace(/\s+/g, ' ')}`] : [];
+}
+
+/** Projects whose pre-commit build was skipped by `build: none`, for the commit's JSON. */
+function skippedBuilds(config: Config) {
+  const skipped = declaredNoBuild(config);
+  return skipped.length ? { builds: Object.fromEntries(skipped.map((name) => [name, 'declared-none'])) } : {};
+}
+
+/** The spec's costs.yml as it is now, with a way to put it back. */
+function costsFile(ctx: CliContext, ref: string) {
+  const file = logPath(logDirFor(ctx.root(), readConfig(ctx.root()), ref), 'costs.yml');
+  const before = existsSync(file) ? readFileSync(file, 'utf8') : undefined;
+  return { restore: () => (before === undefined ? removeFile(file, []) : writeText(file, before)) };
+}
+
 function taskCost(ctx: CliContext, ref: string, o: CommitOptions) {
   try {
     const entry = recordCost(ctx, ref, { record: true, command: 'implement', ...o });

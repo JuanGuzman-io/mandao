@@ -251,6 +251,20 @@ describe('commits found by trailers (ADR 0021)', () => {
     expect(commitPending(pending(root)).error).toBeUndefined();
   });
 
+  test('a prose line that starts with files: or kind: is not bookkeeping (review F12)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(
+      tasks,
+      readFileSync(tasks, 'utf8').replace(
+        '### [ ] T2 — Register `skills list`\n',
+        '### [ ] T2 — Register `skills list`\n\nkind: a note someone added\n',
+      ),
+    );
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: tasks.md/);
+  });
+
   test('an edit to another task, or to a queued task beyond its files, kind and box, still needs review', () => {
     const root = repo();
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');

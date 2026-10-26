@@ -103,6 +103,13 @@ describe("a task's manifest covers the task only (phase 17)", () => {
     put(root, { 'src/cli/skills.ts': 'export const list = 1;\n', 'src/cli/format.ts': 'export const f = 1;\n' });
     const { pack } = await run(root, 'review-pack', 'MDO-0001', 'T2', '--include', 'src/cli/format.ts');
     expect(packManifest(root, pack)).toEqual(['src/cli/format.ts', 'src/cli/skills.ts']);
+    // review F9: what the pack leaves out, and an --include that matches nothing, are said, never dropped silently.
+    put(root, { 'notes/unrelated.md': 'x\n' });
+    const r = await run(root, 'review-pack', 'MDO-0001', 'T2', '--include', 'src/cli/fromat.ts');
+    expect(r).toMatchObject({
+      leftOut: expect.arrayContaining(['notes/unrelated.md', 'src/cli/format.ts']),
+      unmatched: ['src/cli/fromat.ts'],
+    });
   });
   test('a task that declares the config takes the lock its approved change regenerates (MDO-0001 T1: build none)', async () => {
     const root = workspace();

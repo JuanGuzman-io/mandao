@@ -1,6 +1,6 @@
 // mandao-scans: none — lists only the temporary trees it creates.
 import { execFileSync } from 'node:child_process';
-import { cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -88,5 +88,32 @@ describe('run commit records the task cost itself (phase 17, MDO-0002)', () => {
     const root = queued();
     const r = await commit(root);
     expect(r).toMatchObject({ committed: [{ task: 'T2' }], cost: { recorded: false, reason: expect.stringMatching(/no session/) } });
+  });
+
+  test('a refused commit records no cost, so a retry never counts it twice (review F7)', async () => {
+    const root = queued();
+    writeFileSync(join(root, 'src/b.ts'), 'export const changedAfterReview = 1;\n');
+    const r = await commit(root, '--harness', 'codex', '--usd', '3');
+    expect(r.error).toMatch(/differs from the Reviewer-approved manifest/);
+    expect(
+      existsSync(logPath(join(root, SPEC), 'costs.yml')) ? readFileSync(logPath(join(root, SPEC), 'costs.yml'), 'utf8') : '',
+    ).not.toMatch(/usd: 3/);
+  });
+
+  test('a discrepancy reason given at commit reaches the commit as a trailer (review F6)', async () => {
+    const root = queued();
+    const execution = logPath(join(root, SPEC), 'execution.md');
+    writeFileSync(execution, `${readFileSync(execution, 'utf8')}\n`);
+    await commit(root, '--usd', '0', '--discrepancy-reason', 'the PE fixed a typo');
+    expect(git(root, 'log', '-1', '--format=%B')).toMatch(/Mandao-Discrepancy: .*execution\.md.*the PE fixed a typo/);
+  });
+
+  test('a file someone staged by hand never rides in a task commit (review F1)', async () => {
+    const root = queued();
+    writeFileSync(join(root, 'staged.txt'), 'staged by hand\n');
+    git(root, 'add', 'staged.txt');
+    expect(await commit(root, '--usd', '0')).toMatchObject({ committed: [{ task: 'T2' }] });
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).not.toContain('staged.txt');
+    expect(git(root, 'diff', '--cached', '--name-only')).toBe('staged.txt');
   });
 });

@@ -1109,7 +1109,7 @@ Raised in the gap sweep. **In this section, untagged items are OPEN**, overridin
 
 ### 23.2 Process governance
 - **DECIDED (ADRs 0035/0040):** script-recorded story/design/spec/tasks/close approvals, including safe approval by running the next command (§2). Organization-specific permission/identity enforcement and a general pre-approved mode remain **OPEN**; git user.name alone is not proof of authority.
-- **DECIDED (ADR 0011) — spec states:** `draft → approved → in-progress → blocked → verified → closed | abandoned`. A spec with tests `DEFERRED_TO_CI` reaches `verified` only after CI confirms them (ADR 0013).
+- **DECIDED (ADR 0011) — spec states:** `draft → approved → in-progress → blocked → verified → closed | abandoned`. A spec with tests `DEFERRED_TO_CI` reaches `verified` only after CI confirms them (ADR 0013), or a local run of them passes (`run tests --deferred`, ADR 0060), the only way where the repository has no CI.
 - **Mid-flight changes:** AC changed after approval → spec versioning and a spec changelog.
 - **Implemented:** isolated spec worktrees (§14.5). **DECIDED, pending Phase 9:** isolated parallel task worktrees, eligibility and integration queue. Coordination between independent specs touching the same module remains **OPEN**.
 - **DECIDED (ADR 0011) — artifact language:** `language.business` and `language.technical` (§3).

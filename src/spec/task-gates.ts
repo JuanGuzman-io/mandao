@@ -7,6 +7,9 @@ const CODE_KINDS = new Set(['feat', 'fix', 'refactor', 'perf', 'test']);
 
 const CONFIG = '.mandao/config.yml';
 
+/** The gates that check what a task writes. */
+const CHECK_GATES = ['format', 'lint', 'typecheck', 'test'];
+
 /**
  * What `approve tasks` and `run tasks` refuse about gates (phase 17): a project with no gates and no task that
  * sets them (MDO-0001 planned every task "verified with its own pytest", so the first implementation ran with
@@ -15,12 +18,14 @@ const CONFIG = '.mandao/config.yml';
  */
 export function taskGateIssues(tasks: Task[], projects: { name: string; gates: Partial<Record<string, string>> }[]): string[] {
   const issues: string[] = [];
-  const setsGates = tasks.some((t) => t.files.includes(CONFIG));
+  const setsGates = tasks.some((t) => t.files.some((f) => f.replace(/^\.\//, '') === CONFIG));
   const order = planTasks(tasks).waves.flat();
-  const byOrder = [...tasks].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  // A finished task is not reported again (review F10).
+  const byOrder = tasks.filter((t) => !t.done).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   for (const name of new Set(tasks.map((t) => t.project))) {
     const gates = projects.find((p) => p.name === name)?.gates ?? {};
-    if (!Object.values(gates).some(Boolean)) {
+    // `build: none`, `eval` or `metrics` alone check nothing a task writes (MDO-0001 ran with none of these).
+    if (!CHECK_GATES.some((g) => gates[g])) {
       if (!setsGates)
         issues.push(
           `project ${name} has no gates in ${CONFIG}: the task that creates its manifest must declare ${CONFIG} and set the gates the constitution proposed`,
