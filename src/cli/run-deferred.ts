@@ -11,7 +11,7 @@ import { projectNamed } from './spec-context.js';
 
 /**
  * `run tests <project> --spec <ID> --deferred <task>`: the runs a task deferred to CI, run here (phase 17). The
- * project's e2e command (else its test gate) runs in its folder; on PASS the task's deferred entries are cleared
+ * project's e2e command (else a test gate that takes `{files}`) runs in its folder; on PASS the task's deferred entries are cleared
  * and the run is recorded with the full runs, so a repository without CI is never blocked by a deferral forever
  * (MDO-0002: the e2e had passed locally, 4/4, and verify still waited for a CI that did not exist).
  */
@@ -33,7 +33,9 @@ export async function runDeferred(ctx: CliContext, name: string, ref: string, ta
     );
   const budget = budgetFor(root, config, project, 'e2e', `${task} deferred`, opts.force, spec.dir);
   // Paths are relative to the project, which the command runs from (as red does; review F3).
-  const inProject = (t: string) => (project.path !== '.' && t.startsWith(`${project.path}/`) ? posix.relative(project.path, t) : t);
+  const base = posix.normalize(project.path);
+  const inProject = (t: string) =>
+    base !== '.' && posix.normalize(t).startsWith(`${base}/`) ? posix.relative(base, posix.normalize(t)) : t;
   const tests = entries.flatMap((e) => e.tests).map(inProject);
   const command = template.includes('{files}') ? fillCommand(template, tests, budget.workers) : template;
   const result = await runTests(root, `${task} deferred`, inProjectDir(command, project.path), budget, Number(opts.queueWait) * 1000);

@@ -116,4 +116,13 @@ describe('run commit records the task cost itself (phase 17, MDO-0002)', () => {
     expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).not.toContain('staged.txt');
     expect(git(root, 'diff', '--cached', '--name-only')).toBe('staged.txt');
   });
+
+  test('a refused commit does not accept the discrepancy, so the retry still needs and records the reason (review F6)', async () => {
+    const root = queued();
+    const execution = logPath(join(root, SPEC), 'execution.md');
+    writeFileSync(execution, `${readFileSync(execution, 'utf8')}\n`);
+    writeFileSync(join(root, 'src/b.ts'), 'export const changedAfterReview = 1;\n');
+    expect((await commit(root, '--usd', '0', '--discrepancy-reason', 'first try')).error).toMatch(/differs/);
+    await expect(commit(root, '--usd', '0')).rejects.toThrow(/pass --discrepancy-reason/);
+  });
 });

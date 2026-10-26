@@ -47,7 +47,7 @@ const bookkeepingFree = (block: string) =>
   block
     .replace(/^(###\s+\[)[ xX](\])/m, '$1 $2')
     // Only inside the task's YAML block: a prose line starting with `files:` is not bookkeeping (review F12).
-    .replace(/```yaml\n[\s\S]*?```/, (yaml) => yaml.replace(/^\s*(files|kind):.*\n/gm, ''));
+    .replace(/```ya?ml[ \t]*\r?\n[\s\S]*?```/, (yaml) => yaml.replace(/^[ \t]*(files|kind):.*\r?\n/gm, ''));
 
 /**
  * Whether a spec document differs from HEAD only by what the process writes for the queued tasks: the `[x]`

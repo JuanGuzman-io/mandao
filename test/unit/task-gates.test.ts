@@ -35,5 +35,7 @@ describe('taskGateIssues (phase 17, MDO-0001: a first implementation with no lin
     expect(taskGateIssues([task('T1', ['./.mandao/config.yml', 'tests/test_a.py'])], [{ name: 'api', gates: {} }])).toEqual([]);
     const gated = [{ name: 'api', gates: { test: 'uv run pytest' } }];
     expect(taskGateIssues([task('T1', ['src/app.py'], { done: true }), task('T2', ['tests/test_b.py'])], gated)).toEqual([]);
+    // review F10 (second pass): once the first code task is done, the check does not move on to the next one.
+    expect(taskGateIssues([task('T1', ['tests/test_a.py'], { done: true }), task('T2', ['src/more.py'])], gated)).toEqual([]);
   });
 });

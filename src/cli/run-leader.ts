@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, posix, relative } from 'node:path';
 import type { Command } from 'commander';
 import { type Config, projectGate } from '../schemas/index.js';
 import { composeBrief } from '../scripts/brief.js';
@@ -306,7 +306,7 @@ function createReviewPack(ctx: CliContext, ref: string, id: string, requestedHar
   // What the pack leaves out, and the names that matched nothing, are said so a task's own file is never missed (F9).
   const changed = changedFiles(repoRoot(spec.dir), spec.dir);
   const leftOut = changed.filter((f) => !scope.includes(f));
-  const unmatched = include.filter((f) => !changed.includes(f));
+  const unmatched = include.filter((f) => !changed.includes(posix.normalize(f.replaceAll('\\', '/'))));
   return {
     pack: relative(ctx.root(), file).split('\\').join('/'),
     bytes: Buffer.byteLength(pack),

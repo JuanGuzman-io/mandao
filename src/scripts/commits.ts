@@ -251,7 +251,7 @@ export function commitPending(input: PendingInput): CommitRun {
       git(input.repo, ['add', '--', ...entry.files, ...specChanges]);
       // Only these paths: anything else someone staged stays staged, never in a reviewed task's commit (review F1).
       const message = [msg.text.trimEnd(), ...(input.trailers ?? [])].join('\n');
-      git(input.repo, ['commit', '-q', '-m', message, '--', ...entry.files, ...specChanges]);
+      git(input.repo, ['commit', '-q', '-m', message, '--', ...entry.files, ...renameSources(input.repo, entry.files), ...specChanges]);
     } catch (e) {
       writeProgress(input.specDir, progress);
       const reason = String((e as { stderr?: string }).stderr || (e as Error).message).trim();
@@ -288,6 +288,19 @@ export function reconciledTasks(
   entries: Progress['pending_commits'],
 ): Set<string> {
   return new Set(reconcileDetails(repo, specId, trailers, entries).keys());
+}
+
+/** The old path of every staged rename whose new path is in `files`: a path-limited commit needs both (review F13). */
+function renameSources(repo: string, files: string[]): string[] {
+  const records = git(repo, ['status', '--porcelain=v1', '-z']).split('\0');
+  const out: string[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]!;
+    if (record[0] !== 'R') continue;
+    i++;
+    if (files.includes(record.slice(3)) && records[i]) out.push(records[i]!);
+  }
+  return out;
 }
 
 function validatePendingManifest(input: PendingInput, queue: Progress['pending_commits']): { error?: string; specChanges: string[] } {

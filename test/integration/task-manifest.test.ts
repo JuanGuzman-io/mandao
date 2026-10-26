@@ -129,4 +129,16 @@ describe("a task's manifest covers the task only (phase 17)", () => {
     expect(paths).toContain('.mandao/mandao.lock');
     expect(paths).not.toContain('notes/unrelated.md');
   });
+  test('a renamed file goes in whole: the commit takes the old path with the new one (review F13)', async () => {
+    const root = workspace();
+    put(root, { 'src/cli/old.ts': 'export const list = 1;\n' });
+    git(root, 'add', '.');
+    git(root, 'commit', '-qm', 'old name');
+    git(root, 'mv', 'src/cli/old.ts', 'src/cli/skills.ts');
+    await run(root, 'review-pack', 'MDO-0001', 'T2');
+    await passAndQueue(root);
+    expect(await run(root, 'commit', 'MDO-0001', '--usd', '0')).toMatchObject({ committed: [{ task: 'T2' }] });
+    expect(git(root, 'ls-files', 'src/cli')).toBe('src/cli/skills.ts');
+    expect(git(root, 'status', '--porcelain')).toBe('');
+  });
 });

@@ -20,8 +20,7 @@ export function taskGateIssues(tasks: Task[], projects: { name: string; gates: P
   const issues: string[] = [];
   const setsGates = tasks.some((t) => t.files.some((f) => f.replace(/^\.\//, '') === CONFIG));
   const order = planTasks(tasks).waves.flat();
-  // A finished task is not reported again (review F10).
-  const byOrder = tasks.filter((t) => !t.done).sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+  const byOrder = [...tasks].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   for (const name of new Set(tasks.map((t) => t.project))) {
     const gates = projects.find((p) => p.name === name)?.gates ?? {};
     // `build: none`, `eval` or `metrics` alone check nothing a task writes (MDO-0001 ran with none of these).
@@ -34,7 +33,8 @@ export function taskGateIssues(tasks: Task[], projects: { name: string; gates: P
     }
     if (!gates.test) continue;
     const first = byOrder.find((t) => t.project === name && (!t.kind || CODE_KINDS.has(t.kind)));
-    if (first && !first.files.some(isTestFile))
+    // Once the first code task is done it passed its gates: nothing to report, and the check never moves on (F10).
+    if (first && !first.done && !first.files.some(isTestFile))
       issues.push(`${first.id} is the first task of ${name} and runs its test gate, but declares no test file: add one to its files`);
   }
   return issues;

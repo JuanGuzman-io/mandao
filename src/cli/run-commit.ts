@@ -10,6 +10,7 @@ import { inProjectDir, runTests } from '../scripts/run-tests.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { logPath } from '../scripts/spec-log.js';
 import { removeFile, writeText } from '../writer/files.js';
+import { logDiscrepancies } from '../writer/log-integrity.js';
 import { budgetFor } from './budget.js';
 import { recordLogEdits, requireDiscrepancyReason } from './checkpoint-guards.js';
 import type { CliContext } from './context.js';
@@ -48,8 +49,10 @@ export function registerCommit(run: Command, ctx: CliContext) {
         protectedBranches: branchingFor(config).protected,
         home: ctx.root(),
       });
-      // Nothing committed: the cost goes back, so a retry never records it twice (review F7).
+      // Nothing committed: the cost goes back and the hand edit stays unaccepted, so a retry neither counts the
+      // cost twice (F7) nor loses the reason (F6). Something committed: the edit is recorded and accepted.
       if (cost?.recorded && !result.committed.length) costs.restore();
+      if (result.committed.length) recordLogEdits(spec, new Date().toISOString(), 'commit', opts.discrepancyReason);
       json({ ...result, ...skippedBuilds(config), ...(cost ? { cost } : {}) });
       if (result.error) process.exitCode = 1;
     });
@@ -69,10 +72,14 @@ interface CommitOptions {
  * the agent forgot the rule and recorded once at the end). Never blocks the commit: when nothing can be read
  * (no session, no transcript and no `--usd`), it says so.
  */
-/** A log edited by hand, as a commit trailer: version 2 keeps the list in the git-ignored cache (review F6). */
+/**
+ * A log edited by hand, as a commit trailer: version 2 keeps the list in the git-ignored cache (review F6).
+ * Nothing is accepted here: the edit is recorded and accepted only once a commit carrying it exists.
+ */
 function discrepancyTrailers(spec: SpecFolder, reason: string | undefined): string[] {
-  const edited = recordLogEdits(spec, new Date().toISOString(), 'commit', reason);
-  return edited ? [`Mandao-Discrepancy: ${edited.replace(/^[^:]*:\s*/, '').replace(/\s+/g, ' ')}`] : [];
+  const edited = logDiscrepancies(spec.dir);
+  if (!edited.length) return [];
+  return [`Mandao-Discrepancy: ${edited.join(', ')} · reason: ${(reason ?? '').trim().replace(/\s+/g, ' ')}`];
 }
 
 /** Projects whose pre-commit build was skipped by `build: none`, for the commit's JSON. */
