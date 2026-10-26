@@ -69,7 +69,8 @@ export async function createSpec(root: string, config: Config, title: string, pr
   const sharedState = sharedStateElsewhere(root, config, p.base, p.branch);
   const carried = o.carryFrom ? (sharedState.find((x) => x.branch === o.carryFrom)?.files ?? []) : [];
   // Checked before anything is created: `git checkout <branch> -- files` would overwrite these edits (review F1).
-  const dirty = carried.length ? git(root, ['status', '--porcelain', '--', ...carried]) : '';
+  // The carry writes where the spec opens: in place this checkout; a new worktree from another spec's checkout is clean (F11).
+  const dirty = carried.length && !holder ? git(root, ['status', '--porcelain', '--', ...carried]) : '';
   if (dirty)
     throw new Error(`uncommitted edits to ${carried.join(', ')} would be overwritten by --carry-from: commit or set them aside first`);
   let steps: Step[];

@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
 import { writeYaml } from '../../src/engine/files.js';
+import { gitIgnoreBlock } from '../../src/engine/graph.js';
 import { makeTree, pkg } from '../helpers.js';
 
 let out: string[];
@@ -29,5 +30,10 @@ describe('a command with no spec yet logs outside the spec tree (phase 16)', () 
     expect(existsSync(join(root, '.mandao/log/_log'))).toBe(true);
     expect(readdirSync(join(root, '.mandao/log/_log')).sort()).toEqual(expect.arrayContaining(['costs.yml']));
     expect(existsSync(join(root, 'specs/quick'))).toBe(false);
+  });
+
+  test('the workspace log is ignored like the cache, so it never blocks a dirty-tree check after an intake (review F10)', () => {
+    const block = gitIgnoreBlock([], '0.0.0').content;
+    expect(block).toContain('.mandao/log/');
   });
 });

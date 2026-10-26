@@ -69,7 +69,8 @@ export function stepCut(config: Config, spec: SpecFolder, id: string, harness: s
   const advice = cutAdvice(s.context, left, s.price, now.getTime());
   const minSavings = cutMinSavings(config, claudeCostBasis());
   const candidate = advice.cut && advice.savings >= minSavings;
-  const decision = candidate ? 'stop: suggest a new session' : advice.cut ? `go on: below ${minSavings}` : 'stay';
+  const below = minSavings === Number.POSITIVE_INFINITY ? 'no cut threshold on a subscription' : `below ${minSavings}`;
+  const decision = candidate ? 'stop: suggest a new session' : advice.cut ? `go on: ${below}` : 'stay';
   const stop = recordCutEstimate(spec.dir, {
     at: now.toISOString(),
     task: id,

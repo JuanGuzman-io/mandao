@@ -4,16 +4,12 @@ import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { readRecommendations } from '../models/load.js';
 import { claudeCostBasis, claudeSessionCost, findClaudeTranscript } from '../scripts/session-cost.js';
-import { findSpec } from '../scripts/spec.js';
 import { logPath, readApprovalLog, specKeepsState } from '../scripts/spec-log.js';
 import { type CostEntry, parseCosts, renderCosts, sessionDelta, sessionModelTotals, specBudget, summarizeCosts } from '../spec/index.js';
 import { writeText } from '../writer/files.js';
 import type { CliContext } from './context.js';
-
-/** Commands that belong to no spec yet (an intake): their log lives under `.mandao/log/`, never in the spec tree (phase 16). */
-const WORKSPACE_LOG = 'workspace';
-
 import { json } from './json.js';
+import { logDirFor } from './log-dir.js';
 
 interface CostOptions {
   record?: boolean;
@@ -58,15 +54,8 @@ function newEntry(entries: CostEntry[], o: CostOptions, rolesOnly: boolean): Cos
 /** The main session's role: the Leader in implement, the command itself elsewhere. */
 const mainRole = (command: string) => (command === 'implement' ? 'leader' : command);
 
-/** `quick` has no spec: its costs go to `<specs>/quick/_log/costs.yml`. */
-function costsDir(ctx: CliContext, ref: string): string {
-  const config = readConfig(ctx.root());
-  return ref === 'quick'
-    ? join(ctx.root(), config.paths.specs, 'quick')
-    : ref === WORKSPACE_LOG
-      ? join(ctx.root(), '.mandao', 'log')
-      : findSpec(ctx.root(), config, ref);
-}
+/** `quick` and `workspace` have no spec: see `logDirFor`. */
+const costsDir = (ctx: CliContext, ref: string) => logDirFor(ctx.root(), readConfig(ctx.root()), ref);
 
 /** Every costs.yml under the specs folder (quick included): a session's baseline is whatever any of them recorded. */
 function allEntries(ctx: CliContext): CostEntry[] {
