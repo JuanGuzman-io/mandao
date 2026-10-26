@@ -5,6 +5,7 @@ import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
+import { onlyDoneBoxes, scriptLedgerPath } from './commit-spec-files.js';
 import { outOfScopeMessage, reconcileMessage, strayByTask } from './review-scope.js';
 import type { SpecFolder } from './spec.js';
 
@@ -198,34 +199,6 @@ function preflight(
   return manifest.error ? { stop: { ...run, error: manifest.error } } : { specChanges: manifest.specChanges };
 }
 
-/** Only script-owned spec records may ride with a task commit; human spec edits need review. */
-function scriptLedgerPath(path: string): boolean {
-  const logDirs = ['reviews/', 'mutations/', 'gates/', 'premises/'];
-  const logFiles = [
-    'state.yml',
-    'execution.md',
-    'progress.yml',
-    'reviews.md',
-    'gates.md',
-    'premises.md',
-    'costs.yml',
-    'approvals.yml',
-    'session-cuts.md',
-    'full-runs.md',
-    'discrepancies.md',
-    '.integrity.json',
-  ];
-  return (
-    ['execution.md', 'progress.yml', 'costs.yml', 'full-runs.md', 'session-cuts.md', 'discrepancies.md', '.integrity.json'].includes(
-      path,
-    ) ||
-    ['state.yml', 'approvals.yml', '.integrity.json'].includes(path) ||
-    (path.startsWith('_log/') &&
-      (logFiles.includes(path.slice('_log/'.length)) || logDirs.some((prefix) => path.startsWith(`_log/${prefix}`)))) ||
-    logDirs.some((prefix) => path.startsWith(prefix))
-  );
-}
-
 /**
  * Commits every pending task, one commit each with its trailers, in order. The entry leaves progress.yml
  * in the same commit, along with the spec folder's bookkeeping; a failed commit puts the entry back.
@@ -335,7 +308,10 @@ function validatePendingManifest(input: PendingInput, queue: Progress['pending_c
   const specPrefix = `${relative(input.repo, input.specDir).replace(/\\/g, '/')}/`;
   const allCurrent = changeManifest(input.repo);
   const specChanges = allCurrent.filter((item) => item.path.startsWith(specPrefix));
-  const unapprovedSpec = specChanges.map((item) => item.path.slice(specPrefix.length)).filter((path) => !scriptLedgerPath(path));
+  const queued = queue.map((entry) => entry.task);
+  const unapprovedSpec = specChanges
+    .map((item) => item.path.slice(specPrefix.length))
+    .filter((path) => !scriptLedgerPath(path) && !onlyDoneBoxes(input.repo, `${specPrefix}${path}`, queued));
   if (unapprovedSpec.length)
     return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
   const current = allCurrent.filter((item) => !item.path.startsWith(specPrefix));

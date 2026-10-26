@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { chmodSync, cpSync, mkdirSync, realpathSync, writeFileSync } from 'node:fs';
+import { chmodSync, cpSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { nextFor } from '../../src/cli/approve.js';
@@ -189,6 +189,25 @@ describe('commits found by trailers (ADR 0021)', () => {
     passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
     writeFileSync(join(root, SPEC, 'design-note.md'), 'human-authored change\n');
     expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: design-note.md/);
+  });
+
+  test('the [x] that checkpoint --done writes in tasks.md rides with the task commit (MDO-0001)', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(tasks, readFileSync(tasks, 'utf8').replace('### [ ] T2', '### [x] T2'));
+    const run = commitPending(pending(root));
+    expect(run.error).toBeUndefined();
+    expect(git(root, 'show', '--name-only', '--format=', 'HEAD')).toContain(`${SPEC}/tasks.md`);
+    expect(git(root, 'status', '--porcelain')).toBe('');
+  });
+
+  test('any other tasks.md edit still needs review', () => {
+    const root = repo();
+    passPending(root, 'T2', 'src/b.ts', 'register the skills list command');
+    const tasks = join(root, SPEC, 'tasks.md');
+    writeFileSync(tasks, readFileSync(tasks, 'utf8').replace('### [ ] T2', '### [x] T2').replace('Register', 'Add'));
+    expect(commitPending(pending(root)).error).toMatch(/unreviewed spec files would enter the task commit: tasks.md/);
   });
 
   test('tasks committed by hand after the overlap error are reconciled, not refused again', () => {
