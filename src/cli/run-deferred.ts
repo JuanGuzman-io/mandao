@@ -40,3 +40,21 @@ export async function runDeferred(ctx: CliContext, name: string, ref: string, ta
   recordFullRun(root, { at: new Date().toISOString(), project: name, reason, status: result.status }, spec.dir);
   return { ...result, command, cleared, projectRoot: project.path === '.' ? root : join(root, project.path) };
 }
+
+/**
+ * `run tests <project> --eval`: the project's eval gate (model or quality evaluations, phase 17), run by verify
+ * and never among the task gates because it makes real model calls. With `--spec` the run is recorded with the
+ * spec's full runs.
+ */
+export async function runEval(ctx: CliContext, name: string, opts: { spec?: string; queueWait: string; force?: boolean }) {
+  const root = ctx.root();
+  const config = readConfig(root);
+  const project = projectNamed(ctx, name);
+  const command = project.gates.eval;
+  if (!command) throw new Error(`${name} has no eval gate: add projects[].gates.eval in .mandao/config.yml`);
+  const specDir = opts.spec ? findSpec(root, config, opts.spec) : undefined;
+  const budget = budgetFor(root, config, project, 'e2e', `${name} eval`, opts.force, specDir);
+  const result = await runTests(root, `${name} eval`, inProjectDir(command, project.path), budget, Number(opts.queueWait) * 1000);
+  recordFullRun(root, { at: new Date().toISOString(), project: name, reason: `eval gate: \`${command}\``, status: result.status }, specDir);
+  return { ...result, command, gate: 'eval' };
+}

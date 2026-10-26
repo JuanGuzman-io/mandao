@@ -77,3 +77,20 @@ describe('runs deferred to CI (phase 17, MDO-0002)', () => {
     expect(readSpec(join(passing, SPEC)).progress!.deferred_to_ci).toEqual([]);
   });
 });
+
+describe('run tests --eval (phase 17)', () => {
+  test('runs the eval gate from the project folder and records it; without one it says so', async () => {
+    const root = workspace('node -e "process.exit(0)"');
+    await expect(run(root, 'tests', 'shop', '--eval')).rejects.toThrow(/no eval gate/);
+    const config = join(root, '.mandao/config.yml');
+    writeYaml(config, {
+      schema_version: 1,
+      workspace: 'single',
+      projects: [{ name: 'shop', path: '.', gates: { eval: 'node -e "process.exit(0)"' } }],
+      harnesses: ['claude'],
+      diagrams: { engine: 'mermaid' },
+    });
+    await run(root, 'tests', 'shop', '--eval', '--spec', 'MDO-0001');
+    expect(JSON.parse(out.at(-1)!)).toMatchObject({ status: 'PASS', gate: 'eval' });
+  });
+});

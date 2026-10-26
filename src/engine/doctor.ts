@@ -67,7 +67,8 @@ function workspaceFindings(root: string, config: Config): Finding[] {
         });
       }
     }
-    const missing = GATES.filter((g) => !p.gates[g]);
+    // `eval` is optional: only projects with model or quality evaluations have one.
+    const missing = GATES.filter((g) => g !== 'eval' && !p.gates[g]);
     if (missing.length) {
       out.push({
         level: 'info',

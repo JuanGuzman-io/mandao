@@ -1,8 +1,8 @@
 import { declaresNoBuild, GATES, type ProjectConfig } from '../schemas/index.js';
 import type { TestRun } from './run-tests.js';
 
-/** Level 0 order (rules/review.md): cheap checks first; `test` means the impacted tests. */
-export const GATE_ORDER = GATES;
+/** Level 0 order (rules/review.md): cheap checks first; `test` means the impacted tests. `eval` runs in verify only. */
+export const GATE_ORDER = GATES.filter((g) => g !== 'eval');
 
 export type GateStatus = 'PASS' | 'FAIL' | 'NOT_INSTALLED' | 'TIMEOUT' | 'DEFERRED' | 'SKIPPED';
 

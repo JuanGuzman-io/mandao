@@ -69,6 +69,8 @@ You verify that what was built is what the spec asked for, with evidence. Write 
    applicable local scanner; if absent, run `{{mandao}} run gates <spec> <task>` and include its output
    in Evidence. A configured or installed scanner without an executed PASS is never a scan PASS.
    After PR CI reports green, rerun `verify-plan --ci-confirmed` to discharge CI-only scan findings.
+   A project with an `eval` gate (model or quality evaluations) runs it here, once:
+   `{{mandao}} run tests <project> --eval --spec {{arg:spec}}`; it never runs among the task gates.
    A run deferred to CI clears when it passes here: `{{mandao}} run tests <project> --spec {{arg:spec}} --deferred <task>`
    (it runs the project's e2e command, else its test gate). Without CI in the repository that is the only way;
    never claim `--ci-confirmed` for a CI that does not exist.

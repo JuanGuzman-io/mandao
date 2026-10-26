@@ -75,7 +75,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 | `mandao run publish-plan <spec>` | `--target <target>` | The exact payload for a tracker target and whether it is new, changed or unchanged (idempotent) |
 | `mandao run pr-plan <spec>` | — | One PR, one per repo, or stacked: from task dependencies, projects and the real diff (ADR 0028) |
 | `mandao run resources` | `--project <name>` · `--kind <kind>` (default: unit) | Cores, free memory and load, and the budget they allow for an operation |
-| `mandao run tests <project> [files...]` | `--full` · `--reason <text>` · `--queue-wait <s>` (default: 1800) · `--force` · `--spec <id>` · `--deferred <task>` | Run the impacted tests under the resource budget, one heavy run at a time (queued) |
+| `mandao run tests <project> [files...]` | `--full` · `--reason <text>` · `--queue-wait <s>` (default: 1800) · `--force` · `--spec <id>` · `--deferred <task>` · `--eval` | Run the impacted tests under the resource budget, one heavy run at a time (queued) |
 | `mandao run build <project>` | `--force` | Run the project's build gate under the build memory floor, one heavy run at a time |
 | `mandao run next <spec>` | `--shown` · `--harness <id>` | The command that follows from the spec's state, and the others that can; --shown records the summary shown |
 | `mandao run quick-log <name>` | `--gates <text>` · `--verdict <verdict>` · `--reviewer <agent>` · `--harness <id>` (default: claude) · `--reduced-independence` · `--claimed-reviewer <text>` · `--project <name>` · `--base <ref>` (default: HEAD) | Append the quick-log row: measured diff, gates, verdict and the reviewer identity from its agent file |
