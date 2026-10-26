@@ -140,18 +140,21 @@ exist yet ([ADR 0059](decisions/0059-continuous-flow.md)): it creates the branch
 `--id` whose branch exists with no spec is reused), in this checkout by default, carrying the uncommitted work, or
 in a worktree with `--worktree` or when another spec is open in this checkout, moving the uncommitted
 constitution, intake and config changes and the spec folder into it. It records the request (`_log/state.yml`)
-and the baseline, and prints `{ …proposal, mode, dir, steps, sharedState?, ok, resume? }`. `sharedState` lists
-other open spec branches that changed the constitution, the intake proposals or the config since the base;
-`--carry-from <branch>` takes those files. `--discard` (with the spec id as the title) says what it would
-remove; with `--yes` it deletes the spec's branch and worktree, returns this checkout to the base, never
-removes uncommitted work, and reports whether the id is still in use.
+and the baseline, and prints `{ …proposal, mode, dir, steps, sharedState?, ok, resume? }`. `sharedState` (also in the
+plain proposal, before anything is created) lists other open spec branches that changed the constitution, the intake
+proposals or the config since the base; `--carry-from <branch>` takes those files, and refuses before creating
+anything when they have uncommitted edits here. In worktree mode, when another spec's branch is checked out here,
+its uncommitted changes stay with it; a renamed or deleted file is left for the user to see. `--discard` (with the spec id as the title; only a spec branch matches) says what it
+would remove, with the commits the base does not have; with `--yes` it deletes the spec's branch and worktree,
+returns this checkout to the base, never removes uncommitted work, and reports whether the id is still in use.
 
 ## Entering the spec branch or worktree
 
 `mandao run where <spec> [--harness <id>] [--first <command>] [--switch]` prints `{ inWorktree, ready, mode?,
 cwd, branch?, expected: { branch, worktree }, resume, protected, message }`. `ready` is true on the spec's branch,
 in its worktree (`mode: worktree`) or in the main checkout (`mode: in-place`); the flow commands go on only then.
-`--switch` moves this checkout onto the spec's branch (never one another worktree holds: the message names it). `resume` is the active harness's command that opens a
+`--switch` moves this checkout onto the spec's branch (never one another worktree holds: the message names it), and
+refuses when this checkout is on another spec's branch with uncommitted work, which belongs to that spec. `resume` is the active harness's command that opens a
 session in `expected.worktree` with the first mandao (`--first`, default `/mandao-implement <spec>`), built
 from the harness adapter's `session.resume`; an unknown `--harness` is an error and the default is `claude`,
 the same rule as the other `run` commands. `mandao run spec-new ... --harness <id> --first <command>` adds the

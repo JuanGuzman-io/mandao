@@ -53,7 +53,11 @@ in the output which skill was missing.
 3. If there is no item, offer to create one through MCP. Show the exact title and description first;
    create it only after the user confirms. Without MCP or tracker, use the next local id from
    `{{script:spec-new}} "<title>"`.
-4. **Open the spec** when it does not exist yet (phase 16): `{{script:spec-new}} "<title>" [--id <ID>] --type <type> --create --harness {{harness}} --first "/mandao-story <ID>"`.
+4. **Open the spec** when it does not exist yet (phase 16). First run the proposal, `{{script:spec-new}} "<title>" [--id <ID>] --type <type>`:
+   when it lists `sharedState` (another open spec changed the constitution, the intake proposals or the config
+   and has not merged them), tell the PE which spec and files and ask once whether to take them. Then
+   `{{script:spec-new}} "<title>" [--id <ID>] --type <type> --create --harness {{harness}} --first "/mandao-story <ID>"`, adding
+   `--carry-from <branch>` when the PE said yes.
    It creates the branch per `branching` (in this checkout, carrying the uncommitted intake and constitution
    changes; a worktree only when another spec is open here, or with `--worktree` when the PE asks), records the
    request and the baseline. Never run git yourself. Show its `issues` and stop if there are any. Write
@@ -65,9 +69,6 @@ in the output which skill was missing.
    <!-- mandao:if !harness=claude -->
    print the `resume` field of the `spec-new` output (the command that opens this harness there) and stop.
    <!-- mandao:endif -->
-   When the output lists `sharedState` (another open spec changed the constitution, the intake proposals or the
-   config and has not merged them), tell the PE which spec and files, and on one confirmation open again with
-   `--carry-from <branch>`, or go on without them.
    A spec started by mistake: `{{script:spec-new}} <ID> --discard`
    shows what it would remove; after the PE confirms, the same with `--yes`.
 

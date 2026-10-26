@@ -205,7 +205,8 @@ function registerState(run: Command, ctx: CliContext) {
       const expected = expectedPlace(ctx.root(), config, spec);
       const first = opts.first ?? `/mandao-implement ${ref}`;
       const resume = ADAPTERS[harness].session.resume(expected.worktree, first).text;
-      const switched = opts.switch ? switchToSpecBranch(process.cwd(), expected.branch, ref) : undefined;
+      const prefixes = Object.values(branchingFor(config).prefixes);
+      const switched = opts.switch ? switchToSpecBranch(process.cwd(), expected.branch, ref, prefixes) : undefined;
       const branch = currentBranch(process.cwd());
       const isProtected = Boolean(branch && branchingFor(config).protected.includes(branch));
       const report = whereAmI(process.cwd(), expected, resume);

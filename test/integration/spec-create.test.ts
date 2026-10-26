@@ -83,19 +83,54 @@ describe('run spec-new --create: the spec opens in the session, no git by the us
     expect(git(root, 'branch', '--show-current')).toBe('feat/MDO-0001-first');
   });
 
-  test('another open spec changed shared state: the new spec is warned, and --carry-from brings those files (MDO-0002 trial)', async () => {
+  test('a path with spaces moves into the worktree whole (review F6)', async () => {
+    const root = repo();
+    writeFileSync(join(root, 'docs/constitution/my rule.md'), '# Rule\n');
+    const r = await run(root, 'spec-new', 'add a login', '--create', '--worktree', '--no-install', '--no-baseline');
+    expect(readFileSync(join(r.worktree, 'docs/constitution/my rule.md'), 'utf8')).toBe('# Rule\n');
+    expect(existsSync(join(root, 'docs/constitution/my rule.md'))).toBe(false);
+  });
+
+  test("from another spec's branch, its uncommitted shared changes stay with it (review F5)", async () => {
+    const root = repo();
+    git(root, 'switch', '-q', '-c', 'feat/MDO-0001-first');
+    writeFileSync(join(root, 'docs/constitution/product.md'), '# Product\n\nMDO-0001 rule.\n');
+    const r = await run(root, 'spec-new', 'second', '--create', '--no-install', '--no-baseline');
+    expect(r.mode).toBe('worktree');
+    expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).toContain('MDO-0001 rule.');
+    expect(readFileSync(join(r.worktree, 'docs/constitution/product.md'), 'utf8')).not.toContain('MDO-0001 rule.');
+    expect(r.steps).toContainEqual(
+      expect.objectContaining({ step: 'pending files', status: 'skipped', detail: expect.stringMatching(/feat\/MDO-0001-first/) }),
+    );
+  });
+
+  test('another open spec changed shared state: the proposal says so before anything is created, and --carry-from brings those files (MDO-0002 trial)', async () => {
     const root = repo();
     git(root, 'switch', '-q', '-c', 'feat/MDO-0001-backend');
     writeFileSync(join(root, 'docs/constitution/product.md'), '# Product\n\nQdrant, not sqlite-vec.\n');
     git(root, 'commit', '-qam', 'reopen the constitution');
     git(root, 'switch', '-q', 'main');
-    const warned = await run(root, 'spec-new', 'frontend', '--create', '--no-baseline');
-    expect(warned.sharedState).toEqual([{ branch: 'feat/MDO-0001-backend', files: ['docs/constitution/product.md'] }]);
-    expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).not.toContain('Qdrant');
-    git(root, 'switch', '-q', 'main');
-    const carried = await run(root, 'spec-new', 'frontend two', '--create', '--no-baseline', '--carry-from', 'feat/MDO-0001-backend');
-    expect(carried.steps).toContainEqual(expect.objectContaining({ step: 'shared state', status: 'done' }));
+    const proposed = await run(root, 'spec-new', 'frontend');
+    expect(proposed.sharedState).toEqual([{ branch: 'feat/MDO-0001-backend', files: ['docs/constitution/product.md'] }]);
+    expect(git(root, 'branch', '--list', proposed.branch)).toBe('');
+    const opened = await run(root, 'spec-new', 'frontend', '--create', '--no-baseline', '--carry-from', 'feat/MDO-0001-backend');
+    expect(opened.steps).toContainEqual(expect.objectContaining({ step: 'shared state', status: 'done' }));
     expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).toContain('Qdrant');
+  });
+
+  test('--carry-from never overwrites uncommitted edits to those files, and refuses before creating anything (review F1)', async () => {
+    const root = repo();
+    git(root, 'switch', '-q', '-c', 'feat/MDO-0001-backend');
+    writeFileSync(join(root, 'docs/constitution/product.md'), '# Product\n\nQdrant.\n');
+    git(root, 'commit', '-qam', 'reopen the constitution');
+    git(root, 'switch', '-q', 'main');
+    writeFileSync(join(root, 'docs/constitution/product.md'), '# Product\n\nMy own edit.\n');
+    const proposed = await run(root, 'spec-new', 'frontend');
+    await expect(run(root, 'spec-new', 'frontend', '--create', '--no-baseline', '--carry-from', 'feat/MDO-0001-backend')).rejects.toThrow(
+      /uncommitted edits to docs\/constitution\/product\.md/,
+    );
+    expect(readFileSync(join(root, 'docs/constitution/product.md'), 'utf8')).toContain('My own edit.');
+    expect(git(root, 'branch', '--list', proposed.branch)).toBe('');
   });
 
   test('--discard says what it would remove, and with --yes removes the branch and returns this checkout to the base', async () => {
@@ -105,11 +140,18 @@ describe('run spec-new --create: the spec opens in the session, no git by the us
     git(root, 'commit', '-qm', 'start');
     expect(await run(root, 'spec-new', r.id, '--discard')).toMatchObject({
       discarded: false,
-      wouldRemove: { branch: r.branch, inPlace: true },
+      wouldRemove: { branch: r.branch, inPlace: true, unmergedCommits: [expect.stringMatching(/ start$/)] },
     });
     expect(await run(root, 'spec-new', r.id, '--discard', '--yes')).toMatchObject({ discarded: true });
     expect(git(root, 'branch', '--show-current')).toBe('main');
     expect(git(root, 'branch', '--list', r.branch)).toBe('');
+  });
+
+  test('--discard only matches spec branches: never main or another plain branch (review F7)', async () => {
+    const root = repo();
+    git(root, 'switch', '-q', '-c', 'feat/MDO-0001-first');
+    await expect(run(root, 'spec-new', 'main', '--discard', '--yes')).rejects.toThrow(/no spec branch found/);
+    expect(git(root, 'branch', '--list', 'main')).toContain('main');
   });
 
   test('--discard never removes uncommitted work', async () => {

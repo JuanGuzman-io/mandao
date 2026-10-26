@@ -203,25 +203,48 @@ export function carriedPaths(config: Config, p: SpecProposal): string[] {
   return [config.paths.constitution, config.paths.intake, '.mandao/config.yml', p.folder];
 }
 
+/** `git status` entries under `paths`, read with -z so paths come raw (spaces, non-ASCII), never quoted (review F6). */
+function statusEntries(root: string, paths: string[]): { status: string; path: string }[] {
+  const records = git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all', '--', ...paths]).split('\0');
+  const out: { status: string; path: string }[] = [];
+  for (let i = 0; i < records.length; i++) {
+    const record = records[i]!;
+    if (!record) continue;
+    out.push({ status: record.slice(0, 2), path: record.slice(3) });
+    if (/[RC]/.test(record.slice(0, 2))) i++; // the source path of a rename or copy follows
+  }
+  return out;
+}
+
 /**
  * Worktree mode: the uncommitted changes under `carriedPaths` move into the new worktree (copied there, then
  * restored in the main checkout), so nothing the intake or the story wrote is left behind (MDO-0001 trial:
- * `git stash` by hand). Other uncommitted work stays where it is.
+ * `git stash` by hand). Other uncommitted work stays where it is, and so does everything when another spec's
+ * branch is checked out here (`holder`).
  */
-export function carryPending(root: string, config: Config, p: SpecProposal): Step {
-  const lines = git(root, ['status', '--porcelain', '--untracked-files=all', '--', ...carriedPaths(config, p)])
-    .split('\n')
-    .filter(Boolean);
-  if (!lines.length) return { step: 'pending files', status: 'skipped', detail: 'nothing uncommitted to carry' };
+export function carryPending(root: string, config: Config, p: SpecProposal, holder?: string): Step {
+  // Another spec's branch is checked out here: its uncommitted changes belong to it and stay (review F5).
+  if (holder)
+    return { step: 'pending files', status: 'skipped', detail: `uncommitted changes stay with ${holder}, the spec they belong to` };
   const moved: string[] = [];
-  for (const line of lines) {
-    const status = line.slice(0, 2);
-    const path = line.slice(3);
-    if (status.includes('D')) continue; // a deletion stays in the main checkout for the user to see
+  const left: string[] = [];
+  for (const { status, path } of statusEntries(root, carriedPaths(config, p))) {
+    // A rename, a copy or a deletion stays in the main checkout for the user to see.
+    if (/[RCD]/.test(status)) {
+      left.push(path);
+      continue;
+    }
     copyInto(join(root, path), join(p.worktree, path));
     if (status === '??') removeFile(join(root, path), [root]);
     else git(root, ['restore', '--staged', '--worktree', '--', path]);
     moved.push(path);
   }
-  return { step: 'pending files', status: 'done', detail: `moved into the worktree: ${moved.join(', ')}` };
+  if (!moved.length && !left.length) return { step: 'pending files', status: 'skipped', detail: 'nothing uncommitted to carry' };
+  const detail = [
+    moved.length ? `moved into the worktree: ${moved.join(', ')}` : '',
+    left.length ? `left here (renamed or deleted): ${left.join(', ')}` : '',
+  ]
+    .filter(Boolean)
+    .join('; ');
+  return { step: 'pending files', status: left.length ? 'warning' : 'done', detail };
 }

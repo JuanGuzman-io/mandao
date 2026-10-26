@@ -63,5 +63,10 @@ describe('intake: the PE answers recorded in the proposal (phase 16)', () => {
     expect(storyPrefill(answered, 'I-1').open[0]?.status).toBe('resolved: Auth0, decided by the PE');
     expect(() => markQuestionAnswered(md, 'Q-9', 'x')).toThrow(/Q-9/);
     expect(() => markQuestionAnswered(md, 'Q-1', 'a | b')).toThrow(/one line, without \|/);
+    // Only a Q-n row of Open and conflicts: never a coverage or story row (review F8).
+    expect(() => markQuestionAnswered(md, 'S1', 'x')).toThrow(/Q-<n>/);
+    expect(() => markQuestionAnswered(md, 'Q-1.*', 'x')).toThrow(/Q-<n>/);
+    const coverageQ = md.replace('| S1 | p. 1 | I-1 | covered |', '| Q-7 | p. 1 | I-1 | covered |');
+    expect(() => markQuestionAnswered(coverageQ, 'Q-7', 'x')).toThrow(/not a row of Open and conflicts/);
   });
 });

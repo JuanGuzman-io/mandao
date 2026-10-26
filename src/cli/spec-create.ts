@@ -64,43 +64,56 @@ function otherSpecHere(root: string, config: Config, branch: string): boolean {
 export async function createSpec(root: string, config: Config, title: string, proposal: ProposalOptions, o: CreateOptions) {
   const p = proposeSpec(root, config, title, proposal);
   if (p.issues.length) throw new Error(p.issues.join('; '));
-  const mode = o.worktree || otherSpecHere(root, config, p.branch) ? 'worktree' : 'in-place';
+  const holder = otherSpecHere(root, config, p.branch) ? currentBranch(root) : undefined;
+  const mode = o.worktree || holder ? 'worktree' : 'in-place';
   const sharedState = sharedStateElsewhere(root, config, p.base, p.branch);
+  const carried = o.carryFrom ? (sharedState.find((x) => x.branch === o.carryFrom)?.files ?? []) : [];
+  // Checked before anything is created: `git checkout <branch> -- files` would overwrite these edits (review F1).
+  const dirty = carried.length ? git(root, ['status', '--porcelain', '--', ...carried]) : '';
+  if (dirty)
+    throw new Error(`uncommitted edits to ${carried.join(', ')} would be overwritten by --carry-from: commit or set them aside first`);
   let steps: Step[];
   if (mode === 'worktree') {
     steps = await setUp(root, config, p, o);
-    steps.splice(1, 0, carryPending(root, config, p));
+    steps.splice(1, 0, carryPending(root, config, p, holder));
     recordRequest(config, p, title, o);
   } else {
     steps = await openInPlace(root, config, p, o);
     recordRequest(config, p, title, o, root);
   }
   const dir = mode === 'worktree' ? p.worktree : root;
-  if (o.carryFrom) steps.push(carryShared(dir, o.carryFrom, sharedState.find((x) => x.branch === o.carryFrom)?.files ?? []));
+  if (o.carryFrom) steps.push(carryShared(dir, o.carryFrom, carried));
   return { ...p, mode, dir, steps, ...(sharedState.length ? { sharedState } : {}), ok: !steps.some((s) => s.status === 'failed') };
 }
 
 /**
  * `run spec-new --discard <ID>`: abandon a spec started by mistake (MDO-0001 trial: `git worktree remove` and
- * `git branch -D` by hand). Without `--yes` it only says what it would remove. It never removes uncommitted work.
+ * `git branch -D` by hand). Only a spec branch (one of the branching prefixes) matches. Without `--yes` it only
+ * says what it would remove, with the commits the base does not have; it never removes uncommitted work.
  */
 export function discardSpec(root: string, config: Config, id: string, yes?: boolean) {
   const pattern = new RegExp(`(^|/)${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(-|$)`);
+  const prefixes = Object.values(branchingFor(config).prefixes).filter(Boolean);
   const branches = git(root, ['for-each-ref', '--format=%(refname:short)', 'refs/heads'])
     .split('\n')
-    .filter((b) => pattern.test(b));
+    .filter((b) => pattern.test(b) && prefixes.some((prefix) => b.startsWith(prefix)));
   if (branches.length !== 1)
     throw new Error(`${id}: ${branches.length ? `several branches match (${branches.join(', ')})` : 'no spec branch found'}`);
   const branch = branches[0]!;
   const holder = worktreeHolding(root, branch);
   const inPlace = currentBranch(root) === branch;
   const worktree = holder && realpathSync(holder) !== realpathSync(git(root, ['rev-parse', '--show-toplevel'])) ? holder : undefined;
-  const plan = { branch, ...(worktree ? { worktree } : {}), inPlace };
+  // Commits only this branch has: deleting it drops them (recoverable from the reflog only), so the PE sees them first.
+  const base = startPoint(branchingFor(config));
+  const unmergedCommits = git(root, ['log', '--format=%h %s', `${base}..${branch}`])
+    .split('\n')
+    .filter(Boolean);
+  const plan = { branch, ...(worktree ? { worktree } : {}), inPlace, unmergedCommits };
   if (!yes) return { discarded: false, wouldRemove: plan, confirm: 'run again with --yes' };
   for (const dir of [worktree, inPlace ? root : undefined])
     if (dir && git(dir, ['status', '--porcelain']))
       throw new Error(`${dir} holds uncommitted work on ${branch}: commit or remove it first`);
-  if (inPlace) git(root, ['switch', '--quiet', startPoint(branchingFor(config))]);
+  if (inPlace) git(root, ['switch', '--quiet', base]);
   if (worktree) git(root, ['worktree', 'remove', worktree]);
   git(root, ['branch', '-D', branch]);
   return { discarded: true, removed: plan, idStillInUse: idsInUse(root, config).includes(id) };
@@ -150,8 +163,11 @@ async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
   if (discard) return json(discardSpec(ctx.root(), config, title, yes));
   const active = harnessOption(harness);
   if (!create) {
+    // The proposal also names other open specs' unmerged shared changes, so the PE decides on --carry-from first.
     const proposal = proposeSpec(ctx.root(), config, title, options);
-    return json(first ? { ...proposal, resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : proposal);
+    const sharedState = sharedStateElsewhere(ctx.root(), config, proposal.base, proposal.branch);
+    const resume = first ? { resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : {};
+    return json({ ...proposal, ...resume, ...(sharedState.length ? { sharedState } : {}) });
   }
   const quick = options.id === 'quick';
   const made = await createSpec(ctx.root(), config, title, options, {

@@ -105,10 +105,20 @@ export function worktreeHolding(cwd: string, branch: string): string | undefined
 /**
  * Moves this checkout onto the spec's branch so the user never runs git (phase 16). Never takes a branch
  * another worktree holds (that worktree is where to go); a missing branch is created by the spec's own
- * command, not here. Uncommitted changes travel with the switch, and git refuses when they would be lost.
+ * command, not here. Uncommitted changes travel with the switch (git refuses when they would be lost), except
+ * from another spec's branch, whose work stays with it.
  */
-export function switchToSpecBranch(cwd: string, branch: string, spec: string): { done: boolean; message?: string } {
-  if (currentBranch(cwd) === branch) return { done: false };
+export function switchToSpecBranch(
+  cwd: string,
+  branch: string,
+  spec: string,
+  specPrefixes: string[] = [],
+): { done: boolean; message?: string } {
+  const here = currentBranch(cwd);
+  if (here === branch) return { done: false };
+  // Uncommitted work on another spec's branch belongs to that spec: switching would carry it over (review F4).
+  if (here && specPrefixes.some((prefix) => prefix && here.startsWith(prefix)) && git(cwd, ['status', '--porcelain']))
+    throw new Error(`${here} holds uncommitted work: commit it there (\`mandao run commit\`) or open ${spec} in a worktree`);
   const holder = worktreeHolding(cwd, branch);
   if (holder) return { done: false, message: `${branch} is checked out in ${holder}: enter that worktree` };
   if (!branchExists(cwd, branch)) throw new Error(`${spec} has no branch ${branch}: create the spec with /mandao-story or /mandao-specify`);

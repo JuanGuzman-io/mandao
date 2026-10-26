@@ -1,5 +1,5 @@
 import { execFileSync, spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import * as p from '@clack/prompts';
 import type { Command } from 'commander';
@@ -267,7 +267,12 @@ function cleanupMergedWorktree(repo: string, branch: string, target: string): vo
     return;
   }
   process.chdir(repo);
-  command(repo, 'git', ['worktree', 'remove', worktree]);
+  if (realpathSync(worktree) === realpathSync(repo)) {
+    // In place (phase 16): the main checkout holds the branch; move it to the updated target instead of removing it.
+    command(repo, 'git', ['fetch', '-q', 'origin', target]);
+    command(repo, 'git', ['switch', '--quiet', target]);
+    command(repo, 'git', ['merge', '--ff-only', '-q', `origin/${target}`]);
+  } else command(repo, 'git', ['worktree', 'remove', worktree]);
   command(repo, 'git', ['branch', '-d', branch]);
   if (parseRemoteBranches(git(repo, ['ls-remote', '--heads', 'origin'])).includes(branch))
     command(repo, 'git', ['push', 'origin', '--delete', branch]);
@@ -298,7 +303,9 @@ async function offerPromotion(repo: string, promotion: string[], target: string,
   const next = promotion[promotion.indexOf(target) + 1];
   if (!next) return;
   if (!canPrompt())
-    return void console.log(`Promotion to ${next} is the next step: run \`mandao deliver\` from a terminal or open that PR.`);
+    return void console.log(
+      `Promotion to ${next} is a separate PR: after the PE confirms it, run \`gh pr create --base ${next} --head ${target}\`.`,
+    );
   const answer = await p.confirm({ message: `Promote ${target} to ${next} by opening a separate PR?`, initialValue: false });
   if (p.isCancel(answer) || !answer) return;
   const url = command(repo, 'gh', ['pr', 'create', '--base', next, '--head', target, '--title', title, '--body', body]);

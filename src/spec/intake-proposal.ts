@@ -254,9 +254,14 @@ function groupOf(p: ReturnType<typeof parseIntakeProposal>, s: { id: string; gro
 export function markQuestionAnswered(markdown: string, id: string, answer: string): string {
   const text = answer.trim();
   if (!text || /[\r\n|]/.test(text)) throw new Error('--answer needs the answer on one line, without |');
+  if (!/^Q-\d+$/.test(id)) throw new Error(`${id} is not a question: answers go to a Q-<n> row`);
   const lines = markdown.split('\n');
-  const at = lines.findIndex((l) => new RegExp(`^\\|\\s*${id}\\s*\\|`).test(l));
-  if (at < 0) throw new Error(`${id} is not a row of Open and conflicts`);
+  const start = lines.findIndex((l) => /^##\s+Open and conflicts\s*$/i.test(l));
+  const end = start < 0 ? -1 : lines.findIndex((l, i) => i > start && /^##\s/.test(l));
+  const rows = start < 0 ? [] : lines.slice(start + 1, end < 0 ? lines.length : end);
+  const offset = rows.findIndex((l) => new RegExp(`^\\|\\s*${id}\\s*\\|`).test(l));
+  if (offset < 0) throw new Error(`${id} is not a row of Open and conflicts`);
+  const at = start + 1 + offset;
   const cells = lines[at]!.split('|');
   cells[cells.length - 2] = ` resolved: ${text} `;
   lines[at] = cells.join('|');

@@ -282,6 +282,34 @@ describe('mandao deliver GitHub merge path', () => {
     expect(result.delivery.report).toMatch(/^released on main, PR #42, merge [a-f0-9]{7}$/);
   });
 
+  test('in place (phase 16): after the merge the main checkout moves to the target and the merged branch is deleted', async () => {
+    promptState.groups = 0;
+    const { root, remote } = repo('github');
+    const branch = 'feat/MDO-0009-delivery';
+    const localBin = makeTree({});
+    const mergeDir = makeTree({});
+    symlinkSync(execFileSync('which', ['git'], { encoding: 'utf8' }).trim(), join(localBin, 'git'));
+    // GitHub merges on its side: a separate clone, never the local checkout.
+    writeFileSync(
+      join(localBin, 'gh'),
+      '#!/bin/sh\nif [ "$1" = "--version" ]; then exit 0; fi\ncase "$2" in\n  create) echo "https://github.com/org/repo/pull/42" ;;\n  checks) if [ "$4" = "--json" ]; then echo \'[{"name":"gitleaks / scan","workflow":"Secrets"}]\'; fi ;;\n  merge) git clone -q "$TEST_REMOTE" "$MERGE_DIR/c" && git -C "$MERGE_DIR/c" -c user.name=t -c user.email=t@t merge --no-ff -q -m "Merge pull request #42" "origin/$3" && git -C "$MERGE_DIR/c" push -q origin main ;;\n  *) exit 2 ;;\nesac\n',
+      { mode: 0o755 },
+    );
+    vi.stubEnv('PATH', `${localBin}:${process.env.PATH}`);
+    vi.stubEnv('TEST_REMOTE', remote);
+    vi.stubEnv('MERGE_DIR', mergeDir);
+    restoreTerminal();
+    restoreTerminal = stubTerminal(false);
+    logs = [];
+    vi.spyOn(console, 'log').mockImplementation((line: string) => void logs.push(line));
+
+    await run(root, 'MDO-0009', '--target', 'main', '--scope', 'all');
+
+    expect(logs.join('\n')).toContain('Merged into main.');
+    expect(git(root, 'branch', '--show-current')).toBe('main');
+    expect(() => git(root, 'show-ref', '--verify', `refs/heads/${branch}`)).toThrow();
+  });
+
   test('does not merge or clean up when GitHub reports failing checks', async () => {
     promptState.groups = 0;
     promptState.target = 'main';

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { cpSync, realpathSync } from 'node:fs';
+import { cpSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ADAPTERS } from '../../src/adapters/index.js';
@@ -96,6 +96,17 @@ describe('run where: the spec branch in place or in a worktree (phase 16)', () =
     const r = await run(root, 'where', 'MDO-0001', '--switch');
     expect(r).toMatchObject({ ready: false, switched: false, message: expect.stringMatching(/checked out in .* enter that worktree/) });
     expect(git(root, 'branch', '--show-current')).toBe('main');
+  });
+
+  test("--switch never carries another spec's uncommitted work onto this one (review F4)", async () => {
+    const root = committed();
+    process.chdir(root);
+    const { expected } = await run(root, 'where', 'MDO-0001');
+    git(root, 'branch', expected.branch);
+    git(root, 'switch', '-q', '-c', 'feat/MDO-0002-other');
+    writeFileSync(join(root, 'pending.txt'), 'T3 of MDO-0002, not committed yet\n');
+    await expect(run(root, 'where', 'MDO-0001', '--switch')).rejects.toThrow(/feat\/MDO-0002-other holds uncommitted work/);
+    expect(git(root, 'branch', '--show-current')).toBe('feat/MDO-0002-other');
   });
 
   test('--switch with no spec branch refuses and names the command that creates it', async () => {
