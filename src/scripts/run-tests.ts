@@ -97,8 +97,6 @@ export async function runTests(
   opts: {
     keepOutput?: boolean;
     env?: Record<string, string>;
-    /** stderr joins the kept output (red evidence reads it). */
-    withStderr?: boolean;
   } = {},
 ): Promise<TestRun> {
   if (budget.decision === 'defer' || !command) {
@@ -119,8 +117,7 @@ export async function runTests(
   try {
     const env = { ...process.env, ...opts.env, MANDAO_TEST_WORKERS: String(budget.workers) };
     const tail: { text: string; full?: string } = { text: '', ...(opts.keepOutput ? { full: '' } : {}) };
-    const spawned = opts.withStderr ? inProjectDir(command, '.') : command;
-    const exit = await streamRun(withPriority(spawned, budget.priority), root, env, budget.timeoutS * 1000, tail);
+    const exit = await streamRun(withPriority(command, budget.priority), root, env, budget.timeoutS * 1000, tail);
     const durationMs = Date.now() - started;
     if (exit === 'timeout')
       return { status: 'TIMEOUT', command, workers: budget.workers, durationMs, reason: `exceeded ${budget.timeoutS}s` };
