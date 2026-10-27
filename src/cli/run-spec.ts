@@ -25,6 +25,7 @@ import { mockSkillNames } from './mock-skills.js';
 import { runDeferred, runEval } from './run-deferred.js';
 import { registerLedger } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
+import { registerRenameRef, specStaleRefs } from './run-refs.js';
 import { registerTasks } from './run-tasks.js';
 import { registerVerify } from './run-verify.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
@@ -64,7 +65,7 @@ function registerTrace(run: Command, ctx: CliContext) {
       const result = trace(spec.story, spec.requirements, spec.tasks, commitState(spec, config.commits.trailers), designChecks);
       json({
         ...result,
-        findings: [...result.findings, ...specPremiseFindings(spec.dir)],
+        findings: [...result.findings, ...specPremiseFindings(spec.dir), ...specStaleRefs(spec)],
         issues: [
           ...spec.issues,
           ...layout.missing.map((f) => `layout: missing ${f}`),
@@ -378,4 +379,5 @@ export function registerSpecWriters(run: Command, ctx: CliContext) {
   registerBuild(run, ctx);
   registerBaseline(run, ctx);
   registerNext(run, ctx);
+  registerRenameRef(run, ctx);
 }
