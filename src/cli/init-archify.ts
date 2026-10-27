@@ -19,6 +19,8 @@ const ARCHIFY: CatalogSkill = {
   version: '3.2.0',
   author: 'tt-a1i',
   license: 'MIT',
+  license_from: 'file',
+  trust: 'community',
   vetted: true,
   binding: 'core',
   phases: ['specify', 'implement', 'close'],

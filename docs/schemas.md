@@ -158,13 +158,17 @@ Example for a workspace with a config but no `.mandao/mandao.lock` (the messages
 schema_version: 1
 bootstrap: [graphify, software-architect, product-manager-toolkit, brainstorming, mandao-skills]
 skills:
-  flutter-bloc:
+  angular-developer:
     description: …
-    source: { type: skills, ref: owner/repo }   # git | npm | skills | command | plugin | bundled; referenced, never vendored
-    version: 1.2.0
-    author: …
+    source: { type: git, url: https://github.com/angular/skills, ref: <tag or 40-hex>, path: angular-developer, commit: <40-hex> }
+                                                 # git | npm | skills | command | plugin | bundled; referenced, never vendored
+    version: f0c2fbd
+    author: Angular team (Google)
     license: MIT
-    vetted: true                                 # false → proposed as unvetted
+    license_from: frontmatter                    # file (default) | frontmatter: no LICENSE file; shown as "MIT (frontmatter)"
+    trust: official                              # official | vendor | community
+    audit: { checked: 2026-10-26, result: pass } # skills.sh scanners on that date; re-checked on every pin bump
+    vetted: false                                # false → proposed as unvetted (not yet tried on a real project)
     binding: stack                               # core | profile | stack | conditional
     phases: [specify, implement]               # the commands that use the skill
     profiles: [app]
@@ -172,17 +176,15 @@ skills:
     install_on: mock-accepted                    # optional: never installed by init, sync or matching; only `node .mandao/bin/mandao.mjs skills add <id> --yes` after an accepted UI mock
     model_invocation: true                       # boolean, default true; false: the copied SKILL.md gets `disable-model-invocation: true` and Codex `agents/openai.yaml` gets `allow_implicit_invocation: false`
 technologies:
-  flutter:
-    match: { files: [pubspec.yaml] }
-    primary: flutter-bloc
-    when: { state: bloc }
-    alt: [{ skill: flutter-riverpod, when: { state: riverpod } }]
-facets:                                          # style-defining libraries
-  state:
-    bloc: { packages: [flutter_bloc] }
-    riverpod: { packages: [flutter_riverpod] }
+  angular:
+    match: { packages: ["@angular/core"], files: [angular.json] }
+    primary: angular-developer                   # or alternatives by facet: when: { state: x }, alt: [{ skill, when }]
+  nestjs:
+    match: { packages: ["@nestjs/core"] }
+    project_skill: Why no catalog skill passes.  # instead of primary: the constitution proposes the project skill
+facets: {}                                       # style-defining libraries: facet → value → matcher
 packs:
-  dev-flutter: [flutter-bloc, flutter-riverpod]
+  dev-web: [vercel-react-best-practices, next-dev-loop, tailwind-design-system]
 ```
 
 Source types: `skills` (`npx skills add <ref>`), `npm`, `command` (a documented shell installer,
@@ -191,6 +193,10 @@ user), `git` (fetched at `ref`, checked against `commit`, and its `path` folder 
 skills folder; see [cli.md](cli.md#skills-at-init)) and `bundled`. Any source may declare `verify`, a command that proves the
 install. A `git` source requires `commit` (40 hex), the commit the `ref` must resolve to; the lock skill entry
 records it (optional `commit`), and `scripts: true` when its scripts were copied with `--with-scripts`. `fallback` says what the commands do without the skill.
+No entry may carry an `UNVERIFIED` placeholder: `skills add` refuses one and `run fingerprint` drops it (ADR 0063).
+`run fingerprint` prints `matches`, `dropped` and `projectSkills` (a detected technology with `project_skill`);
+`binding: profile` skills are proposed for their profiles. The lock skill entry records the license as shown
+(`MIT (frontmatter)`) and `trust`.
 `commandSkills(catalog)` in `src/skills/command-skills.ts` lists the `bootstrap` skills that are `binding: core`
 and not `bundled`, with their commands (`phases`), for every harness. Every referenced skill and facet must exist. At most ~10 project skills on top of the bootstrap.
 

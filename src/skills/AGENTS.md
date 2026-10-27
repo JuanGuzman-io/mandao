@@ -21,6 +21,10 @@ pin it in the lock (`installSkills`, `pinSkills` in `install.ts`; `commandSkills
   Copy targets stay `skillFolders`.
 - Scripts (executable bit, script extension, or under `scripts/`) are left out and named unless
   `withScripts`; then `warn` is called before any copy and the lock records `scripts: true`.
+- Phase 20 (ADR 0063): `installable(skill)` (`src/schemas/catalog.ts`) is false for an `UNVERIFIED` placeholder;
+  `selectSkills` refuses such an entry before any question and `proposeSkills` drops it. `pinSkills` records
+  `licenseLabel(skill)` (`MIT (frontmatter)`) and `trust`. A catalog pin is the commit a tag resolves to (`git ls-remote`
+  `^{}`), never the annotated tag object's SHA, or the `HEAD == commit` check fails.
 - Phase 13: a catalog skill with `install_on: mock-accepted` cannot be bootstrap, in a pack or a technology
   match (schema), so init, doctor, sync and `run fingerprint` never offer it; `mockSkills` (`on-demand.ts`)
   lists it as `node .mandao/bin/mandao.mjs skills add <id> --yes` for `run mock-offer --record accepted`, which installs nothing.

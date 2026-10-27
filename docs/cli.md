@@ -21,6 +21,12 @@ mandao init --scope global                    # installs /mandao-init for your u
 mandao init --shadow                          # generated files kept out of git (try it on a team repo)
 ```
 
+The profile question: `app` (web, API, mobile or CLI; acceptance as Given/When/Then) or `ai` (LLM, RAG or agents;
+acceptance as eval thresholds, plus a model and prompt registry; it keeps everything `app` does, so an app with AI
+features picks `ai`). It changes the spec templates, not the commands; each project can differ, and the
+preselected one names what was detected. `data` is not offered yet (it has no templates of its own); `--profile data`
+still sets it.
+
 Flags: `--harness <ids...>`, `--profile <app|ai|data>`, `--model-profile <peak|balanced|economy>`,
 `--language-business <lang>`, `--language-technical <lang>`, `--roles <team|solo|solo=<name>|po=…,tech_lead=…,dev=…>`,
 `--budget <usd|none>`, `--cut-min-savings <usd|none>`, `--with-scripts` ([Skills at init](#skills-at-init)),
@@ -246,12 +252,12 @@ What the one-line index leaves out, for the commands and scripts that need it.
 
 | Command | Details |
 |---|---|
-| `mandao init [dir]` | Set up the workspace (or `[dir]`, created with `git init` if needed). `--harness`, `--profile <app\|ai\|data>` (work type), `--model-profile <peak\|balanced\|economy>`, `--budget <usd\|none>`, `--shadow`, `--with-scripts` (see [Skills at init](#skills-at-init)), `--scope global` for `/mandao-init`, `--yes` for no prompts |
+| `mandao init [dir]` | Set up the workspace (or `[dir]`, created with `git init` if needed). `--harness`, `--profile <app\|ai\|data>` (project kind; `data` is not specialized yet), `--model-profile <peak\|balanced\|economy>`, `--budget <usd\|none>`, `--shadow`, `--with-scripts` (see [Skills at init](#skills-at-init)), `--scope global` for `/mandao-init`, `--yes` for no prompts |
 | `mandao doctor` | Validate config, content and generated files; report optional tools and their fallbacks; name each command skill that is not installed for a configured harness, the commands that lose it, its fallback and `mandao skills add <id>` (`warn` when the lock pins it, `info` when it was never installed) |
 | `mandao doctor --json` | Same findings as one JSON document for CI (`counts` per level, `findings`); nothing else on stdout. See [schemas.md](schemas.md) |
 | `mandao models` · `models set <role> <model>` · `models mode <simple\|routed>` · `models profile <peak\|balanced\|economy>` | Show and choose the model per role (leader, reviewer, reviewer_alt, implementer, tester); a profile switches every role at once and keeps your own choices |
 | `mandao skills add <id\|pack>` | Install catalog skills with their ecosystem tool, or copy a repository skill at its pinned commit (after confirmation), verify and pin them. `--with-scripts` also copies a repository skill's scripts |
-| `mandao skills list` | List skills pinned in the workspace lock |
+| `mandao skills list` | List skills pinned in the workspace lock, with license (`MIT (frontmatter)` when no LICENSE file backs it) and trust (`official`, `vendor`, `community`) |
 | `mandao worktree list \| clean` | Spec worktrees; `clean` removes only merged ones that hold no work, never forced |
 | `mandao approve <spec> <step>` | Approve a step from the terminal, without a model session: `story`, `design`, `spec`, `tasks`, `close` (`--items`), `budget` (`--to <usd\|none>`) |
 | `mandao run cost <spec>` | Spend per command and role, with its basis (billed or subscription equivalent); see [Cost](#cost) |

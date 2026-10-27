@@ -16,7 +16,7 @@ tools:
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Arguments: ref: ${input:ref:Spec id or folder, tracker id or URL; empty to choose}, depth: ${input:depth:lite - spec.md and tasks in one session; standard - requirements and design; full - for risky work}, hotfix: ${input:hotfix:A production fix from the hotfix branch, merged back at close}
+Arguments: ref: ${input:ref:Spec id or folder, tracker id or URL; empty to choose}, flags typed after the command, if any: [--depth <lite|standard|full>] [--hotfix]
 
 Produce `requirements.md` and `design.md` for one spec. Follow `.mandao/templates/app/rules/context.md`,
 `.mandao/templates/app/rules/traceability.md`, `.mandao/templates/app/rules/test-policy.md` and, for how each document

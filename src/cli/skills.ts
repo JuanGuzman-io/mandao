@@ -3,7 +3,7 @@ import * as p from '@clack/prompts';
 import { readCatalog } from '../engine/catalog.js';
 import { LOCK_FILE, LOCK_HEADER, readConfig, readLock, writeYaml } from '../engine/files.js';
 import { home } from '../engine/global.js';
-import { type Catalog, type HarnessId, type Lock, MAX_PROJECT_SKILLS } from '../schemas/index.js';
+import { type Catalog, type HarnessId, installable, type Lock, licenseLabel, MAX_PROJECT_SKILLS } from '../schemas/index.js';
 import {
   describeStep,
   type InstallOptions,
@@ -28,6 +28,13 @@ export function selectSkills(ids: string[], catalog: Catalog, lock: Lock): { wan
       `Not in the catalog: ${unknown.join(', ')}. Unknown technologies get unvetted candidates or a generated skill via /mandao-constitution.`,
     );
   }
+  // Phase 20: an entry without a real source is refused before any question (the real-state trial).
+  const unsure = wanted.filter((id) => !installable(catalog.skills[id]!));
+  if (unsure.length) {
+    throw new Error(
+      `Not installable: ${unsure.join(', ')} (no verified source in the catalog). Use a project skill generated from standards.md via /mandao-constitution.`,
+    );
+  }
   const bootstrap = new Set(catalog.bootstrap);
   const counted = new Set([...lock.skills.map((s) => s.id), ...wanted].filter((id) => !bootstrap.has(id)));
   if (counted.size > MAX_PROJECT_SKILLS) {
@@ -36,12 +43,13 @@ export function selectSkills(ids: string[], catalog: Catalog, lock: Lock): { wan
   return { wanted, packs };
 }
 
-/** One skill as the plan shows it: vetted state, id, version, author and license, then how it installs. Pure. */
+/** One skill as the plan shows it: vetted state, id, version, author, license and trust, then how it installs. Pure. */
 export function planLines(id: string, catalog: Catalog, harnesses: readonly HarnessId[]): string[] {
   const s = catalog.skills[id]!;
   const badge = s.vetted ? c.green('vetted  ') : c.yellow('unvetted');
   const how = describeStep(id, installStep(id, s), skillFolders(harnesses));
-  return [`  ${badge} ${id}@${s.version} ${c.dim(`(${s.author}, ${s.license})`)}`, `           ${how}`];
+  const who = [s.author, licenseLabel(s), ...(s.trust ? [s.trust] : [])].join(', ');
+  return [`  ${badge} ${id}@${s.version} ${c.dim(`(${who})`)}`, `           ${how}`];
 }
 
 function printPlan(wanted: string[], catalog: Catalog, harnesses: readonly HarnessId[]) {
@@ -57,13 +65,21 @@ function sortedPinnedSkills(skills: Lock['skills']) {
 export function formatPinnedSkills(skills: Lock['skills']): string[] {
   return sortedPinnedSkills(skills).map((s) => {
     const badge = s.vetted ? c.green('vetted  ') : c.yellow('unvetted');
-    return `  ${badge} ${s.id}@${s.version} ${s.source}`;
+    const who = [s.license, ...(s.trust ? [s.trust] : [])].join(', ');
+    return `  ${badge} ${s.id}@${s.version} ${s.source} ${c.dim(`(${who})`)}`;
   });
 }
 
-/** Pinned skills as `{ id, version, vetted, source }`, sorted by id. Reads only the lock. Pure. */
+/** Pinned skills as `{ id, version, vetted, source, license, trust }`, sorted by id. Reads only the lock. Pure. */
 export function pinnedSkillsJson(skills: Lock['skills']) {
-  return sortedPinnedSkills(skills).map(({ id, version, vetted, source }) => ({ id, version, vetted, source }));
+  return sortedPinnedSkills(skills).map(({ id, version, vetted, source, license, trust }) => ({
+    id,
+    version,
+    vetted,
+    source,
+    license,
+    ...(trust ? { trust } : {}),
+  }));
 }
 
 /** Keeps only the vetted or only the unvetted pinned skills; no filter keeps all. Pure. */

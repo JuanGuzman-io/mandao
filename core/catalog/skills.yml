@@ -3,9 +3,13 @@
 # Admission (design doc §17.2): maintained, clear license, matches the framework version, tried on a
 # real project. Third-party skills are referenced, never vendored.
 #
-# Bootstrap entries were verified at their upstream source (2026-10-20). Every other third-party entry
-# is a seed: author, license, version and source were NOT verified, so they read UNVERIFIED and
-# `vetted: false`. Verify each one at its source before setting `vetted: true`.
+# Bootstrap entries were verified at their upstream source (2026-10-20). The stack, cross-cutting, `ai` and
+# security entries come from docs/audits/2026-10-skills-for-app.md (phase 20): repository, path, frontmatter
+# name, license and the commit each tag resolves to were re-read through the GitHub API on 2026-10-27, and
+# none had a Warn or Fail on skills.sh (Gen Agent Trust Hub, Socket, Snyk) on the `audit.checked` date. They
+# stay `vetted: false` until tried on a real project (§17.2). When a pin moves, re-check its audit by hand and
+# update `audit.checked`. `license_from: frontmatter`: the repository has no LICENSE file. No entry may carry an
+# UNVERIFIED placeholder: `skills add` refuses it and `run fingerprint` never proposes it.
 schema_version: 1
 
 bootstrap: [graphify, software-architect, product-manager-toolkit, brainstorming, mandao-skills]
@@ -22,6 +26,7 @@ skills:
     version: 0.9.92
     author: Safi Shamsi and the Graphify contributors
     license: Apache-2.0
+    trust: vendor
     vetted: true
     binding: core
     phases: [constitution, story, specify, implement, close]
@@ -33,6 +38,7 @@ skills:
     version: 2.34.1
     author: Juan Carlos Cadavid
     license: MIT
+    trust: community
     vetted: true
     binding: core
     phases: [constitution, specify]
@@ -43,6 +49,7 @@ skills:
     version: 2.12.0
     author: Alireza Rezvani
     license: MIT
+    trust: community
     vetted: true
     binding: core
     phases: [constitution, story, specify]
@@ -53,6 +60,7 @@ skills:
     version: 7.0.0
     author: Jesse Vincent
     license: MIT
+    trust: community
     vetted: true
     binding: core
     phases: [constitution, story, specify]
@@ -77,6 +85,7 @@ skills:
     version: 1c1e97c
     author: Elaya
     license: MIT
+    trust: community
     vetted: false
     binding: conditional
     phases: [story, specify, implement]
@@ -84,119 +93,517 @@ skills:
     fallback: The mock is built from ux.md, the project styles and the story, without the skill's guidance.
     install_on: mock-accepted
     model_invocation: false
-  nestjs-best-practices:
-    description: NestJS module architecture, dependency injection, security and performance practices.
-    source: { type: skills, ref: UNVERIFIED/nestjs-best-practices }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+  # Stack, cross-cutting, `ai` and security skills (phase 20; docs/audits/2026-10-skills-for-app.md).
+  vercel-react-best-practices:
+    description: "React and Next.js performance rules: rendering, data fetching, bundles and composition."
+    source: { type: git, url: https://github.com/vercel-labs/agent-skills, ref: dc8367e6f91c022d83361f03c3313fa05e848ee5, path: skills/react-best-practices, commit: dc8367e6f91c022d83361f03c3313fa05e848ee5 }
+    version: dc8367e
+    author: Vercel
+    license: MIT
+    license_from: frontmatter
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: stack
     phases: [specify, implement]
     profiles: [app, ai]
-  react-best-practices:
-    description: React and Next.js performance and composition patterns.
-    source: { type: skills, ref: UNVERIFIED/react-best-practices }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+  next-dev-loop:
+    description: "Next.js development loop from the Next.js team: run, inspect and fix the app while building."
+    source: { type: git, url: https://github.com/vercel/next.js, ref: 56fca738f9b695f8f3f74116922ec29c286ab2fc, path: skills/next-dev-loop, commit: 56fca738f9b695f8f3f74116922ec29c286ab2fc }
+    version: 56fca73
+    author: Vercel (Next.js)
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: stack
-    phases: [specify, implement]
+    phases: [implement, verify]
+    profiles: [app, ai]
   angular-developer:
-    description: Angular components, signals, forms, routing and testing.
-    source: { type: skills, ref: UNVERIFIED/angular-developer }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    description: Angular components, signals, forms, routing, SSR and testing, from the Angular team.
+    source: { type: git, url: https://github.com/angular/skills, ref: f0c2fbd3b5691ef2b40b181d6578f18e6a53168b, path: angular-developer, commit: f0c2fbd3b5691ef2b40b181d6578f18e6a53168b }
+    version: f0c2fbd
+    author: Angular team (Google)
+    license: MIT
+    license_from: frontmatter
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: stack
     phases: [specify, implement]
-  flutter-bloc:
-    description: Flutter architecture with the BLoC state-management convention.
-    source: { type: skills, ref: UNVERIFIED/flutter-bloc }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    profiles: [app, ai]
+  svelte-core-bestpractices:
+    description: Svelte 5 core practices (runes, components, reactivity), from the Svelte team.
+    source: { type: git, url: https://github.com/sveltejs/ai-tools, ref: 1a3ba88bba598c6734533c48e23cb5d37424b618, path: tools/skills/svelte-core-bestpractices, commit: 1a3ba88bba598c6734533c48e23cb5d37424b618 }
+    version: 1a3ba88
+    author: Svelte team
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: stack
     phases: [specify, implement]
-  flutter-riverpod:
-    description: Flutter architecture with the Riverpod state-management convention.
-    source: { type: skills, ref: UNVERIFIED/flutter-riverpod }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    profiles: [app, ai]
+  vue-best-practices:
+    description: "Vue 3 practices: Composition API, components and state. Not from the Vue team despite the org name."
+    source: { type: git, url: https://github.com/vuejs-ai/skills, ref: 813b79c1344cb89f350a5019fc2f8329fa1b4223, path: skills/vue-best-practices, commit: 813b79c1344cb89f350a5019fc2f8329fa1b4223 }
+    version: 813b79c
+    author: vuejs-ai contributors
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: stack
     phases: [specify, implement]
-  ai-agent-development:
-    description: Agent framework and runtime selection, agent architecture and evals.
-    source: { type: skills, ref: UNVERIFIED/ai-agent-development }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    profiles: [app, ai]
+  nuxt:
+    description: Nuxt app structure, routing, data fetching and modules.
+    source: { type: git, url: https://github.com/antfu/skills, ref: d02c48452d782231e4c32d7069cde731a4c7db42, path: skills/nuxt, commit: d02c48452d782231e4c32d7069cde731a4c7db42 }
+    version: d02c484
+    author: Anthony Fu
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
-    binding: profile
-    phases: [specify, implement, verify]
-    profiles: [ai]
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  tailwind-design-system:
+    description: Tailwind CSS v4 design tokens, component patterns and responsive layouts.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/frontend-mobile-development/skills/tailwind-design-system, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  typescript-advanced-types:
+    description: TypeScript generics, conditional and mapped types, and type-safe API design.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/javascript-typescript/skills/typescript-advanced-types, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement]
+  golang-code-style:
+    description: Go code style and idioms.
+    source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-code-style, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
+    version: 2.0.0
+    author: Samuel Berthe
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  golang-error-handling:
+    description: Go error wrapping, sentinel errors and error flows.
+    source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-error-handling, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
+    version: 2.0.0
+    author: Samuel Berthe
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement]
+  golang-testing:
+    description: "Go tests: table-driven tests, fixtures, mocks and benchmarks."
+    source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-testing, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
+    version: 2.0.0
+    author: Samuel Berthe
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement, verify]
+  python-code-style:
+    description: Python style, naming, typing and project conventions.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/python-development/skills/python-code-style, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  python-testing-patterns:
+    description: pytest fixtures, parametrization, mocking and test layout.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/python-development/skills/python-testing-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement, verify]
+  fastapi:
+    description: "FastAPI, from the FastAPI repository and versioned with the library: pin the tag of the project's FastAPI."
+    source: { type: git, url: https://github.com/fastapi/fastapi, ref: 0.162.0, path: fastapi/.agents/skills/fastapi, commit: 7a0a3f0b286c6c865cf4398ea0e957a87b8bffa4 }
+    version: 0.162.0
+    author: Sebastián Ramírez and the FastAPI contributors
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  django-perf-review:
+    description: "Django performance review: queries, N+1, caching. Conventions need a project skill."
+    source: { type: git, url: https://github.com/getsentry/skills, ref: d12f250460ffd961f549dbebf7eeb0cf4afd4c2e, path: skills/django-perf-review, commit: d12f250460ffd961f549dbebf7eeb0cf4afd4c2e }
+    version: d12f250
+    author: Sentry
+    license: Apache-2.0
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement, verify]
+    profiles: [app, ai]
+  fastify-best-practices:
+    description: Fastify plugins, schemas, hooks and testing, by Fastify's lead maintainer.
+    source: { type: git, url: https://github.com/mcollina/skills, ref: c75d70dbfbe991d8cec42aeda0b64ff14fbb9ac7, path: skills/fastify, commit: c75d70dbfbe991d8cec42aeda0b64ff14fbb9ac7 }
+    version: c75d70d
+    author: Matteo Collina
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  supabase-postgres-best-practices:
+    description: PostgreSQL schema, indexes, queries and row-level security; for Postgres anywhere, not only Supabase.
+    source: { type: git, url: https://github.com/supabase/agent-skills, ref: v0.1.9, path: skills/supabase-postgres-best-practices, commit: 544bfc56c89afe2b87b20017a59b2c6e9502a1fb }
+    version: 0.1.9
+    author: Supabase
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  sql-optimization-patterns:
+    description: SQL query optimization, indexes and execution plans.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/developer-essentials/skills/sql-optimization-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [specify, implement]
+  prisma-client-api:
+    description: Prisma Client queries, relations and transactions, from the Prisma team; match the project's Prisma major.
+    source: { type: git, url: https://github.com/prisma/skills, ref: ba3f9d73200bbb62e49733ab93a961fd138a2c18, path: prisma-client-api, commit: ba3f9d73200bbb62e49733ab93a961fd138a2c18 }
+    version: ba3f9d7
+    author: Prisma
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  redis-core:
+    description: Redis data structures, keys and commands, from Redis.
+    source: { type: git, url: https://github.com/redis/agent-skills, ref: a84871d065f398fed55e1633f66b66f731eb4e2b, path: skills/redis-core, commit: a84871d065f398fed55e1633f66b66f731eb4e2b }
+    version: a84871d
+    author: Redis
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  graphql-schema:
+    description: "GraphQL schema design: types, nullability, pagination and evolution."
+    source: { type: git, url: https://github.com/apollographql/skills, ref: v1.4.3, path: skills/graphql-schema, commit: 46034b62106b1044890cdb1cbb01d1bfe671aa69 }
+    version: 1.4.3
+    author: Apollo GraphQL
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+  vercel-react-native-skills:
+    description: React Native performance, lists, animations and native modules.
+    source: { type: git, url: https://github.com/vercel-labs/agent-skills, ref: 063bee94c3f4df8453406c830b0a7df0f2860278, path: skills/react-native-skills, commit: 063bee94c3f4df8453406c830b0a7df0f2860278 }
+    version: 063bee9
+    author: Vercel
+    license: MIT
+    license_from: frontmatter
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  expo-overview:
+    description: "Expo apps: project setup, SDK modules and the other Expo skills, from the Expo team."
+    source: { type: git, url: https://github.com/expo/skills, ref: 8a0dc4fa57ae345923c357e1451cbcd8b6f2a7db, path: plugins/expo/skills/expo-overview, commit: 8a0dc4fa57ae345923c357e1451cbcd8b6f2a7db }
+    version: 8a0dc4f
+    author: Expo
+    license: MIT
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  flutter-apply-architecture-best-practices:
+    description: Flutter layered architecture (UI, logic, data), from the Flutter team. State management (Bloc, Riverpod) needs a project skill.
+    source: { type: git, url: https://github.com/flutter/agent-plugins, ref: 90fa51dc9d1bd6694cee226397e08ec8193e9e69, path: skills/flutter-apply-architecture-best-practices, commit: 90fa51dc9d1bd6694cee226397e08ec8193e9e69 }
+    version: 90fa51d
+    author: Flutter team (Google)
+    license: BSD-3-Clause
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  dart-add-unit-test:
+    description: "Dart unit tests with package:test, from the Dart team."
+    source: { type: git, url: https://github.com/dart-lang/skills, ref: bf984f3ef223dd85e92036f934bbcb6bf301e4ce, path: skills/dart-add-unit-test, commit: bf984f3ef223dd85e92036f934bbcb6bf301e4ce }
+    version: bf984f3
+    author: Dart team (Google)
+    license: BSD-3-Clause
+    trust: official
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement, verify]
+    profiles: [app, ai]
+  swiftui-pro:
+    description: SwiftUI views, state, navigation and modern APIs.
+    source: { type: git, url: https://github.com/twostraws/SwiftUI-Agent-Skill, ref: 2.0.0, path: swiftui-pro, commit: f9800713b24580bc444931949aad4519128605e8 }
+    version: 2.0.0
+    author: Paul Hudson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [specify, implement]
+    profiles: [app, ai]
+  playwright-best-practices:
+    description: "Playwright end-to-end tests: locators, fixtures, flakiness and CI."
+    source: { type: git, url: https://github.com/currents-dev/playwright-best-practices-skill, ref: 283d5cbc5d11aac1abda058b16ad22c317d54dc0, path: playwright-best-practices, commit: 283d5cbc5d11aac1abda058b16ad22c317d54dc0 }
+    version: 283d5cb
+    author: Currents
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: stack
+    phases: [implement, verify]
+    profiles: [app, ai]
   systematic-debugging:
-    description: Root-cause debugging before proposing fixes.
-    source: { type: skills, ref: UNVERIFIED/systematic-debugging }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    description: Root-cause debugging before proposing fixes. Ships helper scripts, copied only with --with-scripts.
+    source: { type: git, url: https://github.com/obra/superpowers, ref: v7.0.1, path: skills/systematic-debugging, commit: 2ce8aa15d05bd57213e6f746f953aafb7ded7a8b }
+    version: 7.0.1
+    author: Jesse Vincent
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: conditional
     phases: [implement, verify]
   error-handling-patterns:
     description: Error propagation, Result types and graceful degradation.
-    source: { type: skills, ref: UNVERIFIED/error-handling-patterns }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/developer-essentials/skills/error-handling-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: conditional
     phases: [specify, implement]
   api-design-principles:
     description: REST and GraphQL API design for public contracts.
-    source: { type: skills, ref: UNVERIFIED/api-design-principles }
-    version: UNVERIFIED
-    author: UNVERIFIED
-    license: UNVERIFIED
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/backend-development/skills/api-design-principles, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
     vetted: false
     binding: conditional
     phases: [specify]
+  github-actions-hardening:
+    description: "GitHub Actions hardening: permissions, pinned actions, secrets and untrusted input."
+    source: { type: git, url: https://github.com/github/awesome-copilot, ref: d106008300bd4c8396e9c3c085c7c8e3ed976d48, path: skills/github-actions-hardening, commit: d106008300bd4c8396e9c3c085c7c8e3ed976d48 }
+    version: d106008
+    author: GitHub
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [constitution, implement]
+  llm-evaluation:
+    description: "LLM evals: metrics, reference datasets, LLM-as-judge and regression thresholds."
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/llm-application-dev/skills/llm-evaluation, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: profile
+    phases: [specify, verify]
+    profiles: [ai]
+  secret-scanning:
+    description: Secret scanning setup and handling leaked secrets.
+    source: { type: git, url: https://github.com/github/awesome-copilot, ref: d106008300bd4c8396e9c3c085c7c8e3ed976d48, path: skills/secret-scanning, commit: d106008300bd4c8396e9c3c085c7c8e3ed976d48 }
+    version: d106008
+    author: GitHub
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [constitution]
+  sast-configuration:
+    description: Static analysis (SAST) tool setup and tuning for the project's languages.
+    source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/security-scanning/skills/sast-configuration, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
+    version: 0874a27
+    author: Seth Hobson
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [constitution]
+  security-review:
+    description: "Security review of a change: injection, auth, secrets and unsafe input."
+    source: { type: git, url: https://github.com/github/awesome-copilot, ref: d106008300bd4c8396e9c3c085c7c8e3ed976d48, path: skills/security-review, commit: d106008300bd4c8396e9c3c085c7c8e3ed976d48 }
+    version: d106008
+    author: GitHub
+    license: MIT
+    trust: vendor
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [verify]
+  security-and-hardening:
+    description: "Secure defaults while implementing: input validation, authz, secrets and dependencies."
+    source: { type: git, url: https://github.com/addyosmani/agent-skills, ref: 0.6.13, path: skills/security-and-hardening, commit: aeac41d4d005999432bb7312f7ff06383a91d59d }
+    version: 0.6.13
+    author: Addy Osmani
+    license: MIT
+    trust: community
+    audit: { checked: 2026-10-26, result: pass }
+    vetted: false
+    binding: conditional
+    phases: [implement]
 
 technologies:
-  nestjs:
-    match: { packages: ["@nestjs/core"], versions: ">=10" }
-    primary: nestjs-best-practices
+  # Frontend
   react:
-    match: { packages: [react, next] }
-    primary: react-best-practices
+    match: { packages: [react] }
+    primary: vercel-react-best-practices
+  nextjs:
+    match: { packages: [next], files: [next.config.js, next.config.mjs, next.config.ts] }
+    primary: next-dev-loop
   angular:
     match: { packages: ["@angular/core"], files: [angular.json] }
     primary: angular-developer
+  svelte:
+    match: { packages: [svelte, "@sveltejs/kit"] }
+    primary: svelte-core-bestpractices
+  vue:
+    match: { packages: [vue] }
+    primary: vue-best-practices
+  nuxt:
+    match: { packages: [nuxt] }
+    primary: nuxt
+  tailwind:
+    match: { packages: [tailwindcss] }
+    primary: tailwind-design-system
+  shadcn:
+    match: { files: [components.json] }
+    project_skill: Both shadcn skills had a Warn on skills.sh (2026-10-26).
+  # Backend and data
+  go:
+    match: { files: [go.mod] }
+    primary: golang-code-style
+  python:
+    match: { files: [pyproject.toml, requirements.txt] }
+    primary: python-code-style
+  fastapi:
+    match: { packages: [fastapi] }
+    primary: fastapi
+  django:
+    match: { packages: [django], files: [manage.py] }
+    primary: django-perf-review
+  fastify:
+    match: { packages: [fastify] }
+    primary: fastify-best-practices
+  nestjs:
+    match: { packages: ["@nestjs/core"] }
+    project_skill: The known NestJS skill has no LICENSE file and one maintainer (2026-10-26).
+  express:
+    match: { packages: [express] }
+    project_skill: No Express skill passed admission (2026-10-26).
+  hono:
+    match: { packages: [hono] }
+    project_skill: Hono's official skill had a Warn on skills.sh (2026-10-26).
+  postgres:
+    match: { packages: [pg, postgres, "@supabase/supabase-js", "@neondatabase/serverless", psycopg, psycopg2, psycopg2-binary, asyncpg] }
+    primary: supabase-postgres-best-practices
+  prisma:
+    match: { packages: [prisma, "@prisma/client"] }
+    primary: prisma-client-api
+  drizzle:
+    match: { packages: [drizzle-orm] }
+    project_skill: No Drizzle skill passed admission (2026-10-26).
+  redis:
+    match: { packages: [redis, ioredis] }
+    primary: redis-core
+  graphql:
+    match: { packages: [graphql, "@apollo/server", "@apollo/client", graphql-yoga] }
+    primary: graphql-schema
+  # Mobile
+  react-native:
+    match: { packages: [react-native] }
+    primary: vercel-react-native-skills
+  expo:
+    match: { packages: [expo] }
+    primary: expo-overview
   flutter:
     match: { files: [pubspec.yaml] }
-    primary: flutter-bloc
-    when: { state: bloc }
-    alt:
-      - { skill: flutter-riverpod, when: { state: riverpod } }
-  langgraph:
-    match: { packages: [langgraph, "@langchain/langgraph", langchain, "@langchain/core"] }
-    primary: ai-agent-development
-
-facets:
-  state:
-    bloc: { packages: [flutter_bloc, bloc] }
-    riverpod: { packages: [flutter_riverpod, riverpod, hooks_riverpod] }
+    primary: flutter-apply-architecture-best-practices
+  # Cross-cutting
+  playwright:
+    match: { packages: ["@playwright/test", playwright] }
+    primary: playwright-best-practices
+  github-actions:
+    match: { files: [.github/workflows] }
+    primary: github-actions-hardening
 
 packs:
   core: [graphify, systematic-debugging]
   po: [brainstorming, product-manager-toolkit]
-  dev-node: [nestjs-best-practices, error-handling-patterns, api-design-principles]
-  dev-web: [react-best-practices, angular-developer]
-  dev-flutter: [flutter-bloc, flutter-riverpod]
-  ai-ml: [ai-agent-development]
+  dev-node: [typescript-advanced-types, api-design-principles, error-handling-patterns]
+  dev-web: [vercel-react-best-practices, next-dev-loop, tailwind-design-system]
+  dev-go: [golang-code-style, golang-error-handling, golang-testing]
+  dev-python: [python-code-style, python-testing-patterns]
+  dev-mobile: [vercel-react-native-skills, expo-overview]
+  dev-flutter: [flutter-apply-architecture-best-practices, dart-add-unit-test]
+  data: [supabase-postgres-best-practices, sql-optimization-patterns]
+  security: [secret-scanning, sast-configuration, security-review, security-and-hardening, github-actions-hardening]
+  ai-ml: [llm-evaluation]

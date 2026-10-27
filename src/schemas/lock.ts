@@ -26,6 +26,8 @@ export const lockSchema = z.object({
         source: z.string(),
         author: z.string(),
         license: z.string(),
+        /** Who publishes it (catalog `trust`), shown by `skills list`. */
+        trust: z.enum(['official', 'vendor', 'community']).optional(),
         vetted: z.boolean(),
         /** Pinned commit of a `git` source (40 hex). */
         commit: z

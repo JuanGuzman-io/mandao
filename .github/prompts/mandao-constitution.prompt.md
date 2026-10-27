@@ -14,7 +14,7 @@ tools:
 
 # /mandao-constitution
 
-Arguments: mode: ${input:mode:How to start - new (no code yet), legacy (code, no constitution), active (update an existing one)}, product: ${input:product:Also distill business sources from .mandao/sources.yml (or `ingest <source>`)}
+Arguments: mode: ${input:mode:How to start - new (no code yet), legacy (code, no constitution), active (update an existing one)}, flags typed after the command, if any: [--product]
 
 Build the foundation every other mandao relies on: how the system is built (technical constitution,
 owned by the PE) and what it does and for whom (product context, owned by the PE). Keep them in
@@ -140,11 +140,12 @@ Write the workspace level in `docs/constitution/` from the templates, and a proj
 ## 6. Skills
 
 1. Run `node .mandao/bin/mandao.mjs run fingerprint` and read its JSON: per-project fingerprint, bootstrap skills, and the
-   catalog proposal (`matches`, `dropped`).
+   catalog proposal (`matches`, `dropped`, `projectSkills`).
 2. Present the proposal: skill, technology, projects, evidence, vetted or `unvetted`. For `dropped`
-   items, ask the question they carry (e.g. which state-management convention is used).
-3. Technologies missing from the catalog: offer `unvetted` candidates or a project-tailored skill
-   generated with skill-creator from `standards.md`.
+   items, ask the question they carry. Offer to install only what `matches` lists: nothing else can be installed.
+3. `projectSkills` (no catalog skill passed admission) and technologies missing from the catalog: propose a
+   project-tailored skill generated with skill-creator from `standards.md`. When this run sets secret-scanning or
+   SAST gates, offer the `security` pack.
 4. After approval, install and pin them with `node .mandao/bin/mandao.mjs skills add <ids>`, which always uses the
    version pinned in the catalog, then write a `## Skill Map` in the root `AGENTS.md` (outside the
    managed block): skill, binding, phase and module. One primary skill per technology, at most ~10

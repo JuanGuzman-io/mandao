@@ -86,7 +86,7 @@ export function registerRun(program: Command, ctx: CliContext) {
     .action(() => {
       const config = readConfig(ctx.root());
       const catalog = readCatalog();
-      const fingerprints = config.projects.map((p) => fingerprintProject(ctx.root(), p, catalog));
+      const fingerprints = config.projects.map((p) => fingerprintProject(ctx.root(), p, catalog, config.workspace === 'monorepo'));
       json({ fingerprints, bootstrap: catalog.bootstrap, proposal: proposeSkills(fingerprints, catalog) });
     });
 }

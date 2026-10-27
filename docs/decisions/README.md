@@ -69,3 +69,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0060](0060-gates-and-task-scoped-commits.md) | Gates from the start, task-scoped commits | Accepted (Phase 17) |
 | [0061](0061-constitution-checked-on-the-runtime.md) | Constitution checked on the runtime, roles, accepted risks | Accepted (Phase 18) |
 | [0062](0062-commands-documented-from-their-source.md) | Commands documented from their source | Accepted (Phase 19) |
+| [0063](0063-skills-catalog-admitted-at-the-source.md) | Skills catalog admitted at the source | Accepted (Phase 20) |

@@ -29,6 +29,18 @@ const source = z.discriminatedUnion('type', [
   z.object({ type: z.literal('bundled'), path: z.string().min(1) }),
 ]);
 
+/**
+ * Who publishes the skill (phase 20): `official` (the project behind the technology), `vendor` (a company, for its
+ * own or a related product) or `community` (a person or a collection without an official org).
+ */
+const trust = z.enum(['official', 'vendor', 'community']);
+
+/** The skills.sh scanners' result on the date it was checked; re-checked by hand on every pin bump. */
+const audit = z.object({
+  checked: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  result: z.literal('pass'),
+});
+
 const PHASES = ['constitution', 'story', 'specify', 'clarify', 'tasks', 'implement', 'verify', 'close', 'quick', 'perf', 'audit'] as const;
 
 const skill = z.object({
@@ -37,6 +49,10 @@ const skill = z.object({
   version: z.string().min(1),
   author: z.string().min(1),
   license: z.string().min(1),
+  /** `frontmatter`: the repository has no LICENSE file and the license is declared only in the skill's SKILL.md. */
+  license_from: z.enum(['file', 'frontmatter']).default('file'),
+  trust: trust.optional(),
+  audit: audit.optional(),
   vetted: z.boolean(),
   /** core: wired to a step · profile · stack · conditional: loaded when a task touches its domain. */
   binding: z.enum(['core', 'profile', 'stack', 'conditional']),
@@ -64,12 +80,25 @@ const matcher = z
 /** `when: { state: bloc }` holds when the fingerprint detected facet `state` = `bloc`. */
 const when = z.record(z.string(), z.string());
 
-const technology = z.object({
-  match: matcher,
-  primary: kebabId,
-  when: when.optional(),
-  alt: z.array(z.object({ skill: kebabId, when })).default([]),
-});
+const technology = z
+  .object({
+    match: matcher,
+    primary: kebabId.optional(),
+    /** No catalog skill passes admission: why, and the constitution proposes the project skill from `standards.md` (ADR 0012). */
+    project_skill: z.string().min(1).optional(),
+    when: when.optional(),
+    alt: z.array(z.object({ skill: kebabId, when })).default([]),
+  })
+  .refine((t) => Boolean(t.primary) !== Boolean(t.project_skill), 'needs exactly one of primary or project_skill');
+
+/** A source Mandao can install: no `UNVERIFIED` placeholder in its version or source (phase 20). */
+export function installable(s: CatalogSkill): boolean {
+  return !/UNVERIFIED/.test(`${s.version} ${JSON.stringify(s.source)}`);
+}
+
+/** The license as every listing shows it: `MIT`, or `MIT (frontmatter)` when no LICENSE file backs it. */
+export const licenseLabel = (s: Pick<CatalogSkill, 'license' | 'license_from'>) =>
+  s.license_from === 'frontmatter' ? `${s.license} (frontmatter)` : s.license;
 
 /** Why an all-hex `ref` is refused (hex is read case-insensitively), or undefined when it is the pinned commit. */
 function hexRefProblem(ref: string, commit: string): string | undefined {
@@ -122,7 +151,7 @@ export const catalogSchema = z
       check(id, ['bootstrap', i]);
     });
     for (const [tech, t] of Object.entries(cat.technologies)) {
-      check(t.primary, ['technologies', tech, 'primary']);
+      if (t.primary) check(t.primary, ['technologies', tech, 'primary']);
       t.alt.forEach((a, i) => {
         check(a.skill, ['technologies', tech, 'alt', i, 'skill']);
       });
