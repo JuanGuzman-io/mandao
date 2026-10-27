@@ -104,5 +104,5 @@ In Claude Code the mock may be made with `/design`; its export into `mockups/` s
 
 ## 4. Approve
 
-Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
+Show the story. When the {{roles.po}} approves, set `status: approved`. If the story lives in a tracker, offer
 to post the approved AC back as a comment (only after confirmation). End with `{{template:rules/next-step.md}}`: `{{script:next}} <ID> --harness {{harness}}`.

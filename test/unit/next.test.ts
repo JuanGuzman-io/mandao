@@ -339,3 +339,30 @@ describe('nextStep with deliveries (MDO-0013)', () => {
     expect(nextStep(plain, {})).not.toHaveProperty('delivery');
   });
 });
+
+describe('nextStep: the constitution changed after the approval (phase 18)', () => {
+  const approval = (sha: Record<string, string>): Approval =>
+    ({ step: 'spec', by: 'Ana PE', at: '2026-10-20T10:00:00Z', sha256: sha }) as Approval;
+
+  test('a changed constitution recommends specify, names the approved documents and the approval after it', () => {
+    const { spec: s, doc } = spec({ depth: 'lite' });
+    const n = nextStep(s, {
+      approvals: [approval({ 'spec.md': sha256(doc), constitution: 'sha256-old' })],
+      hashes: { 'spec.md': sha256(doc), constitution: 'sha256-new' },
+    });
+    expect(n.recommended.command).toBe('/mandao-specify');
+    expect(n.recommended.reason).toContain('constitution changed');
+    expect(n.recommended.reason).toContain('spec.md');
+    expect(n.recommended.reason).toContain('mandao approve MDO-0001 spec');
+    expect(n.recommended.reason).not.toContain('constitution,');
+  });
+
+  test('an approval that recorded no constitution hash makes no claim about it', () => {
+    const { spec: s, doc } = spec({ depth: 'lite' });
+    const n = nextStep(s, {
+      approvals: [approval({ 'spec.md': sha256(doc) })],
+      hashes: { 'spec.md': sha256(doc), constitution: 'sha256-new' },
+    });
+    expect(n.recommended.command).toBe('/mandao-implement');
+  });
+});

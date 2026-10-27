@@ -111,7 +111,7 @@ cd my-project
 cd my-repo
 npx mandao@beta init
 ```
-`init` detects single repo, monorepo or polyrepo and asks which harnesses you use. Then run `/mandao-constitution`: it reads your code and writes everything as **draft** until you approve it.
+`init` detects single repo, monorepo or polyrepo and asks which harnesses you use, and who decides: a team (PO, tech lead, dev) or only you (one role, e.g. PE, with `--roles solo`). Then run `/mandao-constitution`: it reads your code and writes everything as **draft** until you approve it. Every stack choice is checked on your runtime (`mandao run stack-check`) or marked `UNVERIFIED`, and the runtime is pinned ([ADR 0061](docs/decisions/0061-constitution-checked-on-the-runtime.md)).
 
 ### Join a team that already uses Mandao
 
@@ -263,6 +263,11 @@ Designs also carry a deterministic principles gate: the Reviewer enforces only a
 marked applicable, while data writes require declared ACID handling and a task-level partial-failure
 test. Existing constitutions are never rewritten automatically; `doctor` reports when principles are
 not yet declared. See [ADR 0047](docs/decisions/0047-gated-design-principles-and-data-write-validation.md).
+
+An approved design remembers the constitution it was approved against: when the constitution changes later,
+`next` names the approved documents to update with `/mandao-specify <ID>` before approving again. A known
+vulnerability you accept is recorded with its reason and review trigger (`mandao approve <spec> vulnerability`)
+and listed in the close summary's delivery notes.
 
 From the terminal, no model needed: `mandao approve`, `mandao doctor`, `mandao models` (every terminal command in [docs/cli.md](docs/cli.md#command-index); `mandao start` is deprecated).
 

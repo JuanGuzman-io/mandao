@@ -77,7 +77,7 @@ describe('provider-neutral delivery helpers', () => {
   test('builds a PR body from Outcome, For developers and a link to the spec', () => {
     const body = pullRequestBody(
       '---\nschema_version: 1\nspec: MDO-1\nenvironments: []\npublished: []\napplied: []\n---\n\n## Outcome\n\n- AC-1: met\n\n## For developers\n\nUse the transaction boundary.\n',
-      { schema_version: 1, spec: 'MDO-1', environments: [], published: [], applied: [] },
+      { schema_version: 1, spec: 'MDO-1', environments: [], published: [], applied: [], accepted_risks: [] },
       'specs/MDO-1/',
     );
     expect(body).toContain('- AC-1: met');

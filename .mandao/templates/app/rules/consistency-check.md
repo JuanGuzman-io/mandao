@@ -18,7 +18,7 @@ even when it is empty ("No findings" is written, not omitted).
 | `CONTRACT` | A side disagrees with the contract | web sends `amount` as string, contract says integer |
 
 For each finding: ID, type, the two sides quoted with their location, severity (`critical` or
-`normal`), and the owner (business → PO, technical → dev).
+`normal`), and the owner (business → PE, technical → PE).
 
 ## Row shape
 
@@ -27,7 +27,7 @@ One row per finding, in this table (the header is part of the shape; `mandao run
 ```
 | ID | Type | Finding | Severity | Owner | Status |
 |---|---|---|---|---|---|
-| CC-1 | PREMISE | The refund limit is unknown. | critical | PO | open |
+| CC-1 | PREMISE | The refund limit is unknown. | critical | PE | open |
 ```
 
 Status values: `open`, or `resolved <date>: <how>` once the owner answered. A row is resolved only when

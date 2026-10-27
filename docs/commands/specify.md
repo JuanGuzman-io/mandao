@@ -27,7 +27,7 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 - `specs/<ID>-<slug>/design.md`: standard and full
 - `specs/<ID>-<slug>/spec.md`: lite: requirements and design
 - `specs/<ID>-<slug>/research.md`: only when the spec contains NEEDS RESEARCH questions
-- `specs/<ID>-<slug>/quickstart.md`: only when the spec has behavior a user or PO can see
+- `specs/<ID>-<slug>/quickstart.md`: only when the spec has behavior a user can see
 - `specs/<ID>-<slug>/contract/`: only when the spec touches more than one project
 
 ## Steps

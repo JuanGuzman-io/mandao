@@ -45,6 +45,7 @@ Yes: it stops for your approval.
 - `mandao run fingerprint`
 - `mandao run branching`
 - `mandao run security-scanning`
+- `mandao run stack-check`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

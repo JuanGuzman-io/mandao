@@ -80,5 +80,5 @@ In Claude Code the mock may be made with `/design`; its export into `mockups/` s
 
 ## 4. Approve
 
-Show the story. When the PO approves, set `status: approved`. If the story lives in a tracker, offer
+Show the story. When the PE approves, set `status: approved`. If the story lives in a tracker, offer
 to post the approved AC back as a comment (only after confirmation). End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next <ID> --harness claude`.

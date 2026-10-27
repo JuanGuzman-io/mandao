@@ -147,6 +147,18 @@ const commits = z
   })
   .prefault({});
 
+/** A role as templates write it into YAML frontmatter (`owner:`): letters, digits, spaces and `.`, `-`, `(`, `)`. */
+const roleName = z
+  .string()
+  .transform((s) => s.normalize('NFC'))
+  .pipe(
+    z
+      .string()
+      .regex(/^[\p{L}\p{N}][\p{L}\p{M}\p{N} .()-]*$/u, 'a role name holds letters, digits, spaces, ".", "-", "(" or ")"')
+      // YAML reads these as null, a boolean or a number, not as a name.
+      .refine((s) => !/^(null|true|false|yes|no|on|off|~|[\d.]+)$/i.test(s), 'a role name must not read as a YAML null, boolean or number'),
+  );
+
 export const configSchema = z
   .object({
     schema_version: schemaVersion,
@@ -184,6 +196,17 @@ export const configSchema = z
         business: z.string().min(2).default('en'),
         /** requirements, design, tasks, technical docs. */
         technical: z.string().min(2).default('en'),
+      })
+      .prefault({}),
+    /**
+     * Who decides, as the project names them (phase 18): templates' `owner`, the questions and attributions.
+     * A solo maintainer is one person in every role, e.g. `PE` (Product Engineer).
+     */
+    roles: z
+      .object({
+        po: roleName.default('PO'),
+        tech_lead: roleName.default('tech lead'),
+        dev: roleName.default('dev'),
       })
       .prefault({}),
     projects: z.array(project).min(1),

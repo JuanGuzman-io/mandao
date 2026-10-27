@@ -22,7 +22,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md", description: standard and full }
   - { path: "{{paths.specs}}/<ID>-<slug>/spec.md", description: "lite: requirements and design" }
   - { path: "{{paths.specs}}/<ID>-<slug>/research.md", description: "only when the spec contains NEEDS RESEARCH questions" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: "only when the spec has behavior a user or PO can see" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: "only when the spec has behavior a user can see" }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
 capabilities: [read, search, edit, shell, mcp]
 templates:
@@ -70,7 +70,7 @@ reads, `{{template:rules/spec-docs.md}}`, `{{template:rules/doc-requirements.md}
 `{{template:rules/doc-lite.md}}` and `{{template:rules/doc-tasks.md}}` at lite depth,
 `{{template:rules/doc-quickstart.md}}` when the spec has visible behavior.
 
-Write requirements and design content in `{{language.technical}}` and anything addressed to the PO
+Write requirements and design content in `{{language.technical}}` and anything addressed to the {{roles.po}}
 (story text, questions) in `{{language.business}}`. Headings and keywords stay in English.
 
 **Skills.** Use `brainstorming` when the story starts from nothing (no code and no tracker context) and
@@ -113,7 +113,7 @@ When the story's `type` is not `story`, follow `{{template:rules/spec-types.md}}
 ## 2. Research
 
 Mark open questions `[NEEDS RESEARCH: type / topic] question`. Run `{{script:research}} <spec> --harness {{harness}}`;
-reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the PO to prioritize up to
+reuse exact-topic evidence while unexpired (`research.md#R<n>`). Ask the {{roles.po}} to prioritize up to
 `research.max_questions` questions per dispatch batch; the cap does not limit accumulated evidence.
 Follow `{{template:spec/research.md}}`; create one subagent task for every uncovered question, parallelize
 independent ones, with the §20 safety rule in each brief.
@@ -178,7 +178,7 @@ From `{{template:spec/design.md}}`:
 
 ## 5b. quickstart.md (only with visible behavior)
 
-When the spec has behavior a user or a PO can see, write `quickstart.md` from
+When the spec has behavior a user or the {{roles.po}} can see, write `quickstart.md` from
 `{{template:spec/quickstart.md}}`: prerequisites in one line, 3–6 steps (command or click, and what
 appears) and the expected result; about 400 tokens at most. Not for test-only specs,
 refactors or internal infrastructure.

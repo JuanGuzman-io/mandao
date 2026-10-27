@@ -5,6 +5,10 @@ default_profile: app
 language:
   business: en
   technical: en
+roles:
+  po: PE
+  tech_lead: PE
+  dev: PE
 projects:
   - name: mandao
     path: .

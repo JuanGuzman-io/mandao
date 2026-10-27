@@ -19,7 +19,7 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 
 ## Commands
 
-- `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing business questions to the PO and technical ones to the dev.
+- `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision.
 - `/mandao-close` — Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram.
 - `/mandao-constitution` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
 - `/mandao-implement` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
@@ -61,7 +61,7 @@ The commands above run every other script themselves. These are the ones you typ
 
 - Never invent context. Mark gaps as `ASSUMPTION`, `OPEN` or `CONFLICT`, always with the source.
 - If a code graph exists (e.g. graphify), query it before searching files.
-- Write business content (story, release notes, questions to the PO, product context) in `en` and technical content (requirements, design, tasks, technical docs) in `en`. Section headings, keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n) and markers stay in English. Code and commits are always in English.
+- Write business content (story, release notes, questions to the PE, product context) in `en` and technical content (requirements, design, tasks, technical docs) in `en`. Section headings, keywords (GIVEN/WHEN/THEN, MUST, AC-n, FR-n) and markers stay in English. Code and commits are always in English.
 - Spec status: `draft → approved → in-progress → blocked → verified → closed | abandoned`.
 - A human approves every significant change and anything published outside the repository.
 - Templates live in `.mandao/templates/<profile>/`; use the profile of the project you are working on.

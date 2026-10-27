@@ -275,9 +275,38 @@ describe('mandao approve: no model session', () => {
     expect(parsed(root).at(-1)).toMatchObject({ step: 'security-gaps', note: 'CI has no security scanners and release scope cannot wait' });
   });
 
+  test('phase 18: a vulnerability approval needs package, id, reason and review, and records them without changing documents', async () => {
+    const root = repo();
+    await expect(
+      approve(root, 'MDO-0001', 'vulnerability', '--package', 'pillow', '--id', 'PYSEC-1', '--reason', 'unreachable'),
+    ).rejects.toThrow(/vulnerability approval needs --package, --id, --reason and --review/);
+    const r = await approve(
+      root,
+      'MDO-0001',
+      'vulnerability',
+      '--package',
+      'pillow 12.3.0',
+      '--id',
+      'PYSEC-1',
+      '--reason',
+      'images are never decoded',
+      '--review',
+      'when fastembed is upgraded',
+    );
+    expect(r).toMatchObject({ approved: true, step: 'vulnerability', statusChanged: [] });
+    const at = parsed(root).at(-1)!.at;
+    // Annulling one acceptance needs only the reason, as for every step (review F5).
+    expect(await approve(root, 'MDO-0001', 'vulnerability', '--annul', at, '--reason', 'fixed upstream')).toMatchObject({ annulled: true });
+    expect(parsed(root).at(-2)).toMatchObject({
+      step: 'vulnerability',
+      note: 'images are never decoded',
+      vulnerability: { package: 'pillow 12.3.0', id: 'PYSEC-1', review: 'when fastembed is upgraded' },
+    });
+  });
+
   test('an unknown step is refused', async () => {
     await expect(approve(repo(), 'MDO-0001', 'deploy')).rejects.toThrow(
-      /step must be one of story, design, spec, tasks, close, budget, security-gaps/,
+      /step must be one of story, design, spec, tasks, close, budget, security-gaps, vulnerability/,
     );
   });
 });

@@ -15,7 +15,7 @@ Every command and flag the CLI defines. A test fails when this index and the CLI
 
 | Command | Options | What it does |
 |---|---|---|
-| `mandao init [dir]` | `--scope <scope>` · `--harness <ids...>` · `--profile <profile>` · `--default-profile <profile>` · `--language-business <lang>` · `--language-technical <lang>` · `--models-mode <mode>` · `--model-profile <profile>` · `--polyrepo <strategy>` · `--home <path>` · `--budget <usd>` · `--cut-min-savings <usd>` · `--with-scripts` · `-y, --yes` · `--force` · `--shadow` | Set up Mandao in this workspace (or in [dir], created with git init if needed), or install /mandao-init globally |
+| `mandao init [dir]` | `--scope <scope>` · `--harness <ids...>` · `--profile <profile>` · `--default-profile <profile>` · `--language-business <lang>` · `--language-technical <lang>` · `--roles <roles>` · `--models-mode <mode>` · `--model-profile <profile>` · `--polyrepo <strategy>` · `--home <path>` · `--budget <usd>` · `--cut-min-savings <usd>` · `--with-scripts` · `-y, --yes` · `--force` · `--shadow` | Set up Mandao in this workspace (or in [dir], created with git init if needed), or install /mandao-init globally |
 | `mandao sync` | `--force` · `--dry-run` · `-v, --verbose` | Regenerate harness files from .mandao/config.yml |
 | `mandao doctor` | `--json` | Check configuration, generated files and optional tools |
 | `mandao update` | `--force` | Re-resolve content with the installed Mandao version (overrides and model choices are never touched) |
@@ -28,7 +28,7 @@ Every command and flag the CLI defines. A test fails when this index and the CLI
 | `mandao models mode <mode>` | — | simple: one model to implement and one to review · routed: the Implementer follows each task tier |
 | `mandao run cost <spec>` | `--record` · `--command <command>` · `--harness <id>` (default: claude) · `--session <id>` · `--role <role>` · `--usd <amount>` · `--basis <basis>` (default: unknown) | Spend per command and role against budget.per_spec; --record adds this session (Claude Code) or --usd |
 | `mandao run version-notes <version>` | `--from <tag>` · `--to <ref>` · `--write` · `--force` | Release notes of a version: the "For the PO" text of every spec closed since the previous tag, by type (JSON) |
-| `mandao approve <spec> <step>` | `--items <ids...>` · `--to <usd|none>` · `--by <name>` · `--note <text>` · `--revoke` · `--annul <at>` · `--reason <text>` · `--by-running <command>` · `--words <text>` · `--harness <id>` | Approve a step without a model session (story \| design \| spec \| tasks \| close \| budget \| security-gaps): status, who and when, and the spec commit |
+| `mandao approve <spec> <step>` | `--items <ids...>` · `--to <usd|none>` · `--by <name>` · `--note <text>` · `--revoke` · `--annul <at>` · `--reason <text>` · `--by-running <command>` · `--words <text>` · `--harness <id>` · `--package <name>` · `--id <id>` · `--review <trigger>` | Approve a step without a model session (story \| design \| spec \| tasks \| close \| budget \| security-gaps \| vulnerability): status, who and when, and the spec commit |
 | `mandao worktree list` | `--json` | Spec worktrees with their branch, whether they were merged and whether they hold work |
 | `mandao worktree clean` | `--dry-run` · `--yes` | Remove spec worktrees whose branch is merged into the base and that hold no work (never forced) |
 | `mandao deliver <spec>` | `--record-pr-url <url>` · `--list` · `--target <branch>` · `--scope <scope>` | Confirm a destination, then push and open a PR; merge only after green CI |
@@ -86,6 +86,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 | `mandao run review-pack <spec> <task>` | `--harness <id>` (default: claude) · `--include <paths...>` | Write the brief, gates and diff the Reviewer reads; print the pack path |
 | `mandao run implement-summary <spec>` | `--harness <id>` (default: claude) | The end-of-implement report from the log and git: per task verdicts, FAIL reasons, identities, commits |
 | `mandao run premise <spec> <premise> <command...>` | `--timeout <s>` (default: 120) · `--force` | Run the command that proves a High premise (read-only, timeout, resource queue) and record the run |
+| `mandao run stack-check <check> <command...>` | `--project <name>` · `--runtime <command>` · `--timeout <s>` (default: 300) · `--force` | Run the command that proves a stack choice on the project runtime and record it (constitution) |
 | `mandao run archify [args...]` | — | Run the project-pinned Archify skill |
 | `mandao run event <spec> <type>` | `--command <name>` · `--run <id>` · `--id <id>` · `--question <class>` · `--subject <text>` | Record a script-timestamped lifecycle event for Kaizen |
 | `mandao run security-scanning` | — | Detect per-project secret and SAST coverage from gates, CI files and GitHub APIs (JSON on stdout) |

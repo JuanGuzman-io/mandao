@@ -48,7 +48,7 @@ export function buildOutputs(
   if (scope === 'project') {
     files.push(...renderAgentsMd(input).files);
     const profiles = config.projects.map((p) => p.profile);
-    for (const t of installTemplates(resolution.templates, profiles)) {
+    for (const t of installTemplates(resolution.templates, profiles, config.roles)) {
       files.push({ path: t.path, content: t.content, ownership: 'owned', from: t.from, harness: 'mandao', scope: 'project' });
     }
     files.push({

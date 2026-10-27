@@ -143,6 +143,8 @@ export function useLogEnv() {
     process.env.MANDAO_HOME = makeTree({});
     for (const k of ['GIT_AUTHOR_NAME', 'GIT_COMMITTER_NAME']) vi.stubEnv(k, 'test');
     for (const k of ['GIT_AUTHOR_EMAIL', 'GIT_COMMITTER_EMAIL']) vi.stubEnv(k, 'test@example.com');
+    // Run inside Claude Code, the readers would measure the live session's transcript, which grows as it runs.
+    vi.stubEnv('CLAUDE_CODE_SESSION_ID', '');
     out = [];
     vi.spyOn(console, 'log').mockImplementation((s: string) => void out.push(s));
     vi.spyOn(process.stderr, 'write').mockImplementation(() => true);

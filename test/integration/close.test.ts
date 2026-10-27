@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { buildProgram } from '../../src/cli/program.js';
 import { configSchema } from '../../src/schemas/index.js';
 import { fixCommitsAfter, releaseBranchesContaining } from '../../src/scripts/close.js';
 import { parseCloseSummary, renderCloseSummary, withEnvironment, withPublication } from '../../src/spec/index.js';
@@ -293,6 +294,48 @@ describe('a version 2 close is one document inside the spec (MDO-0011 AC-4)', ()
     expect(sections(second)['For the PO']).toBe(sections(first)['For the PO']);
     expect(sections(second)['For developers']).toBe(sections(first)['For developers']);
     expect(changelogLines(root)).toHaveLength(1);
+  });
+
+  test('phase 18: an accepted vulnerability is carried to Delivery and to the record; a revoked one is not', async () => {
+    const root = repo(2);
+    const file = seed(root);
+    const accept = (pkgName: string, id: string) =>
+      buildProgram(() => root).parseAsync([
+        'node',
+        'mandao',
+        'approve',
+        'MDO-0001',
+        'vulnerability',
+        '--package',
+        pkgName,
+        '--id',
+        id,
+        '--reason',
+        'fastembed never decodes images',
+        '--review',
+        'when fastembed is upgraded',
+      ]);
+    await accept('pillow 12.3.0', 'PYSEC-2026-1');
+    await accept('tqdm 4.66', 'GHSA-xxxx');
+    await buildProgram(() => root).parseAsync([
+      'node',
+      'mandao',
+      'approve',
+      'MDO-0001',
+      'vulnerability',
+      '--revoke',
+      '--reason',
+      'upgraded',
+    ]);
+    await run(root, 'close-summary', 'MDO-0001', '--closed');
+    const text = readFileSync(file, 'utf8');
+    expect(sections(text).Delivery).toContain(
+      '- Accepted risk: pillow 12.3.0 PYSEC-2026-1 — fastembed never decodes images (review: when fastembed is upgraded)',
+    );
+    expect(sections(text).Delivery).not.toContain('GHSA-xxxx');
+    expect(parseCloseSummary(text, 'MDO-0001-skills-list').accepted_risks).toEqual([
+      { package: 'pillow 12.3.0', id: 'PYSEC-2026-1', reason: 'fastembed never decodes images', review: 'when fastembed is upgraded' },
+    ]);
   });
 
   test('AC-4: publish-plan for a version 2 spec posts For the PO from close-summary.md, with no docs/releases', async () => {

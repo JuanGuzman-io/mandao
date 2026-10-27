@@ -7,7 +7,7 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "8cf4e5fa330e3d82fdcec3a9a94d7caafd15c3d231abdce01914c5816d08b348"
+      "sha256": "adab49b311afc99127a190a3ddab328129df20017e7049eded6fc7f3aa51c266"
     },
     {
       "path": "core/commands/close.md",
@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "9e6172aff53fe42a5a1ec6b3bfad7bfafb1a2a74bf4d8c619d8c1419a03aaa0f"
+      "sha256": "531e588d39b6004f30e903c65bb94ca130cfe1d0d730b31c39f9fdc650f02ddf"
     },
     {
       "path": "core/commands/implement.md",
@@ -39,11 +39,11 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "e1a768894d6d0c0feaeb557b0be526d3c1aaff90f7c5effcbdad038b54cae159"
+      "sha256": "fa80aa268a6e8200a0b1569f6aae2dc8a08b17d726a90192be1f71bafa6ba454"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "9ba84a1400a915b023eb46b3f0fea9c520d0c9be8df10fc040df3a8dd2a0c1b9"
+      "sha256": "67f0f017d12d86f427d6b522af2e10b8288f90f91f583e2cd3646f618ffaa7af"
     },
     {
       "path": "core/commands/tasks.md",
@@ -51,13 +51,13 @@
     },
     {
       "path": "core/commands/verify.md",
-      "sha256": "36883b6b457372bac3cb722a70935e4cf132deff63d3333228cc7c5b7bf324e7"
+      "sha256": "ca72739f6146e3556d34792f814977caaa97ed73f6f0cca22e4d0b28a57c5c30"
     }
   ],
-  "specSha256": "12d6bf198c2947fe9627d7116739a9027645c1cfde1bc805bd577dcf93b60434",
+  "specSha256": "5ce41a1dd1d26c21b43f3a7c0d64ef95a635846fa30d93bdcfadd222319388c9",
   "svgSha256": {
-    "light": "00308b3d1e4861471f9808a66810a7bc90f3febe7c05f6c42a7c19db2342e33b",
-    "dark": "4ddeaa7f3f010de3b605173d17e00c22f32310ddd6108c28ae33edcb34c5f5cc"
+    "light": "8da5fe83b2073d13e37cd9c534e9c2c13cce3f28751a6c3318d87a9cfe9632f0",
+    "dark": "e54fb69f043eac73854ca3356de03931d8d4cd25375dd792cbac92a6fae160c3"
   },
   "spec": {
     "schema_version": 2,
@@ -130,8 +130,8 @@
         "col": 2,
         "type": "backend",
         "label": "3. Technical constitution",
-        "sublabel": "mandao run security-scanning +1",
-        "width": 241
+        "sublabel": "mandao run stack-check +2",
+        "width": 199
       },
       {
         "id": "s3",

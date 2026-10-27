@@ -35,7 +35,21 @@ never infer it from the framework.
 <!-- Levels, structure, what must never be logged (secrets, personal data). -->
 
 ## Dependencies
-<!-- Who approves new ones, license policy, pinning. -->
+<!-- Who approves a new direct dependency (PE by default) and how versions are pinned. -->
+
+### Licenses
+| Dependency | Allowed | Blocked |
+|---|---|---|
+| Direct (declared in the manifest) | MIT, Apache-2.0, BSD-2-Clause, BSD-3-Clause, ISC | anything else until approved |
+| Transitive, unmodified | the above, plus weak copyleft (MPL-2.0, LGPL linked dynamically), PSF-2.0, Unlicense, CC0-1.0 | strong copyleft (GPL, AGPL) |
+
+A transitive dependency with no license metadata is a `CONFLICT` for the PE (check its
+repository), recorded and decided without stopping the task.
+
+### Known vulnerabilities
+The `audit` gate reports them. One that cannot be fixed now is accepted only with its reachability reason and
+a review trigger: `mandao approve <spec> vulnerability --package <name version> --id <advisory> --reason <why it
+is not reachable> --review <when to look again>`. Close carries it to the delivery notes.
 
 ## Clean-code thresholds (level 0 gates, blocking)
 
@@ -49,4 +63,4 @@ never infer it from the framework.
 | Dead code | none | |
 
 ## Gates
-<!-- Mirror of projects[].gates in .mandao/config.yml: format, lint, typecheck, test, secrets, audit, sast, metrics. -->
+<!-- Mirror of projects[].gates in .mandao/config.yml: format, lint, typecheck, test, build, secrets, sast, audit, eval, metrics. -->

@@ -41,7 +41,7 @@ ref is `inferred: true`. Never renumber: IDs (`C-n`, `E-n`, `I-n`, `Q-n`) are ne
 - **Epics and stories** (`E-n`, `I-n`): each story meets INVEST (independent, negotiable, valuable,
   estimable, small, testable) with a one-line `invest` note naming any criterion it misses; AC are
   GIVEN / WHEN / THEN; `depends_on` lists the stories it needs.
-- **Specs:** group the stories one spec should open together: dependent AC, or one deliverable for the PO
+- **Specs:** group the stories one spec should open together: dependent AC, or one deliverable for the PE
   (rule 8 of `rules/spec-docs.md`), as `- group: G-n` on each of them. A story with no group is its own spec.
 - **Priority:** use `product-manager-toolkit` when installed (RICE or MoSCoW); otherwise MoSCoW, and
   note that the skill was missing.
@@ -63,9 +63,9 @@ that item** (`approved` → `applied`, or `rejected`). An item that contradicts 
 actor becomes `CONFLICT` with both sources quoted; it **never overwrites** the existing one. The
 proposal cannot be closed while any `C-n` is still `proposed`.
 
-## 5. The PO opens stories
+## 5. The PE opens stories
 
-The PO picks the stories (or groups) to open; nothing is opened without that choice. For each, confirmed one
+The PE picks the stories (or groups) to open; nothing is opened without that choice. For each, confirmed one
 by one:
 
 - **Spec:** `/mandao-story --intake <proposal>#I-n`, in this same session: it creates the spec, its branch and
@@ -78,6 +78,6 @@ by one:
 
 ## 6. Close
 
-When the PO is done, `node .mandao/bin/mandao.mjs intake close <proposal>`: it re-runs the check,
+When the PE is done, `node .mandao/bin/mandao.mjs intake close <proposal>`: it re-runs the check,
 refuses on problems, sets `status: closed` and deletes the extracted text from the cache.
 `node .mandao/bin/mandao.mjs intake clean [<doc>]` deletes the cache of one doc, or of every closed proposal.

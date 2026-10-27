@@ -24,6 +24,7 @@ import { ConfigError, hasConfig, inputsText, LOCK_FILE, readConfig, readLock, re
 import { globalLockFile, home } from './global.js';
 import { researchToolFindings } from './research-tools.js';
 import { collectSecurityScanning } from './security-scanning.js';
+import { stackCheckFindings } from './stack-checks.js';
 import { buildProject } from './sync.js';
 import { type Probe, runnerFindings, shellProbe, toolVersionFindings } from './tools.js';
 
@@ -199,7 +200,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
 
   findings.push(...workspaceFindings(root, config));
   findings.push(...securityScanningFindings(root, config));
-  findings.push(...constitutionPrincipleFindings(root, config));
+  findings.push(...constitutionPrincipleFindings(root, config), ...stackCheckFindings(root, config));
 
   const lockForTools = readLock(join(root, LOCK_FILE));
   let build: ReturnType<typeof buildProject>;

@@ -24,7 +24,7 @@ templates are skeletons and this file says what goes in each section.
    the spec root; scripts read the log.
 7. **Cut words, not facts.** No boilerplate ("This document describes…"), no restating the frontmatter.
 8. **Separate specs** only when the parts have value on their own, ship independently and have
-   independent AC; one PO story or dependent AC is one spec. Say the criterion; the user decides.
+   independent AC; one business story or dependent AC is one spec. Say the criterion; the user decides.
 
 ## The documents
 
@@ -36,10 +36,10 @@ templates are skeletons and this file says what goes in each section.
 | `requirements.md` | What must be true? | specify; clarify adds answers |
 | `design.md` | How do we build it? | specify |
 | `data-model.md` | What data changes? (only when data changes; ADR 0034) | specify |
-| `quickstart.md` | How can a PO check it by hand? (only when it has visible behavior) | specify; verify updates |
+| `quickstart.md` | How can the {{roles.po}} check it by hand? (only when it has visible behavior) | specify; verify updates |
 | `tasks.md` | What work, in what order? | tasks |
 | `verify-report.md` | Does it do what was asked? | verify |
-| `close-summary.md` | What shipped? (version 2: outcome, notes for the PO and for developers, Kaizen, delivery) | close |
+| `close-summary.md` | What shipped? (version 2: outcome, notes for the business and for developers, Kaizen, delivery) | close |
 
 Where each fact lives:
 - **Clarifications** live only in `requirements.md` (`## Clarifications`); story and design link there.
