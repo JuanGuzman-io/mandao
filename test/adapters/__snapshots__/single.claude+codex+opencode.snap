@@ -20,6 +20,7 @@ description: Turn an approved story into requirements and design.
 # /mandao-specify
 
 Input: the text the user wrote after the skill name
+Depth: <depth>
 
 Write `specs/<spec>/design.md` from `.mandao/templates/app/design.md`.
 Run `node .mandao/bin/mandao.mjs run quick-check` and continue with $mandao-tasks.
@@ -111,7 +112,7 @@ Run `npx mandao init --scope project`.
   ".claude/skills/mandao-specify/SKILL.md": "---
 name: mandao-specify
 description: Turn an approved story into requirements and design.
-argument-hint: <spec> [depth]
+argument-hint: <spec> [--hotfix] [depth]
 arguments:
   - spec
   - depth
@@ -123,6 +124,7 @@ effort: high
 # /mandao-specify
 
 Input: $ARGUMENTS
+Depth: $depth
 
 Write `specs/$spec/design.md` from `.mandao/templates/app/design.md`.
 Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.
@@ -193,6 +195,7 @@ description: Turn an approved story into requirements and design.
 # /mandao-specify
 
 Input: $ARGUMENTS
+Depth: $2
 
 Write `specs/$1/design.md` from `.mandao/templates/app/design.md`.
 Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.

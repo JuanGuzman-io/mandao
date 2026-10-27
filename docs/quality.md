@@ -58,8 +58,8 @@ design that writes data declares its ACID handling and a partial-failure test
 - **Research.** Inside `/mandao-specify`, unfamiliar and version-bound choices are researched into dated sources;
   model memory alone cannot justify a high-impact decision. Web-search servers are declared per harness in
   `research.web_search_servers`.
-- **Approved means approved.** An approval records the hash of what was approved and of the constitution it
-  relied on. A document changed after it, or a constitution reopened later, sends the spec back to update and
+- **Approved means approved.** An approval records the hash of each approved document (`tasks.md` excepted: its
+  checkboxes change) and of the constitution it relied on. A document changed after it, or a constitution reopened later, sends the spec back to update and
   approve again.
 
 ## Dependencies and accepted risks
@@ -73,7 +73,8 @@ accepted only by a person, with its reachability reason and when to review it
 
 `/mandao-close` measures rework, review failures, cost and session timing. Script-stamped events separate active
 time from human and agent waits. Kaizen names up to three evidence-backed causes and proposes fixes; nothing
-changes until you approve it. Lessons stay in the spec's `close-summary.md`.
+changes until you approve it. Lessons stay in the spec's `close-summary.md`; the approved ones are also added to
+`docs/kaizen/lessons.md`.
 
 ## Skill installs
 

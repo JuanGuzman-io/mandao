@@ -14,7 +14,7 @@ disable-model-invocation: true
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Change: $change
+Change: $ARGUMENTS
 
 Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templates/app/rules/quick-gate.md`.
 

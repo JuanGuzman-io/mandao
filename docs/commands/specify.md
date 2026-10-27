@@ -24,7 +24,7 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 ## Examples
 
 - `/mandao-specify MDO-0003` — requirements and design for a story
-- `/mandao-specify --depth lite fix rounding` — a small spec and its tasks
+- `/mandao-specify PROJ-42 --depth lite` — a small spec and its tasks
 - `/mandao-specify PROJ-88 --hotfix` — a production fix
 
 ## Reads

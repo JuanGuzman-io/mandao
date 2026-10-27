@@ -35,7 +35,7 @@ approval: none
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
-Change: {{arg:change}}
+Change: {{args}}
 
 Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-gate.md}}`.
 

@@ -1124,6 +1124,14 @@ commented out after the beta was published, showed no command's arguments, and m
 4. Terminal commands are documented too: the README names only the six a person types; `docs/cli.md` gets a
    section with examples for each user command, above the generated index of every command and flag.
 
+**Independent review: FAIL, then fixed.** F1: an example put `--depth` before the positional `ref`, and harnesses bind
+named arguments by word position (`$ref` became `--depth`); examples now put positionals first, a test enforces
+it, and ADR 0062 states the rule. F13: `/mandao-quick`'s free-text change bound only its first word; it reads
+`{{args}}`. F2: an adapter test covers flags (hint, Claude `arguments`, OpenCode `$n`). F3–F7: the docs test now
+fails on an unknown subcommand, a flag after `[`, a broken anchor, a generator/schema mismatch on the raw
+frontmatter, and a README that lost its generated-block markers. F8–F11, F14: wording, dated intake paths, the
+guide's Codex invocation. Left for phase 20: F12.
+
 **Agreed (PE, 2026-10-26); after phase 16, which fixes the syntax `next` and the hand-overs use.** Phase
 16 takes the derived `docs/cli.md` and its check, and the terminal commands in the installed guide; this
 phase keeps the agent command pages' arguments and the single command index.
@@ -1157,6 +1165,10 @@ Done when the derived-docs check fails on an undocumented command or flag and th
 every command's arguments.
 
 ## Phase 20 — Minor fixes
+
+**Copilot asks a value for every flag (phase 19 review F12).** Copilot prompt files turn each declared argument
+into a `${input:…}` prompt, so a switch such as `--hotfix` or `--product` becomes a free-text question. Fix: only
+positional arguments become inputs; flags are read from what the user typed, as in the other harnesses.
 
 **Agreed (PE, 2026-10-26).** Independent of phases 16–19; can go in any free slot.
 

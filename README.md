@@ -4,7 +4,7 @@
 
 **Spec-Driven Development for AI coding agents. Any harness.**
 
-*mandao* · Cali slang for an errand you send someone to run — and expect done right.
+*mandao* · Cali (Colombia) slang for an errand you send someone to run — and expect done right.
 
 [![npm](https://img.shields.io/npm/v/mandao/beta.svg?label=npm%40beta)](https://www.npmjs.com/package/mandao)
 [![CI](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/JuanGuzman-io/mandao/actions/workflows/ci.yml)

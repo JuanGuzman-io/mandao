@@ -26,7 +26,7 @@ Create or enrich a user story with enough business context: sufficiency rubric, 
 - `/mandao-story PROJ-123` — a story from your tracker item
 - `/mandao-story let customers save a cart for later` — a story from one line
 - `/mandao-story --from docs/requirements.pdf` — a proposal of stories from a document
-- `/mandao-story --intake docs/product/intake/requirements.md#I-2` — opens story I-2 of that proposal
+- `/mandao-story --intake docs/product/intake/requirements-2026-10-26.md#I-2` — opens story I-2 of that proposal
 
 ## Reads
 

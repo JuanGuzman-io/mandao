@@ -17,7 +17,9 @@ the front page.
 1. **One syntax.** An argument declares how it is typed: `flag: true` makes it `--kebab-name`, `value` adds what
    it takes (`--depth <lite|standard|full>`); a positional `value` lists its values. A flag has no position:
    `{{arg:x}}` on it is refused and Claude's positional `arguments` and OpenCode's `$n` count only positional
-   ones. Each command adds `examples` (`run`, `does`) and a short `summary`.
+   ones. Flags go after the positional arguments, because harnesses bind named arguments by the position of the
+   words typed; a free-text argument (a one-line change) is read whole with `{{args}}`. Each command adds
+   `examples` (`run`, `does`) and a short `summary`.
 2. **Derived everywhere.** The argument hint of every harness, the command pages (usage line, argument table,
    examples), the command index, the installed guide (arguments and two examples per command) and two blocks
    of the README (the agent command table and the paths) are generated from the frontmatter and the process

@@ -30,7 +30,7 @@ Project `web` (profile `app`) in a Mandao polyrepo workspace.
 # Mandao guide
 
 This workspace uses [Mandao](https://www.npmjs.com/package/mandao) for spec-driven development.
-Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent.
+Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent (Codex: `$mandao-<command>`).
 
 Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `implement` → `verify` → `close`
 
@@ -48,8 +48,9 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 ## Commands
 
 - `/mandao-init` — Initialize Mandao in this repository.
-- `/mandao-specify <spec> [depth]` — Turn an approved story into requirements and design.
+- `/mandao-specify <spec> [--hotfix] [depth]` — Turn an approved story into requirements and design.
   - `<spec>`: Spec id, e.g. PROJ-1-login
+  - `--hotfix`: A production fix
   - `<depth>` (default `standard`): lite | standard | full
 
 Not implemented yet: `/mandao-tasks`.

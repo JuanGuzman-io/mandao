@@ -40,7 +40,7 @@ Run `npx mandao init --scope project`.
   ".claude/skills/mandao-specify/SKILL.md": "---
 name: mandao-specify
 description: Turn an approved story into requirements and design.
-argument-hint: <spec> [depth]
+argument-hint: <spec> [--hotfix] [depth]
 arguments:
   - spec
   - depth
@@ -52,6 +52,7 @@ effort: high
 # /mandao-specify
 
 Input: $ARGUMENTS
+Depth: $depth
 
 Write `specs/$spec/design.md` from `.mandao/templates/<profile>/design.md`.
 Criteria are eval thresholds.

@@ -19,7 +19,7 @@ arguments:
     flag: true
 examples:
   - { run: "/mandao-specify MDO-0003", does: "requirements and design for a story" }
-  - { run: "/mandao-specify --depth lite fix rounding", does: "a small spec and its tasks" }
+  - { run: "/mandao-specify PROJ-42 --depth lite", does: "a small spec and its tasks" }
   - { run: "/mandao-specify PROJ-88 --hotfix", does: "a production fix" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }

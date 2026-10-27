@@ -21,7 +21,7 @@ examples:
   - { run: "/mandao-story PROJ-123", does: "a story from your tracker item" }
   - { run: "/mandao-story let customers save a cart for later", does: "a story from one line" }
   - { run: "/mandao-story --from docs/requirements.pdf", does: "a proposal of stories from a document" }
-  - { run: "/mandao-story --intake docs/product/intake/requirements.md#I-2", does: "opens story I-2 of that proposal" }
+  - { run: "/mandao-story --intake docs/product/intake/requirements-2026-10-26.md#I-2", does: "opens story I-2 of that proposal" }
 inputs:
   - { path: .mandao/sources.yml }
   - { path: "{{paths.constitution}}/" }

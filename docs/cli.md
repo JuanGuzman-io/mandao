@@ -122,7 +122,7 @@ After `/mandao-story --from <document>`: `close` checks a proposal and closes it
 text of closed proposals.
 
 ```bash
-mandao intake close docs/product/intake/requirements.md
+mandao intake close docs/product/intake/requirements-2026-10-26.md
 mandao intake clean
 ```
 

@@ -36,6 +36,15 @@ describe('command arguments (phase 19)', () => {
       for (const e of c.meta.examples) {
         expect(e.run.startsWith(`/mandao-${c.meta.id}`), e.run).toBe(true);
         for (const used of e.run.match(/(?<=\s)--[a-z-]+/g) ?? []) expect(flags.has(used), `${c.meta.id}: ${used}`).toBe(true);
+        // Positional arguments come first: harnesses bind named arguments by word position (review F1).
+        const words = e.run.split(/\s+/).slice(1);
+        const first = words.findIndex((w) => w.startsWith('--'));
+        if (first < 0) continue;
+        const valued = new Set(c.meta.arguments.filter((a) => a.flag && a.value).map((a) => argumentSyntax(a).split(' ')[0]));
+        words.slice(first).forEach((w, i, rest) => {
+          const afterValued = i > 0 && valued.has(rest[i - 1]!);
+          expect(w.startsWith('--') || afterValued, `${e.run}: "${w}" after a flag`).toBe(true);
+        });
       }
     }
   });

@@ -170,7 +170,9 @@ export function commandIndex(read) {
 /** Replaces the text between `<!-- mandao:<name>:begin … -->` and `<!-- mandao:<name>:end -->`; a file without them is kept. */
 function withBlock(text, name, body) {
   const re = new RegExp(`(<!-- mandao:${name}:begin[^\\n]*-->\\n)[\\s\\S]*?(<!-- mandao:${name}:end -->)`);
-  return re.test(text) ? text.replace(re, (_m, begin, end) => `${begin}${body}\n${end}`) : text;
+  // A deleted marker would freeze the block silently; diagrams:check must see it (review F7).
+  if (!re.test(text)) throw new Error(`README.md lost its mandao:${name} markers`);
+  return text.replace(re, (_m, begin, end) => `${begin}${body}\n${end}`);
 }
 
 /** README.md: the agent command table and the paths, generated so the front page never drifts from the commands (phase 19). */
@@ -197,6 +199,9 @@ export function readme(read) {
   ].join('\n');
   return withBlock(withBlock(read('README.md'), 'readme-commands', table), 'readme-paths', paths);
 }
+
+/** The commands as the generator reads them (raw frontmatter, no schema defaults), for the mirror test. */
+export const rawCommands = (read) => commands(read);
 
 /** Every generated page, path → content. */
 export function generatedDocs(read) {

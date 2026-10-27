@@ -52,7 +52,7 @@ harness:                    # optional, per-adapter frontmatter passthrough
 | `status` | yes | A `stub` declares its contract but is not implemented yet. |
 | `flow` | no | Used by the diagrams and the `AGENTS.md` flow summary. The next command comes from the spec's state (`mandao run next`). |
 | `profiles` | no | Defaults to every profile. |
-| `arguments` | no | Order matters among the positional ones. A `flag` is typed `--kebab-name` (with `value`, `--name <value>`), has no position, and the body names it as written instead of `{{arg:x}}` (refused). A positional `value` lists its values. One syntax everywhere: hints, pages, the guide, the README (phase 19). |
+| `arguments` | no | Order matters among the positional ones. A `flag` is typed `--kebab-name` (with `value`, `--name <value>`) after the positional ones (harnesses bind named arguments by word position), has no position, and the body names it as written instead of `{{arg:x}}` (refused). A positional `value` lists its values. One syntax everywhere: hints, pages, the guide, the README (phase 19). |
 | `examples` | no | `{ run, does }` pairs. A stable command with arguments needs at least one; a test checks that each uses only declared flags. |
 | `inputs`, `outputs` | yes | May be empty lists. Paths may use `{{paths.*}}`. |
 | `capabilities` | yes | `read`, `edit`, `search`, `shell`, `web`, `mcp`, `agents`. |

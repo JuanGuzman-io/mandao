@@ -9,6 +9,9 @@ arguments:
   - name: spec
     description: "Spec id, e.g. PROJ-1-login"
     required: true
+  - name: hotfix
+    description: A production fix
+    flag: true
   - name: depth
     description: lite | standard | full
     default: standard
@@ -27,6 +30,7 @@ harness:
 # /mandao-specify
 
 Input: {{args}}
+Depth: {{arg:depth}}
 
 Write `{{paths.specs}}/{{arg:spec}}/design.md` from `{{template:design.md}}`.
 <!-- mandao:if profile=ai -->

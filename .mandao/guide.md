@@ -3,7 +3,7 @@
 # Mandao guide
 
 This workspace uses [Mandao](https://www.npmjs.com/package/mandao) for spec-driven development.
-Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent.
+Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent (Codex: `$mandao-<command>`).
 
 Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `implement` → `verify` → `close`
 
@@ -48,7 +48,7 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
   - `--depth <lite|standard|full>` (default `standard`): lite: spec.md and tasks in one session; standard: requirements and design; full: for risky work
   - `--hotfix`: A production fix from the hotfix branch, merged back at close
   - e.g. `/mandao-specify MDO-0003` — requirements and design for a story
-  - e.g. `/mandao-specify --depth lite fix rounding` — a small spec and its tasks
+  - e.g. `/mandao-specify PROJ-42 --depth lite` — a small spec and its tasks
 - `/mandao-story [ref] [--from <file>] [--intake <proposal#I-n>]` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
   - `<ref>`: A tracker id or URL, or a one-line idea; empty to choose
   - `--from <file>`: A long requirements document (Markdown or PDF): proposes the stories it holds, grouped in specs
