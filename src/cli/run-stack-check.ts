@@ -14,8 +14,30 @@ import { pathsOutside, runProbe, sha, shellJoin } from './run-premise.js';
 /** Lines of a stack check's output kept in the record. */
 const STACK_LINES = 20;
 
-/** The runtime's version, as `<program> --version` (or `--runtime`) prints it; `unknown` when it cannot run. */
-function runtimeVersion(cwd: string, command: string): string {
+/** Programs that start another one: their own `--version` says nothing about the runtime the check ran on. */
+const LAUNCHERS = new Set([
+  'uv',
+  'uvx',
+  'npx',
+  'pnpm',
+  'pnpx',
+  'yarn',
+  'bunx',
+  'poetry',
+  'pipenv',
+  'pdm',
+  'hatch',
+  'rye',
+  'conda',
+  'bundle',
+  'env',
+]);
+
+/** The runtime's version, as `--runtime` or `<program> --version` prints it; `unknown` when it cannot run or is a launcher. */
+function runtimeVersion(cwd: string, words: string[], given: string | undefined): string {
+  const program = words[0] ?? '';
+  if (!given && LAUNCHERS.has(program)) return `unknown (${program} is a launcher: pass --runtime)`;
+  const command = given ?? `${shellJoin([program])} --version`;
   try {
     return (
       execSync(command, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 15_000 })
@@ -63,10 +85,11 @@ export function registerStackCheck(run: Command, ctx: CliContext) {
     .action(async (id: string, words: string[], o: StackCheckOptions) => {
       const root = ctx.root();
       const { config, project, dir, check, cwd } = locateCheck(root, id, o.project);
-      const outside = pathsOutside(words, root);
+      const outside = pathsOutside(words, root, cwd);
       if (outside.length) throw new Error(`the command names paths outside the worktree (${outside.join(', ')})`);
       const command = shellJoin(words);
-      const work = join(dir, '_log');
+      // Scratch and HOME go to the git-ignored cache, never into the committed constitution folder (review F4).
+      const work = join(root, '.mandao', 'cache', 'stack');
       const result = await runProbe({
         root,
         cwd,
@@ -84,7 +107,7 @@ export function registerStackCheck(run: Command, ctx: CliContext) {
         process.exitCode = 1;
         return;
       }
-      const runtime = runtimeVersion(cwd, o.runtime ?? `${shellJoin(words.slice(0, 1))} --version`);
+      const runtime = runtimeVersion(cwd, words, o.runtime);
       const body = [
         `- Claim: ${check.claim}`,
         `- Command: \`${command}\` (from ${relative(root, cwd) || 'the workspace root'})`,

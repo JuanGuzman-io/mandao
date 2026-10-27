@@ -971,6 +971,12 @@ warnings, runtime pin), constitution hash in design/spec approvals with `next` n
 `standards.md` template and the `vulnerability` approval carried to the close summary. Also fixed: the
 `log-v2` readers test measured the live Claude Code session when run inside one (`CLAUDE_CODE_SESSION_ID`
 now stubbed). Left as written: the `## For the PO` heading (a section name the code reads).
+Independent review: PASS with advisories; fixed F1 (a failed last stack run warns), F2 (a launcher's version is
+not recorded as the runtime; `--runtime`), F3 (paths resolved from the project folder), F4 (probe scratch in
+`.mandao/cache/stack/`), F5 (`vulnerability --annul` needs only the reason), F6 (`_` allowed only in role
+tokens), F7 (role names safe for YAML frontmatter), F8 (drift tests: status edit, `_log/`, project
+constitutions, document and constitution together). Left: F9 (Biome counts `approve.ts` within the limit),
+F10 (a version 1 close summary does not list accepted risks: version 1 is frozen).
 
 **Plan approved (PE, 2026-10-26),** by item: (A) the constitution proposes every gate in one approval (format,
 lint, typecheck, test, build or `none`, secrets, sast, audit), written as proposed in `standards.md` when no

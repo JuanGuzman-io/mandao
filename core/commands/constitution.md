@@ -113,7 +113,8 @@ Write the workspace level in `{{paths.constitution}}/` from the templates, and a
 - **Verify every stack choice on the runtime** (phase 18), never only against a registry: for each row of
   `## Stack` write a `### S<n>` check in `## Stack verification` and prove it with
   `{{script:stack-check}} S<n> -- <command>` (install or import the library on the project's runtime; the
-  command is read-only beyond the project's own environment). A failing run is the answer: change the choice
+  command is read-only beyond the project's own environment; when it starts with a launcher such as `uv run` or
+  `npx`, add `--runtime "<command that prints the runtime version>"`). A failing run is the answer: change the choice
   before the user approves it. A choice that cannot be checked here (a paid service, credentials, production
   only) says `UNVERIFIED: <why>`, shown in the approval summary. Pin the runtime the checks ran on
   (`.python-version`, `.nvmrc`, `engines`, `requires-python`…) and name the file in the Runtime column; when

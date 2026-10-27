@@ -147,6 +147,9 @@ const commits = z
   })
   .prefault({});
 
+/** A role as templates write it into YAML frontmatter (`owner:`): letters, digits, spaces and `.`, `-`, `(`, `)`. */
+const roleName = z.string().regex(/^[\p{L}\p{N}][\p{L}\p{N} .()-]*$/u, 'a role name holds letters, digits, spaces, ".", "-", "(" or ")"');
+
 export const configSchema = z
   .object({
     schema_version: schemaVersion,
@@ -192,9 +195,9 @@ export const configSchema = z
      */
     roles: z
       .object({
-        po: z.string().min(1).default('PO'),
-        tech_lead: z.string().min(1).default('tech lead'),
-        dev: z.string().min(1).default('dev'),
+        po: roleName.default('PO'),
+        tech_lead: roleName.default('tech lead'),
+        dev: roleName.default('dev'),
       })
       .prefault({}),
     projects: z.array(project).min(1),

@@ -1,5 +1,5 @@
 // mandao-scans: none — reads only the temporary trees it creates.
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { buildProgram } from '../../src/cli/program.js';
@@ -72,6 +72,17 @@ describe('mandao run stack-check (phase 18)', () => {
     const failed = await cli(root, 'stack-check', 'S1', '--', 'node', '-e', 'process.exit(3)');
     expect(failed).toMatchObject({ recorded: true, exitCode: 3 });
     expect(readFileSync(join(root, 'docs/constitution/_log/stack.md'), 'utf8').match(/## S1 — run/g)).toHaveLength(1);
+    expect(messages(root, config)[0]).toMatch(/^warn: workspace S1's last run failed \(exit 3\)/);
+    // The probe's scratch and HOME never live in the committed constitution folder (review F4).
+    expect(existsSync(join(root, 'docs/constitution/_log/tmp'))).toBe(false);
+  });
+
+  test('a launcher as first word records no launcher version as the runtime (review F2)', async () => {
+    const { root } = workspace(true);
+    const r = await cli(root, 'stack-check', 'S1', '--', 'npx', '--version');
+    expect(r.runtime).toBe('unknown (npx is a launcher: pass --runtime)');
+    const given = await cli(root, 'stack-check', 'S1', '--runtime', 'node --version', '--', 'npx', '--version');
+    expect(given.runtime).toMatch(/^v\d+/);
   });
 
   test('a check that is not in the Stack verification is refused', async () => {

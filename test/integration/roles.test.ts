@@ -87,3 +87,11 @@ test('a team keeps the defaults, and --roles takes named roles', async () => {
   expect(parseRoles('po=Ana, tech_lead=Luis')).toEqual({ po: 'Ana', tech_lead: 'Luis' });
   expect(() => parseRoles('cto=Ana')).toThrow(/--roles must be/);
 });
+
+test("a role name that would break the templates' YAML frontmatter is refused (review F7)", async () => {
+  const { configSchema } = await import('../../src/schemas/index.js');
+  const base = { schema_version: 1, workspace: 'single', projects: [{ name: 'p', path: '.' }], harnesses: ['claude'] };
+  expect(configSchema.parse({ ...base, roles: { po: 'Product Engineer (PE)' } }).roles.po).toBe('Product Engineer (PE)');
+  for (const bad of ['PE: Juan', '#lead', '*x', 'a\nb'])
+    expect(configSchema.safeParse({ ...base, roles: { po: bad } }).success).toBe(false);
+});

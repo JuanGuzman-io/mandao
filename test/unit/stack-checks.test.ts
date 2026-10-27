@@ -28,21 +28,32 @@ describe('stack verification (phase 18)', () => {
   });
 
   test('a check without a run and without a mark warns; an UNVERIFIED one informs; a recorded one says nothing', () => {
-    const none = stackFindings(ARCH, new Set(), 'workspace');
+    const none = stackFindings(ARCH, new Map(), 'workspace');
     expect(none.map((f) => [f.ref, f.level])).toEqual([
       ['S1', 'warn'],
       ['S2', 'info'],
     ]);
     expect(none[0]?.message).toContain('mandao run stack-check S1 -- <command>');
-    expect(stackFindings(ARCH, new Set(['S1']), 'workspace').map((f) => f.ref)).toEqual(['S2']);
-    expect(stackFindings(undefined, new Set(), 'workspace')).toEqual([]);
+    expect(stackFindings(ARCH, new Map([['S1', 0]]), 'workspace').map((f) => f.ref)).toEqual(['S2']);
+    expect(stackFindings(undefined, new Map(), 'workspace')).toEqual([]);
+  });
+
+  test('a failed last run warns: the choice does not hold on this runtime (review F1)', () => {
+    const [failed] = stackFindings(ARCH, new Map([['S1', 3]]), 'workspace');
+    expect(failed).toMatchObject({ ref: 'S1', level: 'warn' });
+    expect(failed?.message).toContain('last run failed (exit 3)');
   });
 
   test('the stack log keeps one section per check: a rerun replaces it, another check is appended', () => {
     const one = withStackRun(undefined, 'S1', '- Exit: 1');
     const two = withStackRun(one, 'S2', '- Exit: 0');
     const again = withStackRun(two, 'S1', '- Exit: 0');
-    expect(recordedStackChecks(again)).toEqual(new Set(['S1', 'S2']));
+    expect(recordedStackChecks(again)).toEqual(
+      new Map([
+        ['S1', 0],
+        ['S2', 0],
+      ]),
+    );
     expect(again.match(/## S1 — run/g)).toHaveLength(1);
     expect(again).not.toContain('- Exit: 1');
     expect(again.indexOf('## S1')).toBeLessThan(again.indexOf('## S2'));

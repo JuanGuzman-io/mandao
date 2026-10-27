@@ -158,6 +158,10 @@ describe('roles (phase 18): who decides, as the project names them', () => {
     expect(renderBody(meta, body, ctx({ roles: solo }), syntax)).toBe('Ask the PE; the PE decides; route to the PE.');
   });
 
+  test('only role tokens may hold an underscore: other {{a_b}} text stays as written (review F6)', () => {
+    expect(renderBody(meta, 'keep {{foo_bar}} as is', ctx(), syntax)).toBe('keep {{foo_bar}} as is');
+  });
+
   test('an unknown role is refused', () => {
     expect(() => renderInline('{{roles.cto}}', ctx())).toThrow('unknown role token');
   });

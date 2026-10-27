@@ -26,9 +26,15 @@ export function parseStackChecks(architecture: string): StackCheck[] {
   });
 }
 
-/** The checks with a run recorded by `mandao run stack-check`: `## Sn — run` sections of the stack log. */
-export function recordedStackChecks(log: string | undefined): Set<string> {
-  return new Set([...(log ?? '').matchAll(/^## (S\d+) — run\s*$/gm)].map((m) => m[1]!));
+/** The checks with a run recorded by `mandao run stack-check`, with the exit of their last run (`NaN` when unreadable). */
+export function recordedStackChecks(log: string | undefined): Map<string, number> {
+  const sections = (log ?? '').split(/^(?=## S\d+ — run\s*$)/m);
+  return new Map(
+    sections.flatMap((s): [string, number][] => {
+      const id = /^## (S\d+) — run/.exec(s)?.[1];
+      return id ? [[id, Number(/^- Exit: (\S+)/m.exec(s)?.[1])]] : [];
+    }),
+  );
 }
 
 const STACK_LOG_HEAD = '# Stack checks\n\nWritten by `mandao run stack-check`: the run that proves each stack choice.\n';
@@ -47,12 +53,21 @@ export function withStackRun(log: string | undefined, id: string, body: string):
 /**
  * What doctor reports (warnings, never a block: the constitution has no approval step to stop, and a spec that
  * relies on the choice makes it a High premise, which blocks its design approval): a check with no run and no
- * `UNVERIFIED` mark, and, for information, each check marked `UNVERIFIED`.
+ * `UNVERIFIED` mark or whose last run failed, and, for information, each check marked `UNVERIFIED`.
  */
-export function stackFindings(architecture: string | undefined, recorded: Set<string>, where: string): StackFinding[] {
+export function stackFindings(architecture: string | undefined, recorded: Map<string, number>, where: string): StackFinding[] {
   if (!architecture) return [];
   return parseStackChecks(architecture).flatMap((c): StackFinding[] => {
-    if (recorded.has(c.id)) return [];
+    const exit = recorded.get(c.id);
+    if (exit === 0) return [];
+    if (exit !== undefined)
+      return [
+        {
+          ref: c.id,
+          level: 'warn',
+          message: `${where} ${c.id}'s last run failed (exit ${exit}): change the choice (${c.claim}) and run it again, or mark it UNVERIFIED`,
+        },
+      ];
     if (c.unverified)
       return [
         {

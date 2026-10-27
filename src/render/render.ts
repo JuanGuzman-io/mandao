@@ -60,7 +60,7 @@ export function templateReference(ctx: RenderContext, name: string): string {
 const IF_RE = /^[ \t]*<!--\s*mandao:if\s+(.+?)\s*-->[ \t]*\r?\n?/;
 const ENDIF_RE = /^[ \t]*<!--\s*mandao:endif\s*-->[ \t]*\r?\n?/;
 const MARKER_RE = /^[ \t]*<!--\s*mandao:(if\s+.+?|endif)\s*-->[ \t]*\r?\n?/gm;
-const TOKEN_RE = /\{\{\s*([a-zA-Z._]+)(?::([A-Za-z0-9._/-]+))?\s*\}\}/g;
+const TOKEN_RE = /\{\{\s*(roles\.[a-z_]+|[a-zA-Z.]+)(?::([A-Za-z0-9._/-]+))?\s*\}\}/g;
 
 export class RenderError extends Error {}
 

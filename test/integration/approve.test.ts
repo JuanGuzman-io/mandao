@@ -294,7 +294,10 @@ describe('mandao approve: no model session', () => {
       'when fastembed is upgraded',
     );
     expect(r).toMatchObject({ approved: true, step: 'vulnerability', statusChanged: [] });
-    expect(parsed(root).at(-1)).toMatchObject({
+    const at = parsed(root).at(-1)!.at;
+    // Annulling one acceptance needs only the reason, as for every step (review F5).
+    expect(await approve(root, 'MDO-0001', 'vulnerability', '--annul', at, '--reason', 'fixed upstream')).toMatchObject({ annulled: true });
+    expect(parsed(root).at(-2)).toMatchObject({
       step: 'vulnerability',
       note: 'images are never decoded',
       vulnerability: { package: 'pillow 12.3.0', id: 'PYSEC-1', review: 'when fastembed is upgraded' },

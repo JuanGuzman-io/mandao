@@ -373,7 +373,7 @@ export function registerApprove(program: Command, ctx: CliContext) {
       const spec = readSpec(findSpec(ctx.root(), config, ref));
       const s = step as ApprovalStep;
       if (s === 'security-gaps' && !o.reason?.trim()) throw new Error('security-gaps approval needs --reason <why>');
-      if (s === 'vulnerability' && !o.revoke && ![o.package, o.id, o.reason, o.review].every((v) => v?.trim()))
+      if (s === 'vulnerability' && !o.revoke && !o.annul && ![o.package, o.id, o.reason, o.review].every((v) => v?.trim()))
         throw new Error('vulnerability approval needs --package, --id, --reason and --review');
       if (approvalEvent(spec, config, s, o)) return;
       approveStep(ctx.root(), config, spec, s, o);

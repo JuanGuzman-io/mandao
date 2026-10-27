@@ -85,7 +85,33 @@ describe('a constitution changed after the approval (phase 18)', () => {
     const root = repo();
     await cli(root, 'approve', 'MDO-0001', 'spec');
     edit(root, 'CHANGELOG.md', '# Changelog\n\n- 2026-10-26: reopened for MDO-0001.\n');
+    const arch = join(root, 'docs/constitution/architecture.md');
+    writeFileSync(arch, `---\nstatus: approved\n---\n${readFileSync(arch, 'utf8')}`);
+    await cli(root, 'approve', 'MDO-0001', 'spec');
+    writeFileSync(arch, readFileSync(arch, 'utf8').replace('status: approved', 'status: draft'));
+    mkdirSync(join(root, 'docs/constitution/_log'), { recursive: true });
+    edit(root, '_log/stack.md', '# Stack checks\n\n## S1 — run\n\n- Exit: 0\n');
     expect((await cli(root, 'run', 'next', 'MDO-0001')).recommended.command).toBe('/mandao-implement');
+  });
+
+  test("a project's own constitution counts for the specs of that project only", async () => {
+    const root = repo();
+    const config = readConfig(root);
+    mkdirSync(join(root, 'api/docs/constitution'), { recursive: true });
+    const two = { ...config, projects: [...config.projects, { ...config.projects[0]!, name: 'api', path: 'api' }] };
+    const before = constitutionHash(root, two, ['mandao']);
+    writeFileSync(join(root, 'api/docs/constitution/architecture.md'), '# API\n');
+    expect(constitutionHash(root, two, ['mandao'])).toBe(before);
+    expect(constitutionHash(root, two, ['api'])).not.toBe(before);
+  });
+
+  test('a changed document and a changed constitution: approving the document comes first', async () => {
+    const root = repo();
+    await cli(root, 'approve', 'MDO-0001', 'spec');
+    edit(root, 'architecture.md', '# Architecture\n\nQdrant local.\n');
+    const spec = join(root, SPEC, 'spec.md');
+    writeFileSync(spec, `${readFileSync(spec, 'utf8')}\nUpdated for Qdrant.\n`);
+    expect((await cli(root, 'run', 'next', 'MDO-0001')).recommended.command).toBe('mandao approve MDO-0001 spec');
   });
 
   test('approving again after the update clears the recommendation', async () => {

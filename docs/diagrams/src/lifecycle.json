@@ -15,7 +15,7 @@
     },
     {
       "path": "core/commands/constitution.md",
-      "sha256": "70561eca521cdfe72c8a1fb9ae3b902315b91c8e3c2ca2adf3631310b64f9ca9"
+      "sha256": "531e588d39b6004f30e903c65bb94ca130cfe1d0d730b31c39f9fdc650f02ddf"
     },
     {
       "path": "core/commands/implement.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "0d65768698bf00ad7eecad124f09560f8eff4c0c7083b9333144ddbefcbf97d6"
+      "sha256": "c664b14c33382f008c558ad6fb9a48ed12b16dbb346632d78498d57edce1d28b"
     },
     {
       "path": "src/schemas/common.ts",

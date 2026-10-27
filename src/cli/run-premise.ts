@@ -53,11 +53,11 @@ export const probesDir = (specDir: string) => join(premiseWorkDir(specDir), 'pro
  * The paths a command names that leave the worktree: absolute or `~` paths outside it, and relative
  * ones that climb out. The first word (the program, e.g. `node`) is not checked.
  */
-export function pathsOutside(words: string[], root: string): string[] {
+export function pathsOutside(words: string[], root: string, from: string = root): string[] {
   return words.slice(1).flatMap((raw) => {
     const w = raw.replace(/^['"]|['"]$/g, '').replace(/^--?[\w-]+=/, '');
     if (!/^(\/|~|\.\.?\/)/.test(w) && !w.includes('/../')) return [];
-    const abs = w.startsWith('~') ? join(homedir(), w.slice(1)) : resolve(root, w);
+    const abs = w.startsWith('~') ? join(homedir(), w.slice(1)) : resolve(from, w);
     const rel = relative(root, abs);
     return rel.startsWith('..') || isAbsolute(rel) ? [raw] : [];
   });
