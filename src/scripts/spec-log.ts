@@ -1,7 +1,7 @@
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { effectiveLayoutVersion, keepsLogCache } from '../schemas/index.js';
+import { effectiveLayoutVersion, HARNESS_IDS, keepsLogCache } from '../schemas/index.js';
 import { type Approval, parseApprovals, renderApprovals } from '../spec/approvals.js';
 import { renderCosts } from '../spec/costs.js';
 import { LAYOUT_VERSIONS, layoutManifest, tasksHaveOwnFile } from '../spec/layout.js';
@@ -182,8 +182,11 @@ export function logSections(specDir: string, file: SectionLog): Map<string, stri
 }
 
 const REVIEW_TITLE = /^(T\d+) — attempt (\d+)(?: \(via [^)]+\))?$/;
-/** v1: `Tn-k-review.md` (checkpoint) or `Tn-k-<via>.md` (`run review --via`); `Tn-k-test-review.md` is not a task review. */
-const REVIEW_FILE = /^(T\d+)-(\d+)-(?!test-review\.md$)[a-z0-9-]+\.md$/;
+/**
+ * v1: `Tn-k-review.md` (checkpoint) or `Tn-k-<harness>.md` (`run review --via`). Packs (`Tn-k-pack.md`) and test
+ * reviews (`Tn-k-test-review.md`) share the folder and are not task reviews.
+ */
+const REVIEW_FILE = new RegExp(`^(T\\d+)-(\\d+)-(?:review|${HARNESS_IDS.join('|')})\\.md$`);
 
 /** Every Reviewer answer of the spec by task and attempt: `reviews.md` sections (version 2) or `_log/reviews/` files. */
 export function taskReviews(specDir: string): { task: string; attempt: number; text: string }[] {

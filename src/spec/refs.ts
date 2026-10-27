@@ -25,8 +25,11 @@ export function renameRef(text: string, from: string, to: string): { text: strin
   return { text: out, count };
 }
 
-/** Another spec's reference (`MDO-0003 FR-2`, `PROJ-12/AC-1`) is not this spec's: it is left out. */
-const OTHER_SPEC = /[A-Z][A-Z0-9]*-\d+[\s:/#]+$/;
+/**
+ * Another spec's reference (`MDO-0003 FR-2`, `PROJ-12/AC-1`) is not this spec's: it is left out. The token before must
+ * not be one of this spec's own references, so `AC-1 AC-9` or `FR-3: AC-9` still checks `AC-9`.
+ */
+const OTHER_SPEC = /(?<![A-Za-z0-9_-])(?!(?:AC|N?FR|S)-)[A-Z][A-Z0-9]*-\d+[\s:/#]+$/;
 
 /** The references a text cites, fenced examples already removed by the caller. */
 function ownRefs(text: string): string[] {

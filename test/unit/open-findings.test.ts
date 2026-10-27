@@ -51,6 +51,8 @@ describe('open findings from the review records', () => {
       '_log/reviews/T4-2-review.md': review('PASS', []),
       '_log/reviews/T4-3-codex.md': review('PASS', [finding('F1', 'open')]),
       '_log/reviews/T4-3-test-review.md': review('PASS', [finding('F9', 'open')]),
+      // A rework pack for an attempt not reviewed yet is not a review (round 2, R2-F1).
+      '_log/reviews/T4-4-pack.md': review('PASS', [finding('F8', 'open')]),
     });
     // A v1 `run review --via` file counts (review F1); a test review is not a task review.
     expect(taskReviews(v1).map((r) => [r.task, r.attempt])).toEqual([

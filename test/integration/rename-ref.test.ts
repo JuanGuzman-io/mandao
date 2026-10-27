@@ -50,6 +50,11 @@ describe('reference renames', () => {
   test('a document citing an undefined reference is STALE_REF; examples and other specs are not (review F2)', () => {
     const text = 'Covers AC-1 and AC-9 (FR-1). Like MDO-0003 FR-7.\n\n```\nAC-42 is an example\n```\n';
     const found = staleRefs([{ name: 'design.md', text }], new Set(['AC-1', 'FR-1']));
+    // A list of this spec's own references still checks each one (round 2, R2-F2).
+    expect(staleRefs([{ name: 'tasks.md', text: 'FR-1: AC-8 / AC-1 AC-7' }], new Set(['AC-1', 'FR-1'])).map((f) => f.ref)).toEqual([
+      'AC-8',
+      'AC-7',
+    ]);
     expect(found).toEqual([
       expect.objectContaining({ type: 'STALE_REF', ref: 'AC-9', message: expect.stringMatching(/^design\.md cites AC-9/) }),
     ]);
