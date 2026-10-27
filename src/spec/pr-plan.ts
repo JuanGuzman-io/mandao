@@ -1,6 +1,15 @@
 import type { Delivery } from './deliveries.js';
 import type { Task } from './tasks.js';
 
+/**
+ * Dependency lockfiles: rewritten whole by the package manager, never reviewed line by line, so they do not count
+ * toward a PR's size (phase 20: MDO-0002's plan proposed 4 stacked PRs from 4,766 lines, most of them a lockfile).
+ */
+const LOCKFILE =
+  /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|poetry\.lock|uv\.lock|Pipfile\.lock|Cargo\.lock|go\.sum|Gemfile\.lock|composer\.lock|pubspec\.lock|Podfile\.lock|gradle\.lockfile|packages\.lock\.json)$/;
+
+export const isLockfile = (path: string) => LOCKFILE.test(path);
+
 /** Real size of a task: the files and changed lines of its commits (found by trailers). */
 export interface TaskSize {
   files: string[];

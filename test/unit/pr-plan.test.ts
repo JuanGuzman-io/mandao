@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { prPlan, type Task } from '../../src/spec/index.js';
+import { isLockfile, prPlan, type Task } from '../../src/spec/index.js';
 
 const task = (id: string, project: string, depends_on: string[] = []): Task =>
   ({
@@ -108,5 +108,22 @@ describe('PR plan from structure and the real diff (ADR 0028)', () => {
     test('polyrepo: per repository, deliveries do not apply', () => {
       expect(prPlan({ tasks, waves, sizes: big, limits, polyrepo: true, deliveries }).decision).toBe('per-repo');
     });
+  });
+});
+
+describe('lockfiles do not count toward a PR size (phase 20, MDO-0002)', () => {
+  test('dependency lockfiles of every ecosystem are recognized, at any depth; manifests are not', () => {
+    for (const f of [
+      'package-lock.json',
+      'apps/web/pnpm-lock.yaml',
+      'yarn.lock',
+      'bun.lockb',
+      'uv.lock',
+      'go.sum',
+      'Cargo.lock',
+      'pubspec.lock',
+    ])
+      expect(isLockfile(f), f).toBe(true);
+    for (const f of ['package.json', 'go.mod', 'src/lock.ts', 'docs/package-lock.json.md']) expect(isLockfile(f), f).toBe(false);
   });
 });
