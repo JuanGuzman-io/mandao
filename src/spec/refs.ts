@@ -1,3 +1,4 @@
+import { withoutFences } from './markdown.js';
 import type { TraceFinding } from './trace.js';
 
 /**
@@ -24,13 +25,21 @@ export function renameRef(text: string, from: string, to: string): { text: strin
   return { text: out, count };
 }
 
+/** Another spec's reference (`MDO-0003 FR-2`, `PROJ-12/AC-1`) is not this spec's: it is left out. */
+const OTHER_SPEC = /[A-Z][A-Z0-9]*-\d+[\s:/#]+$/;
+
+/** The references a text cites, fenced examples already removed by the caller. */
+function ownRefs(text: string): string[] {
+  return [...text.matchAll(REF)].filter((m) => !OTHER_SPEC.test(text.slice(Math.max(0, m.index - 24), m.index))).map((m) => m[0]);
+}
+
 /**
  * Pure: references a document cites that the spec does not define (phase 20). At MDO-0001's close a reference fix
  * reached only the story; design, data model and tasks kept the old IDs, and nothing said so.
  */
 export function staleRefs(docs: { name: string; text: string }[], defined: Set<string>): TraceFinding[] {
   return docs.flatMap(({ name, text }) =>
-    [...new Set(text.match(REF) ?? [])]
+    [...new Set(ownRefs(withoutFences(text)))]
       .filter((r) => !defined.has(r))
       .map((r) => ({
         type: 'STALE_REF' as const,

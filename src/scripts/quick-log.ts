@@ -61,14 +61,14 @@ export function quickLogRow(e: QuickLogEntry): string {
  * before phase 20 say `this commit` and are filled the same way.
  */
 export const PENDING = 'pending';
-const UNRESOLVED = /\|\s*(?:pending|this commit)\s*\|\s*$/;
+const UNRESOLVED = /\|[ \t]*(?:pending|this commit)[ \t]*\|[ \t]*(\r?)$/;
 
 /** Pure: fills the Commit cell of every unresolved row whose line has a commit (`commitOf`, 0-based line index). */
 export function resolveCommits(lines: string[], commitOf: (line: number) => string | undefined): string[] {
   return lines.map((l, i) => {
     if (!UNRESOLVED.test(l)) return l;
     const hash = commitOf(i);
-    return hash ? l.replace(UNRESOLVED, `| ${hash} |`) : l;
+    return hash ? l.replace(UNRESOLVED, `| ${hash} |$1`) : l;
   });
 }
 

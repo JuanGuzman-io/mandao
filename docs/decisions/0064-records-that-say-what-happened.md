@@ -28,4 +28,9 @@ instead of from what the agent remembers.
 
 - `STALE_REF` cannot see two defined IDs swapped with each other (both still exist); `rename-ref` through a free ID is
   the way to swap them, and `clarify` says so.
-- A quick-log row's hash appears one quick later; `git log -- specs/quick/quick-log.md` gives it at any time.
+- A quick-log row's hash appears one quick later; `git log -- specs/quick/quick-log.md` gives it at any time. It is the
+  last commit that changed the line (`git blame -w`, so a whitespace-only reformat does not count); a row filled on a
+  branch that is later squash-merged names a commit that only the branch had.
+- `rename-ref` refuses a target the spec already defines (two references would merge) unless `--force`. `STALE_REF`
+  skips fenced examples, another spec's references (`MDO-0003 FR-2`) and removed AC, which keep their record.
+- `--implementer none` is refused with `--pending-commit`: a task with code to commit names its implementer.

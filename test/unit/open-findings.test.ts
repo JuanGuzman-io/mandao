@@ -29,6 +29,14 @@ describe('open findings from the review records', () => {
     expect(open.map((f) => `${f.task} ${f.id} ${f.severity}`)).toEqual(['T1 F2 low', 'T2 F1 medium']);
   });
 
+  test('a checkpoint review and a --via review of the same attempt both count (review F8)', () => {
+    const open = openFindings([
+      { task: 'T1', attempt: 2, text: review('PASS', []) },
+      { task: 'T1', attempt: 2, text: review('PASS', [finding('F1', 'open')]) },
+    ]);
+    expect(open.map((f) => f.id)).toEqual(['F1']);
+  });
+
   test('reads version 2 sections (including a process review) and version 1 files', () => {
     const v2 = makeTree({
       'story.md': '---\nschema_version: 2\nid: MDO-0001\n---\n# X\n',
@@ -41,8 +49,15 @@ describe('open findings from the review records', () => {
     const v1 = makeTree({
       'story.md': '---\nschema_version: 1\nid: MDO-0001\n---\n# X\n',
       '_log/reviews/T4-2-review.md': review('PASS', []),
+      '_log/reviews/T4-3-codex.md': review('PASS', [finding('F1', 'open')]),
+      '_log/reviews/T4-3-test-review.md': review('PASS', [finding('F9', 'open')]),
     });
-    expect(taskReviews(v1)).toEqual([{ task: 'T4', attempt: 2, text: expect.stringContaining('VERDICT: PASS') }]);
+    // A v1 `run review --via` file counts (review F1); a test review is not a task review.
+    expect(taskReviews(v1).map((r) => [r.task, r.attempt])).toEqual([
+      ['T4', 2],
+      ['T4', 3],
+    ]);
+    expect(openFindings(taskReviews(v1)).map((f) => f.id)).toEqual(['F1']);
     expect(taskReviews(join(v1, 'missing'))).toEqual([]);
   });
 

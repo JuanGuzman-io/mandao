@@ -171,6 +171,9 @@ function currentTask(ctx: CliContext, o: CheckpointOptions) {
 function checkedPending(ctx: CliContext, spec: SpecFolder, o: CheckpointOptions) {
   // MDO-0005: a FAIL without its reason leaves the rework unexplainable in Kaizen.
   if (o.verdict === 'FAIL' && !o.reason?.trim()) throw new Error('--verdict FAIL needs --reason "<the first blocking finding>"');
+  // A task closed on evidence alone has no code to commit: `none` with a queued commit contradicts itself (phase 20).
+  if (o.pendingCommit && o.implementer?.split('@')[0] === 'none')
+    throw new Error('--implementer none means no code was written: a task with a commit to queue names its implementer');
   requireDiscrepancyReason(spec, o.discrepancyReason);
   requireRedFirst(spec, o.task, o.verdict);
   requireTestDeletionReason(spec, o.task, o.verdict, o.testDeletionReason);

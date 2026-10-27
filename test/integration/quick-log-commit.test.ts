@@ -3,7 +3,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
 import { blameCommits } from '../../src/cli/run-quick.js';
-import { appendQuickLog, type QuickLogEntry } from '../../src/scripts/quick-log.js';
+import { appendQuickLog, type QuickLogEntry, resolveCommits } from '../../src/scripts/quick-log.js';
 import { initTestRepo, makeTree } from '../helpers.js';
 
 /** Phase 20: a quick-log row cannot hold its own commit; the next row fills it from git. */
@@ -33,6 +33,11 @@ test('a row says pending until the next quick-log, which fills it with the commi
   const text = readFileSync(file, 'utf8');
   expect(text).toMatch(new RegExp(`\\| first \\|.*\\| ${first} \\|$`, 'm'));
   expect(text).toMatch(/\| second \|.*\| pending \|$/m);
+});
+
+test('a CRLF log keeps its line endings when a row is filled (review F6)', () => {
+  const lines = resolveCommits(['| a | pending |\r', '| b | this commit |'], () => 'abc1234');
+  expect(lines).toEqual(['| a | abc1234 |\r', '| b | abc1234 |']);
 });
 
 test('a row written before phase 20 ("this commit") is filled the same way; an uncommitted one stays', () => {

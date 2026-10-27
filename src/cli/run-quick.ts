@@ -25,7 +25,7 @@ export function blameCommits(file: string): (line: number) => string | undefined
   if (!existsSync(file)) return () => undefined;
   let out = '';
   try {
-    out = execFileSync('git', ['blame', '--line-porcelain', '--', file], {
+    out = execFileSync('git', ['blame', '-w', '--line-porcelain', '--', file], {
       cwd: dirname(file),
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
@@ -33,7 +33,7 @@ export function blameCommits(file: string): (line: number) => string | undefined
   } catch {
     return () => undefined; // not in git yet
   }
-  const hashes = [...out.matchAll(/^([0-9a-f]{40}) \d+ \d+/gm)].map((m) => m[1]!);
+  const hashes = [...out.matchAll(/^([0-9a-f]{40}|[0-9a-f]{64}) \d+ \d+/gm)].map((m) => m[1]!);
   return (line) => {
     const h = hashes[line];
     return h && !/^0+$/.test(h) ? h.slice(0, 7) : undefined;

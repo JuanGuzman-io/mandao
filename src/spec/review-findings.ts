@@ -40,28 +40,31 @@ export interface OpenFinding {
 }
 
 /**
- * Pure: every finding still open in each task's last review, whatever its severity (phase 20: MDO-0002's low ones
- * lived only in the review files and the summary said none). A later attempt's review replaces an earlier one.
+ * Pure: every finding still open in each task's last attempt, whatever its severity (phase 20: MDO-0002's low ones
+ * lived only in the review files and the summary said none). A later attempt's reviews replace an earlier one's; the
+ * reviews of the same attempt (a checkpoint review and a `--via` one) all count.
  */
 export function openFindings(reviews: TaskReview[]): OpenFinding[] {
-  const last = new Map<string, TaskReview>();
-  for (const r of reviews) if ((last.get(r.task)?.attempt ?? 0) <= r.attempt) last.set(r.task, r);
-  return [...last.values()].flatMap((r) => {
-    const parsed = parseReviewFindings(r.text);
-    if (!parsed.success) return [];
-    return parsed.data.findings
-      .filter((f) => f.status === 'open')
-      .map((f) => ({
-        task: r.task,
-        attempt: r.attempt,
-        id: f.id,
-        severity: f.severity,
-        lens: f.lens,
-        title: f.title,
-        file: f.file,
-        line: f.line,
-      }));
-  });
+  const lastAttempt = new Map<string, number>();
+  for (const r of reviews) lastAttempt.set(r.task, Math.max(lastAttempt.get(r.task) ?? 0, r.attempt));
+  return reviews
+    .filter((r) => r.attempt === lastAttempt.get(r.task))
+    .flatMap((r) => {
+      const parsed = parseReviewFindings(r.text);
+      if (!parsed.success) return [];
+      return parsed.data.findings
+        .filter((f) => f.status === 'open')
+        .map((f) => ({
+          task: r.task,
+          attempt: r.attempt,
+          id: f.id,
+          severity: f.severity,
+          lens: f.lens,
+          title: f.title,
+          file: f.file,
+          line: f.line,
+        }));
+    });
 }
 
 /** Open high or critical security findings cannot accompany a PASS. */

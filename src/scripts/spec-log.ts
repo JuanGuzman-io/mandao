@@ -182,7 +182,8 @@ export function logSections(specDir: string, file: SectionLog): Map<string, stri
 }
 
 const REVIEW_TITLE = /^(T\d+) — attempt (\d+)(?: \(via [^)]+\))?$/;
-const REVIEW_FILE = /^(T\d+)-(\d+)-review\.md$/;
+/** v1: `Tn-k-review.md` (checkpoint) or `Tn-k-<via>.md` (`run review --via`); `Tn-k-test-review.md` is not a task review. */
+const REVIEW_FILE = /^(T\d+)-(\d+)-(?!test-review\.md$)[a-z0-9-]+\.md$/;
 
 /** Every Reviewer answer of the spec by task and attempt: `reviews.md` sections (version 2) or `_log/reviews/` files. */
 export function taskReviews(specDir: string): { task: string; attempt: number; text: string }[] {

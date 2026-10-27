@@ -29,8 +29,12 @@ export function registerRenameRef(run: Command, ctx: CliContext) {
   run
     .command('rename-ref <spec> <from> <to>')
     .description('Replace a reference (AC-2, FR-3, NFR-1, S-1.2) in every document of the spec; prints each file and count')
-    .action((ref: string, from: string, to: string) => {
+    .option('--force', 'rename onto a reference the spec already defines (the two merge)')
+    .action((ref: string, from: string, to: string, o: { force?: boolean }) => {
       const { spec } = loadSpec(ctx, ref);
+      // A rename onto a defined ID merges two references and trace cannot see it afterwards: swap through a free ID.
+      if (!o.force && spec.story && spec.requirements && definedRefs(spec.story, spec.requirements).has(to))
+        throw new Error(`${to} is already defined in ${spec.name}: rename through a free ID to swap, or pass --force to merge`);
       const files = refDocs(spec).flatMap((d) => {
         const r = renameRef(d.text, from, to);
         if (!r.count) return [];

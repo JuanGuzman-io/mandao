@@ -6,7 +6,7 @@ import type { Task } from './tasks.js';
  * toward a PR's size (phase 20: MDO-0002's plan proposed 4 stacked PRs from 4,766 lines, most of them a lockfile).
  */
 const LOCKFILE =
-  /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|poetry\.lock|uv\.lock|Pipfile\.lock|Cargo\.lock|go\.sum|Gemfile\.lock|composer\.lock|pubspec\.lock|Podfile\.lock|gradle\.lockfile|packages\.lock\.json)$/;
+  /(^|\/)(package-lock\.json|npm-shrinkwrap\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?|poetry\.lock|uv\.lock|Pipfile\.lock|Cargo\.lock|go\.sum|Gemfile\.lock|composer\.lock|pubspec\.lock|Podfile\.lock|gradle\.lockfile|packages\.lock\.json|deno\.lock|flake\.lock|mix\.lock|pdm\.lock|Package\.resolved|conda-lock\.ya?ml)$/;
 
 export const isLockfile = (path: string) => LOCKFILE.test(path);
 
