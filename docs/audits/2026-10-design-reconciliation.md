@@ -90,7 +90,7 @@ These are retained as open or scheduled, rather than silently changing the produ
 - Script-owned command/question timing and active/user/agent breakdowns remain Phase 2 work. Existing
   approval dates or long gaps do not measure human waiting. No new latency improvement is claimed here.
 - Exact gate receipts, review manifests, structured findings, delivery, research and task parallelism
-  remain their assigned phases in [the single backlog](../backlog.md).
+  remain their assigned phases in the single backlog.
 - Organization-specific approval authority, deployment/rollback behavior, local-service isolation,
   disk limits, generic migrations and detailed work types remain OPEN/PROPOSED as documented.
 - Migration of MDO-0008–0010 remains outside these phases until layout v2 is proven on a real spec.

@@ -198,7 +198,7 @@ Every terminal command, with its flags and examples: [docs/cli.md](docs/cli.md).
 - [Agent commands, one page each](docs/commands/) · [Process map](docs/process-map.md) · [Terminal commands](docs/cli.md)
 - [How Mandao keeps the quality](docs/quality.md) · [Spec anatomy](docs/spec-anatomy.md) · [Harnesses](docs/harnesses.md)
 - [Customizing with overrides](docs/customizing.md) · [Command format](docs/command-format.md) · [Schemas](docs/schemas.md)
-- [Design document](MANDAO-DESIGN.md) · [Decisions](docs/decisions/) · [Backlog](docs/backlog.md)
+- [Design document](MANDAO-DESIGN.md) · [Decisions](docs/decisions/)
 
 ## Contributing
 

@@ -97,7 +97,6 @@ stored anywhere. Provenance is attached to every release.
 
 ### First publication (once, by a maintainer)
 
-Publication readiness is item 4 of [Phase 11 in the backlog](docs/backlog.md#phase-11--beta-preparation).
 The maintainer publishes the first version, `0.1.0-beta.0`, by hand, because the trusted publisher can
 only be configured on a package that exists. `prepublishOnly` runs `npm run check` (typecheck, lint, the
 full test suite and `diagrams:check`) and then the build, so a publish runs the full suite locally; that
