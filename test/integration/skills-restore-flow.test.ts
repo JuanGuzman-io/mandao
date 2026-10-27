@@ -1,3 +1,4 @@
+// mandao-scans: none — reads only the temporary skill tree created by this test.
 import { readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { expect, test } from 'vitest';
