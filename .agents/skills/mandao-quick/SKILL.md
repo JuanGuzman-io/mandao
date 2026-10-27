@@ -9,7 +9,7 @@ description: Make a trivial, low-risk change without a spec, behind a double-che
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Change: <change>
+Change: the text the user wrote after the skill name
 
 Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templates/app/rules/quick-gate.md`.
 

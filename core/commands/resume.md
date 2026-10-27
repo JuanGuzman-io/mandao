@@ -3,11 +3,15 @@ schema_version: 1
 id: resume
 title: Resume
 description: "Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness."
+summary: "Continues a spec from its checkpoint, in any harness; without an id, a dashboard"
 status: stable
 flow: { after: [], next: [implement] }
 arguments:
   - name: spec
-    description: "Spec id to continue (empty for the dashboard)"
+    description: "The spec to continue; empty for a dashboard of the open specs"
+examples:
+  - { run: "/mandao-resume", does: "shows every open spec and where it stands" }
+  - { run: "/mandao-resume MDO-0003", does: "continues MDO-0003 from its checkpoint, in any harness" }
 inputs:
   - { path: "{{paths.specs}}/" }
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }

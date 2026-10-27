@@ -36,7 +36,7 @@ Run `npx mandao init --scope project`.
   ".github/prompts/mandao-specify.prompt.md": "---
 name: mandao-specify
 description: Turn an approved story into requirements and design.
-argument-hint: <spec> [depth]
+argument-hint: <spec> [--hotfix] [depth]
 agent: agent
 tools:
   - read
@@ -48,7 +48,8 @@ tools:
 
 # /mandao-specify
 
-Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, depth: ${input:depth:lite | standard | full}
+Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, hotfix: ${input:hotfix:A production fix}, depth: ${input:depth:lite | standard | full}
+Depth: ${input:depth:lite | standard | full}
 
 Write `workspace/specs/${input:spec:Spec id, e.g. PROJ-1-login}/design.md` from `.mandao/templates/app/design.md`.
 Add a `## Contract` section.

@@ -3,12 +3,15 @@ schema_version: 1
 id: clarify
 title: Clarify
 description: "Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision."
+summary: "Resolves open questions and conflicts with whoever owns each decision"
 status: stable
 flow: { after: [specify, tasks], next: [specify, tasks] }
 arguments:
   - name: spec
-    description: "Spec folder or id"
+    description: "The spec id or folder"
     required: true
+examples:
+  - { run: "/mandao-clarify MDO-0003", does: "asks the open questions and records the answers" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true, description: "spec.md at lite depth" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md" }

@@ -16,19 +16,19 @@ tools:
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Spec: ${input:spec:Spec folder or id}
+Spec: ${input:spec:The spec id or folder}
 
 You verify that what was built is what the spec asked for, with evidence. Write the report in
 `en`. Never claim a test passed without its output.
 
 ## 1. Plan
 
-1. `node .mandao/bin/mandao.mjs run where ${input:spec:Spec folder or id} --harness copilot --first "/mandao-verify ${input:spec:Spec folder or id}"` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
+1. `node .mandao/bin/mandao.mjs run where ${input:spec:The spec id or folder} --harness copilot --first "/mandao-verify ${input:spec:The spec id or folder}"` — go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
    the `where` message says another worktree holds the branch:
    Print the `resume` field of the `where` output (the command that opens this harness in that worktree) and
    stop. Otherwise run the same `where` command with `--switch`: it moves this checkout onto the spec branch
    (never run git yourself); go on when it reports `ready`.
-2. `node .mandao/bin/mandao.mjs run verify-plan ${input:spec:Spec folder or id}` gives the suites per project (unit over the files the spec's
+2. `node .mandao/bin/mandao.mjs run verify-plan ${input:spec:The spec id or folder}` gives the suites per project (unit over the files the spec's
    commits touched; e2e for the flows of its AC, critical ones always), `missingRed` (tasks with declared
    tests and no RED evidence), the runs deferred to CI, the trace findings and the `blockers`.
 3. If `blockers` lists open tasks or uncommitted work, stop: verify comes after `/mandao-implement`.
@@ -47,8 +47,8 @@ You verify that what was built is what the spec asked for, with evidence. Write 
    in Evidence. A configured or installed scanner without an executed PASS is never a scan PASS.
    After PR CI reports green, rerun `verify-plan --ci-confirmed` to discharge CI-only scan findings.
    A project with an `eval` gate (model or quality evaluations) runs it here, once:
-   `node .mandao/bin/mandao.mjs run tests <project> --eval --spec ${input:spec:Spec folder or id}`; it never runs among the task gates.
-   A run deferred to CI clears when it passes here: `node .mandao/bin/mandao.mjs run tests <project> --spec ${input:spec:Spec folder or id} --deferred <task>`
+   `node .mandao/bin/mandao.mjs run tests <project> --eval --spec ${input:spec:The spec id or folder}`; it never runs among the task gates.
+   A run deferred to CI clears when it passes here: `node .mandao/bin/mandao.mjs run tests <project> --spec ${input:spec:The spec id or folder} --deferred <task>`
    (it runs the project's e2e command, else its test gate). Without CI in the repository that is the only way;
    never claim `--ci-confirmed` for a CI that does not exist.
 
@@ -82,10 +82,10 @@ report.
 
 - Any `PRODUCT_BUG`, failing suite or blocker → `verdict: blocked`; list what must be fixed and
   suggest `/mandao-implement` (a new task) or `/mandao-quick` when it is trivial.
-- Otherwise `node .mandao/bin/mandao.mjs run status ${input:spec:Spec folder or id} verified` (add `--ci-confirmed` only when CI confirmed every
+- Otherwise `node .mandao/bin/mandao.mjs run status ${input:spec:The spec id or folder} verified` (add `--ci-confirmed` only when CI confirmed every
   deferred run). If it is allowed, set `status: verified` in `story.md` and `verdict: verified` in the
   report. `missingRed` on a spec started before TDD (ADR 0022) is reported, not blocking.
-- Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} verify` (a `docs`
+- Either way, commit the report on its own: `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:The spec id or folder} verify` (a `docs`
   commit with `Refs: <ID>` and a fixed subject; never pushed).
 
-End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --harness copilot`.
+End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:The spec id or folder} --harness copilot`.

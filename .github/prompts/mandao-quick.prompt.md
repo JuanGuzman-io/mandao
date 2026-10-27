@@ -17,7 +17,7 @@ tools:
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Change: ${input:change:What to change, in one sentence}
+Change: change: ${input:change:What to change, in one sentence}
 
 Follow `.mandao/templates/app/rules/context.md` and the gate in `.mandao/templates/app/rules/quick-gate.md`.
 

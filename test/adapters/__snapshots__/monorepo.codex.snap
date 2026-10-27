@@ -32,6 +32,7 @@ description: Turn an approved story into requirements and design.
 # /mandao-specify
 
 Input: the text the user wrote after the skill name
+Depth: <depth>
 
 Write `specs/<spec>/design.md` from `.mandao/templates/<profile>/design.md`.
 Criteria are eval thresholds.

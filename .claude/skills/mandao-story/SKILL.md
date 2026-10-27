@@ -1,7 +1,7 @@
 ---
 name: mandao-story
 description: "Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags."
-argument-hint: "[ref]"
+argument-hint: "[ref] [--from <file>] [--intake <proposal#I-n>]"
 arguments:
   - ref
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash

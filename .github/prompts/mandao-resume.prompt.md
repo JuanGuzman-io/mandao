@@ -14,7 +14,7 @@ tools:
 
 # /mandao-resume
 
-Spec: ${input:spec:Spec id to continue (empty for the dashboard)}
+Spec: ${input:spec:The spec to continue; empty for a dashboard of the open specs}
 
 ## Without a spec id: dashboard
 
@@ -24,14 +24,14 @@ and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_T
 
 ## With a spec id: continue
 
-1. **Place.** `node .mandao/bin/mandao.mjs run where ${input:spec:Spec id to continue (empty for the dashboard)} --harness copilot`. Not `ready`: run it again with `--switch`, or, when another worktree
+1. **Place.** `node .mandao/bin/mandao.mjs run where ${input:spec:The spec to continue; empty for a dashboard of the open specs} --harness copilot`. Not `ready`: run it again with `--switch`, or, when another worktree
    holds the branch, give its `resume` command and stop.
 2. **Checkpoint.** Read `progress.yml` and the last rows of `execution.md`. Say what was happening (and "delivery n of m" from `run next` or `run tasks`, if any),
    in which harness and on which model, the open questions and the recorded next step.
 3. **Models.** Use `models.yml` for **this** harness: `node .mandao/bin/mandao.mjs run models --harness copilot`.
    Never assume the previous harness's models are available here.
 4. **Commits pending.** Tasks in `pending_commits` passed review; their changes are not "uncommitted
-   work". Commit them first with `node .mandao/bin/mandao.mjs run commit ${input:spec:Spec id to continue (empty for the dashboard)}` (local, one commit per task, never
+   work". Commit them first with `node .mandao/bin/mandao.mjs run commit ${input:spec:The spec to continue; empty for a dashboard of the open specs}` (local, one commit per task, never
    pushes). If this harness cannot write git metadata either, tell the user to run that command, and
    leave their files out of step 5.
 5. **Uncommitted work.** If `git status` shows other changes and the checkpoint has a task in progress,
@@ -41,6 +41,6 @@ and its phase (from `progress.yml`), blockers (`OPEN`, HALT, pivots, `DEFERRED_T
    - **continue implementing** → brief the implementer with the diff as the starting point;
    - **discard and redo the task** → only after confirming, restore the task's `files` (from `tasks.md`) and start it again. Never restore `specs/`: it holds the checkpoint and rows of tasks that already passed.
 6. **Provider independence** is recorded by the scripts when the implementer and the reviewer ran in
-   different harnesses; `node .mandao/bin/mandao.mjs run loop ${input:spec:Spec id to continue (empty for the dashboard)} <Tn> --harness <h>` reports it.
+   different harnesses; `node .mandao/bin/mandao.mjs run loop ${input:spec:The spec to continue; empty for a dashboard of the open specs} <Tn> --harness <h>` reports it.
 7. **Continue** with the `/mandao-implement` loop from that step, checkpointing as it does
    (`node .mandao/bin/mandao.mjs run checkpoint`).

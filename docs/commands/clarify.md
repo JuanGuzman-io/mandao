@@ -9,9 +9,19 @@ Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each
   <img alt="/mandao-clarify: steps, approval and what it writes" src="../diagrams/command-clarify-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec` (required): Spec folder or id
+```
+/mandao-clarify <spec>
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | required | The spec id or folder |
+
+## Examples
+
+- `/mandao-clarify MDO-0003` — asks the open questions and records the answers
 
 ## Reads
 

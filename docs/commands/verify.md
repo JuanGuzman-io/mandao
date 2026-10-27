@@ -9,9 +9,19 @@ Run testers per suite on the impacted tests, trace every AC to its tests and che
   <img alt="/mandao-verify: steps, approval and what it writes" src="../diagrams/command-verify-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec` (required): Spec folder or id
+```
+/mandao-verify <spec>
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | required | The spec id or folder |
+
+## Examples
+
+- `/mandao-verify MDO-0003` — runs the impacted tests and traces every acceptance criterion
 
 ## Reads
 

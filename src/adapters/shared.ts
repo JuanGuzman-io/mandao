@@ -2,7 +2,7 @@ import { stringify as stringifyYaml } from 'yaml';
 import type { Choice, ResolvedModels } from '../models/resolve.js';
 import { applyConditionals, contextFromConfig, type RenderContext, renderBody, type TokenSyntax } from '../render/render.js';
 import type { ResolvedCommand, ResolvedPersona } from '../resolver/resolve.js';
-import { type Capability, type Effort, type HarnessId, TIERS } from '../schemas/index.js';
+import { argumentUsage, type Capability, type Effort, type HarnessId, TIERS } from '../schemas/index.js';
 import type { AdapterInput } from './types.js';
 
 /** The resume text of a harness that is opened by hand from the worktree. */
@@ -21,9 +21,12 @@ export function frontmatter(data: Record<string, unknown>): string {
   return `---\n${stringifyYaml(clean, { lineWidth: 0 }).trimEnd()}\n---\n`;
 }
 
+/** A command's positional arguments, in order: flags are read from what the user wrote. */
+export const positional = (cmd: ResolvedCommand) => cmd.meta.arguments.filter((a) => !a.flag);
+
 export function argumentHint(cmd: ResolvedCommand): string | undefined {
   if (!cmd.meta.arguments.length) return undefined;
-  return cmd.meta.arguments.map((a) => (a.flag ? `[--${a.name}]` : a.required ? `<${a.name}>` : `[${a.name}]`)).join(' ');
+  return cmd.meta.arguments.map(argumentUsage).join(' ');
 }
 
 /** Commands installed for this scope and for at least one profile in use. */

@@ -1,5 +1,7 @@
 import { posix } from 'node:path';
+import type { ResolvedCommand } from '../resolver/resolve.js';
 import { USER_COMMANDS } from '../schemas/cli-commands.js';
+import { argumentSyntax, usageLine } from '../schemas/index.js';
 import { wrapBlock } from '../writer/blocks.js';
 import { commandName, selectCommands } from './shared.js';
 import type { AdapterInput, AdapterOutput, GeneratedFile } from './types.js';
@@ -47,7 +49,7 @@ function guide(input: AdapterInput): string {
     '# Mandao guide',
     '',
     'This workspace uses [Mandao](https://www.npmjs.com/package/mandao) for spec-driven development.',
-    'Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent.',
+    'Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent (Codex: `$mandao-<command>`).',
     '',
     `Flow: ${['constitution', 'story', 'specify', '[clarify]', 'tasks', 'implement', 'verify', 'close']
       .map((s) => `\`${s}\``)
@@ -65,7 +67,7 @@ function guide(input: AdapterInput): string {
     '',
     '## Commands',
     '',
-    ...stable.map((c) => `- \`/${commandName(c.meta.id)}\` — ${c.meta.description}`),
+    ...stable.flatMap(commandEntry),
     ...(stubs.length ? ['', `Not implemented yet: ${stubs.map((c) => `\`/${commandName(c.meta.id)}\``).join(', ')}.`] : []),
     '',
     '## Terminal commands',
@@ -124,6 +126,20 @@ function projectBlock(input: AdapterInput, project: AdapterInput['config']['proj
         ]
       : []),
   ]);
+}
+
+/**
+ * One command in the guide: its usage line, what it does, then each argument as typed with its default and an
+ * example (phase 19: the project gets every argument, not only the repository's pages).
+ */
+function commandEntry(c: ResolvedCommand): string[] {
+  const m = c.meta;
+  const usage = usageLine(m.id, m);
+  return [
+    `- \`${usage}\` — ${m.description}`,
+    ...m.arguments.map((a) => `  - \`${argumentSyntax(a)}\`${a.default ? ` (default \`${a.default}\`)` : ''}: ${a.description}`),
+    ...m.examples.slice(0, 2).map((e) => `  - e.g. \`${e.run}\` — ${e.does}`),
+  ];
 }
 
 /** Universal fallback: a managed block in the root AGENTS.md and in each project's AGENTS.md. */

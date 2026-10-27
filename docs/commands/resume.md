@@ -9,9 +9,20 @@ Without an id: dashboard of active specs. With an id: continue that spec from it
   <img alt="/mandao-resume: steps, approval and what it writes" src="../diagrams/command-resume-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec`: Spec id to continue (empty for the dashboard)
+```
+/mandao-resume [spec]
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | optional | The spec to continue; empty for a dashboard of the open specs |
+
+## Examples
+
+- `/mandao-resume` — shows every open spec and where it stands
+- `/mandao-resume MDO-0003` — continues MDO-0003 from its checkpoint, in any harness
 
 ## Reads
 

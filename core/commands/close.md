@@ -3,12 +3,15 @@ schema_version: 1
 id: close
 title: Close
 description: "Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram."
+summary: "Close summary, Kaizen, approved constitution changes, then push and PR in the session"
 status: stable
 flow: { after: [verify], next: [] }
 arguments:
   - name: spec
-    description: "Spec folder or id"
+    description: "The spec id or folder"
     required: true
+examples:
+  - { run: "/mandao-close MDO-0003", does: "writes the close summary, Kaizen and delivers" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/" }
 outputs:

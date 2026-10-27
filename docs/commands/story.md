@@ -9,9 +9,24 @@ Create or enrich a user story with enough business context: sufficiency rubric, 
   <img alt="/mandao-story: steps, approval and what it writes" src="../diagrams/command-story-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `ref`: Tracker id or URL, a one-line idea, --from <file> (Markdown or PDF), or --intake <proposal>#I-n
+```
+/mandao-story [ref] [--from <file>] [--intake <proposal#I-n>]
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<ref>` | optional | A tracker id or URL, or a one-line idea; empty to choose |
+| `--from <file>` | optional | A long requirements document (Markdown or PDF): proposes the stories it holds, grouped in specs |
+| `--intake <proposal#I-n>` | optional | Open one story of an intake proposal as a spec |
+
+## Examples
+
+- `/mandao-story PROJ-123` — a story from your tracker item
+- `/mandao-story let customers save a cart for later` — a story from one line
+- `/mandao-story --from docs/requirements.pdf` — a proposal of stories from a document
+- `/mandao-story --intake docs/product/intake/requirements-2026-10-26.md#I-2` — opens story I-2 of that proposal
 
 ## Reads
 

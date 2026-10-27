@@ -3,11 +3,25 @@ schema_version: 1
 id: story
 title: Story
 description: "Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags."
+summary: "A story with enough context, from your tracker, one line or a requirements document"
 status: stable
 flow: { after: [constitution], next: [specify] }
 arguments:
   - name: ref
-    description: "Tracker id or URL, a one-line idea, --from <file> (Markdown or PDF), or --intake <proposal>#I-n"
+    description: "A tracker id or URL, or a one-line idea; empty to choose"
+  - name: from
+    description: "A long requirements document (Markdown or PDF): proposes the stories it holds, grouped in specs"
+    flag: true
+    value: file
+  - name: intake
+    description: "Open one story of an intake proposal as a spec"
+    flag: true
+    value: "proposal#I-n"
+examples:
+  - { run: "/mandao-story PROJ-123", does: "a story from your tracker item" }
+  - { run: "/mandao-story let customers save a cart for later", does: "a story from one line" }
+  - { run: "/mandao-story --from docs/requirements.pdf", does: "a proposal of stories from a document" }
+  - { run: "/mandao-story --intake docs/product/intake/requirements-2026-10-26.md#I-2", does: "opens story I-2 of that proposal" }
 inputs:
   - { path: .mandao/sources.yml }
   - { path: "{{paths.constitution}}/" }

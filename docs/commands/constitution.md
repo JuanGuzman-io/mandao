@@ -9,10 +9,22 @@ Establish or update the project foundation (technical constitution and product c
   <img alt="/mandao-constitution: steps, approval and what it writes" src="../diagrams/command-constitution-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `mode`: auto | new | legacy | active (default: auto-detect)
-- `product`: Incorporate business sources from .mandao/sources.yml (or: ingest <source>)
+```
+/mandao-constitution [auto|new|legacy|active] [--product]
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<auto\|new\|legacy\|active>` | default `auto` | How to start: new (no code yet), legacy (code, no constitution), active (update an existing one) |
+| `--product` | optional | Also distill business sources from .mandao/sources.yml (or `ingest <source>`) |
+
+## Examples
+
+- `/mandao-constitution` — detects the mode and builds or updates the constitution
+- `/mandao-constitution active` — proposes changes to an existing constitution, one diff per file
+- `/mandao-constitution --product` — adds the product context from your tracker and documents
 
 ## Reads
 

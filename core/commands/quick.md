@@ -3,12 +3,15 @@ schema_version: 1
 id: quick
 title: Quick
 description: "Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial."
+summary: "A small change behind a gate, with review and one commit; escalates to a spec if it grows"
 status: stable
 flow: { after: [], next: [story, specify] }
 arguments:
   - name: change
-    description: What to change, in one sentence
+    description: "What to change, in one sentence"
     required: true
+examples:
+  - { run: "/mandao-quick fix the label on the checkout button", does: "a gated small change with review and one commit" }
 inputs:
   - { path: "{{paths.constitution}}/standards.md" }
   - { path: AGENTS.md }
@@ -32,7 +35,7 @@ approval: none
 Budget: follow `{{template:rules/budget.md}}` at the start and at the end.
 Telemetry: follow `{{template:rules/telemetry.md}}` for event calls and categories.
 
-Change: {{arg:change}}
+Change: {{args}}
 
 Follow `{{template:rules/context.md}}` and the gate in `{{template:rules/quick-gate.md}}`.
 

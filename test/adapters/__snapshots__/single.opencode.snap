@@ -38,6 +38,7 @@ description: Turn an approved story into requirements and design.
 # /mandao-specify
 
 Input: $ARGUMENTS
+Depth: $2
 
 Write `specs/$1/design.md` from `.mandao/templates/app/design.md`.
 Run `node .mandao/bin/mandao.mjs run quick-check` and continue with /mandao-tasks.

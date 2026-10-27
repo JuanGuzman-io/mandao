@@ -3,6 +3,7 @@ schema_version: 1
 id: init
 title: Init
 description: "Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution."
+summary: "Sets up Mandao in this repository from inside your agent"
 status: stable
 flow: { after: [], next: [constitution] }
 inputs: []

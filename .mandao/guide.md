@@ -3,7 +3,7 @@
 # Mandao guide
 
 This workspace uses [Mandao](https://www.npmjs.com/package/mandao) for spec-driven development.
-Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent.
+Every command is a *mandao*: invoke it as `/mandao-<command>` in your agent (Codex: `$mandao-<command>`).
 
 Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `implement` → `verify` → `close`
 
@@ -19,17 +19,48 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 
 ## Commands
 
-- `/mandao-clarify` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision.
-- `/mandao-close` — Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram.
-- `/mandao-constitution` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
-- `/mandao-implement` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
+- `/mandao-clarify <spec>` — Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision.
+  - `<spec>`: The spec id or folder
+  - e.g. `/mandao-clarify MDO-0003` — asks the open questions and records the answers
+- `/mandao-close <spec>` — Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram.
+  - `<spec>`: The spec id or folder
+  - e.g. `/mandao-close MDO-0003` — writes the close summary, Kaizen and delivers
+- `/mandao-constitution [auto|new|legacy|active] [--product]` — Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
+  - `<auto|new|legacy|active>` (default `auto`): How to start: new (no code yet), legacy (code, no constitution), active (update an existing one)
+  - `--product`: Also distill business sources from .mandao/sources.yml (or `ingest <source>`)
+  - e.g. `/mandao-constitution` — detects the mode and builds or updates the constitution
+  - e.g. `/mandao-constitution active` — proposes changes to an existing constitution, one diff per file
+- `/mandao-implement <spec> [task]` — Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS.
+  - `<spec>`: The spec id or folder
+  - `<task>`: One task id; default: the next eligible task
+  - e.g. `/mandao-implement MDO-0003` — implements the tasks left, one commit each
+  - e.g. `/mandao-implement MDO-0003 T4` — only task T4
 - `/mandao-init` — Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution.
-- `/mandao-quick` — Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial.
-- `/mandao-resume` — Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness.
-- `/mandao-specify` — Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session.
-- `/mandao-story` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
-- `/mandao-tasks` — Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies.
-- `/mandao-verify` — Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
+- `/mandao-quick <change>` — Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial.
+  - `<change>`: What to change, in one sentence
+  - e.g. `/mandao-quick fix the label on the checkout button` — a gated small change with review and one commit
+- `/mandao-resume [spec]` — Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness.
+  - `<spec>`: The spec to continue; empty for a dashboard of the open specs
+  - e.g. `/mandao-resume` — shows every open spec and where it stands
+  - e.g. `/mandao-resume MDO-0003` — continues MDO-0003 from its checkpoint, in any harness
+- `/mandao-specify [ref] [--depth <lite|standard|full>] [--hotfix]` — Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session.
+  - `<ref>`: Spec id or folder, tracker id or URL; empty to choose
+  - `--depth <lite|standard|full>` (default `standard`): lite: spec.md and tasks in one session; standard: requirements and design; full: for risky work
+  - `--hotfix`: A production fix from the hotfix branch, merged back at close
+  - e.g. `/mandao-specify MDO-0003` — requirements and design for a story
+  - e.g. `/mandao-specify PROJ-42 --depth lite` — a small spec and its tasks
+- `/mandao-story [ref] [--from <file>] [--intake <proposal#I-n>]` — Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags.
+  - `<ref>`: A tracker id or URL, or a one-line idea; empty to choose
+  - `--from <file>`: A long requirements document (Markdown or PDF): proposes the stories it holds, grouped in specs
+  - `--intake <proposal#I-n>`: Open one story of an intake proposal as a spec
+  - e.g. `/mandao-story PROJ-123` — a story from your tracker item
+  - e.g. `/mandao-story let customers save a cart for later` — a story from one line
+- `/mandao-tasks <spec>` — Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies.
+  - `<spec>`: The spec id or folder
+  - e.g. `/mandao-tasks MDO-0003` — breaks the approved spec into small tasks
+- `/mandao-verify <spec>` — Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full.
+  - `<spec>`: The spec id or folder
+  - e.g. `/mandao-verify MDO-0003` — runs the impacted tests and traces every acceptance criterion
 
 Not implemented yet: `/mandao-audit`, `/mandao-perf`.
 

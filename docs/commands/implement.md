@@ -9,10 +9,21 @@ Run the Leader → Implementer → Reviewer loop task by task, with checkpoints 
   <img alt="/mandao-implement: steps, approval and what it writes" src="../diagrams/command-implement-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec` (required): Spec folder or id
-- `task`: Optional task id (default: the next eligible task)
+```
+/mandao-implement <spec> [task]
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | required | The spec id or folder |
+| `<task>` | optional | One task id; default: the next eligible task |
+
+## Examples
+
+- `/mandao-implement MDO-0003` — implements the tasks left, one commit each
+- `/mandao-implement MDO-0003 T4` — only task T4
 
 ## Reads
 

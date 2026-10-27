@@ -11,6 +11,7 @@ schema_version: 1
 id: specify                 # kebab-case, unique; installed as /mandao-<id>
 title: Specify
 description: Turn an approved story into requirements and design at the chosen depth.
+summary: "Requirements, design and a diagram for your approval"   # one short line for the README and guide tables
 status: stable              # stable | stub
 flow:
   after: [story, clarify]   # commands that usually run before
@@ -21,8 +22,12 @@ arguments:
     description: Spec id or path
     required: true
   - name: depth
-    description: lite | standard | full
+    description: How much to write before the tasks
+    flag: true                # typed as --depth
+    value: "lite|standard|full"   # shown as --depth <lite|standard|full>
     default: standard
+examples:                   # real invocations: the command page, the guide and the README show them
+  - { run: "/mandao-specify MDO-0003 --depth lite", does: "a small spec and its tasks in one session" }
 inputs:                     # contract: what the command reads
   - path: "{{paths.specs}}/<spec>/story.md"
     required: true
@@ -43,10 +48,12 @@ harness:                    # optional, per-adapter frontmatter passthrough
 | `schema_version` | yes | `1`. |
 | `id` | yes | Kebab-case. Must match the file name. |
 | `title`, `description` | yes | `description` is shown in every harness command picker. |
+| `summary` | no | At most 110 characters; the README's and the guide's command tables use it. |
 | `status` | yes | A `stub` declares its contract but is not implemented yet. |
 | `flow` | no | Used by the diagrams and the `AGENTS.md` flow summary. The next command comes from the spec's state (`mandao run next`). |
 | `profiles` | no | Defaults to every profile. |
-| `arguments` | no | Order matters: it is the order of positional arguments. |
+| `arguments` | no | Order matters among the positional ones. A `flag` is typed `--kebab-name` (with `value`, `--name <value>`) after the positional ones (harnesses bind named arguments by word position), has no position, and the body names it as written instead of `{{arg:x}}` (refused). A positional `value` lists its values. One syntax everywhere: hints, pages, the guide, the README (phase 19). |
+| `examples` | no | `{ run, does }` pairs. A stable command with arguments needs at least one; a test checks that each uses only declared flags. |
 | `inputs`, `outputs` | yes | May be empty lists. Paths may use `{{paths.*}}`. |
 | `capabilities` | yes | `read`, `edit`, `search`, `shell`, `web`, `mcp`, `agents`. |
 | `templates`, `scripts` | no | Every `{{template:x}}` and `{{script:x}}` in the body must be listed here. |

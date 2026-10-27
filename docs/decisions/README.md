@@ -68,3 +68,4 @@ Format: **Status**, **Context**, **Decision**, **Consequences**.
 | [0059](0059-continuous-flow.md) | Continuous flow: the spec's branch in the session, chaining by default | Accepted (Phase 16) |
 | [0060](0060-gates-and-task-scoped-commits.md) | Gates from the start, task-scoped commits | Accepted (Phase 17) |
 | [0061](0061-constitution-checked-on-the-runtime.md) | Constitution checked on the runtime, roles, accepted risks | Accepted (Phase 18) |
+| [0062](0062-commands-documented-from-their-source.md) | Commands documented from their source | Accepted (Phase 19) |

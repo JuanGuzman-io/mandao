@@ -50,6 +50,30 @@ export function processMap(read) {
   return `${lines.join('\n')}\n`;
 }
 
+/** An argument as the user types it; mirrors `argumentSyntax` in src/schemas/command.ts (a test compares them). */
+export function argumentSyntax(a) {
+  if (!a.flag) return `<${a.value ?? a.name}>`;
+  const flag = `--${a.name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}`;
+  return a.value ? `${flag} <${a.value}>` : flag;
+}
+const argumentUsage = (a) => (a.required ? argumentSyntax(a) : a.flag ? `[${argumentSyntax(a)}]` : `[${a.value ?? a.name}]`);
+/** A command's usage line; mirrors `usageLine` in src/schemas/command.ts. */
+export const usageLine = (id, m) => [`/mandao-${id}`, ...(m.arguments ?? []).map(argumentUsage)].join(' ');
+const cell = (t) => String(t).replace(/\|/g, '\\|');
+
+/** The arguments of a command as a table: as typed, required or the default, what it is. */
+function argumentTable(m) {
+  const args = m.arguments ?? [];
+  if (!args.length) return 'None.';
+  return [
+    '| Argument | Required / default | What it is |',
+    '|---|---|---|',
+    ...args.map((a) => `| \`${cell(argumentSyntax(a))}\` | ${a.required ? 'required' : a.default ? `default \`${a.default}\`` : 'optional'} | ${cell(a.description)} |`),
+  ].join('\n');
+}
+
+const examples = (m) => (m.examples ?? []).map((e) => `- \`${e.run}\` — ${e.does}`);
+
 const list = (items) => (items.length ? items.map((i) => `- ${i}`).join('\n') : '- —');
 /** Readers see the default paths, not the template tokens (`paths` in .mandao/config.yml can change them). */
 const paths = (t) =>
@@ -62,7 +86,6 @@ const paths = (t) =>
 export function commandPage(read, id) {
   const c = commands(read)[id];
   const m = c.meta;
-  const args = (m.arguments ?? []).map((a) => `\`${a.name}\`${a.required ? ' (required)' : ''}: ${a.description}`);
   const reads = (m.inputs ?? []).map((i) => `\`${paths(i.path)}\``);
   const writes = (m.outputs ?? []).map((o) => `\`${paths(o.path)}\`${o.description ? `: ${o.description}` : ''}`);
   const scripts = (m.scripts ?? []).map((s) => `\`mandao run ${s}\``);
@@ -77,10 +100,15 @@ export function commandPage(read, id) {
     '',
     picture(`command-${id}`, `/mandao-${id}: steps, approval and what it writes`, '../diagrams/'),
     '',
-    '## Arguments',
+    '## Usage',
     '',
-    list(args),
+    '```',
+    usageLine(id, m),
+    '```',
     '',
+    argumentTable(m),
+    '',
+    ...(examples(m).length ? ['## Examples', '', examples(m).join('\n'), ''] : []),
     '## Reads',
     '',
     list(reads),
@@ -120,7 +148,8 @@ export function commandIndex(read) {
     const m = all[id]?.meta;
     const what = PLANNED[id] ?? m.description;
     const approval = status === 'planned' ? '—' : m.approval === 'required' ? 'yes' : 'no';
-    return `| [\`/mandao-${id}\`](${id}.md) | ${what.replace(/\|/g, '\\|')} | ${approval} | ${status === 'planned' ? '⚪ planned' : '🟢 stable'} |`;
+    const usage = status === 'planned' ? '—' : `\`${cell(usageLine(id, m))}\``;
+    return `| [\`/mandao-${id}\`](${id}.md) | ${usage} | ${what.replace(/\|/g, '\\|')} | ${approval} | ${status === 'planned' ? '⚪ planned' : '🟢 stable'} |`;
   };
   return `${[
     '# Commands',
@@ -129,19 +158,57 @@ export function commandIndex(read) {
     '',
     'One page per command: what it does, what it reads and writes, its steps and its diagram.',
     'How they fit together: the [overview in the README](../../README.md#how-it-works) and the [process map](../process-map.md).',
+    'Terminal commands (`mandao …`): [docs/cli.md](../cli.md).',
     '',
-    '| Command | What it does | You approve | Status |',
-    '|---|---|---|---|',
+    '| Command | Usage | What it does | You approve | Status |',
+    '|---|---|---|---|---|',
     ...STABLE_COMMANDS.map((id) => row(id, 'stable')),
     ...['research', 'perf', 'audit'].map((id) => row(id, 'planned')),
   ].join('\n')}\n`;
 }
+
+/** Replaces the text between `<!-- mandao:<name>:begin … -->` and `<!-- mandao:<name>:end -->` in `file`; throws when they are missing. */
+function withBlock(text, name, body, file = 'README.md') {
+  const re = new RegExp(`(<!-- mandao:${name}:begin[^\\n]*-->\\n)[\\s\\S]*?(<!-- mandao:${name}:end -->)`);
+  // A deleted marker would freeze the block silently; diagrams:check must see it (review F7).
+  if (!re.test(text)) throw new Error(`${file} lost its mandao:${name} markers`);
+  return text.replace(re, (_m, begin, end) => `${begin}${body}\n${end}`);
+}
+
+/** README.md: the agent command table and the paths, generated so the front page never drifts from the commands (phase 19). */
+export function readme(read) {
+  const all = commands(read);
+  const { processes } = parseYaml(frontmatterOf(read('docs/process-map.md')).slice(4, -5));
+  const table = [
+    '| Command | Usage | What it does |',
+    '|---|---|---|',
+    ...STABLE_COMMANDS.filter((id) => id !== 'init').map((id) => {
+      const m = all[id].meta;
+      return `| [\`/mandao-${id}\`](docs/commands/${id}.md) | \`${cell(usageLine(id, m))}\` | ${cell(m.summary ?? m.description)} |`;
+    }),
+    '',
+    `Planned: ${['research', 'perf', 'audit'].map((id) => `[\`/mandao-${id}\`](docs/commands/${id}.md)`).join(', ')}. \`/mandao-init\` sets Mandao up from inside your agent after \`mandao init --scope global\`.`,
+  ].join('\n');
+  const paths = [
+    '| You want to… | Path |',
+    '|---|---|',
+    ...PROCESSES.map((id) => {
+      const p = processes.find((x) => x.id === id);
+      return `| **${p.title}** | ${p.steps.map((s) => `\`${s.command}\` ${MARK[s.mark]}${s.note ? ` (${s.note})` : ''}`).join(' → ')} |`;
+    }),
+  ].join('\n');
+  return withBlock(withBlock(read('README.md'), 'readme-commands', table), 'readme-paths', paths);
+}
+
+/** The commands as the generator reads them (raw frontmatter, no schema defaults), for the mirror test. */
+export const rawCommands = (read) => commands(read);
 
 /** Every generated page, path → content. */
 export function generatedDocs(read) {
   return {
     'docs/process-map.md': processMap(read),
     'docs/commands/README.md': commandIndex(read),
+    'README.md': readme(read),
     ...Object.fromEntries(STABLE_COMMANDS.map((id) => [`docs/commands/${id}.md`, commandPage(read, id)])),
     ...Object.fromEntries(['research', 'perf', 'audit'].map((id) => [`docs/commands/${id}.md`, plannedPage(read, id)])),
   };
