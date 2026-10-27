@@ -105,7 +105,7 @@ locally: the full suite runs in PR CI.
 
 1. `npm login` with an account that has two-factor authentication.
 2. Use a commit whose complete PR CI passed; run `npm ci`, lint, typecheck, build and impacted tests locally.
-3. `node scripts/publish-tag.mjs --provenance=false` (2FA prompt). Extra arguments go to `npm publish`; this
+3. `node scripts/publish-tag.mjs --provenance=false` (2FA prompt). Extra arguments go to the publish command; this
    first, hand-run publish needs `--provenance=false` because `publishConfig.provenance` only works in
    CI (npm fails with EUSAGE outside a supported provider). Provenance comes with the workflow publishes
    after that. The script applies the dist-tag rule below by hand: no stable
@@ -124,19 +124,26 @@ On npmjs.com → package `mandao` → **Settings** → **Trusted publishing** �
 | Workflow filename | `release.yml` (the file name only) |
 | Environment | leave empty |
 
-A new configuration must complete a successful publish within 2 days, or it expires. Then, in the same
-settings, require two-factor authentication and disallow tokens for publishing.
+Allowed actions: **npm dist-tag** only. Leave **npm publish** unchecked, as npm recommends: the workflow can then
+only stage a version (`npm stage publish`), and a maintainer approves it with 2FA. A new configuration must
+complete a publish within 2 days, or it expires. Then, in the same settings, require two-factor authentication and
+disallow tokens for publishing.
 
 ### Every release
 
 1. Add changesets with `npx changeset` as changes land.
 2. Run the **Release** workflow (Actions → Release → Run workflow) on `main`. It checks, builds, runs
-   the smoke test, then either opens the "version packages" PR or, once that PR is merged, publishes
-   with OIDC. A manual run on a tag publishes that tag's package version directly; other refs are skipped.
+   the smoke test, then either opens the "version packages" PR or, once that PR is merged, **stages** the
+   version with OIDC (`npm stage publish`). The workflow cannot open the PR itself (the repository does not let
+   Actions create pull requests): open it by hand from the pushed `changeset-release/main` branch.
+3. Approve the staged version with 2FA: npmjs.com → package → **Staged Packages** → Approve, or
+   `npm stage list mandao` and `npm stage approve <id>`. Then run the **Release** workflow on `main` again: it
+   finds the version published, creates the git tag and moves `latest` while no stable exists. Running it
+   before the approval fails, because the version is already staged. A manual run on a tag publishes that tag's package version directly; other refs are skipped.
    Changesets only versions; the publish step is `scripts/publish-tag.mjs` (`npm run release`, which also runs `changeset git-tag`),
    which always passes an explicit dist-tag (see below).
-3. For the stable release, run `npx changeset pre exit` and merge the resulting version PR.
-4. After every publish, verify the tags with `npm dist-tag ls mandao`.
+4. For the stable release, run `npx changeset pre exit` and merge the resulting version PR.
+5. After every publish, verify the tags with `npm dist-tag ls mandao`.
 
 ### Dist-tag rule
 

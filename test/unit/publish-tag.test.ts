@@ -43,11 +43,11 @@ describe('npm dist-tag decision', () => {
     expect(missingTags(decidePublish('0.2.0-beta.0', ['0.1.0']), '0.2.0-beta.0', {})).toEqual([]);
   });
 
-  test('extra arguments pass through to npm publish after the explicit tag', () => {
+  test('the version is staged for the maintainer to approve; extra arguments follow the explicit tag', () => {
     const plan = decidePublish('0.1.0-beta.0', []);
-    expect(publishArgs(plan)).toEqual(['publish', '--tag', 'beta']);
-    expect(publishArgs(plan, ['--provenance=false'])).toEqual(['publish', '--tag', 'beta', '--provenance=false']);
-    expect(publishArgs(plan, ['--otp=123456'])).toEqual(['publish', '--tag', 'beta', '--otp=123456']);
+    expect(publishArgs(plan)).toEqual(['stage', 'publish', '--tag', 'beta']);
+    expect(publishArgs(plan, ['--provenance=false'])).toEqual(['stage', 'publish', '--tag', 'beta', '--provenance=false']);
+    expect(publishArgs(plan, ['--otp=123456'])).toEqual(['stage', 'publish', '--tag', 'beta', '--otp=123456']);
     for (const bad of [['--tag', 'latest'], ['--tag=latest'], ['--dry-run'], ['--access=restricted']])
       expect(() => publishArgs(plan, bad)).toThrow(/only --provenance=false and --otp=<code>/);
   });

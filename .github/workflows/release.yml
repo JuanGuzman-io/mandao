@@ -22,8 +22,8 @@ jobs:
           node-version: 22 # trusted publishing needs Node 22.14.0 or later
           cache: npm
           registry-url: https://registry.npmjs.org
-      - name: npm with trusted publishing support (11.5.1 or later)
-        run: npm install -g npm@^11.5.1
+      - name: npm with staged publishing support (11.15.0 or later)
+        run: npm install -g npm@^11.15.0
       - run: npm ci
       - run: npm run check
       - run: npm run build
@@ -33,7 +33,8 @@ jobs:
         # v2 reads Changesets v3 state (pre mode keeps consumed changesets in .changeset/pre/); v1 failed on it.
         uses: changesets/action@v2.1.2
         with:
-          # `release` runs scripts/publish-tag.mjs: explicit dist-tags; changesets only versions; the script publishes and runs git-tag.
+          # `release` runs scripts/publish-tag.mjs: it stages the version (the maintainer approves it with 2FA); after the
+          # approval, a rerun runs git-tag and the dist-tags. Changesets only versions.
           publish-script: npm run release
           commit-message: "🔧 chore(release): version packages"
           pr-title: "🔧 chore(release): version packages"
