@@ -18,7 +18,7 @@ single one; `spec.md` never holds them. At lite depth `/mandao-specify` runs thi
 
 Version 1 specs (`schema_version: 1` in `story.md`) are read as they are: lite keeps its tasks inside
 `spec.md`. No new spec uses that format, and this command never writes tasks inside `spec.md`. On an
-open version 1 spec it warns and does not convert it; the migration goes through the backlog spec.
+open version 1 spec it warns and does not convert it; migrating it is a separate change, never part of this command.
 
 1. **Gate.** Run `node .mandao/bin/mandao.mjs run where <spec> --harness codex --first "/mandao-tasks <spec>"`: go on when `ready` is true (on the spec branch, in its worktree or in place, ADR 0059). Otherwise, when
    the `where` message says another worktree holds the branch:

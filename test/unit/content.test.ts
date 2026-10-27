@@ -323,7 +323,7 @@ describe('core content', () => {
       expect(tasks).toMatch(/version 1[^\n]*(read|as they are)/i);
       expect(tasks).toMatch(/never writes? (the )?tasks (inside|in) `spec\.md`/i);
       expect(tasks).toMatch(/version 1[\s\S]{0,300}warns?[\s\S]{0,120}(does not|never) convert/i);
-      expect(tasks).toMatch(/migration[^\n]*backlog/i);
+      expect(tasks).toMatch(/migrating it is a separate change/i);
     });
 
     test('AC-1: a story rendered from the template starts at layout version 2', () => {

@@ -16,7 +16,7 @@ Every rule carries one of three status tags:
 
 Sections without an explicit tag are **DECIDED**. A decision is not a claim of implementation:
 **implemented** names behavior present in the current canonical commands or code; **pending** names an
-accepted change still scheduled in [the backlog](docs/backlog.md). ADRs retain the history; this document
+accepted change still scheduled in the maintainer's backlog (kept outside the repository). ADRs retain the history; this document
 states the current decision. The [reconciliation audit](docs/audits/2026-10-design-reconciliation.md)
 records the discrepancies corrected in version 0.11.
 
@@ -1133,7 +1133,7 @@ Raised in the gap sweep. **In this section, untagged items are OPEN**, overridin
 - **Data and migrations:** expand/contract strategy, backfills, data rollback.
 - **Accessibility and i18n:** a11y exists only as a tag; i18n not covered.
 - **Testing:** test data and fixtures, flaky test policy, contract testing tooling.
-- **DECIDED (ADR 0042):** docs/backlog.md is the single execution backlog; unresolved closure items require an owner in Phase 5.
+- **DECIDED (ADR 0042):** one execution backlog, kept by the maintainer outside the repository; unresolved closure items require an owner in Phase 5.
 
 ### 23.4 Harness security
 - See §20.
@@ -1169,8 +1169,8 @@ resume. **Planned:** research, perf, audit. Tracker payloads exist; live Jira pu
 
 ### 24.2 Accepted improvement program
 
-**DECIDED (ADR 0042) — pending by phase.** [docs/backlog.md](docs/backlog.md) is the single itemized backlog;
-it records acceptance criteria, dependencies, status and the phase responsible for each item. MDO-0012,
+**DECIDED (ADR 0042) — pending by phase.** The maintainer's backlog (outside the repository) is the single itemized
+list; it records acceptance criteria, dependencies, status and the phase responsible for each item. MDO-0012,
 0013 and 0014 are historical references fulfilled through these phases, without opening Mandao specs.
 
 | Phase | Scope |
