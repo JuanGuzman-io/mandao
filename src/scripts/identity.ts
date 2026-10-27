@@ -6,12 +6,15 @@ import type { HarnessId } from '../schemas/index.js';
 /** Who did a step, as the script established it, never as the model described itself (ADR 0021). */
 export interface Identity {
   harness: string;
-  /** `mandao-reviewer`, `mandao-implementer-standard`, `self` (the Leader's own context), or `exec`. */
+  /**
+   * `mandao-reviewer`, `mandao-implementer-standard`, `self` (the Leader's own context), `exec`, or `none`: an
+   * implementer for a task closed by evidence alone, with no code written (phase 20, MDO-0001 T11 and T12).
+   */
   agent: string;
   /** Model the harness was told to run; `self` steps cannot be verified and say so. */
   model: string;
   effort?: string;
-  source: 'agent-file' | 'process' | 'self';
+  source: 'agent-file' | 'process' | 'self' | 'none';
 }
 
 /** Generated agent definitions per harness: the file the harness loads when the Leader delegates. */
@@ -40,6 +43,7 @@ export function agentIdentity(root: string, spec: string, defaultHarness: string
   const [rawAgent = '', harness = defaultHarness] = spec.split('@');
   const agent = rawAgent.replace(/_/g, '-');
   if (agent === 'self') return { harness, agent, model: 'self', source: 'self' };
+  if (agent === 'none') return { harness, agent, model: 'no code (evidence only)', source: 'none' };
   const path = AGENT_FILES[harness as HarnessId]?.(agent);
   if (!path) throw new Error(`No agent files for harness "${harness}"`);
   if (!existsSync(join(root, path))) throw new Error(`${path} does not exist: run \`mandao sync\` or check the agent name`);
@@ -91,10 +95,12 @@ function claimMatches(claimed: string[], model: string): boolean {
 export function identityNotes(role: 'implementer' | 'reviewer', id: Identity | undefined, claimed?: string): string[] {
   if (!id) return [];
   const notes: string[] = [];
+  if (id.source === 'none' && role === 'reviewer') throw new Error('a review needs a reviewer: `none` is only for --implementer');
+  if (id.source === 'none') notes.push('closed on evidence alone: no code written');
   if (id.source === 'self')
     notes.push(role === 'reviewer' ? 'reduced independence (reviewed in the Leader context)' : 'implemented in the Leader context');
   const models = claimed ? claimedModels(claimed) : [];
-  const comparable = id.source !== 'self' && id.model !== '(harness default)';
+  const comparable = id.source !== 'self' && id.source !== 'none' && id.model !== '(harness default)';
   if (comparable && models.length && !claimMatches(models, id.model))
     notes.push(`identity mismatch: ${role} claimed ${models.join(', ')}, invoked ${id.model}`);
   return notes;

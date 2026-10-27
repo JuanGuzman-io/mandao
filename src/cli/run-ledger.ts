@@ -102,7 +102,9 @@ function checkpointRow(root: string, spec: SpecFolder, o: CheckpointOptions, now
   const notes = [
     ...identityNotes('implementer', implementer, o.claimedImplementer),
     ...identityNotes('reviewer', reviewer, o.claimedReviewer),
-    ...(implementer && reviewer && implementer.harness !== reviewer.harness ? [NOTE_FLAGS.providerIndependence] : []),
+    ...(implementer?.source !== 'none' && implementer && reviewer && implementer.harness !== reviewer.harness
+      ? [NOTE_FLAGS.providerIndependence]
+      : []),
     ...redNotes(spec, o),
     ...(o.reason ? [`${o.verdict === 'FAIL' ? 'FAIL' : 'reason'}: ${o.reason}`] : []),
     ...(o.testDeletionReason ? [`test deletion: ${o.testDeletionReason}`] : []),
@@ -226,7 +228,10 @@ export function withCheckpointOptions(cmd: Command): Command {
     .option('--question <text...>', 'open questions')
     .option('--verdict <verdict>', `also append an execution row: ${VERDICTS.join(' | ')}`)
     .option('--tier <tier>', 'tier for the execution row')
-    .option('--implementer <agent>', 'agent that implemented: mandao-implementer-<tier>[@<harness>] or self')
+    .option(
+      '--implementer <agent>',
+      'agent that implemented: mandao-implementer-<tier>[@<harness>], self, or none (closed on evidence alone)',
+    )
     .option('--reviewer <agent>', 'agent that reviewed: mandao-reviewer[@<harness>] or self')
     .option('--claimed-implementer <model>', 'model the implementer said it was (a mismatch is flagged)')
     .option('--claimed-reviewer <model>', 'model the reviewer said it was (a mismatch is flagged)')

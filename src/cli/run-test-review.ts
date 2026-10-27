@@ -36,7 +36,7 @@ function independentReviewer(root: string, reviewer: string, harness: string) {
   if (!['mandao-reviewer', 'mandao-reviewer-alt'].includes(agent))
     throw new Error('--reviewer must be mandao-reviewer or mandao-reviewer-alt');
   const identity = agentIdentity(root, reviewer, harness);
-  if (identity.source === 'self') throw new Error('test review must be independent of the Leader context');
+  if (identity.source === 'self' || identity.source === 'none') throw new Error('test review must be independent of the Leader context');
   return identity;
 }
 
