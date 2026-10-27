@@ -107,8 +107,9 @@ describe('front-page docs match what exists (phase 19)', () => {
   test('the docs generator, from the raw frontmatter, writes each usage and argument as the CLI schema does', () => {
     const raw = generator.rawCommands((p: string) => readFileSync(p, 'utf8'));
     for (const c of commands) {
+      if (PLANNED.has(c.meta.id)) continue;
       const meta = raw[c.meta.id]?.meta;
-      if (!meta) continue;
+      expect(meta, `the generator does not read ${c.meta.id}`).toBeDefined();
       expect(generator.usageLine(c.meta.id, meta), c.meta.id).toBe(usageLine(c.meta.id, c.meta));
       (meta.arguments ?? []).forEach((a: object, i: number) => {
         expect(generator.argumentSyntax(a), `${c.meta.id} argument ${i}`).toBe(argumentSyntax(c.meta.arguments[i]!));

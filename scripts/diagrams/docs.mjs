@@ -167,11 +167,11 @@ export function commandIndex(read) {
   ].join('\n')}\n`;
 }
 
-/** Replaces the text between `<!-- mandao:<name>:begin … -->` and `<!-- mandao:<name>:end -->`; a file without them is kept. */
-function withBlock(text, name, body) {
+/** Replaces the text between `<!-- mandao:<name>:begin … -->` and `<!-- mandao:<name>:end -->` in `file`; throws when they are missing. */
+function withBlock(text, name, body, file = 'README.md') {
   const re = new RegExp(`(<!-- mandao:${name}:begin[^\\n]*-->\\n)[\\s\\S]*?(<!-- mandao:${name}:end -->)`);
   // A deleted marker would freeze the block silently; diagrams:check must see it (review F7).
-  if (!re.test(text)) throw new Error(`README.md lost its mandao:${name} markers`);
+  if (!re.test(text)) throw new Error(`${file} lost its mandao:${name} markers`);
   return text.replace(re, (_m, begin, end) => `${begin}${body}\n${end}`);
 }
 
