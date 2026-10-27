@@ -55,8 +55,8 @@ scope, product behavior, security or irreversible actions.
 | [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | complete; PR #29 merged (`9aec6ca`) |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | complete; PR #30 merged (`38c1a05`) |
-| [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | in progress on `perf/phase-19` |
-| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
+| [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | complete; PR #31 merged (`86c1825`) |
+| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | in progress on `perf/phase-20` (20a: skills catalog, profile, Copilot; 20b: the five fixes) |
 | [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
 
 ## Phase 0 — Documentation and backlog
@@ -1165,6 +1165,46 @@ Done when the derived-docs check fails on an undocumented command or flag and th
 every command's arguments.
 
 ## Phase 20 — Minor fixes
+
+**Plan approved (PE, 2026-10-27).** Two PRs: 20a rebuilds the skills catalog from the research, rewrites
+the profile question and fixes Copilot's flags; 20b takes the five fixes below. Decisions:
+1. Catalog entries carry `trust` (`official`, `vendor`, `community`), their audit results with the date checked,
+   and where the license comes from (`LICENSE` file or the skill's frontmatter); `skills list` shows all three.
+   Every pin is re-confirmed at its repository before it is written.
+2. `data` leaves the `init` question; the config and `--profile` still accept it.
+3. Audits are stored with their date and re-checked by hand on every pin bump (maintainer checklist); `doctor`
+   does not query skills.sh (undocumented API, needs the network).
+4. The phase 15 end-to-end test of the MDO-0001 sequence is dropped: the phase 16 flow test covers intake to
+   implement.
+
+**The constitution offers stack skills that cannot be installed (PE, 2026-10-26, real-state trial).** On a
+Next.js project `run fingerprint` proposed `react-best-practices`, and `/mandao-constitution` (Codex) asked
+"install the version pinned by Mandao?"; the PE said yes, and only then the agent found the catalog entry is
+`UNVERIFIED` (no source, version, author or license), so there was nothing to install. Nine catalog skills are in
+that state (`nestjs-best-practices`, `react-best-practices`, `angular-developer`, `flutter-bloc`,
+`flutter-riverpod`, `ai-agent-development`, `systematic-debugging`, `error-handling-patterns`,
+`api-design-principles`), and every technology mapping (`nestjs`, `react`, `angular`, `flutter`, `langgraph`)
+points at one. Fix: `proposeSkills` marks an entry without an installable source as `not installable` (or leaves it
+out), the constitution never offers to install it and proposes the project skill built from `standards.md`
+instead (ADR 0012), and `skills add` refuses it before any question; then verify each entry at its real source
+or remove it from the catalog. Known real source for React and Next.js: `vercel-labs/agent-skills` (MIT,
+Vercel; `skills/react-best-practices`, frontmatter name `vercel-react-best-practices`; `npx skills add
+vercel-labs/agent-skills`); the entry needs its pinned commit, author and license verified there before it
+loses `UNVERIFIED`. The full research for the `app` profile (frontend, backend and data, mobile, cross-cutting, `ai` evals,
+security; no WARN, trusted repos) is in [docs/audits/2026-10-skills-for-app.md](audits/2026-10-skills-for-app.md),
+with the catalog changes it implies and four decisions for the PE. The same repository has `composition-patterns`, `react-view-transitions` (Next.js
+integration) and `web-design-guidelines`, candidates for the `react` technology once verified.
+
+**The profile question at `init` is not understood (PE, 2026-10-26).** `init` asks "Default profile for the
+workspace (projects can differ)" with the bare options `app`, `ai`, `data`: no word on what a profile is, what
+each one changes, or why one is preselected (`ai` was, because the project's dependencies include AI libraries:
+`guessProfile` in `src/workspace/detect.ts`). `data` is offered although it adds nothing yet (MANDAO-DESIGN §9:
+OPEN). Fix: the question says what it decides ("What kind of project is this? It changes the templates, not the
+commands"), each option carries a hint (`app`: web, API, mobile, acceptance as Given/When/Then; `ai`: LLM/RAG,
+acceptance as eval thresholds, a model and prompt registry; it keeps everything `app` does, so an app that offers AI
+features picks `ai`; in a monorepo, each project its own), the preselection names its evidence ("detected:
+openai in pyproject.toml"), and `data` is hidden or marked "not specialized yet" until it has templates. The
+README and `docs/cli.md` `--profile` lines say the same.
 
 **Copilot asks a value for every flag (phase 19 review F12).** Copilot prompt files turn each declared argument
 into a `${input:…}` prompt, so a switch such as `--hotfix` or `--product` becomes a free-text question. Fix: only
