@@ -30,14 +30,15 @@ jobs:
       - run: npm run smoke
       - name: Version or publish
         if: github.ref == 'refs/heads/main'
-        uses: changesets/action@v1
+        # v2 reads Changesets v3 state (pre mode keeps consumed changesets in .changeset/pre/); v1 failed on it.
+        uses: changesets/action@v2.1.2
         with:
           # `release` runs scripts/publish-tag.mjs: explicit dist-tags; changesets only versions; the script publishes and runs git-tag.
-          publish: npm run release
-          commit: "🔧 chore(release): version packages"
-          title: "🔧 chore(release): version packages"
+          publish-script: npm run release
+          commit-message: "🔧 chore(release): version packages"
+          pr-title: "🔧 chore(release): version packages"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_CONFIG_PROVENANCE: "true"
       - name: Publish tagged version
         if: startsWith(github.ref, 'refs/tags/')
