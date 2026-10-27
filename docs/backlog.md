@@ -56,7 +56,7 @@ scope, product behavior, security or irreversible actions.
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | complete; PR #29 merged (`9aec6ca`) |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | complete; PR #30 merged (`38c1a05`) |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | complete; PR #31 merged (`86c1825`) |
-| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | 20a complete; PR #32 merged (`f504d8e`); 20b in progress on `perf/phase-20b` |
+| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | complete; 20a PR #32 merged (`f504d8e`), 20b PR #33 merged (`e4ac98d`) |
 | [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
 
 ## Phase 0 — Documentation and backlog
@@ -1180,6 +1180,7 @@ the profile question and fixes Copilot's flags; 20b takes the five fixes below. 
 **No changeset since the beta (maintainer, 2026-10-27).** Phases 15–20 changed user-visible behavior, but
 `.changeset/` holds no entry after `0.1.0-beta.0`, so the next `changeset version` would produce empty release
 notes. Before the next beta: one changeset per phase (or one summarizing 15–20), decided by the PE.
+**Done (PE, 2026-10-27):** one brief changeset summarizing phases 15–20 (`.changeset/post-beta-trial-fixes.md`).
 
 **The constitution offers stack skills that cannot be installed (PE, 2026-10-26, real-state trial).** On a
 Next.js project `run fingerprint` proposed `react-best-practices`, and `/mandao-constitution` (Codex) asked
