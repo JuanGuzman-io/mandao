@@ -54,8 +54,8 @@ scope, product behavior, security or irreversible actions.
 | [15 — Blocking bugs and false evidence](#phase-15--blocking-bugs-and-false-evidence) | beta trial | — | complete; PR #27 merged (`e3bc296`) |
 | [16 — Continuous flow without manual git](#phase-16--continuous-flow-without-manual-git) | beta trial | phase 15 | complete; PR #28 merged (`b4a7d7a`) |
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | complete; PR #29 merged (`9aec6ca`) |
-| [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | in progress on `perf/phase-18` |
-| [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | agreed |
+| [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | complete; PR #30 merged (`38c1a05`) |
+| [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | in progress on `perf/phase-19` |
 | [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | agreed; any free slot |
 | [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
 
@@ -1111,6 +1111,18 @@ Done when a stack choice cannot be approved without a recorded run on the projec
 `UNVERIFIED` mark, and a constitution change from inside a spec makes `next` name the documents to update.
 
 ## Phase 19 — Command documentation
+
+**Plan approved (PE, 2026-10-26), widened to the README.** The README is the most visible page and had drifted
+from the product: it said every spec works in its own worktree and that delivery is a terminal step (both
+changed in phase 16), listed an epic path (`specify` proposing stories) that does not exist, kept the npm badge
+commented out after the beta was published, showed no command's arguments, and mixed implementation detail
+(TDD mechanics, review format, `GIT_SSH_COMMAND`) into the front page. Decisions:
+1. The README's agent command table and its paths are generated from `core/commands` and the process map
+   (`npm run diagrams`), so they cannot drift; a test checks every command, flag and link the front-page docs show.
+2. The quality detail moves to `docs/quality.md`; the README keeps one line and the link.
+3. The README stays in English. The banner replaces the logo.
+4. Terminal commands are documented too: the README names only the six a person types; `docs/cli.md` gets a
+   section with examples for each user command, above the generated index of every command and flag.
 
 **Agreed (PE, 2026-10-26); after phase 16, which fixes the syntax `next` and the hand-overs use.** Phase
 16 takes the derived `docs/cli.md` and its check, and the terminal commands in the installed guide; this
