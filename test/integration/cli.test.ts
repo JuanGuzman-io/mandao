@@ -51,20 +51,20 @@ test('prints the add hint and exits 0 when nothing is pinned', async () => {
   }
 });
 
-test('prints a JSON array of id, version, vetted and source', async () => {
+test('prints a JSON array of id, version, vetted, source, license and trust', async () => {
   const root = workspace();
   const lockPath = join(root, LOCK_FILE);
   const lock = readLock(lockPath)!;
   lock.skills = [
     { id: 'zeta', version: '2.0.0', source: 'owner/zeta', author: 'a', license: 'MIT', vetted: false },
-    { id: 'alpha', version: '1.0.0', source: 'owner/alpha', author: 'a', license: 'MIT', vetted: true },
+    { id: 'alpha', version: '1.0.0', source: 'owner/alpha', author: 'a', license: 'MIT (frontmatter)', trust: 'vendor', vetted: true },
   ];
   writeYaml(lockPath, lock, LOCK_HEADER);
   await run(root, 'skills', 'list', '--json');
   expect(console.log).toHaveBeenCalledTimes(1);
   expect(JSON.parse(vi.mocked(console.log).mock.calls[0]![0])).toEqual([
-    { id: 'alpha', version: '1.0.0', vetted: true, source: 'owner/alpha' },
-    { id: 'zeta', version: '2.0.0', vetted: false, source: 'owner/zeta' },
+    { id: 'alpha', version: '1.0.0', vetted: true, source: 'owner/alpha', license: 'MIT (frontmatter)', trust: 'vendor' },
+    { id: 'zeta', version: '2.0.0', vetted: false, source: 'owner/zeta', license: 'MIT' },
   ]);
 });
 
@@ -95,7 +95,7 @@ test('--unvetted prints only unvetted skills, in text and JSON', async () => {
   vi.mocked(console.log).mockClear();
   await run(root, 'skills', 'list', '--unvetted', '--json');
   expect(JSON.parse(vi.mocked(console.log).mock.calls[0]![0])).toEqual([
-    { id: 'zeta', version: '2.0.0', vetted: false, source: 'owner/zeta' },
+    { id: 'zeta', version: '2.0.0', vetted: false, source: 'owner/zeta', license: 'MIT' },
   ]);
 });
 

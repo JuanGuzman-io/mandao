@@ -54,7 +54,10 @@ describe('commandSkills (FR-1, D1)', () => {
 describe('catalog and lock schemas (D1, D3)', () => {
   test('AC-3: every git source has a 40-hex commit; one without commit is rejected', () => {
     const gits = Object.entries(catalog.skills).filter(([, s]) => s.source.type === 'git');
-    expect(gits.map(([id]) => id).sort()).toEqual(['ai-design-skills', 'brainstorming', 'product-manager-toolkit', 'software-architect']);
+    // Phase 20 added the stack, cross-cutting, ai and security skills as git sources too.
+    expect(gits.map(([id]) => id)).toEqual(
+      expect.arrayContaining(['ai-design-skills', 'brainstorming', 'product-manager-toolkit', 'software-architect', 'next-dev-loop']),
+    );
     for (const [id, s] of gits) expect((s.source as { commit?: string }).commit, id).toMatch(/^[0-9a-f]{40}$/);
     const bad = structuredClone(catalog) as unknown as { skills: Record<string, { source: Record<string, unknown> }> };
     delete bad.skills['software-architect']!.source.commit;

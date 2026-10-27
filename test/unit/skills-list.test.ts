@@ -8,13 +8,16 @@ beforeAll(() => {
 });
 
 describe('formatPinnedSkills', () => {
-  test('prints each pinned skill with its badge, id@version and source, sorted by id', () => {
+  test('prints each pinned skill with its badge, id@version, source, license and trust, sorted by id', () => {
     const skills: Lock['skills'] = [
       { id: 'zeta', version: '2.0.0', source: 'owner/zeta', author: 'a', license: 'MIT', vetted: false },
-      { id: 'alpha', version: '1.0.0', source: 'owner/alpha', author: 'a', license: 'MIT', vetted: true },
+      { id: 'alpha', version: '1.0.0', source: 'owner/alpha', author: 'a', license: 'MIT (frontmatter)', trust: 'vendor', vetted: true },
     ];
 
-    expect(formatPinnedSkills(skills)).toEqual(['  vetted   alpha@1.0.0 owner/alpha', '  unvetted zeta@2.0.0 owner/zeta']);
+    expect(formatPinnedSkills(skills)).toEqual([
+      '  vetted   alpha@1.0.0 owner/alpha (MIT (frontmatter), vendor)',
+      '  unvetted zeta@2.0.0 owner/zeta (MIT)',
+    ]);
   });
 });
 

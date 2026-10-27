@@ -26,7 +26,7 @@ export function registerExtensions(program: Command, ctx: CliContext) {
   skills
     .command('list')
     .description('List pinned skills')
-    .option('--json', 'print a JSON array of id, version, vetted and source')
+    .option('--json', 'print a JSON array of id, version, vetted, source, license and trust')
     .option('--vetted', 'list only vetted skills')
     .option('--unvetted', 'list only unvetted skills')
     .action((opts: { json?: boolean; vetted?: boolean; unvetted?: boolean }) => skillsList(ctx, opts));

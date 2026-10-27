@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import type { Catalog, CatalogSkill, HarnessId, Lock } from '../schemas/index.js';
+import { type Catalog, type CatalogSkill, type HarnessId, type Lock, licenseLabel } from '../schemas/index.js';
 import { coreDir } from '../util/package-root.js';
 import { copyGitSkill } from './git-copy.js';
 
@@ -214,7 +214,8 @@ export function pinSkills(lock: Lock, results: SkillResult[], catalog: Catalog):
       version: s.version,
       source: sourceLabel(s),
       author: s.author,
-      license: s.license,
+      license: licenseLabel(s),
+      ...(s.trust ? { trust: s.trust } : {}),
       vetted: s.vetted,
       ...(commit ? { commit } : {}),
       ...(r.scripts ? { scripts: true } : {}),
