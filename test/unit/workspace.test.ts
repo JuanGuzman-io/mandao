@@ -24,8 +24,8 @@ describe('detectWorkspace', () => {
     expect(ws.mode).toBe('monorepo');
     expect(ws.reason).toBe('package.json workspaces');
     expect(ws.projects).toEqual([
-      { name: 'web', path: 'apps/web', profile: 'app' },
-      { name: 'api', path: 'packages/api', profile: 'ai' },
+      { name: 'web', path: 'apps/web', profile: 'app', evidence: 'package.json' },
+      { name: 'api', path: 'packages/api', profile: 'ai', evidence: '@anthropic-ai/sdk in package.json' },
     ]);
   });
 

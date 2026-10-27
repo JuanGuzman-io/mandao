@@ -14,7 +14,6 @@ import {
   type ModelMode,
   type ModelProfile,
   type Models,
-  PROFILES,
   type Profile,
   type Recommendations,
   type Role,
@@ -28,6 +27,7 @@ import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
 import { chooseRoles } from './init-roles.js';
 import { offerSkills } from './init-skills.js';
+import { askProjectProfile, chooseDefaultProfile, startingProfile } from './init-work-profile.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
 import { requireTerminal } from './terminal.js';
 
@@ -94,23 +94,8 @@ async function chooseHarnesses(opts: InitOptions): Promise<HarnessId[]> {
   return picked as HarnessId[];
 }
 
-async function chooseDefaultProfile(ws: DetectedWorkspace, opts: InitOptions): Promise<Profile> {
-  if (opts.defaultProfile) return opts.defaultProfile;
-  const detected = ws.projects.map((pr) => pr.profile).filter((x): x is Profile => Boolean(x));
-  const common = PROFILES.map((v) => [v, detected.filter((d) => d === v).length] as const).sort((a, b) => b[1] - a[1])[0];
-  const initial = common && common[1] > 0 ? common[0] : 'app';
-  if (opts.yes) return initial;
-  const picked = await p.select({
-    message: 'Default profile for the workspace (projects can differ)',
-    options: PROFILES.map((v) => ({ value: v, label: v })),
-    initialValue: initial,
-  });
-  bail(picked);
-  return picked as Profile;
-}
-
 async function confirmProjects(ws: DetectedWorkspace, defaultProfile: Profile, opts: InitOptions): Promise<DetectedProject[]> {
-  const projects = ws.projects.map((pr) => ({ ...pr, profile: opts.profile ?? pr.profile ?? defaultProfile }));
+  const projects = ws.projects.map((pr) => ({ ...pr, profile: startingProfile(pr, opts.profile, defaultProfile) }));
   if (opts.yes) return projects;
   p.note(
     projects.map((pr) => `${pr.name.padEnd(20)} ${pr.path.padEnd(28)} ${pr.profile}`).join('\n'),
@@ -121,13 +106,7 @@ async function confirmProjects(ws: DetectedWorkspace, defaultProfile: Profile, o
   if (ok) return projects;
   const out: DetectedProject[] = [];
   for (const pr of projects) {
-    const profile = await p.select({
-      message: `Profile for ${pr.name} (${pr.path})`,
-      options: PROFILES.map((v) => ({ value: v, label: v })),
-      initialValue: pr.profile,
-    });
-    bail(profile);
-    out.push({ ...pr, profile: profile as Profile });
+    out.push({ ...pr, profile: await askProjectProfile(pr) });
   }
   p.log.info('Edit .mandao/config.yml later to add, remove or rename projects.');
   return out;

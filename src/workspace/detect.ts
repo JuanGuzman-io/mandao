@@ -8,6 +8,8 @@ export interface DetectedProject {
   path: string;
   /** Undefined when nothing in the project points to a profile; `init` then applies the workspace default. */
   profile?: Profile;
+  /** What decided `profile`, shown by `init` (e.g. `openai in pyproject.toml`). */
+  evidence?: string;
   /** Polyrepo: the child repository's origin URL, or `local` when it has no remote. */
   repo?: string;
 }
@@ -117,42 +119,58 @@ export function toProjectName(raw: string): string {
 }
 
 /** Dependency names declared in the manifests of `dir`, lower-cased. Best effort. */
-export function dependencyNames(dir: string): string[] {
-  const names: string[] = [];
+function packageDependencies(dir: string): string[] {
   const pkg = readJson(join(dir, 'package.json'));
-  if (pkg) {
-    for (const key of ['dependencies', 'devDependencies', 'peerDependencies']) {
-      const deps = pkg[key];
-      if (deps && typeof deps === 'object') names.push(...Object.keys(deps));
-    }
-  }
-  const pyproject = join(dir, 'pyproject.toml');
-  if (existsSync(pyproject)) {
-    // PEP 621 / Poetry: quoted requirement strings such as "fastapi>=0.1" or "pkg[extra]".
-    for (const m of readFileSync(pyproject, 'utf8').matchAll(/"([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?\s*(?:[<>=~!;][^"]*)?"/g)) {
-      if (m[1]) names.push(m[1]);
-    }
-    // Poetry tables: `name = "^1.0"`.
-    for (const m of readFileSync(pyproject, 'utf8').matchAll(/^([A-Za-z0-9_.-]+)\s*=\s*["{]/gm)) {
-      if (m[1]) names.push(m[1]);
-    }
-  }
-  const requirements = join(dir, 'requirements.txt');
-  if (existsSync(requirements)) {
-    for (const m of readFileSync(requirements, 'utf8').matchAll(/^\s*([A-Za-z0-9_.-]+)/gm)) {
-      if (m[1]) names.push(m[1]);
-    }
-  }
-  return names.map((n) => n.toLowerCase());
+  if (!pkg) return [];
+  return ['dependencies', 'devDependencies', 'peerDependencies'].flatMap((key) => {
+    const deps = pkg[key];
+    return deps && typeof deps === 'object' ? Object.keys(deps) : [];
+  });
 }
 
-export function guessProfile(dir: string): Profile | undefined {
-  if (existsSync(join(dir, 'dbt_project.yml'))) return 'data';
-  const deps = dependencyNames(dir);
-  const has = (markers: string[]) => deps.some((d) => markers.some((m) => (m.endsWith('/') ? d.startsWith(m) : d === m)));
-  if (has(AI_MARKERS)) return 'ai';
-  if (has(DATA_MARKERS)) return 'data';
-  return MANIFESTS.some((m) => existsSync(join(dir, m))) ? 'app' : undefined;
+function pyprojectDependencies(dir: string): string[] {
+  const file = join(dir, 'pyproject.toml');
+  if (!existsSync(file)) return [];
+  const text = readFileSync(file, 'utf8');
+  return [
+    // PEP 621 / Poetry: quoted requirement strings such as "fastapi>=0.1" or "pkg[extra]".
+    ...[...text.matchAll(/"([A-Za-z0-9_.-]+)(?:\[[^\]]*\])?\s*(?:[<>=~!;][^"]*)?"/g)].map((m) => m[1]!),
+    // Poetry tables: `name = "^1.0"`.
+    ...[...text.matchAll(/^([A-Za-z0-9_.-]+)\s*=\s*["{]/gm)].map((m) => m[1]!),
+  ];
+}
+
+function requirementsDependencies(dir: string): string[] {
+  const file = join(dir, 'requirements.txt');
+  if (!existsSync(file)) return [];
+  return [...readFileSync(file, 'utf8').matchAll(/^\s*([A-Za-z0-9_.-]+)/gm)].map((m) => m[1]!);
+}
+
+/** Declared dependency names with the manifest that declares each one (`package.json`, `pyproject.toml`, `requirements.txt`). */
+function dependencySources(dir: string): [name: string, file: string][] {
+  const sources: [string, string[]][] = [
+    ['package.json', packageDependencies(dir)],
+    ['pyproject.toml', pyprojectDependencies(dir)],
+    ['requirements.txt', requirementsDependencies(dir)],
+  ];
+  return sources.flatMap(([file, names]) => names.map((n): [string, string] => [n.toLowerCase(), file]));
+}
+
+export function dependencyNames(dir: string): string[] {
+  return dependencySources(dir).map(([n]) => n);
+}
+
+/** The profile the project points to and why (`openai in pyproject.toml`), or undefined when nothing does. */
+export function profileEvidence(dir: string): { profile: Profile; evidence: string } | undefined {
+  if (existsSync(join(dir, 'dbt_project.yml'))) return { profile: 'data', evidence: 'dbt_project.yml' };
+  const deps = dependencySources(dir);
+  const hit = (markers: string[]) => deps.find(([d]) => markers.some((m) => (m.endsWith('/') ? d.startsWith(m) : d === m)));
+  const ai = hit(AI_MARKERS);
+  if (ai) return { profile: 'ai', evidence: `${ai[0]} in ${ai[1]}` };
+  const data = hit(DATA_MARKERS);
+  if (data) return { profile: 'data', evidence: `${data[0]} in ${data[1]}` };
+  const manifest = MANIFESTS.find((m) => existsSync(join(dir, m)));
+  return manifest ? { profile: 'app', evidence: manifest } : undefined;
 }
 
 function rootName(root: string): string {
@@ -218,8 +236,8 @@ function toProjects(root: string, paths: string[], repos = false): DetectedProje
     // Disambiguate `apps/web` and `packages/web`.
     if (used.has(name)) name = toProjectName(path);
     used.add(name);
-    const profile = guessProfile(join(root, path));
-    return { name, path, ...(profile ? { profile } : {}), ...(repos ? { repo: originUrl(join(root, path)) } : {}) };
+    const guess = profileEvidence(join(root, path));
+    return { name, path, ...(guess ?? {}), ...(repos ? { repo: originUrl(join(root, path)) } : {}) };
   });
 }
 
@@ -250,11 +268,11 @@ export function detectWorkspace(root: string): DetectedWorkspace {
     };
   }
 
-  const rootProfile = guessProfile(root);
+  const rootProfile = profileEvidence(root);
   return {
     mode: 'single',
     rootIsRepo,
     reason: rootIsRepo ? 'single git repository' : 'not a git repository',
-    projects: [{ name: rootName(root), path: '.', ...(rootProfile ? { profile: rootProfile } : {}) }],
+    projects: [{ name: rootName(root), path: '.', ...(rootProfile ?? {}) }],
   };
 }
