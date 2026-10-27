@@ -21,6 +21,49 @@ export function parseReviewFindings(review: string) {
   }
 }
 
+/** One Reviewer answer recorded for a task attempt. */
+export interface TaskReview {
+  task: string;
+  attempt: number;
+  text: string;
+}
+
+export interface OpenFinding {
+  task: string;
+  attempt: number;
+  id: string;
+  severity: string;
+  lens: string;
+  title: string;
+  file: string;
+  line: number;
+}
+
+/**
+ * Pure: every finding still open in each task's last review, whatever its severity (phase 20: MDO-0002's low ones
+ * lived only in the review files and the summary said none). A later attempt's review replaces an earlier one.
+ */
+export function openFindings(reviews: TaskReview[]): OpenFinding[] {
+  const last = new Map<string, TaskReview>();
+  for (const r of reviews) if ((last.get(r.task)?.attempt ?? 0) <= r.attempt) last.set(r.task, r);
+  return [...last.values()].flatMap((r) => {
+    const parsed = parseReviewFindings(r.text);
+    if (!parsed.success) return [];
+    return parsed.data.findings
+      .filter((f) => f.status === 'open')
+      .map((f) => ({
+        task: r.task,
+        attempt: r.attempt,
+        id: f.id,
+        severity: f.severity,
+        lens: f.lens,
+        title: f.title,
+        file: f.file,
+        line: f.line,
+      }));
+  });
+}
+
 /** Open high or critical security findings cannot accompany a PASS. */
 export function securityBlockers(review: string): string[] {
   const parsed = parseReviewFindings(review);

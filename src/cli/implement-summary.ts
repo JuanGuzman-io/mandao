@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import type { SpecFolder } from '../scripts/spec.js';
-import { logPath } from '../scripts/spec-log.js';
-import { type ExecutionRow, NOTE_FLAGS, securityMentions } from '../spec/index.js';
+import { logPath, taskReviews } from '../scripts/spec-log.js';
+import { type ExecutionRow, NOTE_FLAGS, openFindings, securityMentions } from '../spec/index.js';
 
 /** What `/mandao-implement` reports at the end, built from the log and git instead of the Leader's memory. */
 export function implementSummary(spec: SpecFolder, committed: Set<string>, pending: string[]) {
@@ -36,6 +36,8 @@ export function implementSummary(spec: SpecFolder, committed: Set<string>, pendi
     pendingCommits: pending,
     deferredToCi: spec.progress?.deferred_to_ci ?? [],
     advisories: countAdvisories(readLog(spec), spec.execution),
+    /** Every finding still open in each task's last review, low ones included (phase 20). */
+    openFindings: openFindings(taskReviews(spec.dir)),
     securityMentions: securityMentions(spec.execution),
   };
 }
