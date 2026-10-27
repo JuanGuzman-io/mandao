@@ -92,6 +92,8 @@ test("a role name that would break the templates' YAML frontmatter is refused (r
   const { configSchema } = await import('../../src/schemas/index.js');
   const base = { schema_version: 1, workspace: 'single', projects: [{ name: 'p', path: '.' }], harnesses: ['claude'] };
   expect(configSchema.parse({ ...base, roles: { po: 'Product Engineer (PE)' } }).roles.po).toBe('Product Engineer (PE)');
-  for (const bad of ['PE: Juan', '#lead', '*x', 'a\nb'])
+  expect(configSchema.parse({ ...base, roles: { po: 'Jose\u0301 2' } }).roles.po).toBe('Jos\u00e9 2');
+  expect(configSchema.parse({ ...base, roles: { po: 'हिंदी' } }).roles.po).toBe('हिंदी');
+  for (const bad of ['PE: Juan', '#lead', '*x', 'a\nb', 'null', 'true', '2024'])
     expect(configSchema.safeParse({ ...base, roles: { po: bad } }).success).toBe(false);
 });

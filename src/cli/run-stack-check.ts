@@ -1,6 +1,6 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { constitutionDir, stackLogPath } from '../engine/stack-checks.js';
@@ -15,28 +15,16 @@ import { pathsOutside, runProbe, sha, shellJoin } from './run-premise.js';
 const STACK_LINES = 20;
 
 /** Programs that start another one: their own `--version` says nothing about the runtime the check ran on. */
-const LAUNCHERS = new Set([
-  'uv',
-  'uvx',
-  'npx',
-  'pnpm',
-  'pnpx',
-  'yarn',
-  'bunx',
-  'poetry',
-  'pipenv',
-  'pdm',
-  'hatch',
-  'rye',
-  'conda',
-  'bundle',
-  'env',
-]);
+const LAUNCHERS = new Set(
+  'uv uvx npx npm pnpm pnpx yarn bunx poetry pipenv pdm hatch rye conda bundle env sh bash zsh make docker mise asdf nix sudo time'.split(
+    ' ',
+  ),
+);
 
 /** The runtime's version, as `--runtime` or `<program> --version` prints it; `unknown` when it cannot run or is a launcher. */
 function runtimeVersion(cwd: string, words: string[], given: string | undefined): string {
   const program = words[0] ?? '';
-  if (!given && LAUNCHERS.has(program)) return `unknown (${program} is a launcher: pass --runtime)`;
+  if (!given && LAUNCHERS.has(basename(program))) return `unknown (${basename(program)} is a launcher: pass --runtime)`;
   const command = given ?? `${shellJoin([program])} --version`;
   try {
     return (
@@ -113,7 +101,7 @@ export function registerStackCheck(run: Command, ctx: CliContext) {
         `- Command: \`${command}\` (from ${relative(root, cwd) || 'the workspace root'})`,
         `- Runtime: ${runtime}`,
         `- Ran at: ${new Date().toISOString()} on ${sha(root)}`,
-        `- Exit: ${result.exitCode}`,
+        `- Exit: ${result.exitCode ?? 'unknown'}`,
         '',
         '```',
         excerpt(result.output, STACK_LINES),

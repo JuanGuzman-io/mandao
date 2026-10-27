@@ -148,7 +148,16 @@ const commits = z
   .prefault({});
 
 /** A role as templates write it into YAML frontmatter (`owner:`): letters, digits, spaces and `.`, `-`, `(`, `)`. */
-const roleName = z.string().regex(/^[\p{L}\p{N}][\p{L}\p{N} .()-]*$/u, 'a role name holds letters, digits, spaces, ".", "-", "(" or ")"');
+const roleName = z
+  .string()
+  .transform((s) => s.normalize('NFC'))
+  .pipe(
+    z
+      .string()
+      .regex(/^[\p{L}\p{N}][\p{L}\p{M}\p{N} .()-]*$/u, 'a role name holds letters, digits, spaces, ".", "-", "(" or ")"')
+      // YAML reads these as null, a boolean or a number, not as a name.
+      .refine((s) => !/^(null|true|false|yes|no|on|off|~|[\d.]+)$/i.test(s), 'a role name must not read as a YAML null, boolean or number'),
+  );
 
 export const configSchema = z
   .object({

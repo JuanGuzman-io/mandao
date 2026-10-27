@@ -65,7 +65,7 @@ export function stackFindings(architecture: string | undefined, recorded: Map<st
         {
           ref: c.id,
           level: 'warn',
-          message: `${where} ${c.id}'s last run failed (exit ${exit}): change the choice (${c.claim}) and run it again, or mark it UNVERIFIED`,
+          message: `${where} ${c.id}'s last run failed (exit ${Number.isNaN(exit) ? 'unreadable' : exit}): change the choice (${c.claim}) and run it again, or mark it UNVERIFIED`,
         },
       ];
     if (c.unverified)
