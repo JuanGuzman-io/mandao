@@ -1,4 +1,6 @@
-import { join, relative } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
 import { agentIdentity } from '../scripts/identity.js';
@@ -16,6 +18,26 @@ interface QuickLogOptions {
   claimedReviewer?: string;
   reducedIndependence?: boolean;
   base: string;
+}
+
+/** The short hash of the commit that added each line of a committed file; uncommitted lines have none. */
+export function blameCommits(file: string): (line: number) => string | undefined {
+  if (!existsSync(file)) return () => undefined;
+  let out = '';
+  try {
+    out = execFileSync('git', ['blame', '--line-porcelain', '--', file], {
+      cwd: dirname(file),
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
+  } catch {
+    return () => undefined; // not in git yet
+  }
+  const hashes = [...out.matchAll(/^([0-9a-f]{40}) \d+ \d+/gm)].map((m) => m[1]!);
+  return (line) => {
+    const h = hashes[line];
+    return h && !/^0+$/.test(h) ? h.slice(0, 7) : undefined;
+  };
 }
 
 /**
@@ -44,17 +66,21 @@ export function registerQuickLog(run: Command, ctx: CliContext) {
       const logPath = relative(root, join(specsDir, 'quick', 'quick-log.md')).replace(/\\/g, '/');
       const files = collectDiff(root, o.base).files.filter((f) => f.path !== logPath);
       const reviewer = agentIdentity(root, o.reviewer, o.harness);
-      const file = appendQuickLog(specsDir, {
-        date: new Date().toISOString().slice(0, 10),
-        name,
-        project: o.project ?? config.projects[0]!.name,
-        files,
-        gates: o.gates,
-        verdict: o.verdict,
-        reviewer,
-        ...(o.claimedReviewer ? { claimedReviewer: o.claimedReviewer } : {}),
-        ...(o.reducedIndependence ? { reducedIndependence: true } : {}),
-      });
+      const file = appendQuickLog(
+        specsDir,
+        {
+          date: new Date().toISOString().slice(0, 10),
+          name,
+          project: o.project ?? config.projects[0]!.name,
+          files,
+          gates: o.gates,
+          verdict: o.verdict,
+          reviewer,
+          ...(o.claimedReviewer ? { claimedReviewer: o.claimedReviewer } : {}),
+          ...(o.reducedIndependence ? { reducedIndependence: true } : {}),
+        },
+        blameCommits,
+      );
       json({ written: relative(root, file), reviewer, files: files.map((f) => f.path) });
     });
 }
