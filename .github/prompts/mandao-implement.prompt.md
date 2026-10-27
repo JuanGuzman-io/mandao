@@ -31,9 +31,10 @@ write production code yourself. Use `en` for notes; code and commits are English
    (never run git yourself); go on when it reports `ready`.
 2. `node .mandao/bin/mandao.mjs run models --harness copilot` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
-3. **Status.** If `story.md` says `approved`, check `node .mandao/bin/mandao.mjs run status ${input:spec:The spec id or folder} in-progress` and set
-   `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
-   spec to `verified`.
+3. **Status.** If `story.md` says `approved`, run `node .mandao/bin/mandao.mjs run status ${input:spec:The spec id or folder} in-progress --apply`, then
+   `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:The spec id or folder} implement` before the first task: the script writes the status and commits
+   it on its own (never edit `story.md` by hand; a task commit refuses it). `verify` can only move an
+   `in-progress` spec to `verified`.
    When the spec is still `draft`, run `node .mandao/bin/mandao.mjs approve --by-running /mandao-implement --harness copilot ${input:spec:The spec id or folder} <step>`
    (`<step>` is `spec` for a lite draft and `tasks` for draft tasks; add `--words "<what the person wrote>"` when they wrote something next to the command): on `go` it has
    approved and recorded it, so go on; on `ask`, relay its one question and wait for the answer. Never

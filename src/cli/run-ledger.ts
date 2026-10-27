@@ -6,6 +6,7 @@ import { readRecommendations, resolveWorkspaceModels } from '../models/load.js';
 import type { HarnessId } from '../schemas/index.js';
 import { branchingFor } from '../scripts/branching.js';
 import { appendExecutionRow, markTask, writeProgress } from '../scripts/checkpoint.js';
+import { statusOnlyChange } from '../scripts/commit-spec-files.js';
 import { type ChangeManifestEntry, changedFiles, commitSpecDocs, repoRoot } from '../scripts/commits.js';
 import { agentIdentity, identityCell, identityNotes } from '../scripts/identity.js';
 import { changedRedTests } from '../scripts/red.js';
@@ -268,6 +269,7 @@ export const SPEC_STEPS = {
   specify: (id: string) => `approve the ${id} requirements and design`,
   spec: (id: string) => `approve the ${id} spec`,
   clarify: (id: string) => `record the ${id} clarification answers`,
+  implement: (id: string) => `start the ${id} implementation`,
   tasks: (id: string) => `approve the ${id} task plan`,
   verify: (id: string) => `record the ${id} verify report`,
   close: (id: string) => `close ${id} with release docs and Kaizen`,
@@ -314,11 +316,23 @@ function closePaths(ctx: CliContext, config: ReturnType<typeof readConfig>, repo
   ];
 }
 
+/** implement commits story.md alone, and only when nothing but its status changed, to in-progress (hotfix beta.2). */
+function storyStatusPath(repo: string, specDir: string): string {
+  const story = relative(repo, join(specDir, 'story.md')).replace(/\\/g, '/');
+  if (changedFiles(repo).includes(story) && statusOnlyChange(repo, story) !== 'in-progress')
+    throw new Error(
+      `${story} changed beyond a status set to in-progress: review that edit; commit-spec implement records only that status`,
+    );
+  return story;
+}
+
 /** `mandao run commit-spec`: the spec documents in their own docs commit, at every step that writes them. */
 function registerCommitSpec(run: Command, ctx: CliContext) {
   run
     .command('commit-spec <spec> <step>')
-    .description('Commit the spec documents as a docs commit with Refs: specify, clarify, tasks, verify and close')
+    .description(
+      'Commit the spec documents as a docs commit with Refs: specify, clarify, tasks, verify and close; implement commits only the story status',
+    )
     .option('--trailer <text...>', 'extra trailers, e.g. "Co-Authored-By: …"')
     .action((ref: string, step: string, opts: { trailer?: string[] }) => {
       if (!(step in SPEC_STEPS)) throw new Error(`step must be one of ${Object.keys(SPEC_STEPS).join(', ')}`);
@@ -336,6 +350,7 @@ function registerCommitSpec(run: Command, ctx: CliContext) {
         trailers: opts.trailer ?? [],
         protectedBranches: branchingFor(config).protected,
         ...(step === 'close' ? { extraPaths: closePaths(ctx, config, repo, spec) } : {}),
+        ...(step === 'implement' ? { only: [storyStatusPath(repo, spec.dir)] } : {}),
       });
       json({ ...result, header });
       if (!result.committed && result.reason !== 'nothing to commit in the spec folder') process.exitCode = 1;
