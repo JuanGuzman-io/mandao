@@ -56,7 +56,7 @@ scope, product behavior, security or irreversible actions.
 | [17 — Gates and commits](#phase-17--gates-and-commits) | beta trial; phase 4 commit manifest | phase 15 | complete; PR #29 merged (`9aec6ca`) |
 | [18 — Constitution and research](#phase-18--constitution-and-research) | beta trial | phase 15 | complete; PR #30 merged (`38c1a05`) |
 | [19 — Command documentation](#phase-19--command-documentation) | beta trial | phase 16 | complete; PR #31 merged (`86c1825`) |
-| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | in progress on `perf/phase-20` (20a: skills catalog, profile, Copilot; 20b: the five fixes) |
+| [20 — Minor fixes](#phase-20--minor-fixes) | beta trial | — | 20a complete; PR #32 merged (`f504d8e`); 20b in progress on `perf/phase-20b` |
 | [Infrastructure lane](#infrastructure-lane) | beta trial | — | agreed; after phase 20 |
 
 ## Phase 0 — Documentation and backlog

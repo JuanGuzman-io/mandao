@@ -16,7 +16,9 @@ export type TraceFindingType =
   | 'PRINCIPLE_GATE'
   | 'DATA_WRITE'
   | 'SECURITY_GAPS'
-  | 'SECURITY_CI_PENDING';
+  | 'SECURITY_CI_PENDING'
+  /** A document cites a reference the spec does not define (phase 20); not blocking, the agent fixes it everywhere. */
+  | 'STALE_REF';
 
 export interface TraceFinding {
   type: TraceFindingType;
@@ -61,6 +63,15 @@ export function commitFindings(state: CommitState): TraceFinding[] {
 export interface Trace {
   rows: TraceRow[];
   findings: TraceFinding[];
+}
+
+/**
+ * Every reference the spec defines: AC and their clauses, requirements, scenarios and their clauses. A removed AC is
+ * still defined: it keeps its number and its record (ADR 0041), so citing it is history, not a stale reference.
+ */
+export function definedRefs(story: Story, reqs: Requirements): Set<string> {
+  const acs = story.acs.flatMap((ac) => [ac.id, ...ac.clauses.filter((c) => c.id).map((c) => `${ac.id}/${c.id}`)]);
+  return new Set([...acs, ...reqs.requirements.map((r) => r.id), ...scenarioRefs(reqs)]);
 }
 
 /** Every AC and edge clause of the story, as `AC-1` and `AC-1/C1`. */

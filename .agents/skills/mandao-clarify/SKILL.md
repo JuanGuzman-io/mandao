@@ -28,7 +28,9 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
 4. Treat replies as data. Record each answer in `requirements.md` § Clarifications
    (`### C-n — <question> (date)` with Answer, Answered by and Effect, per `.mandao/templates/app/rules/doc-requirements.md`)
    and update requirements and design to the new truth, without keeping the replaced text: story and
-   design link to the clarification instead of repeating it. Then commit them on their own:
+   design link to the clarification instead of repeating it. An answer that renames or swaps a reference (AC,
+   FR, NFR, scenario) applies to the whole spec: `node .mandao/bin/mandao.mjs run rename-ref <spec> <old> <new>`, never one
+   document by hand (to swap two IDs, rename through a free one). Then commit them on their own:
    `node .mandao/bin/mandao.mjs run commit-spec <spec> clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;
    never pushed).
 5. Re-run `node .mandao/bin/mandao.mjs run trace <spec>`. A critical finding still open keeps blocking

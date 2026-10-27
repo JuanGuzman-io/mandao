@@ -37,6 +37,20 @@ export const closeSummarySchema = z.object({
   accepted_risks: z
     .array(z.object({ package: z.string().min(1), id: z.string().min(1), reason: z.string().min(1), review: z.string().min(1) }))
     .default([]),
+  /** Findings still open in each task's last review, any severity, from the review records (phase 20). */
+  open_findings: z
+    .array(
+      z.object({
+        task: z.string().min(1),
+        id: z.string().min(1),
+        severity: z.string().min(1),
+        lens: z.string().min(1),
+        title: z.string().min(1),
+        file: z.string().min(1),
+        line: z.number().int(),
+      }),
+    )
+    .default([]),
 });
 export type CloseSummary = z.infer<typeof closeSummarySchema>;
 
@@ -115,6 +129,7 @@ function deliveryLines(s: CloseSummary, links: CloseLink[]): string[] {
     ...(s.published.length ? [`- Published: ${joined(s.published.map((p) => `${p.target} ${p.kind} ${p.id}`))}`] : []),
     ...(s.applied.length ? [`- Applied: ${joined(s.applied.map((a) => `\`${a}\``))}`] : []),
     ...s.accepted_risks.map((r) => `- Accepted risk: ${r.package} ${r.id} — ${r.reason} (review: ${r.review})`),
+    ...s.open_findings.map((f) => `- Open finding: ${f.task} ${f.id} (${f.severity}, ${f.lens}) — ${f.title} (\`${f.file}:${f.line}\`)`),
     ...links.map((l) => `- [${l.label}](${l.href})`),
   ];
 }

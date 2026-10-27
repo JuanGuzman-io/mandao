@@ -32,6 +32,7 @@ const cellText = (s: string) => s.replace(/\|/g, '\\|').replace(/\n+/g, ' ');
 
 /** The review cell: verdict, agent and the model its agent file pins, plus independence and mismatch notes. */
 export function reviewCell(e: Pick<QuickLogEntry, 'verdict' | 'reviewer' | 'claimedReviewer' | 'reducedIndependence'>): string {
+  if (e.reviewer.source === 'none') throw new Error('a quick change needs a review: `none` is only for --implementer');
   const who = e.reviewer.source === 'self' ? 'self' : `${e.reviewer.agent} on ${identityCell(e.reviewer)}`;
   const notes = identityNotes('reviewer', e.reviewer, e.claimedReviewer);
   if (e.reducedIndependence && e.reviewer.source !== 'self') notes.push('reduced independence (the reviewer shares the author model)');
@@ -49,16 +50,40 @@ export function quickLogRow(e: QuickLogEntry): string {
     `${added + deleted} (+${added}/-${deleted})`,
     e.gates,
     reviewCell(e),
-    'this commit',
+    PENDING,
   ];
   return `| ${cells.map(cellText).join(' | ')} |`;
 }
 
-/** Appends the row to `<specs>/quick/quick-log.md`, creating it when missing. Returns the file. */
-export function appendQuickLog(specsDir: string, entry: QuickLogEntry): string {
+/**
+ * A row is written inside the commit it records, so it cannot hold its own hash (phase 20). It says `pending`
+ * until the next `run quick-log`, which fills it with the commit that added the row (`git blame`); rows written
+ * before phase 20 say `this commit` and are filled the same way.
+ */
+export const PENDING = 'pending';
+const UNRESOLVED = /\|[ \t]*(?:pending|this commit)[ \t]*\|[ \t]*(\r?)$/;
+
+/** Pure: fills the Commit cell of every unresolved row whose line has a commit (`commitOf`, 0-based line index). */
+export function resolveCommits(lines: string[], commitOf: (line: number) => string | undefined): string[] {
+  return lines.map((l, i) => {
+    if (!UNRESOLVED.test(l)) return l;
+    const hash = commitOf(i);
+    return hash ? l.replace(UNRESOLVED, `| ${hash} |$1`) : l;
+  });
+}
+
+/**
+ * Appends the row to `<specs>/quick/quick-log.md`, creating it when missing, after filling earlier rows' commits
+ * through `commitOf` (the committed line's short hash). Returns the file.
+ */
+export function appendQuickLog(
+  specsDir: string,
+  entry: QuickLogEntry,
+  commitOf: (file: string) => (line: number) => string | undefined = () => () => undefined,
+): string {
   const file = join(specsDir, 'quick', 'quick-log.md');
   const snap = snapshot(file);
-  const lines = (snap.content ?? QUICK_LOG_TEMPLATE).split('\n');
+  const lines = resolveCommits((snap.content ?? QUICK_LOG_TEMPLATE).split('\n'), commitOf(file));
   const header = lines.findIndex((l) => /^\|\s*Date\s*\|\s*Name\s*\|/.test(l));
   if (header < 0) throw new Error(`${file} has no log table (| Date | Name | …)`);
   let end = header + 2;

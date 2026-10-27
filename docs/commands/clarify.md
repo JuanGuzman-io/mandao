@@ -51,6 +51,7 @@ Yes: it stops for your approval.
 - `mandao run diagram`
 - `mandao run commit-spec`
 - `mandao run event`
+- `mandao run rename-ref`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

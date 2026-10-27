@@ -33,7 +33,7 @@ templates:
   - rules/budget.md
   - rules/telemetry.md
   - rules/next-step.md
-scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec, event]
+scripts: [where, next, status, branching, kaizen, kaizen-compare, close-summary, release-status, impacts, diagram, diagram-drift, publish-plan, commit-spec, event, trace, rename-ref]
 approval: required
 ---
 
@@ -171,6 +171,11 @@ block the user can paste.
 unapplied and is reported.
 
 ## 8. Finish
+
+A reference fixed at close (a renamed or swapped AC, FR, NFR or scenario) goes through
+`{{script:rename-ref}} {{arg:spec}} <old> <new>`, which changes every document of the spec; then
+`{{script:trace}} {{arg:spec}}` must show no `STALE_REF`. The record lists every finding still open in a task's last
+review (`open_findings`, any severity); report them, do not drop the low ones.
 
 `{{script:close-summary}} {{arg:spec}} --closed` (it writes the record; for version 2 it also rewrites
 `## Outcome` and `## Delivery`, keeps your prose sections as they are, and upserts the spec's one line in

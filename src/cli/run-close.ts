@@ -11,7 +11,7 @@ import { publishPlan } from '../scripts/publish.js';
 import { sizeLimits } from '../scripts/quick-check.js';
 import { measureSessions } from '../scripts/session-turns.js';
 import { findSpec, readSpec, type SpecFolder } from '../scripts/spec.js';
-import { docPath, dropLogCache, hasExecutionLog, logPath, specLogInCache } from '../scripts/spec-log.js';
+import { docPath, dropLogCache, hasExecutionLog, logPath, specLogInCache, taskReviews } from '../scripts/spec-log.js';
 import { specSpend } from '../scripts/spend.js';
 import { readTelemetryEvents } from '../scripts/telemetry.js';
 import {
@@ -22,7 +22,9 @@ import {
   costKaizen,
   historicalDuplicateAmount,
   impactItems,
+  isLockfile,
   type LeaderSwitch,
+  openFindings,
   parseCloseSummary,
   parseCosts,
   planTasks,
@@ -252,7 +254,9 @@ function registerSummary(run: Command, ctx: CliContext) {
         const open = closePremiseFindings(spec);
         if (open.length) throw new Error(`cannot close with unresolved ASSUMPTION or CONFLICT: ${open.join(' | ')}`);
       }
-      const summary = updatedSummary(config, spec, o);
+      // Phase 20: every finding still open in a task's last review reaches the record, low ones included.
+      const open_findings = openFindings(taskReviews(spec.dir)).map(({ attempt: _, ...f }) => f);
+      const summary = { ...updatedSummary(config, spec, o), open_findings };
       if (specLogInCache(spec.dir)) writeCloseDocument(ctx.root(), config, spec, summary);
       else writeText(join(spec.dir, 'close-summary.md'), renderCloseSummary(summary, closeLinks(ctx.root(), config, spec)));
       // A version 2 spec's local cache goes at close, unless `logs.level: full` keeps it (MDO-0011 D3).
@@ -285,7 +289,7 @@ export function registerClose(run: Command, ctx: CliContext) {
 
 /**
  * Paths that do not count toward a PR's size (ADR 0028, MDO-0004): the spec folders, release docs, Kaizen,
- * diagrams, and every file Mandao generates (from the lock).
+ * diagrams, every file Mandao generates (from the lock) and dependency lockfiles (phase 20).
  */
 function notCode(root: string, config: ReturnType<typeof readConfig>, spec: SpecFolder): (path: string) => boolean {
   const generated = new Set(readLock(join(root, LOCK_FILE))?.files.map((f) => f.path) ?? []);
@@ -295,7 +299,7 @@ function notCode(root: string, config: ReturnType<typeof readConfig>, spec: Spec
     (d) => `${d.replace(/\/$/, '')}/`,
   );
   const files = new Set(v2 ? ['docs/CHANGELOG.md', 'docs/kaizen/lessons.md'] : []);
-  return (path) => generated.has(path) || files.has(path) || folders.some((d) => path.startsWith(d));
+  return (path) => generated.has(path) || files.has(path) || isLockfile(path) || folders.some((d) => path.startsWith(d));
 }
 
 function registerPrPlan(run: Command, ctx: CliContext) {

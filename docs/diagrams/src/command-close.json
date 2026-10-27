@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "5b708e8e163e2adc2a73a35f5dd4b3118eef54200c39d6bf2ff4251ccb0c0985"
+      "sha256": "5696d9944234bcb3c80c3c6fda5af1415c92ac6f3810fa5768dc7fb5f38d1707"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "08133e9e726484136a414cf7fb31570de8acebca04c2f04e365cbeb85e03fdd4"
+      "sha256": "5af3e602726e1fc1a72cc81b8e2fa6532650a1e3c9a48508eb48cff453f7111d"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "14b97309257c4409ff036903ab41ba52ecfa134e188f389943aab0f8f676b46c"
+      "sha256": "7c5233396ec38c9bc64fda5a5794a343d8e68353ef343a75d1ddb439eb7cd694"
     },
     {
       "path": "core/commands/init.md",
@@ -54,10 +54,10 @@
       "sha256": "249ac22d46027c61aa2f67cc571df15b9ef90b08dec868405434acbff90df79a"
     }
   ],
-  "specSha256": "c8c9c507b239a40082b73288246133c739daa1ce253bc87c8284b0d68238c46c",
+  "specSha256": "427a12c3f6f20d15f3a327e77e53059b2cbcf0827dd6179d6556df79046c88ee",
   "svgSha256": {
-    "light": "33c441848aa16e227a1294efaec43465256db7bac5a1f7821da279a78693c61d",
-    "dark": "6be14dbd59336613cff713e287566a78e76bca9593df816aca82219a7da9443c"
+    "light": "c1405c704b7558084133e1e7731f75836fdb7d804c75cc6c2aa32c4d35ed245f",
+    "dark": "1958b80072781a5c6763f073fdf0a7bf4fee67fc57118611ba6f59c881c367d4"
   },
   "spec": {
     "schema_version": 2,
@@ -189,8 +189,8 @@
         "col": 0,
         "type": "backend",
         "label": "8. Finish",
-        "sublabel": "mandao run close-summary +1",
-        "width": 213
+        "sublabel": "mandao run rename-ref +3",
+        "width": 192
       },
       {
         "id": "approve",

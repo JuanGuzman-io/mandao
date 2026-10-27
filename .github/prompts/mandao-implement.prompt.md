@@ -69,7 +69,8 @@ their short JSON, and decide; never paste their full output into the conversatio
    options work on `node .mandao/bin/mandao.mjs run checkpoint` when you need no next action).
    **Identity is never typed by hand.** `--implementer` and `--reviewer` take the **agent you invoked**
    (`mandao-implementer-<tier>`, `mandao-reviewer`, with `@<harness>` when another harness ran it, or
-   `self` when it ran in your own context); the script reads its model and effort from the agent file the
+   `self` when it ran in your own context; `--implementer none` for a task closed by evidence alone, such as an
+   inspection or recorded mutations, with no code written); the script reads its model and effort from the agent file the
    harness loads, and the Leader's model from `models.yml`. Pass what the agent said about itself, verbatim,
    as `--claimed-implementer` / `--claimed-reviewer`: it is only compared, never recorded as the identity,
    and only a claim that names a different model is recorded as `identity mismatch`.
@@ -159,8 +160,8 @@ the task.
 
 Report from `node .mandao/bin/mandao.mjs run implement-summary ${input:spec:The spec id or folder}` (verdicts, FAIL reasons, identities, commits,
 deferred tests and advisories, read from the log and git): tasks done, FAILs and escalations, reduced or
-provider independence, deferred tests, commits, and every `securityMentions` entry verbatim: they did not
-block, so the user must see them.
+provider independence, deferred tests, commits, every `openFindings` entry (a finding still open in a task's last
+review, low ones included) and every `securityMentions` entry verbatim: they did not block, so the user must see them.
 Then `node .mandao/bin/mandao.mjs run pr-plan ${input:spec:The spec id or folder}` says how to deliver: one PR, one per repository (polyrepo), or
 stacked PRs along the declared deliveries or the task dependencies — decided by the structure and the **real** size of the commits
 against `size_limits.pr`, never by an estimate. Propose it; nothing is written into the spec.

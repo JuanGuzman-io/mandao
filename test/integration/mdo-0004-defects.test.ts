@@ -89,6 +89,31 @@ describe('defects found by MDO-0004', () => {
     expect(progress.pending_commits[0]).toMatchObject({ reviewed: ['src/cli/extensions.ts'], receipts: [] });
   });
 
+  test('phase 20: --implementer none cannot queue a commit (no code was written)', async () => {
+    const root = repo();
+    const run = (...args: string[]) => buildProgram(() => root).parseAsync(['node', 'mandao', 'run', ...args]);
+    const review = join(makeTree({}), 'review.txt');
+    writeFileSync(review, 'VERDICT: PASS\n\n## Findings (JSON)\n\n```json\n{"version":1,"findings":[]}\n```\n');
+    await expect(
+      run(
+        'checkpoint',
+        'MDO-0001',
+        '--task',
+        'T2',
+        '--pending-commit',
+        'x',
+        '--verdict',
+        'PASS',
+        '--reviewer',
+        'self',
+        '--implementer',
+        'none',
+        '--review',
+        review,
+      ),
+    ).rejects.toThrow(/--implementer none means no code was written/);
+  });
+
   test('#2 the size of a PR leaves out what is not code', () => {
     const root = repo();
     mkdirSync(join(root, 'src'), { recursive: true });

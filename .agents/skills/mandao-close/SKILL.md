@@ -132,6 +132,11 @@ unapplied and is reported.
 
 ## 8. Finish
 
+A reference fixed at close (a renamed or swapped AC, FR, NFR or scenario) goes through
+`node .mandao/bin/mandao.mjs run rename-ref <spec> <old> <new>`, which changes every document of the spec; then
+`node .mandao/bin/mandao.mjs run trace <spec>` must show no `STALE_REF`. The record lists every finding still open in a task's last
+review (`open_findings`, any severity); report them, do not drop the low ones.
+
 `node .mandao/bin/mandao.mjs run close-summary <spec> --closed` (it writes the record; for version 2 it also rewrites
 `## Outcome` and `## Delivery`, keeps your prose sections as they are, and upserts the spec's one line in
 `docs/CHANGELOG.md`; never edit the record by hand), set `status: closed` in story.md, then commit everything
