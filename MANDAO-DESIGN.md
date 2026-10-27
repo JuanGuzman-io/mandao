@@ -327,6 +327,8 @@ Flow:
 constitution → story → specify → [clarify] → tasks → implement → verify → close
 ```
 
+**DECIDED (ADR 0062, phase 19) — commands documented from their source.** Each argument declares how it is typed (`flag` → `--kebab-name`, `value` → `--depth <lite|standard|full>`); commands carry `examples` and a `summary`. Harness hints, the command pages, the command index, the installed guide and the README's command and path tables are generated from that frontmatter, and a test fails when the front-page docs show a command, flag or link that does not exist. `docs/cli.md` documents every terminal command, with a section and examples for the ones a person types.
+
 **DECIDED (ADR 0059, phase 16) — continuous flow.** No new agent commands; each one carries the work on to the
 next. `run next` returns the next step as typed in the active harness with the spec ID (`recommended.invocation`,
 `invocations`), and `autoContinue` on every step that needs no decision of the PE when `flow.chain` is on (the

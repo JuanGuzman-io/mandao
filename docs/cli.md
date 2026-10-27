@@ -1,10 +1,142 @@
 # CLI reference
 
-`mandao --help` and `mandao <command> --help` list every option.
+The agent commands (`/mandao-<command>`, [one page each](commands/)) are the way in, and they run Mandao's
+scripts themselves. This page covers the terminal: first the commands you type, with examples; then the
+[index](#command-index) of every command and flag, generated from the CLI; then the details of the parts that
+need more than a line. `mandao --help` and `mandao <command> --help` list every option too.
 
-The agent commands (`/mandao-<command>`) are the way in; they run the internal scripts themselves. The index
-below is generated from the CLI, so it lists every command and flag; the sections after it explain the parts
-that need more than a line.
+## Terminal commands you type
+
+### `mandao init`
+
+Sets Mandao up in a repository: detects the workspace (single repo, monorepo or polyrepo), asks for the
+harnesses, the models, the languages and who decides, writes `.mandao/config.yml` and generates every harness
+file. Then run `/mandao-constitution` in your agent.
+
+```bash
+mandao init                                   # this repository, asking each question
+mandao init my-project --harness claude,codex # a new folder, git init included
+mandao init --yes --roles solo                # no questions; you are one role (PE) in every decision
+mandao init --scope global                    # installs /mandao-init for your user
+mandao init --shadow                          # generated files kept out of git (try it on a team repo)
+```
+
+Flags: `--harness <ids...>`, `--profile <app|ai|data>`, `--model-profile <peak|balanced|economy>`,
+`--language-business <lang>`, `--language-technical <lang>`, `--roles <team|solo|solo=<name>|po=…,tech_lead=…,dev=…>`,
+`--budget <usd|none>`, `--cut-min-savings <usd|none>`, `--with-scripts` ([Skills at init](#skills-at-init)),
+`--force` to replace an existing config.
+
+### `mandao sync`
+
+Regenerates the harness files from `.mandao/config.yml`: after you edit the config, pull a teammate's change or
+add an override. A generated file edited by hand is reported as drifted and kept, unless `--force`.
+
+```bash
+mandao sync
+mandao sync --dry-run    # what would change, writing nothing
+```
+
+### `mandao doctor`
+
+Checks the configuration, the generated files and the optional tools (graph engine, Archify, scanners), and says
+how to fix each finding: a stack choice with no run, a missing gate, a pending commit, an outdated tool.
+
+```bash
+mandao doctor
+mandao doctor --json     # one JSON document for CI
+```
+
+### `mandao update`
+
+After upgrading the Mandao package, brings the project to that version: re-resolves the content and
+regenerates the files. Your overrides and model choices are never touched.
+
+```bash
+npm i -D mandao@beta && mandao update
+```
+
+### `mandao harness add <id>`
+
+Adds a harness to a project that already uses Mandao, from the existing config.
+
+```bash
+mandao harness add codex
+```
+
+### `mandao approve <spec> <step>`
+
+Approves a step without a model session, so it costs no tokens: it checks the same gates the command would,
+sets the status, records who and when, and makes the spec commit. Steps: `story`, `design`, `spec`, `tasks`,
+`close`, `budget`, `security-gaps`, `vulnerability`. More in [Approving without a model session](#approving-without-a-model-session).
+
+```bash
+mandao approve MDO-0003 design
+mandao approve MDO-0003 budget --to 25
+mandao approve MDO-0003 vulnerability --package "pillow 12.3.0" --id PYSEC-2026-1 \
+  --reason "images are never decoded" --review "when fastembed is upgraded"
+mandao approve MDO-0003 design --revoke --reason "the constitution changed"
+```
+
+### `mandao models`
+
+Shows the model each role uses per harness, and changes it. Mandao never changes a model without you.
+
+```bash
+mandao models
+mandao models profile balanced          # every role at once; your own choices are kept
+mandao models set reviewer claude-opus-5-5 --harness claude
+mandao models mode routed               # the Implementer follows each task's tier
+```
+
+### `mandao skills`
+
+The skills pinned in the workspace lock.
+
+```bash
+mandao skills list
+mandao skills add graphify              # installs, verifies and pins the catalog version
+```
+
+### `mandao deliver <spec>`
+
+Pushes the spec's branch and opens its PR; merges only after green CI. `/mandao-close` runs it in the session
+after asking you once; type it yourself only to deliver later.
+
+```bash
+mandao deliver MDO-0003 --list                          # the destinations
+mandao deliver MDO-0003 --target main --scope push-pr   # push and PR, no merge
+```
+
+### `mandao worktree list` · `mandao worktree clean`
+
+The spec worktrees, when a spec used one. `clean` removes only merged ones that hold no work.
+
+```bash
+mandao worktree list
+mandao worktree clean --dry-run
+```
+
+### `mandao intake close` · `mandao intake clean`
+
+After `/mandao-story --from <document>`: `close` checks a proposal and closes it; `clean` deletes the extracted
+text of closed proposals.
+
+```bash
+mandao intake close docs/product/intake/requirements.md
+mandao intake clean
+```
+
+### `mandao run cost <spec>` · `mandao run version-notes <version>`
+
+The two scripts worth typing: a spec's spend per command and role ([Cost](#cost)), and the release notes of a
+version, from the "For the PO" text of every spec closed since the previous tag.
+
+```bash
+mandao run cost MDO-0003
+mandao run version-notes 1.2.0 --write
+```
+
+Every other `mandao run …` is run by the agent commands; the index below lists them all.
 
 <!-- mandao:cli-index:begin — generated by `npm run docs:cli` from the CLI definitions; edit src/cli/cli-reference.ts -->
 ## Command index
@@ -110,7 +242,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 
 ## Command details
 
-What the one-line index leaves out, for the commands that need it.
+What the one-line index leaves out, for the commands and scripts that need it.
 
 | Command | Details |
 |---|---|
