@@ -32,5 +32,7 @@ instead of from what the agent remembers.
   last commit that changed the line (`git blame -w`, so a whitespace-only reformat does not count); a row filled on a
   branch that is later squash-merged names a commit that only the branch had.
 - `rename-ref` refuses a target the spec already defines (two references would merge) unless `--force`. `STALE_REF`
-  skips fenced examples, another spec's references (`MDO-0003 FR-2`) and removed AC, which keep their record.
+  skips fenced examples, another spec's references (`MDO-0003 FR-2`) and removed AC, which keep their record. A
+  constitution ID right before a reference (`DP-1: FR-9`) has a story ID's shape, so that reference is skipped too: a
+  known false negative of an advisory check.
 - `--implementer none` is refused with `--pending-commit`: a task with code to commit names its implementer.

@@ -1,5 +1,7 @@
 import { join } from 'node:path';
 import { describe, expect, test } from 'vitest';
+import { HARNESS_IDS } from '../../src/schemas/index.js';
+import { REVIEW_PROCESSES } from '../../src/scripts/review.js';
 import { taskReviews } from '../../src/scripts/spec-log.js';
 import { closeSummarySchema, openFindings, renderCloseDocument } from '../../src/spec/index.js';
 import { makeTree } from '../helpers.js';
@@ -19,6 +21,10 @@ const finding = (id: string, status: string, severity = 'low') => ({
 });
 
 describe('open findings from the review records', () => {
+  test('every review process names a harness, so its v1 review file is read', () => {
+    for (const p of REVIEW_PROCESSES) expect(HARNESS_IDS).toContain(p);
+  });
+
   test('the last attempt of each task wins; open findings of any severity are kept, resolved ones dropped', () => {
     const open = openFindings([
       { task: 'T1', attempt: 1, text: review('FAIL', [finding('F1', 'open', 'high')]) },
