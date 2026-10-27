@@ -7,11 +7,11 @@
     },
     {
       "path": "core/commands/clarify.md",
-      "sha256": "5b708e8e163e2adc2a73a35f5dd4b3118eef54200c39d6bf2ff4251ccb0c0985"
+      "sha256": "5696d9944234bcb3c80c3c6fda5af1415c92ac6f3810fa5768dc7fb5f38d1707"
     },
     {
       "path": "core/commands/close.md",
-      "sha256": "08133e9e726484136a414cf7fb31570de8acebca04c2f04e365cbeb85e03fdd4"
+      "sha256": "5af3e602726e1fc1a72cc81b8e2fa6532650a1e3c9a48508eb48cff453f7111d"
     },
     {
       "path": "core/commands/constitution.md",
@@ -19,7 +19,7 @@
     },
     {
       "path": "core/commands/implement.md",
-      "sha256": "14b97309257c4409ff036903ab41ba52ecfa134e188f389943aab0f8f676b46c"
+      "sha256": "7c5233396ec38c9bc64fda5a5794a343d8e68353ef343a75d1ddb439eb7cd694"
     },
     {
       "path": "core/commands/init.md",
@@ -54,10 +54,10 @@
       "sha256": "249ac22d46027c61aa2f67cc571df15b9ef90b08dec868405434acbff90df79a"
     }
   ],
-  "specSha256": "dcdcf626412591f4fb70bf6e5e9f9bb10bcdb1ca3ba83e05b0ebe2d8d0c22b4f",
+  "specSha256": "379a710c11786ee5136b87de4ed1d35801801414a1e5fad8daa64411e49ad635",
   "svgSha256": {
-    "light": "7d884330df38b85628021149049630d62c77baab1b8ccd55751979ceca64c6c2",
-    "dark": "91e73bf9eda33895ccd35e53125105d9e7f03402706b90c3942e2b21a59644db"
+    "light": "d05ccb660159b89771433ca7c7964c14d72ad4c7511d7d142e78b6f15c12542f",
+    "dark": "6ba583952fe56d5f6a377149eadbc84c1fecc092598091e714ab7d7443b56393"
   },
   "spec": {
     "schema_version": 2,
@@ -139,7 +139,7 @@
         "col": 3,
         "type": "backend",
         "label": "4. Treat replies as data",
-        "sublabel": "mandao run commit-spec",
+        "sublabel": "mandao run rename-ref +1",
         "width": 192
       },
       {

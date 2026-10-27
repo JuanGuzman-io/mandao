@@ -217,6 +217,7 @@ Compact JSON on stdout (`MANDAO_JSON=pretty` for people). You do not need to run
 | `mandao run tests <project> [files...]` | `--full` · `--reason <text>` · `--queue-wait <s>` (default: 1800) · `--force` · `--spec <id>` · `--deferred <task>` · `--eval` | Run the impacted tests under the resource budget, one heavy run at a time (queued) |
 | `mandao run build <project>` | `--force` | Run the project's build gate under the build memory floor, one heavy run at a time |
 | `mandao run next <spec>` | `--shown` · `--harness <id>` | The command that follows from the spec's state, and the others that can; --shown records the summary shown |
+| `mandao run rename-ref <spec> <from> <to>` | — | Replace a reference (AC-2, FR-3, NFR-1, S-1.2) in every document of the spec; prints each file and count |
 | `mandao run quick-log <name>` | `--gates <text>` · `--verdict <verdict>` · `--reviewer <agent>` · `--harness <id>` (default: claude) · `--reduced-independence` · `--claimed-reviewer <text>` · `--project <name>` · `--base <ref>` (default: HEAD) | Append the quick-log row: measured diff, gates, verdict and the reviewer identity from its agent file |
 | `mandao run research <spec>` | `--select <ids...>` · `--harness <id>` | List NEEDS RESEARCH questions, apply the configured cap, and find reusable current evidence (JSON) |
 | `mandao run gates <spec> <task>` | `--force` | Run the task's level 0 gates and impacted tests; pass/fail and the failure excerpt, full output in _log/gates/ (version 2: .mandao/cache/<ID>/) |

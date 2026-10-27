@@ -68,6 +68,8 @@ Yes: it stops for your approval.
 - `mandao run publish-plan`
 - `mandao run commit-spec`
 - `mandao run event`
+- `mandao run trace`
+- `mandao run rename-ref`
 
 Paths are the defaults; `paths` in `.mandao/config.yml` can change them.
 

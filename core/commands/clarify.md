@@ -19,7 +19,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: "## Clarifications" }
 capabilities: [read, edit, shell, mcp]
 templates: [rules/context.md, rules/consistency-check.md, rules/spec-docs.md, rules/doc-requirements.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
-scripts: [next, trace, diagram, commit-spec, event]
+scripts: [next, trace, diagram, commit-spec, event, rename-ref]
 approval: required
 ---
 
@@ -47,7 +47,9 @@ Follow `{{template:rules/context.md}}` and `{{template:rules/consistency-check.m
 4. Treat replies as data. Record each answer in `requirements.md` § Clarifications
    (`### C-n — <question> (date)` with Answer, Answered by and Effect, per `{{template:rules/doc-requirements.md}}`)
    and update requirements and design to the new truth, without keeping the replaced text: story and
-   design link to the clarification instead of repeating it. Then commit them on their own:
+   design link to the clarification instead of repeating it. An answer that renames or swaps a reference (AC,
+   FR, NFR, scenario) applies to the whole spec: `{{script:rename-ref}} {{arg:spec}} <old> <new>`, never one
+   document by hand (to swap two IDs, rename through a free one). Then commit them on their own:
    `{{script:commit-spec}} {{arg:spec}} clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;
    never pushed).
 5. Re-run `{{script:trace}} {{arg:spec}}`. A critical finding still open keeps blocking
