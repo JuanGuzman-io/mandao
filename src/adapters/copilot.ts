@@ -1,5 +1,5 @@
 import type { TokenSyntax } from '../render/render.js';
-import type { Capability } from '../schemas/index.js';
+import { argumentUsage, type Capability } from '../schemas/index.js';
 import {
   argumentHint,
   commandName,
@@ -28,11 +28,17 @@ const TOOLS: Record<Capability, string[]> = {
 
 const placeholder = (text: string) => text.replace(/[}\n]/g, ' ').replace(/:/g, ' -').trim();
 
+/**
+ * Only positional arguments become `${input:…}` prompts; a flag (`--hotfix`) is read from what the person typed
+ * after the command, as in the other harnesses, never asked as free text (phase 19 review F12).
+ */
 const syntax: TokenSyntax = {
-  args: (meta) =>
-    meta.arguments.length
-      ? meta.arguments.map((a) => `${a.name}: \${input:${a.name}:${placeholder(a.description)}}`).join(', ')
-      : '(no arguments)',
+  args: (meta) => {
+    const positional = meta.arguments.filter((a) => !a.flag).map((a) => `${a.name}: \${input:${a.name}:${placeholder(a.description)}}`);
+    const flags = meta.arguments.filter((a) => a.flag).map(argumentUsage);
+    const typed = flags.length ? [`flags typed after the command, if any: ${flags.join(' ')}`] : [];
+    return [...positional, ...typed].join(', ') || '(no arguments)';
+  },
   arg: (meta, name) => {
     const a = meta.arguments.find((x) => x.name === name)!;
     return `\${input:${name}:${placeholder(a.description)}}`;

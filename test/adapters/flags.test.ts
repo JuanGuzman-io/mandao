@@ -11,7 +11,7 @@ const config = configSchema.parse({
   schema_version: 1,
   workspace: 'single',
   projects: [{ name: 'shop', path: '.', profile: 'app' }],
-  harnesses: ['claude', 'opencode'],
+  harnesses: ['claude', 'opencode', 'copilot'],
 });
 
 test('a flag has no position: hints show it as typed, positional names and $n skip it (phase 19)', () => {
@@ -27,4 +27,13 @@ test('a flag has no position: hints show it as typed, positional names and $n sk
   const opencode = tree['.opencode/commands/mandao-specify.md']!;
   expect(opencode).toContain('Depth: $2');
   expect(opencode).not.toMatch(/\$3/);
+});
+
+test('Copilot asks only positional arguments; a flag is read from what was typed (phase 20, review F12)', () => {
+  const files = ADAPTERS.copilot.render({ resolution, config, models: {}, version: '0.1.0', scope: 'project' }).files;
+  const copilot = files.find((f) => f.path === '.github/prompts/mandao-specify.prompt.md')!.content;
+  expect(copilot).toContain('${input:spec:');
+  expect(copilot).toContain('${input:depth:');
+  expect(copilot).not.toContain('${input:hotfix');
+  expect(copilot).toContain('flags typed after the command, if any: [--hotfix]');
 });

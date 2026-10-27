@@ -48,7 +48,7 @@ tools:
 
 # /mandao-specify
 
-Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, hotfix: ${input:hotfix:A production fix}, depth: ${input:depth:lite | standard | full}
+Input: spec: ${input:spec:Spec id, e.g. PROJ-1-login}, depth: ${input:depth:lite | standard | full}, flags typed after the command, if any: [--hotfix]
 Depth: ${input:depth:lite | standard | full}
 
 Write `workspace/specs/${input:spec:Spec id, e.g. PROJ-1-login}/design.md` from `.mandao/templates/app/design.md`.
