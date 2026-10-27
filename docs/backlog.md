@@ -1177,6 +1177,10 @@ the profile question and fixes Copilot's flags; 20b takes the five fixes below. 
 4. The phase 15 end-to-end test of the MDO-0001 sequence is dropped: the phase 16 flow test covers intake to
    implement.
 
+**No changeset since the beta (maintainer, 2026-10-27).** Phases 15–20 changed user-visible behavior, but
+`.changeset/` holds no entry after `0.1.0-beta.0`, so the next `changeset version` would produce empty release
+notes. Before the next beta: one changeset per phase (or one summarizing 15–20), decided by the PE.
+
 **The constitution offers stack skills that cannot be installed (PE, 2026-10-26, real-state trial).** On a
 Next.js project `run fingerprint` proposed `react-best-practices`, and `/mandao-constitution` (Codex) asked
 "install the version pinned by Mandao?"; the PE said yes, and only then the agent found the catalog entry is
