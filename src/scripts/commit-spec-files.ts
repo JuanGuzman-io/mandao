@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { withStatus } from '../spec/approvals.js';
 
 /** Spec-folder files a task commit may carry without review. */
 
@@ -32,6 +33,32 @@ export function scriptLedgerPath(path: string): boolean {
   );
 }
 
+/** A file as committed in HEAD and as it is now; undefined when it is new, gone or unchanged. */
+function headAndCurrent(repo: string, path: string): [string, string] | undefined {
+  const file = join(repo, path);
+  if (!existsSync(file)) return undefined;
+  let head: string;
+  try {
+    head = execFileSync('git', ['show', `HEAD:${path}`], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  } catch {
+    return undefined;
+  }
+  const current = readFileSync(file, 'utf8');
+  return current === head ? undefined : [head, current];
+}
+
+/**
+ * The new frontmatter `status:` when a document differs from HEAD by that alone (implement's `in-progress`, hotfix
+ * beta.2); undefined for any other edit.
+ */
+export function statusOnlyChange(repo: string, path: string): string | undefined {
+  const pair = headAndCurrent(repo, path);
+  if (!pair) return undefined;
+  const [head, current] = pair;
+  const status = /^---\n[\s\S]*?^status:[ \t]*(\S+)/m.exec(current)?.[1];
+  return status !== undefined && withStatus(head, status) === current ? status : undefined;
+}
+
 /** A task's block: its heading to the next task heading. */
 const TASK_HEADING = /^###\s+\[[ xX]\]\s+(T\d+)\s*[—–-]/m;
 
@@ -55,16 +82,9 @@ const bookkeepingFree = (block: string) =>
  * `docs` commit per task for them). Any other edit, or one to another task, still needs review.
  */
 export function onlyTaskBookkeeping(repo: string, path: string, tasks: string[]): boolean {
-  const file = join(repo, path);
-  if (!existsSync(file)) return false;
-  let head: string;
-  try {
-    head = execFileSync('git', ['show', `HEAD:${path}`], { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-  } catch {
-    return false;
-  }
-  const current = readFileSync(file, 'utf8');
-  if (current === head) return false;
+  const pair = headAndCurrent(repo, path);
+  if (!pair) return false;
+  const [head, current] = pair;
   const before = taskBlocks(head);
   const after = taskBlocks(current);
   if (before.preamble !== after.preamble || before.blocks.length !== after.blocks.length) return false;

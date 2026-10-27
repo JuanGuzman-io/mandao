@@ -5,7 +5,7 @@ import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
 import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
-import { onlyTaskBookkeeping, scriptLedgerPath } from './commit-spec-files.js';
+import { onlyTaskBookkeeping, scriptLedgerPath, statusOnlyChange } from './commit-spec-files.js';
 import { reconcileEntries } from './reconcile.js';
 import { outOfScopeMessage, reconcileMessage, strayByTask } from './review-scope.js';
 import type { SpecFolder } from './spec.js';
@@ -327,8 +327,12 @@ function validatePendingManifest(input: PendingInput, queue: Progress['pending_c
   const unapprovedSpec = specChanges
     .map((item) => item.path.slice(specPrefix.length))
     .filter((path) => !scriptLedgerPath(path) && !onlyTaskBookkeeping(input.repo, `${specPrefix}${path}`, queued));
-  if (unapprovedSpec.length)
-    return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}`, specChanges: [] };
+  if (unapprovedSpec.length) {
+    // implement's `in-progress` is committed on its own (hotfix beta.2); say how, for a status set by hand.
+    const status = unapprovedSpec.includes('story.md') && statusOnlyChange(input.repo, `${specPrefix}story.md`) === 'in-progress';
+    const hint = status ? `; commit the story status on its own first: \`mandao run commit-spec ${input.story.meta.id} implement\`` : '';
+    return { error: `unreviewed spec files would enter the task commit: ${unapprovedSpec.join(', ')}${hint}`, specChanges: [] };
+  }
   // Only the approved paths are compared (phase 17): unrelated changes in the tree stay out of the commit.
   const actual = new Map(allCurrent.map((item) => [item.path, item]));
   const changed = approved.filter((item) => JSON.stringify(actual.get(item.path)) !== JSON.stringify(item)).map((item) => item.path);
@@ -378,12 +382,14 @@ export function commitSpecDocs(input: {
   trailers?: string[];
   protectedBranches?: string[];
   extraPaths?: string[];
+  /** Only these paths instead of the spec folder (implement's status commit leaves task bookkeeping alone). */
+  only?: string[];
 }): SpecCommit {
   const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
   if (input.protectedBranches?.includes(branch))
     return { committed: false, reason: `${branch} is a protected branch: commit from the spec's worktree` };
   const folder = relative(input.repo, input.specDir) || '.';
-  const paths = [folder, ...(input.extraPaths ?? []).filter((p) => existsSync(join(input.repo, p)))];
+  const paths = input.only ?? [folder, ...(input.extraPaths ?? []).filter((p) => existsSync(join(input.repo, p)))];
   git(input.repo, ['add', '--', ...paths]);
   if (!git(input.repo, ['diff', '--cached', '--name-only', '--', ...paths]).trim())
     return { committed: false, reason: 'nothing to commit in the spec folder' };

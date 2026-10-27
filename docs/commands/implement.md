@@ -54,6 +54,7 @@ No approval step of its own.
 - `mandao run next`
 - `mandao run models`
 - `mandao run status`
+- `mandao run commit-spec`
 - `mandao run tasks`
 - `mandao run step`
 - `mandao run brief`

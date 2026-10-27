@@ -25,7 +25,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md" }
 capabilities: [read, search, edit, shell, agents]
 templates: [rules/review.md, rules/clean-code.md, rules/test-policy.md, rules/commits.md, spec/execution.md, spec/pivot-record.md, rules/budget.md, rules/telemetry.md, rules/next-step.md]
-scripts: [task-files, where, next, models, status, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
+scripts: [task-files, where, next, models, status, commit-spec, tasks, step, brief, loop, checkpoint, resources, gates, review-pack, review, test-review, commit, pr-plan, verify-plan, mutation, implement-summary, event]
 # OpenCode: the commands run as the Leader agent, so the session uses the leader model.
 harness: { opencode: { agent: mandao-leader } }
 ---
@@ -56,9 +56,10 @@ write production code yourself. Use `{{language.technical}}` for notes; code and
 <!-- mandao:endif -->
 2. `{{script:models}} --harness {{harness}}` — compare **your own model** with `leader`. On a mismatch,
    warn (the Leader should run on `<leader>`) and continue.
-3. **Status.** If `story.md` says `approved`, check `{{script:status}} {{arg:spec}} in-progress` and set
-   `status: in-progress` in `story.md` before the first task: `verify` can only move an `in-progress`
-   spec to `verified`.
+3. **Status.** If `story.md` says `approved`, run `{{script:status}} {{arg:spec}} in-progress --apply`, then
+   `{{script:commit-spec}} {{arg:spec}} implement` before the first task: the script writes the status and commits
+   it on its own (never edit `story.md` by hand; a task commit refuses it). `verify` can only move an
+   `in-progress` spec to `verified`.
    When the spec is still `draft`, run `{{mandao}} approve --by-running /mandao-implement --harness {{harness}} {{arg:spec}} <step>`
    (`<step>` is `spec` for a lite draft and `tasks` for draft tasks; add `--words "<what the person wrote>"` when they wrote something next to the command): on `go` it has
    approved and recorded it, so go on; on `ask`, relay its one question and wait for the answer. Never

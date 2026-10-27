@@ -13,9 +13,9 @@ import { runWithGateReceipt } from '../scripts/gate-receipts.js';
 import { fillCommand } from '../scripts/impact.js';
 import { type BudgetKind, decideBudget, effectiveResources, probeMachine } from '../scripts/resources.js';
 import { inProjectDir, runTests } from '../scripts/run-tests.js';
-import { checkTransition, expectedPlace, readLayout, whereAmI } from '../scripts/spec.js';
-import { LOG_DIR, readApprovalLog, specKeepsState } from '../scripts/spec-log.js';
-import { commitMessage, layoutProblems, loopState, timeline, trace } from '../spec/index.js';
+import { expectedPlace, readLayout, whereAmI } from '../scripts/spec.js';
+import { LOG_DIR, specKeepsState } from '../scripts/spec-log.js';
+import { commitMessage, loopState, trace } from '../spec/index.js';
 import { nextFor, recordShown } from './approve.js';
 import { type BaselineLog, recordBaseline } from './baseline.js';
 import { budgetFor } from './budget.js';
@@ -26,6 +26,7 @@ import { runDeferred, runEval } from './run-deferred.js';
 import { registerLedger } from './run-ledger.js';
 import { specPremiseFindings } from './run-premise.js';
 import { registerRenameRef, specStaleRefs } from './run-refs.js';
+import { registerStatus } from './run-status.js';
 import { registerTasks } from './run-tasks.js';
 import { registerVerify } from './run-verify.js';
 import { harnessOption, impactFor, loadSpec, loopContext, modelsFor, projectNamed } from './spec-context.js';
@@ -140,44 +141,8 @@ function registerTaskScripts(run: Command, ctx: CliContext) {
 
 const collect = (value: string, all: string[]) => [...all, value];
 
-/** Close refuses a folder that does not match its layout; an unreadable version is a problem too. */
-function closeLayoutProblems(dir: string, principleIds: string[]): string[] {
-  try {
-    return layoutProblems(readLayout(dir, principleIds));
-  } catch (e) {
-    return [`layout: ${(e as Error).message}`];
-  }
-}
-
-/** Spec status changes and the worktree check. */
+/** Spec layout and the worktree check; status lives in run-status.ts. */
 function registerState(run: Command, ctx: CliContext) {
-  run
-    .command('status <spec> [to]')
-    .description(
-      'Check a spec status change (verified needs CI confirmation of deferred runs); without <to>, the status and the timeline (approvals among the execution rows, by date)',
-    )
-    .option('--ci-confirmed', 'CI passed every DEFERRED_TO_CI run')
-    .action((ref: string, to: string | undefined, opts: { ciConfirmed?: boolean }) => {
-      const { config, spec } = loadSpec(ctx, ref);
-      const from = spec.story?.meta.status ?? 'draft';
-      // Read only: the approvals stay in their log and are merged here, never written into execution.md (C-1).
-      if (to === undefined) return json({ status: from, timeline: timeline(spec.execution, readApprovalLog(spec.dir)) });
-      const problems = checkTransition(from, to, spec.progress, Boolean(opts.ciConfirmed));
-      if (to === 'closed')
-        problems.push(
-          ...closeLayoutProblems(
-            spec.dir,
-            principlesForProjects(
-              ctx.root(),
-              config,
-              spec.tasks.map((task) => task.project),
-            ),
-          ),
-        );
-      json({ from, to, allowed: problems.length === 0, problems });
-      if (problems.length) process.exitCode = 1;
-    });
-
   run
     .command('layout <spec>')
     .description('Compare the spec folder with the layout of its version and depth (missing, unexpected)')
@@ -368,6 +333,7 @@ export function registerSpecScripts(run: Command, ctx: CliContext) {
   registerPlanning(run, ctx);
   registerTrace(run, ctx);
   registerTaskScripts(run, ctx);
+  registerStatus(run, ctx);
   registerState(run, ctx);
   registerVerify(run, ctx);
 }
