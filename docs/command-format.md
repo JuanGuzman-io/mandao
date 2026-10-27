@@ -81,7 +81,7 @@ How each harness renders them:
 
 | Token | Claude Code | GitHub Copilot |
 |---|---|---|
-| `{{args}}` | `$ARGUMENTS` | one `${input:name:description}` per argument |
+| `{{args}}` | `$ARGUMENTS` | one `${input:name:description}` per positional argument; flags are read as typed after the command |
 | `{{arg:spec}}` | `$spec` (declared in `arguments:`) | `${input:spec:...}` |
 | `{{template:x}}` | `.mandao/templates/<profile>/x` | same |
 | `{{script:x}}` | `npx -y mandao@<version> run x` | same |

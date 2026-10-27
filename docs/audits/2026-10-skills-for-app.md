@@ -132,6 +132,20 @@ LICENSE file.
    accessibility): the constitution proposes the project skill generated from `standards.md` (ADR 0012), and the
    catalog's technology entry says so instead of pointing at a seed.
 
+## Re-check before the catalog (2026-10-27)
+
+Every pin written to the catalog was re-read through the GitHub API: commit, skill folder, frontmatter `name` and
+license. Corrections:
+
+- **Annotated tags.** For obra/superpowers v7.0.1 and addyosmani/agent-skills 0.6.13 the tables above give the tag
+  object's SHA (`cfd50a28…`, `8595f3f4…`), not the commit. The catalog pins the commits (`2ce8aa15d05bd57213e6f746f953aafb7ded7a8b`,
+  `aeac41d4d005999432bb7312f7ff06383a91d59d`); Mandao checks `HEAD == commit` after the fetch.
+- **wshobson/agents** entries all pin `0874a27b17a22e2b7c2e2bcd725768e0803cad06` (the folders exist there), including
+  `typescript-advanced-types` and `tailwind-design-system`.
+- **Left out of the catalog for now:** Android (no general guidance skill; the set is per area) and Kotlin; SwiftUI is in the
+  catalog without a technology match (no reliable file to detect it); the Dart and Expo sets beyond one skill each,
+  Docker, Cypress, TDD and code review (Mandao has its own steps). `cloudflare/security-audit-skill` stays rejected.
+
 ## Catalog changes this implies (phase 20)
 
 - Replace the nine `UNVERIFIED` seeds: three resolve (`systematic-debugging`, `api-design-principles`,

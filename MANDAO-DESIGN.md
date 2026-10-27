@@ -865,12 +865,14 @@ Archify is required for diagrams (§18.3). Init offers its pinned installation w
    - Build a **stack fingerprint**: languages, frameworks with versions, style-defining libraries (state management, ORM, UI kit), cloud, profile, infra.
    - Match it against `core/catalog/skills.yml`:
      ```yaml
+     nextjs:
+       primary: next-dev-loop
      nestjs:
-       primary: nestjs-best-practices
+       project_skill: no catalog skill passes admission   # → project skill from standards.md (ADR 0012)
      flutter:
-       primary: <bloc-skill>
+       primary: <skill>
        when: { state: bloc }
-       alt: [{ skill: <riverpod-skill>, when: { state: riverpod } }]
+       alt: [{ skill: <other-skill>, when: { state: riverpod } }]
      ```
    - Propose → user approves → install at project level, pinned in the lock → write `## Skill Map` in `AGENTS.md` (which skill applies in which phase and module).
 
@@ -887,6 +889,12 @@ Archify is required for diagrams (§18.3). Init offers its pinned installation w
 - Third-party skills are **referenced, not vendored**, pinned with author, license and version.
 - **DECIDED (ADR 0011):** `mandao skills add` installs by running the ecosystem tool after confirmation (`--yes` for CI), then verifies the skill and pins it in the lock. When the tool is missing, or the install happens inside the agent (`/plugin install …`), it prints the command instead.
 - Catalog admission: maintained, clear license, matches framework version, tried on a real project.
+- **DECIDED (ADR 0063), implemented:** every entry is verified at its source (repository, path, frontmatter,
+  license, the commit its tag resolves to), has no Warn or Fail on skills.sh's scanners, and records `trust`
+  (`official`, `vendor`, `community`), `audit.checked` and `license_from: frontmatter` when no LICENSE file backs the
+  license. No entry carries an `UNVERIFIED` placeholder; `skills add` refuses one. A technology with no passing skill
+  names `project_skill` instead of a primary, and the constitution proposes the project skill. Until tried on a real
+  project, entries stay `vetted: false`.
 - Unknown technology: candidates marked `unvetted`, or generate a project-tailored skill with `skill-creator` from the constitution's conventions (`standards.md`, `architecture.md`), listed in the Skill Map with binding `stack` (applied to Mandao itself in ADR 0012).
 - Binding per skill: `core` (wired to a step) · `profile` · `stack` · `conditional` (loaded when the task touches its domain), plus the phases where it applies.
 

@@ -47,8 +47,9 @@ npx mandao@beta init                # an existing repository: detects single rep
 npx mandao@beta sync                # a team repository that already uses Mandao
 ```
 
-`init` asks which harnesses you use, the models (one profile: `peak`, `balanced` or `economy`) and who decides:
-a team (PO, tech lead, dev) or only you (one role, e.g. PE).
+`init` asks what kind of project it is (`app`, or `ai` for LLM, RAG or agents: an app with AI features picks `ai`;
+it changes the spec templates, not the commands), which harnesses you use, the models (one profile: `peak`,
+`balanced` or `economy`) and who decides: a team (PO, tech lead, dev) or only you (one role, e.g. PE).
 
 **2. In your agent, build the foundation:**
 
