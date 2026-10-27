@@ -7,7 +7,7 @@ coverage/
 .claude/settings.local.json
 
 # mandao:begin
-# Managed by mandao 0.1.0-beta.1.
+# Managed by mandao 0.1.0-beta.2.
 graphify-out/
 .mandao/run.lock
 .mandao/cli.log
