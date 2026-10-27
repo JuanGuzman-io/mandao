@@ -32,6 +32,10 @@ describe('the profile question at init', () => {
     expect(defaultProfileGuess(ws)).toEqual({ profile: 'app', evidence: 'dbt_project.yml (the data profile is not specialized yet)' });
     expect(startingProfile(ws.projects[0]!, undefined, 'app')).toBe('app');
     expect(startingProfile(ws.projects[0]!, 'data', 'app')).toBe('data');
+    // --default-profile data keeps a detected data project as data (review F3).
+    expect(startingProfile(ws.projects[0]!, undefined, 'data')).toBe('data');
+    // Re-asking a project already set to data can keep it (review F4).
+    expect(profileOptions('data').map((o) => o.value)).toEqual(['app', 'ai', 'data']);
   });
 
   test('nothing detected: app, with no evidence', () => {

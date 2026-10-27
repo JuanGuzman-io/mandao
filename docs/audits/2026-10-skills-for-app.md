@@ -142,6 +142,8 @@ license. Corrections:
   `aeac41d4d005999432bb7312f7ff06383a91d59d`); Mandao checks `HEAD == commit` after the fetch.
 - **wshobson/agents** entries all pin `0874a27b17a22e2b7c2e2bcd725768e0803cad06` (the folders exist there), including
   `typescript-advanced-types` and `tailwind-design-system`.
+- **Known false positive:** the `python` technology matches any `pyproject.toml` or `requirements.txt`, so a JS repo that
+  keeps one for its docs tooling gets `python-code-style` proposed; the person declines it in the proposal.
 - **Left out of the catalog for now:** Android (no general guidance skill; the set is per area) and Kotlin; SwiftUI is in the
   catalog without a technology match (no reliable file to detect it); the Dart and Expo sets beyond one skill each,
   Docker, Cypress, TDD and code review (Mandao has its own steps). `cloudflare/security-audit-skill` stays rejected.

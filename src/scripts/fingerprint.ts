@@ -63,6 +63,8 @@ const FINGERPRINT_FILES = [
   '.github/workflows',
 ];
 
+const REPO_FILES = ['.github/workflows'];
+
 function satisfies(declared: string, wanted: string | undefined): boolean {
   if (!wanted || declared === '*' || declared === 'latest') return true;
   const min = semver.minVersion(declared);
@@ -102,10 +104,18 @@ export function detectFacets(catalog: Catalog, deps: Record<string, string>, fil
   return facets;
 }
 
-export function fingerprintProject(root: string, project: Config['projects'][number], catalog: Catalog): ProjectFingerprint {
+/** `monorepo`: repository-level files at the workspace root count for every project; a polyrepo child has its own. */
+export function fingerprintProject(
+  root: string,
+  project: Config['projects'][number],
+  catalog: Catalog,
+  monorepo = false,
+): ProjectFingerprint {
   const dir = join(root, project.path);
   const dependencies = readDependencies(dir);
-  const files = FINGERPRINT_FILES.filter((f) => existsSync(join(dir, f)));
+  // Repository-level files (CI workflows) live at the workspace root in a monorepo, not in each project.
+  const atRoot = (f: string) => monorepo && REPO_FILES.includes(f) && existsSync(join(root, f));
+  const files = FINGERPRINT_FILES.filter((f) => existsSync(join(dir, f)) || atRoot(f));
   return {
     project: project.name,
     path: project.path,

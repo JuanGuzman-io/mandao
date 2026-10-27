@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, test } from 'vitest';
 import { planLines, selectSkills } from '../../src/cli/skills.js';
 import { readCatalog } from '../../src/engine/catalog.js';
 import { type Catalog, catalogSchema, installable, type Lock } from '../../src/schemas/index.js';
-import { type ProjectFingerprint, proposeSkills } from '../../src/scripts/fingerprint.js';
+import { fingerprintProject, type ProjectFingerprint, proposeSkills } from '../../src/scripts/fingerprint.js';
+import { makeTree } from '../helpers.js';
 
 /** Phase 20: the catalog offers only what can be installed, and says who publishes it and under which license. */
 const catalog = readCatalog();
@@ -46,6 +47,21 @@ describe('the shipped catalog (phase 20)', () => {
     expect(nest.projectSkills).toEqual([
       expect.objectContaining({ technology: 'nestjs', projects: ['web'], evidence: '@nestjs/core@^11.0.0' }),
     ]);
+  });
+
+  test('a data project still gets the profile-neutral skills (review F2)', () => {
+    const r = proposeSkills([fp({ psycopg2: '*' }, ['pyproject.toml'], 'data')], catalog);
+    expect(r.matches.map((m) => m.skill)).toEqual(['python-code-style', 'supabase-postgres-best-practices']);
+  });
+
+  test('CI workflows at the workspace root count for a monorepo project (review F5)', () => {
+    const root = makeTree({ '.github/workflows/ci.yml': 'on: push\n', 'apps/web/package.json': '{}' });
+    const web = { name: 'web', path: 'apps/web', profile: 'app' } as never;
+    expect(proposeSkills([fingerprintProject(root, web, catalog, true)], catalog).matches.map((m) => m.skill)).toEqual([
+      'github-actions-hardening',
+    ]);
+    // A polyrepo child has its own repository: the workspace folder's workflows are not its CI (review N1).
+    expect(proposeSkills([fingerprintProject(root, web, catalog, false)], catalog).matches).toEqual([]);
   });
 
   test('llm-evaluation is proposed for the ai profile only', () => {

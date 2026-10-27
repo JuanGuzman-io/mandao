@@ -34,6 +34,10 @@ Copilot also turned every flag into a free-text `${input:…}` question (phase 1
 
 ## Consequences
 
-- The four seeds with no passing skill (`nestjs-best-practices`, `flutter-bloc`, `flutter-riverpod`,
-  `ai-agent-development`) left the catalog; three resolved upstream and two moved to vendor sources.
+- Of the nine seeds: `systematic-debugging`, `error-handling-patterns` and `api-design-principles` resolved to their
+  upstream sources under the same id; `react-best-practices` became `vercel-react-best-practices` (Vercel) and
+  `angular-developer` points at angular/skills; `nestjs-best-practices`, `flutter-bloc`, `flutter-riverpod` and
+  `ai-agent-development` left the catalog (NestJS is a `project_skill`; `llm-evaluation` covers `ai` evals).
+- A profile-neutral skill (language, database, security, cross-cutting) has no `profiles` key, so `data` projects get it
+  too; frontend and mobile skills are `[app, ai]`.
 - A pin bump is a maintainer step: re-read the source, re-check the audit, update `audit.checked`.

@@ -91,7 +91,6 @@ const technology = z
   })
   .refine((t) => Boolean(t.primary) !== Boolean(t.project_skill), 'needs exactly one of primary or project_skill');
 
-/** Why an all-hex `ref` is refused (hex is read case-insensitively), or undefined when it is the pinned commit. */
 /** A source Mandao can install: no `UNVERIFIED` placeholder in its version or source (phase 20). */
 export function installable(s: CatalogSkill): boolean {
   return !/UNVERIFIED/.test(`${s.version} ${JSON.stringify(s.source)}`);
@@ -101,6 +100,7 @@ export function installable(s: CatalogSkill): boolean {
 export const licenseLabel = (s: Pick<CatalogSkill, 'license' | 'license_from'>) =>
   s.license_from === 'frontmatter' ? `${s.license} (frontmatter)` : s.license;
 
+/** Why an all-hex `ref` is refused (hex is read case-insensitively), or undefined when it is the pinned commit. */
 function hexRefProblem(ref: string, commit: string): string | undefined {
   if (ref !== ref.toLowerCase()) return `ref ${ref} is a hash in uppercase: use lowercase hex (the full 40-hex commit)`;
   if (ref.length !== 40) return `ref ${ref} looks like a short hash: use a tag or the full 40-hex commit (equal to commit)`;

@@ -26,9 +26,13 @@ export const PROFILE_QUESTION = 'What kind of project is this? It changes the sp
 /** A detected `data` project starts as `app` until `data` has its own templates. */
 const offered = (profile: Profile | undefined): Profile | undefined => (profile === 'data' ? 'app' : profile);
 
-/** Pure: the select options, the preselected one naming what was detected. */
+/** Pure: the select options, the preselected one naming what was detected; `data` only when it is already the value. */
 export function profileOptions(initial: Profile, evidence?: string) {
-  return OFFERED.map((o) => ({
+  const offeredHere =
+    initial === 'data'
+      ? [...OFFERED, { value: 'data' as const, hint: 'set by --profile or --default-profile; not specialized yet' }]
+      : OFFERED;
+  return offeredHere.map((o) => ({
     value: o.value,
     label: o.value,
     hint: o.value === initial && evidence ? `${o.hint} · detected: ${evidence}` : o.hint,
@@ -60,9 +64,12 @@ export async function chooseDefaultProfile(ws: DetectedWorkspace, opts: { defaul
   return picked as Profile;
 }
 
-/** The profile one project starts with: the flag, else what was detected (`data` as `app`), else the default. */
+/**
+ * The profile one project starts with: the flag, else what was detected, else the workspace default. A detected
+ * `data` project takes the default (`app` unless `--default-profile data` said otherwise).
+ */
 export const startingProfile = (pr: DetectedProject, flag: Profile | undefined, fallback: Profile): Profile =>
-  flag ?? offered(pr.profile) ?? fallback;
+  flag ?? (pr.profile === 'data' ? fallback : pr.profile) ?? fallback;
 
 /** One project's profile, asked when the person said the detected ones are wrong. */
 export async function askProjectProfile(pr: DetectedProject & { profile: Profile }): Promise<Profile> {

@@ -191,7 +191,6 @@ skills:
     vetted: false
     binding: stack
     phases: [implement]
-    profiles: [app, ai]
   golang-code-style:
     description: Go code style and idioms.
     source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-code-style, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
@@ -203,7 +202,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   golang-error-handling:
     description: Go error wrapping, sentinel errors and error flows.
     source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-error-handling, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
@@ -215,7 +213,6 @@ skills:
     vetted: false
     binding: stack
     phases: [implement]
-    profiles: [app, ai]
   golang-testing:
     description: "Go tests: table-driven tests, fixtures, mocks and benchmarks."
     source: { type: git, url: https://github.com/samber/cc-skills-golang, ref: v2.0.0, path: skills/golang-testing, commit: 053894c088317d7ba2038cffcbf5fd57b5494fa6 }
@@ -227,7 +224,6 @@ skills:
     vetted: false
     binding: stack
     phases: [implement, verify]
-    profiles: [app, ai]
   python-code-style:
     description: Python style, naming, typing and project conventions.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/python-development/skills/python-code-style, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -239,7 +235,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   python-testing-patterns:
     description: pytest fixtures, parametrization, mocking and test layout.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/python-development/skills/python-testing-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -251,7 +246,6 @@ skills:
     vetted: false
     binding: stack
     phases: [implement, verify]
-    profiles: [app, ai]
   fastapi:
     description: "FastAPI, from the FastAPI repository and versioned with the library: pin the tag of the project's FastAPI."
     source: { type: git, url: https://github.com/fastapi/fastapi, ref: 0.162.0, path: fastapi/.agents/skills/fastapi, commit: 7a0a3f0b286c6c865cf4398ea0e957a87b8bffa4 }
@@ -299,7 +293,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   sql-optimization-patterns:
     description: SQL query optimization, indexes and execution plans.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/developer-essentials/skills/sql-optimization-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -311,7 +304,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [specify, implement]
-    profiles: [app, ai]
   prisma-client-api:
     description: Prisma Client queries, relations and transactions, from the Prisma team; match the project's Prisma major.
     source: { type: git, url: https://github.com/prisma/skills, ref: ba3f9d73200bbb62e49733ab93a961fd138a2c18, path: prisma-client-api, commit: ba3f9d73200bbb62e49733ab93a961fd138a2c18 }
@@ -323,7 +315,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   redis-core:
     description: Redis data structures, keys and commands, from Redis.
     source: { type: git, url: https://github.com/redis/agent-skills, ref: a84871d065f398fed55e1633f66b66f731eb4e2b, path: skills/redis-core, commit: a84871d065f398fed55e1633f66b66f731eb4e2b }
@@ -335,7 +326,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   graphql-schema:
     description: "GraphQL schema design: types, nullability, pagination and evolution."
     source: { type: git, url: https://github.com/apollographql/skills, ref: v1.4.3, path: skills/graphql-schema, commit: 46034b62106b1044890cdb1cbb01d1bfe671aa69 }
@@ -347,7 +337,6 @@ skills:
     vetted: false
     binding: stack
     phases: [specify, implement]
-    profiles: [app, ai]
   vercel-react-native-skills:
     description: React Native performance, lists, animations and native modules.
     source: { type: git, url: https://github.com/vercel-labs/agent-skills, ref: 063bee94c3f4df8453406c830b0a7df0f2860278, path: skills/react-native-skills, commit: 063bee94c3f4df8453406c830b0a7df0f2860278 }
@@ -432,7 +421,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [implement, verify]
-    profiles: [app, ai]
   error-handling-patterns:
     description: Error propagation, Result types and graceful degradation.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/developer-essentials/skills/error-handling-patterns, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -444,7 +432,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [specify, implement]
-    profiles: [app, ai]
   api-design-principles:
     description: REST and GraphQL API design for public contracts.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/backend-development/skills/api-design-principles, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -456,7 +443,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [specify]
-    profiles: [app, ai]
   github-actions-hardening:
     description: "GitHub Actions hardening: permissions, pinned actions, secrets and untrusted input."
     source: { type: git, url: https://github.com/github/awesome-copilot, ref: d106008300bd4c8396e9c3c085c7c8e3ed976d48, path: skills/github-actions-hardening, commit: d106008300bd4c8396e9c3c085c7c8e3ed976d48 }
@@ -468,7 +454,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [constitution, implement]
-    profiles: [app, ai]
   llm-evaluation:
     description: "LLM evals: metrics, reference datasets, LLM-as-judge and regression thresholds."
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/llm-application-dev/skills/llm-evaluation, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -492,7 +477,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [constitution]
-    profiles: [app, ai]
   sast-configuration:
     description: Static analysis (SAST) tool setup and tuning for the project's languages.
     source: { type: git, url: https://github.com/wshobson/agents, ref: 0874a27b17a22e2b7c2e2bcd725768e0803cad06, path: plugins/security-scanning/skills/sast-configuration, commit: 0874a27b17a22e2b7c2e2bcd725768e0803cad06 }
@@ -504,7 +488,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [constitution]
-    profiles: [app, ai]
   security-review:
     description: "Security review of a change: injection, auth, secrets and unsafe input."
     source: { type: git, url: https://github.com/github/awesome-copilot, ref: d106008300bd4c8396e9c3c085c7c8e3ed976d48, path: skills/security-review, commit: d106008300bd4c8396e9c3c085c7c8e3ed976d48 }
@@ -516,7 +499,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [verify]
-    profiles: [app, ai]
   security-and-hardening:
     description: "Secure defaults while implementing: input validation, authz, secrets and dependencies."
     source: { type: git, url: https://github.com/addyosmani/agent-skills, ref: 0.6.13, path: skills/security-and-hardening, commit: aeac41d4d005999432bb7312f7ff06383a91d59d }
@@ -528,7 +510,6 @@ skills:
     vetted: false
     binding: conditional
     phases: [implement]
-    profiles: [app, ai]
 
 technologies:
   # Frontend
