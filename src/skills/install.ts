@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { type Catalog, type CatalogSkill, type HarnessId, type Lock, licenseLabel } from '../schemas/index.js';
-import { coreDir } from '../util/package-root.js';
+import { coreDir, packageInfo } from '../util/package-root.js';
 import { copyGitSkill } from './git-copy.js';
 
 export type InstallStep =
@@ -219,6 +219,11 @@ export function pinSkills(lock: Lock, results: SkillResult[], catalog: Catalog):
       vetted: s.vetted,
       ...(commit ? { commit } : {}),
       ...(r.scripts ? { scripts: true } : {}),
+      ...(s.source.type === 'git'
+        ? { restore: { type: 'git' as const, url: s.source.url, path: s.source.path ?? '.', model_invocation: s.model_invocation } }
+        : s.source.type === 'bundled'
+          ? { restore: { type: 'bundled' as const, path: s.source.path, mandao: packageInfo().version } }
+          : {}),
     });
   }
   return { ...lock, skills: [...pinned.values()].sort((a, b) => a.id.localeCompare(b.id)) };

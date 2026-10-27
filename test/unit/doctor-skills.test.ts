@@ -69,3 +69,42 @@ describe('doctor: skills the commands use', () => {
     }
   });
 });
+
+describe('doctor: pinned restorable skills', () => {
+  const pinnedSkill = {
+    id: 'example',
+    version: '1',
+    source: 'https://example.com/repo#v1:skill',
+    author: 'author',
+    license: 'MIT',
+    vetted: true,
+    commit: 'a'.repeat(40),
+    restore: { type: 'git' as const, url: 'https://example.com/repo', path: 'skill', model_invocation: true },
+  };
+
+  test('warns about a missing pinned skill outside command skills even when it exists globally', () => {
+    const root = makeTree({});
+    const homed = makeTree({ ...skill('.claude/skills', 'example') });
+    const findings = skillFindings({ catalog, pinned: [], locked: [pinnedSkill], harnesses: ['claude'], root, home: homed });
+    expect(find(findings, 'example')).toEqual([expect.objectContaining({ level: 'warn', fix: 'mandao skills restore' })]);
+  });
+
+  test('an incomplete existing folder requires manual intervention', () => {
+    const root = makeTree({ '.claude/skills/example/notes.md': 'incomplete' });
+    const findings = skillFindings({ catalog, pinned: [], locked: [pinnedSkill], harnesses: ['claude'], root, home });
+    expect(find(findings, 'example')[0]?.fix).toContain('remove');
+  });
+
+  test('does not warn when all local target folders exist', () => {
+    const root = makeTree({ ...skill('.claude/skills', 'example'), ...skill('.agents/skills', 'example') });
+    const findings = skillFindings({ catalog, pinned: [], locked: [pinnedSkill], harnesses: ['claude', 'codex'], root, home });
+    expect(find(findings, 'example')).toEqual([]);
+  });
+
+  test('reports a missing pinned non-restorable skill with its install command', () => {
+    const root = makeTree({});
+    const legacy = { id: 'custom', version: '1', source: 'npm:custom', author: 'author', license: 'MIT', vetted: true };
+    const findings = skillFindings({ catalog, pinned: ['custom'], locked: [legacy], harnesses: ['claude'], root, home });
+    expect(find(findings, 'custom')).toEqual([expect.objectContaining({ level: 'warn', fix: 'mandao skills add custom' })]);
+  });
+});

@@ -36,6 +36,18 @@ export const lockSchema = z.object({
           .optional(),
         /** True when a `git` source was copied with its executable scripts (`--with-scripts`). */
         scripts: z.boolean().optional(),
+        /** Reproducible installation recipe, present on skills pinned by Mandao 0.1.0-beta.3+. */
+        restore: z
+          .discriminatedUnion('type', [
+            z.object({
+              type: z.literal('git'),
+              url: z.url().refine((v) => /^https:\/\//i.test(v)),
+              path: z.string().min(1),
+              model_invocation: z.boolean(),
+            }),
+            z.object({ type: z.literal('bundled'), path: z.string().min(1), mandao: z.string().min(1) }),
+          ])
+          .optional(),
       }),
     )
     .default([]),

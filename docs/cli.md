@@ -159,6 +159,7 @@ Every command and flag the CLI defines. A test fails when this index and the CLI
 | `mandao update` | `--force` | Re-resolve content with the installed Mandao version (overrides and model choices are never touched) |
 | `mandao harness add <ids...>` | — | Generate files for more harnesses |
 | `mandao skills list` | `--json` · `--vetted` · `--unvetted` | List pinned skills |
+| `mandao skills restore` | — | Restore missing pinned skills |
 | `mandao skills add <ids...>` | `-y, --yes` · `--with-scripts` | Install catalog skills (or packs) with their ecosystem tool, verify them and pin them in the lock |
 | `mandao models` | `--project <name>` · `--harness <id>` | Show the model each role uses per harness, with its source |
 | `mandao models set <role> <model>` | `--harness <id>` · `--tier <tier>` · `--project <name>` | Choose the model for a role (leader, reviewer, reviewer_alt, implementer, tester) and regenerate |

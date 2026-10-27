@@ -6,7 +6,7 @@ import { build } from 'tsup';
 import { afterEach, beforeEach, describe, expect, type MockInstance, test, vi } from 'vitest';
 import { runInit } from '../../src/cli/init.js';
 import { readCatalog } from '../../src/engine/catalog.js';
-import { LOCK_FILE, readLock } from '../../src/engine/files.js';
+import { LOCK_FILE, readConfig, readLock } from '../../src/engine/files.js';
 import { commandSkills } from '../../src/skills/command-skills.js';
 import { initTestRepo, makeTree, makeTreeAt, pkg, stubTerminal } from '../helpers.js';
 
@@ -15,10 +15,6 @@ beforeEach(() => {
   restoreTerminal = stubTerminal();
 });
 afterEach(() => restoreTerminal());
-
-// MDO-0009 T2: `init` offers the commands' skills and copies only what the person selects (FR-2, FR-3, FR-4).
-// Prompts are mocked like the budget question; Git rewrites its HTTPS fixture URL to a local tagged repository.
-
 const state = vi.hoisted(() => ({
   /** What the skills multiselect answers; the test sets it per case. */
   answer: [] as unknown,
@@ -31,7 +27,6 @@ const state = vi.hoisted(() => ({
   runnerCalls: [] as string[],
   root: '',
 }));
-
 vi.mock('@clack/prompts', () => {
   const noop = () => {};
   return {
@@ -65,9 +60,7 @@ vi.mock('@clack/prompts', () => {
     },
   };
 });
-
 vi.mock('../../src/cli/init-archify.js', () => ({ offerArchify: async () => {} }));
-
 vi.mock('../../src/skills/install.js', async (importOriginal) => {
   const real = await importOriginal<typeof import('../../src/skills/install.js')>();
   return {
@@ -81,19 +74,16 @@ vi.mock('../../src/skills/install.js', async (importOriginal) => {
     },
   };
 });
-
 const SKILLS: Record<string, string> = {
   brainstorming: 'skills/brainstorming',
   'product-manager-toolkit': 'product-team/skills/product-manager-toolkit',
   'software-architect': '.claude/skills/software-architect',
 };
-
 const git = (cwd: string, ...args: string[]) =>
   execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@example.com', '-c', 'commit.gpgsign=false', ...args], {
     cwd,
     encoding: 'utf8',
   }).trim();
-
 /** A local repository holding the three git skills at their catalog paths, tagged `v1.0.0`. */
 function skillRepo() {
   const dir = makeTree({});
@@ -110,17 +100,13 @@ function skillRepo() {
   git(dir, 'tag', 'v1.0.0');
   return { url: 'https://fixture.invalid/skills.git', localUrl: `file://${dir}`, commit: git(dir, 'rev-parse', 'HEAD') };
 }
-
 let source: { url: string; localUrl: string; commit: string } = { url: '', localUrl: '', commit: '' };
-
 function rewriteGitFixture() {
   process.env.GIT_CONFIG_COUNT = '1';
   process.env.GIT_CONFIG_KEY_0 = `url.${source.localUrl}.insteadOf`;
   process.env.GIT_CONFIG_VALUE_0 = source.url;
 }
-
 let previousGitConfig: Record<string, string | undefined> = {};
-
 vi.mock('../../src/engine/catalog.js', async (importOriginal) => {
   const real = await importOriginal<typeof import('../../src/engine/catalog.js')>();
   return {
@@ -135,9 +121,7 @@ vi.mock('../../src/engine/catalog.js', async (importOriginal) => {
     },
   };
 });
-
 let exit: MockInstance<typeof process.exit>;
-
 beforeEach(() => {
   previousGitConfig = Object.fromEntries(
     ['GIT_CONFIG_COUNT', 'GIT_CONFIG_KEY_0', 'GIT_CONFIG_VALUE_0'].map((key) => [key, process.env[key]]),
@@ -158,7 +142,6 @@ beforeEach(() => {
     throw new Error(`process.exit(${code}) called`);
   }) as never);
 });
-
 afterEach(() => {
   vi.restoreAllMocks();
   for (const [key, value] of Object.entries(previousGitConfig)) {
@@ -166,7 +149,6 @@ afterEach(() => {
     else process.env[key] = value;
   }
 });
-
 const initOptions = {
   scope: 'project',
   defaultProfile: 'app',
@@ -179,7 +161,6 @@ const initOptions = {
 const init = (harness: string[], extra: Record<string, unknown> = {}) => runInit(state.root, { ...initOptions, harness, ...extra });
 const lockSkills = () => readLock(join(state.root, LOCK_FILE))?.skills ?? [];
 const folder = (base: string, id: string) => join(state.root, base, id);
-
 describe('init offers the skills (FR-2)', () => {
   test('S-2.1 and AC-1/C1: before the question, each skill shows what it does, source, version, vetted state and its commands', async () => {
     await init(['claude', 'codex']);
@@ -197,7 +178,6 @@ describe('init offers the skills (FR-2)', () => {
     expect(shown).toContain(source.url);
     expect(shown).toContain('v1.0.0');
   });
-
   test('S-2.1/C1: before the question, it shows how each is installed: the shell commands, or repository, tag and the folders', async () => {
     await init(['claude', 'codex']);
     const shown = state.atQuestion!.shown;
@@ -206,7 +186,6 @@ describe('init offers the skills (FR-2)', () => {
     expect(shown).toContain('skills/brainstorming');
     expect(shown).toContain('uv tool install graphifyy==0.9.92');
   });
-
   test('S-2.3/C1 and AC-1/C2: no skill starts selected and the question is not required', async () => {
     await init(['claude', 'codex']);
     const { initialValues, required, options } = state.atQuestion!;
@@ -219,7 +198,6 @@ describe('init offers the skills (FR-2)', () => {
         .sort(),
     );
   });
-
   test('S-2.3/C1: nothing was run and no folder written when the question is asked', async () => {
     await init(['claude', 'codex']);
     expect(state.atQuestion!.runnerCalls).toEqual([]);
@@ -229,7 +207,6 @@ describe('init offers the skills (FR-2)', () => {
     }
   });
 });
-
 describe('init installs only the selection (AC-1, AC-3)', () => {
   test('S-2.2 and AC-1/C3: selecting product-manager-toolkit only copies it into both folders and pins it with its commit', async () => {
     state.answer = ['product-manager-toolkit'];
@@ -239,11 +216,11 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
       expect(existsSync(folder(base, 'brainstorming'))).toBe(false);
       expect(existsSync(folder(base, 'software-architect'))).toBe(false);
     }
+    expect(readConfig(state.root).skills.track).toBe(false);
     const pinned = lockSkills();
     expect(pinned.map((s) => s.id)).toEqual(['product-manager-toolkit']);
     expect(pinned[0]).toMatchObject({ commit: source.commit });
   });
-
   test('S-2.3: selecting nothing finishes init and pins no skill', async () => {
     state.answer = [];
     await init(['claude', 'codex']);
@@ -251,7 +228,6 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
     for (const id of Object.keys(SKILLS)) expect(existsSync(folder('.claude/skills', id)), id).toBe(false);
     expect(existsSync(join(state.root, '.mandao/config.yml'))).toBe(true);
   });
-
   test('S-2.3: cancelling the question finishes init without exiting and pins no skill', async () => {
     state.answer = Symbol('cancel');
     await init(['claude', 'codex']);
@@ -260,7 +236,6 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
     for (const id of Object.keys(SKILLS)) expect(existsSync(folder('.claude/skills', id)), id).toBe(false);
     expect(readLock(join(state.root, LOCK_FILE))).toBeDefined();
   });
-
   test('AC-3: with only Codex chosen the same skills are offered and the accepted one lands where Codex reads', async () => {
     state.answer = ['brainstorming'];
     await init(['codex']);
@@ -274,7 +249,6 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
     expect(existsSync(folder('.claude/skills', 'brainstorming'))).toBe(false);
     expect(lockSkills().map((s) => s.id)).toEqual(['brainstorming']);
   });
-
   test('AC-1/C4: by default the accepted skill is copied without its scripts, which are named; --with-scripts copies them', async () => {
     state.answer = ['brainstorming'];
     await init(['claude']);
@@ -283,7 +257,6 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
     expect(state.shown.join('\n')).toContain('--with-scripts');
     expect(lockSkills()[0]?.scripts).not.toBe(true);
   });
-
   test('AC-1/C4: --with-scripts on init copies the scripts, warns, and records it in the lock', async () => {
     state.answer = ['brainstorming'];
     await init(['claude'], { withScripts: true });
@@ -291,7 +264,6 @@ describe('init installs only the selection (AC-1, AC-3)', () => {
     expect(state.shown.join('\n')).toMatch(/third-party/i);
     expect(lockSkills()[0]).toMatchObject({ id: 'brainstorming', commit: source.commit, scripts: true });
   });
-
   test('S-3.3/C1 and AC-3/C1: an accepted skill whose fetch fails does not fail init; it is reported pending and not pinned', async () => {
     source = { ...source, localUrl: 'file:///nonexistent/mandao-no-such-repository' };
     rewriteGitFixture();
@@ -313,7 +285,6 @@ describe('init --yes as a process (FR-4)', () => {
 
   beforeEach(async () => {
     outDir = makeTreeAt(cache, 'mandao-init-skills-', {});
-    // Same entry, format, target and platform as tsup.config.ts; the bundle sits in the repository so core/ is found.
     await build({
       entry: { cli: join(root, 'src/cli/index.ts') },
       format: ['esm'],

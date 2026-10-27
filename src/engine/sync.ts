@@ -1,3 +1,4 @@
+import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
 import { renderAgentsMd } from '../adapters/agents-md.js';
 import { ADAPTERS, type AdapterInput, type GeneratedFile, type InstallScope } from '../adapters/index.js';
@@ -7,10 +8,13 @@ import { installTemplates } from '../render/templates.js';
 import { type Layer, layerHash, loadLayers } from '../resolver/layers.js';
 import { type Resolution, resolve } from '../resolver/resolve.js';
 import { type Config, configSchema, type HarnessId, type Lock, type LockFile } from '../schemas/index.js';
+import { skillFolders } from '../skills/install.js';
+import { enrichLegacySkills, restorableSkill } from '../skills/restore.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { applyChanges } from '../writer/apply.js';
 import { type Change, planChanges } from '../writer/plan.js';
+import { readCatalog } from './catalog.js';
 import { inputsText, LOCK_FILE, LOCK_HEADER, readConfig, readLock, writeYaml } from './files.js';
 import { globalLockFile, globalRoots } from './global.js';
 import { gitIgnoreBlock, graphIgnoreBlock } from './graph.js';
@@ -33,6 +37,7 @@ export function buildOutputs(
   version: string,
   scope: InstallScope,
   moduleDirs: string[] = [],
+  skills: Lock['skills'] = [],
 ): BuildResult {
   const resolution = resolve(layers);
   const input: AdapterInput = { resolution, config, models, version, scope, moduleDirs };
@@ -68,7 +73,7 @@ export function buildOutputs(
       scope: 'project',
     });
     const childRepos = config.workspace === 'polyrepo' ? config.projects.map((p) => p.path) : [];
-    files.push(gitIgnoreBlock(childRepos, version));
+    files.push(gitIgnoreBlock(childRepos, version, ignoredSkills(config, skills)));
     files.push(graphIgnoreBlock(files, version));
   }
 
@@ -77,6 +82,7 @@ export function buildOutputs(
 
 /** What `sync` writes for a workspace. `doctor` compares the disk against exactly this. */
 export function buildProject(root: string, config: Config, layers: Layer[], version: string): BuildResult {
+  const lock = readLock(join(root, LOCK_FILE));
   const built = buildOutputs(
     config,
     resolveWorkspaceModels(root, config, readRecommendations()),
@@ -84,9 +90,31 @@ export function buildProject(root: string, config: Config, layers: Layer[], vers
     version,
     'project',
     findModuleGuides(root, config),
+    enrichLegacySkills(lock?.skills ?? [], readCatalog(), lock?.mandao ?? version),
   );
   // Shadow mode is reported by doctor as info; it is a choice, not a warning (ADR 0030).
   return { ...built, files: applyShadow(root, config, built.files, version).files };
+}
+
+/** Paths are anchored to the workspace and only include validated lock entries. */
+export function ignoredSkills(config: Config, skills: Lock['skills']): string[] {
+  if (config.skills.track) return [];
+  return [
+    ...new Set(
+      skills
+        .filter((s) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(s.id) && restorableSkill(s))
+        .flatMap((s) => skillFolders(config.harnesses).map((folder) => `/${folder}/${s.id}/`)),
+    ),
+  ].sort();
+}
+
+/** Git ignore does not remove files already in the index. Report a safe command instead. */
+function trackedSkillWarnings(root: string, paths: string[]): string[] {
+  const tracked = paths.filter((path) => {
+    const result = spawnSync('git', ['ls-files', '-z', '--', path.slice(1)], { cwd: root, encoding: 'utf8' });
+    return result.status === 0 && result.stdout.length > 0;
+  });
+  return tracked.map((path) => `Already tracked: ${path}. Run git rm --cached -r -- '${path.slice(1, -1)}'`);
 }
 
 export interface SyncOptions {
@@ -119,13 +147,14 @@ export function syncProject(root: string, opts: SyncOptions = {}): SyncResult {
   const layers = loadLayers(root, config.presets);
   const build = buildProject(root, config, layers, version);
   const lockPath = join(root, LOCK_FILE);
-  const previous = readLock(lockPath);
+  const raw = readLock(lockPath);
+  const previous = raw ? { ...raw, skills: enrichLegacySkills(raw.skills, readCatalog(), raw.mandao) } : undefined;
   const changes = planChanges(build.files, previous?.files ?? [], { project: root }, opts.force);
 
   const entries = opts.dryRun ? changes.flatMap((c) => (c.lock ? [c.lock] : [])) : applyChanges(changes, [root]);
   const lock = lockFrom(previous, entries, layers, sha256(inputsText(root)), version);
   if (!opts.dryRun) writeYaml(lockPath, lock, LOCK_HEADER);
-  return { changes, warnings: build.warnings, lock };
+  return { changes, warnings: [...build.warnings, ...trackedSkillWarnings(root, ignoredSkills(config, previous?.skills ?? []))], lock };
 }
 
 /** A minimal config for user-level installs, where there is no workspace. */

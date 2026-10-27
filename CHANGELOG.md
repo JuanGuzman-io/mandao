@@ -1,5 +1,11 @@
 # mandao
 
+## 0.1.0-beta.3
+
+### Patch Changes
+
+- Teams can choose whether to commit installed catalog skills or restore missing copies from the lock at their pinned commits.
+
 ## 0.1.0-beta.2
 
 ### Patch Changes

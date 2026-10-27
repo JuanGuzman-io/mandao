@@ -238,6 +238,8 @@ export const configSchema = z
     /** The team's branching model (ADR 0023): preset plus overrides. */
     branching: branchingInput.default({ model: 'feature-branch' }),
     harnesses: z.array(harnessId).min(1),
+    /** Whether reinstallable catalog skills are committed to Git. */
+    skills: z.object({ track: z.boolean().default(true) }).prefault({}),
     presets: z.array(z.string().min(1)).default([]),
     skill_packs: z.array(kebabId).default([]),
     spec: z

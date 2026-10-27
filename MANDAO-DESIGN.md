@@ -887,6 +887,7 @@ Archify is required for diagrams (§18.3). Init offers its pinned installation w
 - **One primary skill per technology** by default.
 - **Cap** of ~10 project skills on top of the bootstrap.
 - Third-party skills are **referenced, not vendored**, pinned with author, license and version.
+- **DECIDED (ADR 0066, phase 22):** `skills.track` defaults to true for existing projects; interactive init offers ignoring reinstalable catalog skills by default. `sync` manages their ignore paths without network access and reports tracked paths; `skills restore` restores missing copies from the lock. Project skills and command sources remain tracked.
 - **DECIDED (ADR 0011):** `mandao skills add` installs by running the ecosystem tool after confirmation (`--yes` for CI), then verifies the skill and pins it in the lock. When the tool is missing, or the install happens inside the agent (`/plugin install …`), it prints the command instead.
 - Catalog admission: maintained, clear license, matches framework version, tried on a real project.
 - **DECIDED (ADR 0063), implemented:** every entry is verified at its source (repository, path, frontmatter,
