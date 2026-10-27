@@ -9,6 +9,7 @@ import {
   generatedNotice,
   mapCapabilities,
   personaVariants,
+  positional,
   renderCommandBody,
   renderContext,
   renderPersonaBody,
@@ -74,7 +75,8 @@ export const claudeAdapter: Adapter = {
         name: commandName(cmd.meta.id),
         description: cmd.meta.description,
         'argument-hint': argumentHint(cmd),
-        arguments: cmd.meta.arguments.length ? cmd.meta.arguments.map((a) => a.name) : undefined,
+        // Positional names only: a flag is read from what the user wrote, not by position.
+        arguments: positional(cmd).length ? positional(cmd).map((a) => a.name) : undefined,
         'allowed-tools': mapCapabilities(cmd.meta.capabilities, TOOLS).join(', ') || undefined,
         // Mandaos are given explicitly; with flow.chain the model may invoke the next flow command itself (phase 16).
         'disable-model-invocation': userInvoked(input, cmd.meta.id),

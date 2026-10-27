@@ -3,7 +3,7 @@
   "derivedFrom": [
     {
       "path": "docs/process-map.md",
-      "sha256": "dbedcc6300d58440056c668dabca3b0c2cce3875fea7a4514751f99f52d39d39"
+      "sha256": "d4c2a70d7da150ccaf7076eaac50f146fc024fac3d909cceaf77bf1a5c756d2d"
     }
   ],
   "specSha256": "8856ad25ad6cb4db5fa345bd309b83f9ddee3be618275d582065fd188728933e",

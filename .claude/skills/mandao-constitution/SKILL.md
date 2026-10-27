@@ -1,10 +1,9 @@
 ---
 name: mandao-constitution
 description: Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
-argument-hint: "[mode] [--product]"
+argument-hint: "[auto|new|legacy|active] [--product]"
 arguments:
   - mode
-  - product
 allowed-tools: Read, Grep, Glob, Edit, Write, Bash, Agent
 disable-model-invocation: true
 ---

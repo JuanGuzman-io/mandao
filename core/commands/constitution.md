@@ -3,15 +3,21 @@ schema_version: 1
 id: constitution
 title: Constitution
 description: "Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills."
+summary: "The project's foundation: technical rules, product context, AGENTS.md and skills"
 status: stable
 flow: { after: [], next: [story, specify] }
 arguments:
   - name: mode
-    description: "auto | new | legacy | active (default: auto-detect)"
+    description: "How to start: new (no code yet), legacy (code, no constitution), active (update an existing one)"
+    value: "auto|new|legacy|active"
     default: auto
   - name: product
-    description: "Incorporate business sources from .mandao/sources.yml (or: ingest <source>)"
+    description: "Also distill business sources from .mandao/sources.yml (or `ingest <source>`)"
     flag: true
+examples:
+  - { run: "/mandao-constitution", does: "detects the mode and builds or updates the constitution" }
+  - { run: "/mandao-constitution active", does: "proposes changes to an existing constitution, one diff per file" }
+  - { run: "/mandao-constitution --product", does: "adds the product context from your tracker and documents" }
 inputs:
   - { path: .mandao/config.yml, required: true }
   - { path: .mandao/sources.yml }

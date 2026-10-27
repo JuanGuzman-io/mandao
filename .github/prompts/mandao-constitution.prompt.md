@@ -1,7 +1,7 @@
 ---
 name: mandao-constitution
 description: Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills.
-argument-hint: "[mode] [--product]"
+argument-hint: "[auto|new|legacy|active] [--product]"
 agent: agent
 tools:
   - read
@@ -14,7 +14,7 @@ tools:
 
 # /mandao-constitution
 
-Arguments: mode: ${input:mode:auto | new | legacy | active (default - auto-detect)}, product: ${input:product:Incorporate business sources from .mandao/sources.yml (or - ingest <source>)}
+Arguments: mode: ${input:mode:How to start - new (no code yet), legacy (code, no constitution), active (update an existing one)}, product: ${input:product:Also distill business sources from .mandao/sources.yml (or `ingest <source>`)}
 
 Build the foundation every other mandao relies on: how the system is built (technical constitution,
 owned by the PE) and what it does and for whom (product context, owned by the PE). Keep them in

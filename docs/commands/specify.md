@@ -9,11 +9,23 @@ Turn a story into requirements and design at lite, standard or full depth, with 
   <img alt="/mandao-specify: steps, approval and what it writes" src="../diagrams/command-specify-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `ref`: Spec folder, tracker id (PROJ-123) or item URL; empty to choose
-- `depth`: lite | standard | full (default: standard)
-- `hotfix`: --hotfix for a production fix: branch from branching.hotfix.from, merged back at close
+```
+/mandao-specify [ref] [--depth <lite|standard|full>] [--hotfix]
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<ref>` | optional | Spec id or folder, tracker id or URL; empty to choose |
+| `--depth <lite\|standard\|full>` | default `standard` | lite: spec.md and tasks in one session; standard: requirements and design; full: for risky work |
+| `--hotfix` | optional | A production fix from the hotfix branch, merged back at close |
+
+## Examples
+
+- `/mandao-specify MDO-0003` — requirements and design for a story
+- `/mandao-specify --depth lite fix rounding` — a small spec and its tasks
+- `/mandao-specify PROJ-88 --hotfix` — a production fix
 
 ## Reads
 
@@ -26,7 +38,7 @@ Turn a story into requirements and design at lite, standard or full depth, with 
 - `specs/<ID>-<slug>/requirements.md`: standard and full
 - `specs/<ID>-<slug>/design.md`: standard and full
 - `specs/<ID>-<slug>/spec.md`: lite: requirements and design
-- `specs/<ID>-<slug>/research.md`: only when the spec contains NEEDS RESEARCH questions
+- `specs/<ID>-<slug>/research.md`: only with NEEDS RESEARCH questions
 - `specs/<ID>-<slug>/quickstart.md`: only when the spec has behavior a user can see
 - `specs/<ID>-<slug>/contract/`: only when the spec touches more than one project
 

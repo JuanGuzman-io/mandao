@@ -3,16 +3,24 @@ schema_version: 1
 id: specify
 title: Specify
 description: "Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session."
+summary: "Requirements, design and a diagram you approve; at lite, the tasks too"
 status: stable
 flow: { after: [story], next: [clarify, tasks, implement] }
 arguments:
   - name: ref
-    description: "Spec folder, tracker id (PROJ-123) or item URL; empty to choose"
+    description: "Spec id or folder, tracker id or URL; empty to choose"
   - name: depth
-    description: "lite | standard | full (default: standard)"
+    description: "lite: spec.md and tasks in one session; standard: requirements and design; full: for risky work"
+    flag: true
+    value: "lite|standard|full"
     default: standard
   - name: hotfix
-    description: "--hotfix for a production fix: branch from branching.hotfix.from, merged back at close"
+    description: "A production fix from the hotfix branch, merged back at close"
+    flag: true
+examples:
+  - { run: "/mandao-specify MDO-0003", does: "requirements and design for a story" }
+  - { run: "/mandao-specify --depth lite fix rounding", does: "a small spec and its tasks" }
+  - { run: "/mandao-specify PROJ-88 --hotfix", does: "a production fix" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/story.md" }
   - { path: "{{paths.constitution}}/", required: true }
@@ -21,7 +29,7 @@ outputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", description: standard and full }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md", description: standard and full }
   - { path: "{{paths.specs}}/<ID>-<slug>/spec.md", description: "lite: requirements and design" }
-  - { path: "{{paths.specs}}/<ID>-<slug>/research.md", description: "only when the spec contains NEEDS RESEARCH questions" }
+  - { path: "{{paths.specs}}/<ID>-<slug>/research.md", description: "only with NEEDS RESEARCH questions" }
   - { path: "{{paths.specs}}/<ID>-<slug>/quickstart.md", description: "only when the spec has behavior a user can see" }
   - { path: "{{paths.specs}}/<ID>-<slug>/contract/", description: only when the spec touches more than one project }
 capabilities: [read, search, edit, shell, mcp]
@@ -74,7 +82,7 @@ Write requirements and design content in `{{language.technical}}` and anything a
 (story text, questions) in `{{language.business}}`. Headings and keywords stay in English.
 
 **Skills.** Use `brainstorming` when the story starts from nothing (no code and no tracker context) and
-`product-manager-toolkit` when there is code and product context. This command's steps continue after `brainstorming`: ignore its hand-off to `superpowers:writing-plans`, which is not installed. When a skill is missing, follow this command's own steps without it and note
+`product-manager-toolkit` when there is code and product context. Its steps continue after `brainstorming`; ignore the hand-off to `superpowers:writing-plans`. When a skill is missing, follow this command's own steps without it and note
 in the output which skill was missing.
 
 ## 1. Resolve the spec
@@ -90,8 +98,8 @@ in the output which skill was missing.
    confirmation) · *No tracker* (next local id, `<local_prefix>-NNNN` from `.mandao/config.yml`).
 
 The folder is `{{paths.specs}}/<ID>-<slug>/`. **Branch** (ADR 0059): when the spec does not exist yet, open it
-with `{{script:spec-new}} "<title>" --id <ID> --type <type> --create --harness {{harness}} --first "/mandao-specify <ID>"` (add `--hotfix` when the request says
-`--hotfix`), exactly as {{command:story}} does: the branch per the team's branching model (its `base` is the PR
+with `{{script:spec-new}} "<title>" --id <ID> --type <type> --create --harness {{harness}} --first "/mandao-specify <ID>"` (plus `--hotfix` for a hotfix),
+as {{command:story}} does: the branch per the team's branching model (its `base` is the PR
 target), in this checkout or, when another spec is open here, a worktree; never run git yourself. Show its
 `issues` and stop if there are any. With `mode: worktree`, move into `dir` first:
 <!-- mandao:if harness=claude -->
@@ -126,7 +134,7 @@ independent ones, with the §20 safety rule in each brief.
 | `standard` | most features | + NFRs with numbers, all clauses | + decisions with alternatives, risk tags |
 | `full` | high risk, cross-cutting, new architecture | + exhaustive edge cases | + adversarial review of the design before approval |
 
-Use `{{arg:depth}}`; propose a different depth if the risk clearly calls for it. Separate specs: `spec-docs.md` principle 8.
+Use the `--depth` given (default `standard`); propose another if the risk calls for it. Separate specs: `spec-docs.md` principle 8.
 
 **At lite depth** the whole spec is one session: follow `{{template:rules/doc-lite.md}}`.
 

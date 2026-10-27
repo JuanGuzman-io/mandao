@@ -9,9 +9,13 @@ Set up Mandao in the current workspace by running the Mandao CLI, then suggest t
   <img alt="/mandao-init: steps, approval and what it writes" src="../diagrams/command-init-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- —
+```
+/mandao-init
+```
+
+None.
 
 ## Reads
 

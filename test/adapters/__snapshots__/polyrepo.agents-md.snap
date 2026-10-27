@@ -48,7 +48,9 @@ Flow: `constitution` → `story` → `specify` → `[clarify]` → `tasks` → `
 ## Commands
 
 - `/mandao-init` — Initialize Mandao in this repository.
-- `/mandao-specify` — Turn an approved story into requirements and design.
+- `/mandao-specify <spec> [depth]` — Turn an approved story into requirements and design.
+  - `<spec>`: Spec id, e.g. PROJ-1-login
+  - `<depth>` (default `standard`): lite | standard | full
 
 Not implemented yet: `/mandao-tasks`.
 

@@ -15,12 +15,12 @@ tools:
 Budget: follow `.mandao/templates/app/rules/budget.md` at the start and at the end.
 Telemetry: follow `.mandao/templates/app/rules/telemetry.md` for event calls and categories.
 
-Spec: ${input:spec:Spec folder or id}
+Spec: ${input:spec:The spec id or folder}
 
 Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules/consistency-check.md`.
 
 1. Collect what needs an answer: `[NEEDS CLARIFICATION]` items, `OPEN` markers, and the findings of
-   `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}` plus the Consistency Check table in `requirements.md`.
+   `node .mandao/bin/mandao.mjs run trace ${input:spec:The spec id or folder}` plus the Consistency Check table in `requirements.md`.
 2. Rank by impact (critical first: anything that blocks tasks). Keep at most **5** questions this round.
 3. Route each question:
    - **reversible technical** → resolve it from the constitution and accepted ADRs. If they do not
@@ -35,12 +35,12 @@ Follow `.mandao/templates/app/rules/context.md` and `.mandao/templates/app/rules
    (`### C-n — <question> (date)` with Answer, Answered by and Effect, per `.mandao/templates/app/rules/doc-requirements.md`)
    and update requirements and design to the new truth, without keeping the replaced text: story and
    design link to the clarification instead of repeating it. Then commit them on their own:
-   `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:Spec folder or id} clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;
+   `node .mandao/bin/mandao.mjs run commit-spec ${input:spec:The spec id or folder} clarify` (a `docs` commit with `Refs: <ID>` and a fixed subject;
    never pushed).
-5. Re-run `node .mandao/bin/mandao.mjs run trace ${input:spec:Spec folder or id}`. A critical finding still open keeps blocking
+5. Re-run `node .mandao/bin/mandao.mjs run trace ${input:spec:The spec id or folder}`. A critical finding still open keeps blocking
    /mandao-tasks; say so.
 
-End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:Spec folder or id} --shown --harness copilot` (it records what was shown).
+End with `.mandao/templates/app/rules/next-step.md`: `node .mandao/bin/mandao.mjs run next ${input:spec:The spec id or folder} --shown --harness copilot` (it records what was shown).
 
 If an answer changes `design.md` and `node .mandao/bin/mandao.mjs run diagram <ID>` then reports `stale: true`, regenerate the
 approval diagram as `/mandao-specify` step 7 describes before asking for approval again.

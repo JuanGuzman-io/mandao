@@ -4,20 +4,21 @@
 
 One page per command: what it does, what it reads and writes, its steps and its diagram.
 How they fit together: the [overview in the README](../../README.md#how-it-works) and the [process map](../process-map.md).
+Terminal commands (`mandao …`): [docs/cli.md](../cli.md).
 
-| Command | What it does | You approve | Status |
-|---|---|---|---|
-| [`/mandao-init`](init.md) | Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution. | no | 🟢 stable |
-| [`/mandao-constitution`](constitution.md) | Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills. | yes | 🟢 stable |
-| [`/mandao-story`](story.md) | Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags. | yes | 🟢 stable |
-| [`/mandao-specify`](specify.md) | Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session. | yes | 🟢 stable |
-| [`/mandao-clarify`](clarify.md) | Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision. | yes | 🟢 stable |
-| [`/mandao-tasks`](tasks.md) | Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies. | yes | 🟢 stable |
-| [`/mandao-implement`](implement.md) | Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS. | no | 🟢 stable |
-| [`/mandao-verify`](verify.md) | Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full. | no | 🟢 stable |
-| [`/mandao-close`](close.md) | Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram. | yes | 🟢 stable |
-| [`/mandao-quick`](quick.md) | Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial. | no | 🟢 stable |
-| [`/mandao-resume`](resume.md) | Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness. | no | 🟢 stable |
-| [`/mandao-research`](research.md) | Sourced research for technical decisions. Planned as a standalone command; research already runs inside `/mandao-specify` (ADR 0051, 0052). | — | ⚪ planned |
-| [`/mandao-perf`](perf.md) | Find and fix performance problems with evidence: budgets, protocol, baseline, diagnosis by layer, one measured optimization per task. | — | ⚪ planned |
-| [`/mandao-audit`](audit.md) | Read-only audit by lenses (drift, docs, architecture, security, quality, performance, infra, ai, process, skills) with scored findings. | — | ⚪ planned |
+| Command | Usage | What it does | You approve | Status |
+|---|---|---|---|---|
+| [`/mandao-init`](init.md) | `/mandao-init` | Set up Mandao in the current workspace by running the Mandao CLI, then suggest the constitution. | no | 🟢 stable |
+| [`/mandao-constitution`](constitution.md) | `/mandao-constitution [auto\|new\|legacy\|active] [--product]` | Establish or update the project foundation (technical constitution and product context), the AGENTS.md hierarchy and the project skills. | yes | 🟢 stable |
+| [`/mandao-story`](story.md) | `/mandao-story [ref] [--from <file>] [--intake <proposal#I-n>]` | Create or enrich a user story with enough business context: sufficiency rubric, sources, AC-n with critical flags. | yes | 🟢 stable |
+| [`/mandao-specify`](specify.md) | `/mandao-specify [ref] [--depth <lite\|standard\|full>] [--hotfix]` | Turn a story into requirements and design at lite, standard or full depth, with traceability and a Consistency Check; at lite, story and spec in one session. | yes | 🟢 stable |
+| [`/mandao-clarify`](clarify.md) | `/mandao-clarify <spec>` | Resolve [NEEDS CLARIFICATION] items and Consistency Check findings, routing each question to whoever owns the decision. | yes | 🟢 stable |
+| [`/mandao-tasks`](tasks.md) | `/mandao-tasks <spec>` | Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies. | yes | 🟢 stable |
+| [`/mandao-implement`](implement.md) | `/mandao-implement <spec> [task]` | Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS. | no | 🟢 stable |
+| [`/mandao-verify`](verify.md) | `/mandao-verify <spec>` | Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full. | no | 🟢 stable |
+| [`/mandao-close`](close.md) | `/mandao-close <spec>` | Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and produce technical docs, release notes and a diagram. | yes | 🟢 stable |
+| [`/mandao-quick`](quick.md) | `/mandao-quick <change>` | Make a trivial, low-risk change without a spec, behind a double-checked gate that escalates when the change is not actually trivial. | no | 🟢 stable |
+| [`/mandao-resume`](resume.md) | `/mandao-resume [spec]` | Without an id: dashboard of active specs. With an id: continue that spec from its last checkpoint, in any harness. | no | 🟢 stable |
+| [`/mandao-research`](research.md) | — | Sourced research for technical decisions. Planned as a standalone command; research already runs inside `/mandao-specify` (ADR 0051, 0052). | — | ⚪ planned |
+| [`/mandao-perf`](perf.md) | — | Find and fix performance problems with evidence: budgets, protocol, baseline, diagnosis by layer, one measured optimization per task. | — | ⚪ planned |
+| [`/mandao-audit`](audit.md) | — | Read-only audit by lenses (drift, docs, architecture, security, quality, performance, infra, ai, process, skills) with scored findings. | — | ⚪ planned |

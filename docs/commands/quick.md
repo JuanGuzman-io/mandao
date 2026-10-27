@@ -9,9 +9,19 @@ Make a trivial, low-risk change without a spec, behind a double-checked gate tha
   <img alt="/mandao-quick: steps, approval and what it writes" src="../diagrams/command-quick-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `change` (required): What to change, in one sentence
+```
+/mandao-quick <change>
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<change>` | required | What to change, in one sentence |
+
+## Examples
+
+- `/mandao-quick fix the label on the checkout button` — a gated small change with review and one commit
 
 ## Reads
 

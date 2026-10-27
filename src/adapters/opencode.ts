@@ -16,7 +16,7 @@ import type { Adapter, AdapterInput, GeneratedFile } from './types.js';
 const syntax: TokenSyntax = {
   args: () => '$ARGUMENTS',
   // OpenCode passes positional arguments as $1, $2… in the order the command declares them.
-  arg: (meta, name) => `$${meta.arguments.findIndex((a) => a.name === name) + 1}`,
+  arg: (meta, name) => `$${meta.arguments.filter((a) => !a.flag).findIndex((a) => a.name === name) + 1}`,
   command: (id) => `/${commandName(id)}`,
 };
 

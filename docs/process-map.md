@@ -50,14 +50,15 @@ processes:
       - { command: verify, mark: required }
       - { command: close, mark: required, approval: true }
   - id: epic
-    title: Break down an epic
+    title: Start from a requirements document
     steps:
-      - { command: story, mark: required, approval: true }
-      - { command: specify, mark: required, note: proposes the stories }
+      - { command: story --from, mark: required, approval: true, note: proposes epics and stories }
+      - { command: story --intake, mark: required, approval: true, note: opens each story you pick }
+      - { command: specify, mark: required, approval: true }
   - id: bug
     title: Fix a bug
     steps:
-      - { command: specify, mark: required, approval: true, note: lite, regression test red first }
+      - { command: specify --depth lite, mark: required, approval: true, note: regression test red first }
       - { command: implement, mark: required }
       - { command: verify, mark: required }
       - { command: close, mark: required, approval: true }
@@ -89,8 +90,8 @@ processes:
 |---|---|
 | [Set up a project](#setup) | `init` ✅ → `constitution` ✅ → `constitution --product` ➕ |
 | [Build a story](#feature) | `story` ➕ → `specify` ✅ → `clarify` ⚙️ → `tasks` ✅ → `implement` ✅ → `verify` ✅ → `close` ✅ |
-| [Break down an epic](#epic) | `story` ✅ → `specify` ✅ |
-| [Fix a bug](#bug) | `specify` ✅ → `implement` ✅ → `verify` ✅ → `close` ✅ |
+| [Start from a requirements document](#epic) | `story --from` ✅ → `story --intake` ✅ → `specify` ✅ |
+| [Fix a bug](#bug) | `specify --depth lite` ✅ → `implement` ✅ → `verify` ✅ → `close` ✅ |
 | [Ship a hotfix](#hotfix) | `specify --hotfix` ✅ → `implement` ✅ → `verify` ✅ → `close` ✅ |
 | [Make a small change](#quick) | `quick` ✅ |
 | [Pick up where you left off](#maintenance) | `resume` ✅ → `implement` ✅ |
@@ -112,11 +113,11 @@ processes:
 </picture>
 
 <a id="epic"></a>
-## Break down an epic
+## Start from a requirements document
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="diagrams/process-epic-dark.svg">
-  <img alt="Break down an epic" src="diagrams/process-epic-light.svg">
+  <img alt="Start from a requirements document" src="diagrams/process-epic-light.svg">
 </picture>
 
 <a id="bug"></a>

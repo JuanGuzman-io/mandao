@@ -9,9 +9,19 @@ Break an approved spec into Tn tasks: an overview by acceptance criterion with c
   <img alt="/mandao-tasks: steps, approval and what it writes" src="../diagrams/command-tasks-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec` (required): Spec folder or id
+```
+/mandao-tasks <spec>
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | required | The spec id or folder |
+
+## Examples
+
+- `/mandao-tasks MDO-0003` — breaks the approved spec into small tasks
 
 ## Reads
 

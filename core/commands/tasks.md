@@ -3,12 +3,15 @@ schema_version: 1
 id: tasks
 title: Tasks
 description: "Break an approved spec into Tn tasks: an overview by acceptance criterion with checkpoints, and per task what, done when, test levels and dependencies."
+summary: "Small, traceable tasks with their tests, for your approval"
 status: stable
 flow: { after: [specify, clarify], next: [implement] }
 arguments:
   - name: spec
-    description: "Spec folder or id"
+    description: "The spec id or folder"
     required: true
+examples:
+  - { run: "/mandao-tasks MDO-0003", does: "breaks the approved spec into small tasks" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/requirements.md", required: true, description: "spec.md at lite depth" }
   - { path: "{{paths.specs}}/<ID>-<slug>/design.md", required: true }

@@ -3,14 +3,18 @@ schema_version: 1
 id: implement
 title: Implement
 description: "Run the Leader → Implementer → Reviewer loop task by task, with checkpoints after every step and a commit after each Reviewer PASS."
+summary: "Leader, Implementer and an independent Reviewer per task, red tests first, one commit each"
 status: stable
 flow: { after: [tasks], next: [verify] }
 arguments:
   - name: spec
-    description: "Spec folder or id"
+    description: "The spec id or folder"
     required: true
   - name: task
-    description: "Optional task id (default: the next eligible task)"
+    description: "One task id; default: the next eligible task"
+examples:
+  - { run: "/mandao-implement MDO-0003", does: "implements the tasks left, one commit each" }
+  - { run: "/mandao-implement MDO-0003 T4", does: "only task T4" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/tasks.md", required: true, description: "every depth, including lite" }
   - { path: "{{paths.specs}}/<ID>-<slug>/_log/progress.yml" }

@@ -157,6 +157,8 @@ export function renderBody(meta: CommandFrontmatter, body: string, ctx: RenderCo
         return syntax.args(meta);
       case 'arg':
         if (!arg || !meta.arguments.some((a) => a.name === arg)) throw new RenderError(`"${whole}" is not a declared argument`);
+        // A flag has no position: the command reads it from what the user wrote (phase 19).
+        if (meta.arguments.find((a) => a.name === arg)?.flag) throw new RenderError(`"${whole}" is a flag: name it as written`);
         return syntax.arg(meta, arg);
       case 'template':
         if (!arg || !meta.templates.includes(arg)) throw new RenderError(`"${whole}" is not listed in frontmatter templates`);

@@ -3,12 +3,15 @@ schema_version: 1
 id: verify
 title: Verify
 description: "Run testers per suite on the impacted tests, trace every AC to its tests and check conformance with the spec; the full critical smoke runs in CI or with --full."
+summary: "Impacted tests, e2e on critical flows, and every acceptance criterion traced"
 status: stable
 flow: { after: [implement], next: [close] }
 arguments:
   - name: spec
-    description: "Spec folder or id"
+    description: "The spec id or folder"
     required: true
+examples:
+  - { run: "/mandao-verify MDO-0003", does: "runs the impacted tests and traces every acceptance criterion" }
 inputs:
   - { path: "{{paths.specs}}/<ID>-<slug>/", description: "the documents in the root; _log/ is read through scripts" }
 outputs:

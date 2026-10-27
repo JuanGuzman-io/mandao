@@ -9,9 +9,19 @@ Kaizen, apply approved constitution and product impacts, sync AGENTS.md, and pro
   <img alt="/mandao-close: steps, approval and what it writes" src="../diagrams/command-close-light.svg">
 </picture>
 
-## Arguments
+## Usage
 
-- `spec` (required): Spec folder or id
+```
+/mandao-close <spec>
+```
+
+| Argument | Required / default | What it is |
+|---|---|---|
+| `<spec>` | required | The spec id or folder |
+
+## Examples
+
+- `/mandao-close MDO-0003` — writes the close summary, Kaizen and delivers
 
 ## Reads
 
