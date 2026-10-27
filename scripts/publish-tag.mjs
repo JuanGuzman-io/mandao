@@ -1,5 +1,7 @@
-// Publishes the package version in package.json with an explicit npm dist-tag. Changesets only
-// versions; it never chooses the tag. Rule, from the version and the versions already on the registry:
+// Stages the package version in package.json on npm with an explicit dist-tag (`npm stage publish`): the
+// trusted publisher may only stage, and the maintainer approves the staged version with 2FA on npmjs.com
+// (Staged Packages) or `npm stage approve <id>`. Once approved, a rerun tags git and moves `latest`.
+// Changesets only versions; it never chooses the tag. Rule, from the version and the versions already on the registry:
 //   prerelease, no stable published yet -> `--tag beta`, then `latest` also points at it (beta period)
 //   prerelease, a stable exists         -> `--tag beta` only; `latest` is untouched
 //   stable                              -> `--tag latest`
@@ -28,11 +30,11 @@ export function missingTags(plan, version, distTags) {
   return plan.alsoTag.filter((tag) => distTags[tag] !== version);
 }
 
-/** Pure: the `npm publish` arguments; extra arguments (e.g. `--provenance=false`) pass through last. */
+/** Pure: the `npm stage publish` arguments; extra arguments (e.g. `--provenance=false`) pass through last. */
 export function publishArgs(plan, extra = []) {
   const refused = extra.filter((arg) => arg !== '--provenance=false' && !/^--otp=\d+$/.test(arg));
   if (refused.length) throw new Error(`refused ${refused.join(' ')}: only --provenance=false and --otp=<code> may be passed; the tag comes from the rule`);
-  return ['publish', '--tag', plan.tag, ...extra];
+  return ['stage', 'publish', '--tag', plan.tag, ...extra];
 }
 
 const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
@@ -59,8 +61,13 @@ function main(extraArgs) {
   const plan = decidePublish(version, registryVersions(name));
   let pending = plan.alsoTag;
   if (plan.publish) {
-    console.log(`publishing ${name}@${version} with --tag ${plan.tag}`);
+    // Staged, not published: no git tag and no dist-tag until the maintainer approves it.
+    console.log(`staging ${name}@${version} with --tag ${plan.tag}`);
     npmRun(publishArgs(plan, extraArgs), { stdio: 'inherit' });
+    console.log(
+      `${name}@${version} is staged. Approve it with 2FA on npmjs.com (package → Staged Packages) or \`npm stage approve <id>\` (\`npm stage list ${name}\`), then run the Release workflow on main again to tag it.`,
+    );
+    return;
   } else {
     // A rerun after a failed dist-tag add: publishing is done; retry only the tags still missing.
     pending = missingTags(plan, version, registryDistTags(name));
