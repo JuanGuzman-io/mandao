@@ -32,6 +32,13 @@ pin it in the lock (`installSkills`, `pinSkills` in `install.ts`; `commandSkills
   SKILL.md (literal edit, BOM and CRLF kept) and, under `.agents/skills`, set `policy.allow_implicit_invocation:
   false` in `agents/openai.yaml` (Codex; an upstream file is merged, not replaced); the lock
   pins the commit only (no file hash), so the edit causes no drift.
+- Phase 22 (ADR 0066): `pinSkills` records a `restore` recipe (git: url, path, `model_invocation`; bundled: path and
+  Mandao version). `skills restore` (`restore.ts`) fills only absent targets from it, at the pinned commit; with
+  `skills.track: false`, `sync` ignores the folders of restorable skills. `enrichLegacySkills` recovers a recipe for a
+  pin written before beta.3: bundled when version and source match; git only when the catalog also pins the same commit
+  and a copy is on disk (`root`), whose `disable-model-invocation: true` or Codex `allow_implicit_invocation: false`
+  turns invocation off, as does the current catalog's `model_invocation: false` (either side off wins; an edited copy
+  never loosens it). `safeId` is checked before any path is built; `sync` writes the recovered recipe into the lock.
 - `pending` means the person must act (tool missing, fetch failed: the detail is the manual step);
   `failed` means something was wrong (moved tag, unsafe path, installer error). Neither throws.
 

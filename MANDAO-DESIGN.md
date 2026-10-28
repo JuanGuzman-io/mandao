@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.11 · **Last updated:** 2026-10-21
+> **Status:** living document · **Version:** 0.11 · **Last updated:** 2026-10-27
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -16,7 +16,7 @@ Every rule carries one of three status tags:
 
 Sections without an explicit tag are **DECIDED**. A decision is not a claim of implementation:
 **implemented** names behavior present in the current canonical commands or code; **pending** names an
-accepted change still scheduled in the maintainer's backlog (kept outside the repository). ADRs retain the history; this document
+accepted change still scheduled in the maintainer's backlog (kept outside the repository; §24.4 lists its open items). ADRs retain the history; this document
 states the current decision. The [reconciliation audit](docs/audits/2026-10-design-reconciliation.md)
 records the discrepancies corrected in version 0.11.
 
@@ -445,6 +445,10 @@ doc-tasks rule about repeating decisions without dropping their constraints.
 ### 10.6 implement, verify, close
 
 See §14 (harness), §15 (review), §16 (testing), §18 (close).
+
+- **DECIDED (ADR 0065), implemented:** implement moves an approved spec to `in-progress` with
+  `mandao run status <spec> in-progress --apply` and commits it on its own with `mandao run commit-spec <spec> implement`
+  (`story.md` alone); it never edits the status by hand, which a task commit refuses.
 
 ## 11. Tracker integration and IDs
 
@@ -887,7 +891,7 @@ Archify is required for diagrams (§18.3). Init offers its pinned installation w
 - **One primary skill per technology** by default.
 - **Cap** of ~10 project skills on top of the bootstrap.
 - Third-party skills are **referenced, not vendored**, pinned with author, license and version.
-- **DECIDED (ADR 0066, phase 22):** `skills.track` defaults to true for existing projects; interactive init offers ignoring reinstalable catalog skills by default. `sync` manages their ignore paths without network access and reports tracked paths; `skills restore` restores missing copies from the lock. Project skills and command sources remain tracked.
+- **DECIDED (ADR 0066, phase 22):** `skills.track` defaults to true for existing projects; interactive init offers ignoring reinstallable catalog skills by default. `sync` manages their ignore paths without network access and reports tracked paths; `skills restore` restores missing copies from the lock. Project skills and command sources remain tracked.
 - **DECIDED (ADR 0011):** `mandao skills add` installs by running the ecosystem tool after confirmation (`--yes` for CI), then verifies the skill and pins it in the lock. When the tool is missing, or the install happens inside the agent (`/plugin install …`), it prints the command instead.
 - Catalog admission: maintained, clear license, matches framework version, tried on a real project.
 - **DECIDED (ADR 0063), implemented:** every entry is verified at its source (repository, path, frontmatter,
@@ -1216,3 +1220,15 @@ itself define the standalone planned research command.
   After merge, pull main and build in the principal checkout. Mark completed work in the backlog.
 - The agent decides reversible technical implementation details and records its recommendation in an
   ADR; questions are for scope, product behavior, security or irreversible actions.
+
+### 24.4 Backlog
+
+Open items not yet assigned to a phase. Each one moves to a phase, with its own ADR, when the PE accepts it.
+
+| Item | Status | Summary |
+|---|---|---|
+| AGENTS.md standard alignment | **PROPOSED** | §7.4 and `constitution` §5 follow the [agents.md](https://agents.md) layout (root plus nested files, closest wins). The root, however, holds only the managed block, the module index and the Skill Map. Add the sections the standard recommends, outside the managed block, linking to the constitution instead of copying it: build and test commands, code style, testing instructions, security considerations, and commit and PR guidelines. `close` keeps them current. `CLAUDE.md` may keep sections added by tools (for example graphify) next to `@AGENTS.md`. |
+| Constitution on its own branch | **PROPOSED** | `constitution` writes many files (constitution and product documents, the AGENTS.md hierarchy, skills, config, hooks) into the current checkout, mixed with the user's own changes. Before writing, it opens an isolated branch: in place when the tree is clean, a worktree when it is dirty, reusing `spec-new --create` (phase 16). It commits locally, one commit per area, and never pushes. Then it asks the user to review the branch and request changes. Approval sets `status: approved`, and delivery goes through `deliver`. Changes outside the branch (git hooks in `.git/hooks`) are listed in the summary. |
+| Constitution summary lists every file | **PROPOSED** | The closing message names only the constitution documents ("the 11 documents in `docs/constitution/`"). It leaves out the rest of what the run changed: the AGENTS.md and CLAUDE.md hierarchy, `.mandao/config.yml`, the lock, installed skills (one copy per harness folder), graphify hooks in `.claude/settings.json`, and `.git/hooks`. The summary lists every changed path, grouped by area, using `git status` as the source. |
+| Infrastructure lane | **DECIDED** (PE, 2026-10-23), pending | Changes that only wire existing gates into CI (or similar tooling) follow a short checklist instead of the spec cycle: pin actions, check licences, and update `infrastructure.md` with approval. |
+| CI actions on Node 20 | pending | Move `actions/checkout` and `actions/setup-node` to their current major version; GitHub deprecates Node 20 on runners. |

@@ -52,7 +52,7 @@ it changes the spec templates, not the commands), which harnesses you use, the m
 `balanced` or `economy`) and who decides: a team (PO, tech lead, dev) or only you (one role, e.g. PE).
 
 When working in a team, commit `.mandao/mandao.lock` with the configuration. During interactive
-`init`, after installing skills, you can choose to commit them or ignore reinstalable catalog skills;
+`init`, after installing skills, you can choose to commit them or ignore reinstallable catalog skills;
 ignoring them is the default. Existing projects keep tracking skills unless `skills.track: false` is
 set in `.mandao/config.yml`. After cloning, run `npx mandao@beta skills restore` to restore missing
 skills from the lock; CI can run the same command. Git sources are restored at their pinned commits.
