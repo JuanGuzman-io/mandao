@@ -165,7 +165,7 @@ export function skillsRestore(ctx: CliContext) {
   const root = ctx.root();
   const lock = readLock(join(root, LOCK_FILE));
   if (!lock) throw new Error('No lock found: run `mandao sync` first.');
-  const skills = enrichLegacySkills(lock.skills, readCatalog(), lock.mandao);
+  const skills = enrichLegacySkills(lock.skills, readCatalog(), lock.mandao, root);
   const results = restoreSkills(skills, root, readConfig(root).harnesses, shellRunner);
   for (const result of results) console.log(`  ${result.status} ${result.id}${result.detail ? ` — ${result.detail}` : ''}`);
   if (results.some((result) => result.status === 'failed')) process.exitCode = 1;

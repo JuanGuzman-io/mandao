@@ -1,4 +1,4 @@
-import { existsSync, lstatSync, readdirSync } from 'node:fs';
+import { existsSync, lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { isAbsolute, join } from 'node:path';
 import type { Catalog, HarnessId, Lock } from '../schemas/index.js';
 import { coreDir, packageInfo } from '../util/package-root.js';
@@ -27,16 +27,43 @@ export function restorableSkill(skill: Pinned): boolean {
   return Boolean(skill.commit && /^[0-9a-f]{40}$/.test(skill.commit) && /^https:\/\//i.test(recipe.url));
 }
 
-/** Recover an old lock recipe only when the installed catalog agrees with the complete old pin. */
-export function enrichLegacySkills(skills: Pinned[], catalog: Catalog, mandao: string): Pinned[] {
+const COPY_DIRS = ['.claude/skills', '.agents/skills', '.github/skills'];
+
+/**
+ * The invocation policy a legacy git copy was installed with, read from the copy itself: Mandao writes
+ * `disable-model-invocation: true` (SKILL.md) or `allow_implicit_invocation: false` (Codex) when it is off.
+ * Undefined when no copy is on disk: nothing proves it.
+ */
+function installedInvocation(root: string, id: string): boolean | undefined {
+  const copies = COPY_DIRS.map((dir) => join(root, dir, id)).filter((dir) => existsSync(join(dir, 'SKILL.md')));
+  if (!copies.length) return undefined;
+  const disabled = copies.some(
+    (dir) =>
+      /^disable-model-invocation:[ \t]*true[ \t]*\r?$/m.test(readFileSync(join(dir, 'SKILL.md'), 'utf8')) ||
+      (existsSync(join(dir, 'agents/openai.yaml')) &&
+        /^[ \t]*allow_implicit_invocation:[ \t]*false\b/m.test(readFileSync(join(dir, 'agents/openai.yaml'), 'utf8'))),
+  );
+  return !disabled;
+}
+
+/**
+ * Recover an old lock recipe only when the installed catalog agrees with the complete old pin. A git pin also needs
+ * the same commit in the catalog and a copy on disk (`root`) that shows its invocation policy; `sync` then writes
+ * the recipe into the lock, so a clone without the copies can restore them.
+ */
+export function enrichLegacySkills(skills: Pinned[], catalog: Catalog, mandao: string, root?: string): Pinned[] {
   return skills.map((skill) => {
     if (skill.restore) return skill;
     const entry = catalog.skills[skill.id];
     if (!entry || entry.version !== skill.version || sourceLabel(entry) !== skill.source) return skill;
     const source = entry.source;
-    // Old git pins did not record the invocation policy. The current catalog cannot prove it.
     if (source.type === 'bundled') return { ...skill, restore: { type: 'bundled', path: source.path, mandao } };
-    return skill;
+    if (source.type !== 'git' || !root || !safeId(skill.id) || skill.commit !== source.commit) return skill;
+    const invocation = installedInvocation(root, skill.id);
+    if (invocation === undefined) return skill;
+    // Either side saying off wins: an edited copy never loosens what the catalog sets today (review F2).
+    const model_invocation = invocation && entry.model_invocation;
+    return { ...skill, restore: { type: 'git', url: source.url, path: source.path ?? '.', model_invocation } };
   });
 }
 

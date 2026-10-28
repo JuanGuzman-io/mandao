@@ -149,7 +149,7 @@ function cacheCheck(root: string, probe: Probe, harnesses: string[]): Finding[] 
 /** Catalog tools (versions) and the skills the commands use, against the lock's pins. */
 function catalogFindings(root: string, config: Config, lock: Lock | undefined, probe: Probe): Finding[] {
   const catalog = readCatalog();
-  const skills = lock ? enrichLegacySkills(lock.skills, catalog, lock.mandao) : [];
+  const skills = lock ? enrichLegacySkills(lock.skills, catalog, lock.mandao, root) : [];
   const pinned = skills.map((s) => s.id);
   return [
     ...researchToolFindings(root, config.harnesses, config.research.web_search_servers),

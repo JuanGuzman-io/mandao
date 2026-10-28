@@ -90,7 +90,7 @@ export function buildProject(root: string, config: Config, layers: Layer[], vers
     version,
     'project',
     findModuleGuides(root, config),
-    enrichLegacySkills(lock?.skills ?? [], readCatalog(), lock?.mandao ?? version),
+    enrichLegacySkills(lock?.skills ?? [], readCatalog(), lock?.mandao ?? version, root),
   );
   // Shadow mode is reported by doctor as info; it is a choice, not a warning (ADR 0030).
   return { ...built, files: applyShadow(root, config, built.files, version).files };
@@ -148,7 +148,7 @@ export function syncProject(root: string, opts: SyncOptions = {}): SyncResult {
   const build = buildProject(root, config, layers, version);
   const lockPath = join(root, LOCK_FILE);
   const raw = readLock(lockPath);
-  const previous = raw ? { ...raw, skills: enrichLegacySkills(raw.skills, readCatalog(), raw.mandao) } : undefined;
+  const previous = raw ? { ...raw, skills: enrichLegacySkills(raw.skills, readCatalog(), raw.mandao, root) } : undefined;
   const changes = planChanges(build.files, previous?.files ?? [], { project: root }, opts.force);
 
   const entries = opts.dryRun ? changes.flatMap((c) => (c.lock ? [c.lock] : [])) : applyChanges(changes, [root]);

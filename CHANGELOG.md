@@ -5,6 +5,7 @@
 ### Patch Changes
 
 - Teams can choose whether to commit installed catalog skills or restore missing copies from the lock at their pinned commits.
+- Skills installed before 0.1.0-beta.3 become restorable too: `sync` records their recipe from the copy on disk when the catalog pins the same commit.
 
 ## 0.1.0-beta.2
 
