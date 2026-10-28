@@ -51,6 +51,14 @@ npx mandao@beta sync                # a team repository that already uses Mandao
 it changes the spec templates, not the commands), which harnesses you use, the models (one profile: `peak`,
 `balanced` or `economy`) and who decides: a team (PO, tech lead, dev) or only you (one role, e.g. PE).
 
+When working in a team, commit `.mandao/mandao.lock` with the configuration. During interactive
+`init`, after installing skills, you can choose to commit them or ignore reinstalable catalog skills;
+ignoring them is the default. Existing projects keep tracking skills unless `skills.track: false` is
+set in `.mandao/config.yml`. After cloning, run `npx mandao@beta skills restore` to restore missing
+skills from the lock; CI can run the same command. Git sources are restored at their pinned commits.
+Project skills and tools such as Graphify remain tracked or installed as before. If a skill is already
+tracked, `sync` prints the `git rm --cached` command for you to run.
+
 **2. In your agent, build the foundation:**
 
 ```

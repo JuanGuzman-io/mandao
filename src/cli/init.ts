@@ -26,6 +26,7 @@ import { chooseBudget, chooseCutThreshold } from './init-budget.js';
 import { writeInitFiles } from './init-files.js';
 import { chooseProfile } from './init-profile.js';
 import { chooseRoles } from './init-roles.js';
+import { chooseSkillTracking, readInitSkillIds } from './init-skill-tracking.js';
 import { offerSkills } from './init-skills.js';
 import { askProjectProfile, chooseDefaultProfile, startingProfile } from './init-work-profile.js';
 import { c, harnessSetupNotes, printChanges, printWarnings } from './output.js';
@@ -266,6 +267,13 @@ function modeFlags(localOnly: boolean | undefined, opts: InitOptions): Pick<Conf
   return { ...(localOnly ? { local_only: true } : {}), ...(opts.shadow ? { shadow: true } : {}) };
 }
 
+async function initSkills(root: string, harnesses: HarnessId[], opts: InitOptions) {
+  const priorSkills = readInitSkillIds(root);
+  await offerSkills(root, harnesses, opts);
+  await offerArchify(root, harnesses, opts);
+  await chooseSkillTracking(root, priorSkills, Boolean(opts.yes));
+}
+
 export async function runInit(root: string, opts: InitOptions) {
   const interactive = !opts.yes;
   if (interactive) requireTerminal('mandao init', '--yes');
@@ -345,8 +353,7 @@ export async function runInit(root: string, opts: InitOptions) {
   const result = syncProject(root, { force: opts.force });
   printChanges(result.changes);
   printWarnings(result.warnings);
-  await offerSkills(root, harnesses, opts);
-  await offerArchify(root, harnesses, opts);
+  await initSkills(root, harnesses, opts);
 
   const next = [...harnessSetupNotes(harnesses), 'Next: open your agent here and run /mandao-constitution.'].join('\n');
   interactive ? p.outro(next) : console.log(next);

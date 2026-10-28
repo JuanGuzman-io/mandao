@@ -3,7 +3,7 @@ import { readConfig } from '../engine/files.js';
 import { HARNESS_IDS, type HarnessId } from '../schemas/index.js';
 import { type CliContext, editConfig, sync } from './context.js';
 import { c, harnessSetupNotes } from './output.js';
-import { skillsAdd, skillsList } from './skills.js';
+import { skillsAdd, skillsList, skillsRestore } from './skills.js';
 
 /** harness add, skills list, skills add. */
 export function registerExtensions(program: Command, ctx: CliContext) {
@@ -30,6 +30,10 @@ export function registerExtensions(program: Command, ctx: CliContext) {
     .option('--vetted', 'list only vetted skills')
     .option('--unvetted', 'list only unvetted skills')
     .action((opts: { json?: boolean; vetted?: boolean; unvetted?: boolean }) => skillsList(ctx, opts));
+  skills
+    .command('restore')
+    .description('Restore missing pinned skills')
+    .action(() => skillsRestore(ctx));
   skills
     .command('add <ids...>')
     .description('Install catalog skills (or packs) with their ecosystem tool, verify them and pin them in the lock')

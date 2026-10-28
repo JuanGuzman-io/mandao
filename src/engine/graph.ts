@@ -38,7 +38,7 @@ export function graphIgnoreBlock(files: GeneratedFile[], version: string): Gener
 }
 
 /** `.gitignore`: the graph output is rebuilt by hooks and never committed; polyrepo children are their own repos. */
-export function gitIgnoreBlock(childRepos: string[], version: string): GeneratedFile {
+export function gitIgnoreBlock(childRepos: string[], version: string, skillPaths: string[] = []): GeneratedFile {
   const path = '.gitignore';
   return {
     path,
@@ -56,6 +56,7 @@ export function gitIgnoreBlock(childRepos: string[], version: string): Generated
       // Machine-specific agent settings (ADR 0015).
       '.claude/settings.local.json',
       ...childRepos.map((p) => `/${p}/`),
+      ...skillPaths,
     ]),
     ownership: 'managed-block',
     from: 'block:gitignore',

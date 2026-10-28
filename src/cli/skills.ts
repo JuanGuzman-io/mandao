@@ -14,6 +14,7 @@ import {
   shellRunner,
   skillFolders,
 } from '../skills/install.js';
+import { enrichLegacySkills, restoreSkills } from '../skills/restore.js';
 import { type CliContext, editConfig } from './context.js';
 import { c } from './output.js';
 import { requireTerminal } from './terminal.js';
@@ -157,4 +158,15 @@ export async function skillsAdd(ctx: CliContext, ids: string[], opts: { yes?: bo
     const current = readConfig(ctx.root()).skill_packs;
     editConfig(ctx, (doc) => doc.set('skill_packs', [...new Set([...current, ...packs])]));
   }
+}
+
+/** Restore the absent copies named by the lock; unavailable sources do not fail the command. */
+export function skillsRestore(ctx: CliContext) {
+  const root = ctx.root();
+  const lock = readLock(join(root, LOCK_FILE));
+  if (!lock) throw new Error('No lock found: run `mandao sync` first.');
+  const skills = enrichLegacySkills(lock.skills, readCatalog(), lock.mandao);
+  const results = restoreSkills(skills, root, readConfig(root).harnesses, shellRunner);
+  for (const result of results) console.log(`  ${result.status} ${result.id}${result.detail ? ` — ${result.detail}` : ''}`);
+  if (results.some((result) => result.status === 'failed')) process.exitCode = 1;
 }

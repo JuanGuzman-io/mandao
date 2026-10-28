@@ -11,6 +11,7 @@ export const USER_COMMANDS: readonly { path: string; summary: string }[] = [
   { path: 'harness add', summary: 'generate files for another harness' },
   { path: 'skills list', summary: 'list the pinned skills' },
   { path: 'skills add', summary: 'install, verify and pin catalog skills' },
+  { path: 'skills restore', summary: 'restore missing skills from the lock' },
   { path: 'models', summary: 'show the model of each role' },
   { path: 'models set', summary: 'choose the model of a role' },
   { path: 'models mode', summary: 'simple or routed models' },

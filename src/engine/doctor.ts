@@ -5,7 +5,8 @@ import { ADAPTERS } from '../adapters/index.js';
 import { readRecommendations } from '../models/load.js';
 import { loadLayers } from '../resolver/layers.js';
 import { ResolveError } from '../resolver/resolve.js';
-import { BUILD_NONE, type Config, GATES, LOCAL_REPO } from '../schemas/index.js';
+import { BUILD_NONE, type Config, GATES, LOCAL_REPO, type Lock } from '../schemas/index.js';
+import { enrichLegacySkills } from '../skills/restore.js';
 import { sha256 } from '../util/hash.js';
 import { packageInfo } from '../util/package-root.js';
 import { onPath } from '../util/which.js';
@@ -146,12 +147,13 @@ function cacheCheck(root: string, probe: Probe, harnesses: string[]): Finding[] 
 }
 
 /** Catalog tools (versions) and the skills the commands use, against the lock's pins. */
-function catalogFindings(root: string, config: Config, skills: { id: string }[], probe: Probe): Finding[] {
+function catalogFindings(root: string, config: Config, lock: Lock | undefined, probe: Probe): Finding[] {
   const catalog = readCatalog();
+  const skills = lock ? enrichLegacySkills(lock.skills, catalog, lock.mandao) : [];
   const pinned = skills.map((s) => s.id);
   return [
     ...researchToolFindings(root, config.harnesses, config.research.web_search_servers),
-    ...skillFindings({ catalog, pinned, harnesses: config.harnesses, root, home: home() }),
+    ...skillFindings({ catalog, pinned, locked: skills, harnesses: config.harnesses, root, home: home() }),
     ...toolVersionFindings(catalog, [...new Set([...catalog.bootstrap, ...pinned])], probe),
   ];
 }
@@ -218,7 +220,7 @@ export function runDoctor(root: string, opts: DoctorOptions = {}): Finding[] {
   const recs = readRecommendations();
   findings.push(...modelFindings(root, config, recs), ...cacheCheck(root, probe, config.harnesses));
   findings.push(...harnessFindings(root, config, build.files, lockForTools?.files ?? [], recs, probe));
-  findings.push(...catalogFindings(root, config, lockForTools?.skills ?? [], probe));
+  findings.push(...catalogFindings(root, config, lockForTools ?? undefined, probe));
 
   const lock = readLock(join(root, LOCK_FILE));
   if (!lock) {
