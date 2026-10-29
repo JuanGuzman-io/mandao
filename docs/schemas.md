@@ -33,7 +33,7 @@ projects:                      # always a list; a simple repo is one project wit
 presets: []                    # bundled ids or ./paths, lowest precedence first
 skill_packs: []
 harnesses: [claude, copilot]  # claude | copilot | codex | opencode | antigravity (experimental)
-spec: { branch: "{prefix}{id}-{slug}", local_prefix: MDO }   # {prefix} from branching.prefixes
+spec: { branch: "{prefix}{id}-{ref}-{slug}", local_prefix: MDO }   # {prefix} from branching.prefixes; {ref}: tracker item (ADR 0067)
 branching:                     # ADR 0023: a preset plus only the fields that differ
   model: gitflow               # trunk | feature-branch (default) | gitflow | env-branches
   # base: develop              # where spec branches start and where PRs target

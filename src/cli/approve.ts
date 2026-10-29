@@ -250,6 +250,7 @@ function commitApproval(config: ReturnType<typeof readConfig>, spec: SpecFolder,
     specDir: spec.dir,
     header: `${emojiPrefix(config, 'docs')}docs(${scope}): ${SPEC_STEPS[commitStep](id)}`,
     specId: id,
+    story: spec.story?.meta,
     config,
     protectedBranches: branchingFor(config).protected,
   });
@@ -264,6 +265,7 @@ function commitRevocation(config: ReturnType<typeof readConfig>, spec: SpecFolde
     specDir: spec.dir,
     header: `${emojiPrefix(config, 'docs')}docs(${scope}): revoke ${id} ${step} approval`,
     specId: id,
+    story: spec.story?.meta,
     config,
     protectedBranches: branchingFor(config).protected,
   });

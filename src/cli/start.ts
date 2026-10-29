@@ -1,11 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import type { Command } from 'commander';
 import { readConfig } from '../engine/files.js';
+import { STORY_ID } from '../schemas/index.js';
 import { proposeSpec, type SpecProposal } from '../scripts/spec.js';
 import type { CliContext } from './context.js';
 import { type OpenOptions, openCommand, recordRequest, type Step, setUp } from './spec-open.js';
-
-const TRACKER_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
 
 interface StartOptions extends OpenOptions {
   harness?: string;
@@ -16,7 +15,7 @@ interface StartOptions extends OpenOptions {
 /** `PROJ-123 optional title` → the tracker id and title; anything else is a description for a local id. */
 export function parseRequest(words: string[]): { id?: string; title: string } {
   const [first = '', ...rest] = words;
-  return TRACKER_ID.test(first) ? { id: first, title: rest.join(' ') } : { title: words.join(' ') };
+  return STORY_ID.test(first) ? { id: first, title: rest.join(' ') } : { title: words.join(' ') };
 }
 
 function proposalOptions(id: string | undefined, o: StartOptions) {

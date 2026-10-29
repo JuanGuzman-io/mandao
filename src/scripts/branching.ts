@@ -7,10 +7,16 @@ export function branchingFor(config: Config, project?: string): Branching {
   return resolveBranching(own ? { ...own, model: own.model ?? config.branching.model } : config.branching);
 }
 
-/** `<prefix><ID>-<slug>`: the prefix by spec type (bug → fix), `hotfix` for the hotfix lane. */
-export function specBranch(config: Config, b: Branching, p: { id: string; slug: string; type?: string; hotfix?: boolean }): string {
+/** `<prefix><ID>-[<ref>-]<slug>`: the prefix by spec type (bug → fix), `hotfix` for the hotfix lane. */
+export function specBranch(
+  config: Config,
+  b: Branching,
+  p: { id: string; slug: string; type?: string; hotfix?: boolean; ref?: string },
+): string {
   const kind = p.hotfix ? 'hotfix' : p.type === 'bug' ? 'fix' : 'feature';
-  return config.spec.branch
+  // No tracker reference: `{ref}` goes with its following separator, so `{id}-{ref}-{slug}` reads `{id}-{slug}`.
+  const template = p.ref ? config.spec.branch.replace('{ref}', p.ref) : config.spec.branch.replace(/\{ref\}[-_/]?/, '');
+  return template
     .replace('{prefix}', b.prefixes[kind])
     .replace('{type}', p.type === 'bug' ? 'fix' : 'feat')
     .replace('{id}', p.id)

@@ -90,6 +90,21 @@ test('branchIdPattern extracts tracker and local ids', () => {
   expect('main'.match(re)).toBeNull();
 });
 
+test('branchIdPattern reads the id through the default {prefix} template, with or without a tracker reference', () => {
+  const re = new RegExp(branchIdPattern('{prefix}{id}-{ref}-{slug}', 'MDO', ['feature/', 'feat/', 'fix/', '']));
+  expect('feature/MDO-0012-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect('feat/MDO-0012-CU-86e3w5954-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect('MDO-0012-VZ-12-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect('main'.match(re)).toBeNull();
+  // Not a spec branch: an uppercase word with a number in the slug is no id (review F12).
+  expect('fix/handle-HTTP-500-errors'.match(re)).toBeNull();
+  expect('docs/bump-README-2-links'.match(re)).toBeNull();
+  const custom = new RegExp(branchIdPattern('{prefix}{id}-{slug}', 'MDO', ['users/jd/feature/', 'feature-']));
+  expect('users/jd/feature/MDO-0004-x'.match(custom)?.[1]).toBe('MDO-0004');
+  expect('feature-MDO-0005-x'.match(custom)?.[1]).toBe('MDO-0005');
+  expect('jd/feat-ABC-1-x'.match(custom)).toBeNull();
+});
+
 describe('generated commitlint config with commits.emoji false', () => {
   test('parses a plain header and does not require the emoji rule', async () => {
     const config = configSchema.parse({
@@ -116,4 +131,20 @@ describe('generated commitlint config with commits.emoji false', () => {
     expect(rule({ header: `feat: ${'x'.repeat(70)}` })[0]).toBe(false);
     expect(rule({ header: 'feat: short' })[0]).toBe(true);
   });
+});
+
+test('the generated branch pattern knows the own prefixes of each polyrepo project (review F17)', () => {
+  const config = configSchema.parse({
+    schema_version: 1,
+    workspace: 'polyrepo',
+    projects: [
+      { name: 'api', path: 'api', repo: 'local' },
+      { name: 'web', path: 'web', repo: 'local', branching: { prefixes: { feature: 'web-feature/' } } },
+    ],
+    harnesses: ['claude'],
+  });
+  const source = /const BRANCH_RE = new RegExp\((".*")\);/.exec(commitlintConfig(config, '0.0.0'))?.[1];
+  const re = new RegExp(JSON.parse(source!));
+  expect('web-feature/MDO-0007-x'.match(re)?.[1]).toBe('MDO-0007');
+  expect('fix/handle-HTTP-500-errors'.match(re)).toBeNull();
 });

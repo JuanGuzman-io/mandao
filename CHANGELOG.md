@@ -6,6 +6,7 @@
 
 - Teams can choose whether to commit installed catalog skills or restore missing copies from the lock at their pinned commits.
 - Skills installed before 0.1.0-beta.3 become restorable too: `sync` records their recipe from the copy on disk when the catalog pins the same commit.
+- Specs opened from ClickUp, Monday, Jira or Linear keep a local ID; the tracker item's reference goes in the branch, every commit (`Tracker` trailer) and the PR. `run spec-new` refuses an `--id` that is not a story ID and takes `--tracker-id`.
 
 ## 0.1.0-beta.2
 

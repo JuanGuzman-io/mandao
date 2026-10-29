@@ -17,6 +17,7 @@ import {
   progressSchema,
   setTaskDone,
   trace,
+  trackerRef,
 } from '../../src/spec/index.js';
 
 const dir = join(import.meta.dirname, '../fixtures/spec/MDO-0001-skills-list');
@@ -348,4 +349,33 @@ test('commitMessage with commits.emoji false builds a plain Conventional Commits
   );
   expect(commitMessage(config, story, task, `${'x'.repeat(70)}.`).issues[0]).toBe('header is 82 characters; the limit is 72');
   expect(commitMessage(config, story, task, 'drop old flag', true).header).toBe('feat(cli)!: drop old flag');
+});
+
+test('a story with a tracker item adds the tracker trailer to every commit, and --trailer cannot forge it', () => {
+  const config = configSchema.parse({
+    schema_version: 1,
+    workspace: 'single',
+    projects: [{ name: 'mandao', path: '.' }],
+    harnesses: ['claude'],
+  });
+  const base = parseStory(read('story.md')).story!;
+  const story = { ...base, meta: { ...base.meta, tracker: 'clickup' as const, tracker_id: '86e3w5954' } };
+  const task = parseTasks(read('tasks.md')).tasks[1]!;
+  expect(commitMessage(config, story, task, 'add skills list command').text).toBe(
+    '✨ feat(cli): add skills list command\n\nRefs: MDO-0001\nTracker: CU-86e3w5954\nMandao-Task: T2\nMandao-AC: AC-2, AC-2/C1\n',
+  );
+  expect(commitMessage(config, story, task, 'x', false, [], ['Tracker: CU-other']).issues.join(' ')).toMatch(/Tracker/);
+  expect(trackerRef('jira', 'VZ-12')).toBe('VZ-12');
+  expect(trackerRef('none', undefined)).toBeUndefined();
+});
+
+test('story.md accepts a tracker_id next to the local id, and refuses one that is unsafe in a branch name', () => {
+  const story = read('story.md');
+  const withId = (v: string) => story.replace(/^id: .*$/m, (line) => `${line}\ntracker_id: ${v}`);
+  expect(parseStory(withId('86e3w5954')).story?.meta.tracker_id).toBe('86e3w5954');
+  expect(parseStory(withId('../x')).story).toBeUndefined();
+  // YAML reads these as numbers (86e3 is 86000): the id is taken as written (review F1).
+  expect(parseStory(withId('1234567890')).story?.meta.tracker_id).toBe('1234567890');
+  expect(parseStory(withId('86e3')).story?.meta.tracker_id).toBe('86e3');
+  expect(parseStory(withId('"86e3"')).story?.meta.tracker_id).toBe('86e3');
 });

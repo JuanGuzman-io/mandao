@@ -346,6 +346,7 @@ function registerCommitSpec(run: Command, ctx: CliContext) {
         specDir: spec.dir,
         header,
         specId: id,
+        story: spec.story?.meta,
         config,
         trailers: opts.trailer ?? [],
         protectedBranches: branchingFor(config).protected,

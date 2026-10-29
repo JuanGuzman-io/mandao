@@ -1,6 +1,6 @@
 # Mandao — Design Document
 
-> **Status:** living document · **Version:** 0.11 · **Last updated:** 2026-10-27
+> **Status:** living document · **Version:** 0.11 · **Last updated:** 2026-10-29
 >
 > This is the **source of truth** for Mandao's design. Agents building Mandao read this file before proposing or implementing anything. When a decision changes, update this file first and record an ADR in `docs/decisions/`.
 
@@ -464,7 +464,8 @@ See §14 (harness), §15 (review), §16 (testing), §18 (close).
 schema_version: 1
 tracker: jira          # linear | clickup | monday | none
 type: story            # epic | story | bug | enhancement | task | performance
-id: PROJ-123
+id: MDO-0012           # always a story id (PROJ-123 shape); names folder and branch
+tracker_id: 86e3w5954  # the tracker's own item id (ADR 0067)
 url: https://…
 parent: PROJ-100
 projects: [api, web]
@@ -487,6 +488,10 @@ status: draft          # states decided in §23.2
 - Spec folder: `specs/<ID>-<slug>/`. Without a tracker the ID is the local id, so the folder is `specs/MDO-0001-<slug>/` (resolves §11.1 vs the earlier `<NNN>-<slug>`; ADR 0010).
 - Branch: `<prefix><ID>-<slug>`, the prefix from `branching.prefixes` by spec type (§14.5; ADR 0023).
 - Commits: trailer `Refs: <ID>` (§16.4).
+- **DECIDED (ADR 0067):** the spec ID stays local even with a tracker. The item's own ID goes in `tracker_id`; its
+  reference (`CU-<id>` for ClickUp, the key as is for Jira or Linear) goes in the branch (`{prefix}{id}-{ref}-{slug}`),
+  in a `Tracker` trailer on every spec commit and at the top of the PR body. `spec-new` refuses an `--id` that is not a
+  story ID and takes `--tracker-id <item>`.
 - Trackers with GitHub integration link branches and commits by key; `close` knows where to publish.
 
 ## 12. Traceability and consistency
@@ -788,7 +793,8 @@ runs.
 Issue long-lived refresh tokens when the user opts in, capped by
 the configurable session policy defined in the contract.
 
-Refs: PROJ-123
+Refs: MDO-0012
+Tracker: CU-86e3w5954
 Mandao-Task: T2
 Mandao-AC: AC-1, AC-3
 ```

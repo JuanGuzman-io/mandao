@@ -39,11 +39,11 @@
     },
     {
       "path": "core/commands/specify.md",
-      "sha256": "55749583b7be60988490a892e6eb7d10d3f515caac2f8f7c39e19f05dc40df43"
+      "sha256": "539339930122c1a7cb899b8a03580482fa69d89cd8a21488239a83768337899a"
     },
     {
       "path": "core/commands/story.md",
-      "sha256": "913d8afe8b3089f20054e0cb5ffbe6125cd8bad23164ce13decf75aeeb3ddc37"
+      "sha256": "c128ad69cc3edf4c3ae96072050d89e34083be0d07daae0fe531bd9bb9573bf5"
     },
     {
       "path": "core/commands/tasks.md",
@@ -55,7 +55,7 @@
     },
     {
       "path": "src/cli/approve.ts",
-      "sha256": "c664b14c33382f008c558ad6fb9a48ed12b16dbb346632d78498d57edce1d28b"
+      "sha256": "f5bc909c20f2be85688617944420dd641b607e287c645b007f61ae76999001a8"
     },
     {
       "path": "src/schemas/common.ts",
@@ -63,7 +63,7 @@
     },
     {
       "path": "src/scripts/spec.ts",
-      "sha256": "637874d3188a254402240992d0ae19769c1faa1db56ad11dc395a4ed431906f1"
+      "sha256": "a96aa18c568de673505a9106d0fa7f786ee31e02ffaa2638a9a37d94644d1762"
     }
   ],
   "specSha256": "0205591777369dc1d74376fb27b2c1ac32c7ac384ca7095cdbeb1a9045f3d949",

@@ -14,6 +14,8 @@ import {
   pullRequestBody,
   renderCloseDocument,
   sectionOf,
+  specTrailers,
+  trackerRef,
   upsertChangelog,
   withDelivery,
 } from '../spec/index.js';
@@ -71,6 +73,17 @@ async function selectDestination(delivery: DeliveryContext): Promise<{ choices: 
   return { choices, target };
 }
 
+/**
+ * The PR body's first line when the story names a tracker item: its integration links the PR by the reference
+ * (ClickUp, Jira and Linear read the body too). Only a plain http(s) URL becomes a link.
+ */
+export function trackerLine(config: Config, meta: { tracker: string; tracker_id?: string | null; url?: string | null }): string {
+  const ref = trackerRef(meta.tracker, meta.tracker_id);
+  if (!ref) return '';
+  const url = meta.url && /^https?:\/\/[^\s()<>]+$/.test(meta.url) ? meta.url : undefined;
+  return `${config.commits.trailers.tracker}: ${url ? `[${ref}](${url})` : ref}\n\n`;
+}
+
 function pullRequest(delivery: DeliveryContext): { title: string; body: string } {
   const closeText = delivery.quick ? undefined : readIf(join(delivery.specDir, 'close-summary.md'));
   const title = delivery.quick ? (delivery.start.title ?? delivery.quickName!) : delivery.spec!.story!.title;
@@ -81,7 +94,8 @@ function pullRequest(delivery: DeliveryContext): { title: string; body: string }
         parseCloseSummary(closeText, delivery.spec!.name),
         `${relative(delivery.worktree, delivery.specDir).split(sep).join('/')}/`,
       );
-  return { title, body };
+  const link = delivery.quick ? '' : trackerLine(delivery.config, delivery.spec!.story!.meta);
+  return { title, body: `${link}${body}` };
 }
 
 function pushBranch(delivery: DeliveryContext): void {
@@ -250,7 +264,7 @@ function recordSpecDelivery(repo: string, specDir: string, target: string, confi
     // A non-zero status means the delivery record is staged and needs its own branch commit.
   }
   const header = `${emojiPrefix(config, 'docs')}docs(delivery): record PR destination`;
-  command(repo, 'git', ['commit', '-m', `${header}\n\n${config.commits.trailers.refs}: ${spec.story.meta.id}`]);
+  command(repo, 'git', ['commit', '-m', [header, '', ...specTrailers(config, spec.story.meta)].join('\n')]);
 }
 
 /** Cleanup runs from the principal checkout, after checking branch ancestry and refusing dirty trees. */

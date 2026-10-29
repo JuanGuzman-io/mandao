@@ -1,7 +1,6 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { parse as parseYaml } from 'yaml';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
 import type { Config } from '../schemas/index.js';
@@ -9,15 +8,11 @@ import { branchingFor, specBranch, startPoint } from '../scripts/branching.js';
 import { parseRemoteBranches, providerForRemote } from '../scripts/delivery.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { findSpec, mainCheckout, readSpec } from '../scripts/spec.js';
-import { STATE_FILE } from '../scripts/spec-log.js';
-import { parseState } from '../spec/state.js';
+import { type StartRecord, startRecord } from '../scripts/spec-start.js';
 
 /** Where a delivery starts: the spec or quick, its branch and worktree, the remote and the branching model. */
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-const readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
-
-type StartRecord = { id?: string; title?: string; lane?: string; branch?: string; base?: string };
 
 export interface DeliveryContext {
   config: ReturnType<typeof readConfig>;
@@ -39,21 +34,6 @@ function originInfo(repo: string): { url: string; provider: 'github' | 'other'; 
   if (!provider) throw new Error('origin has no remote URL');
   const branches = parseRemoteBranches(git(repo, ['ls-remote', '--heads', 'origin']));
   return { url, provider, branches };
-}
-
-/** Reads the start record written by `mandao start`; quick starts retain one file per request. */
-function startRecord(dir: string, quick = false, quickName?: string): StartRecord {
-  const file = quick
-    ? join(dir, '_log', `start-${quickName}.yml`)
-    : [join(dir, '_log', STATE_FILE), join(dir, '_log', 'start.yml'), join(dir, 'start.yml')].find((candidate) => existsSync(candidate));
-  if (!file) return {};
-  const text = readIf(file);
-  if (!text) return {};
-  if (quick) {
-    return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
-  }
-  if (file.endsWith(STATE_FILE)) return parseState(text).start ?? {};
-  return parseYaml(text) as { id?: string; title?: string; lane?: string; branch?: string; base?: string };
 }
 
 /**

@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, dirname, join, resolve } from 'node:path';
 import type { Config } from '../schemas/index.js';
-import { type SpecStatus, specStatus } from '../schemas/index.js';
+import { type SpecStatus, specStatus, TRACKER_ITEM_ID, trackerRef } from '../schemas/index.js';
 import {
   type ExecutionRow,
   frontmatterOf,
@@ -19,6 +19,8 @@ import {
 } from '../spec/index.js';
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
 import { docPath, LITE_DOC, logPath, readProgress, specKeepsState } from './spec-log.js';
+import { startRecord } from './spec-start.js';
+import { idIssues } from './tracker-ref.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -206,6 +208,8 @@ export interface SpecProposal {
   issues: string[];
   /** The explicit id's branch already exists with no spec or worktree: `command` checks it out instead of creating it. */
   reusesBranch?: true;
+  /** The tracker item's reference in the branch name (`CU-86e3w5954`, `VZ-12`), from `--tracker-id` and sources.yml. */
+  trackerRef?: string;
 }
 
 export interface ProposalOptions {
@@ -215,6 +219,10 @@ export interface ProposalOptions {
   project?: string;
   /** Hotfix lane: start from `hotfix.from` with the hotfix prefix. */
   hotfix?: boolean;
+  /** The tracker's own item id: the spec keeps a local id, the branch carries the reference. */
+  trackerId?: string;
+  /** The tracker kind sources.yml names (the CLI reads it); `none` when absent. */
+  trackerKind?: string;
 }
 
 /** Proposes the spec folder, branch, base and worktree for `specify` or `quick` (ADR 0015, ADR 0023). */
@@ -222,13 +230,21 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
   const id = opts.id ?? nextLocalId(root, config);
   const slug = slugify(title);
   const b = branchingFor(config, opts.project);
-  const branch = specBranch(config, b, { id, slug, ...(opts.type ? { type: opts.type } : {}), ...(opts.hotfix ? { hotfix: true } : {}) });
+  const kind = opts.trackerKind ?? 'none';
+  const ref = opts.trackerId && TRACKER_ITEM_ID.test(opts.trackerId) ? trackerRef(kind, opts.trackerId) : undefined;
+  const branch = specBranch(config, b, {
+    id,
+    slug,
+    ...(opts.type ? { type: opts.type } : {}),
+    ...(opts.hotfix ? { hotfix: true } : {}),
+    ...(ref ? { ref } : {}),
+  });
   const base = startPoint(b, opts.hotfix);
   const name = slug ? `${id}-${slug}` : id;
   const worktree = join(worktreesDir(root, config), name);
-  const issues = branchExists(root, base)
-    ? []
-    : [`base branch "${base}" does not exist here: create it, or set branching.base in .mandao/config.yml (model ${b.model})`];
+  const issues = idIssues(id, opts.trackerId, kind);
+  if (!branchExists(root, base))
+    issues.push(`base branch "${base}" does not exist here: create it, or set branching.base in .mandao/config.yml (model ${b.model})`);
   const existing = opts.id && branchExists(root, branch) ? existingBranch(root, config, branch, opts.id) : undefined;
   if (existing === 'taken')
     issues.push(`branch "${branch}" already exists with a spec or a worktree: resume that spec or pick another --id`);
@@ -245,6 +261,7 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
       : `git worktree add -b ${branch} ${JSON.stringify(worktree)} ${base}`,
     issues,
     ...(reuse ? { reusesBranch: true as const } : {}),
+    ...(ref ? { trackerRef: ref } : {}),
   };
 }
 
@@ -330,16 +347,30 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
   };
 }
 
-/** The branch and worktree a spec folder belongs to, from its folder name and story type. */
+/** The start record's branch; a state.yml that breaks its schema is no fact here (review F15), never an error. */
+function recordedBranch(dir: string): string | undefined {
+  try {
+    return startRecord(dir).branch;
+  } catch {
+    return undefined;
+  }
+}
+
+/** The branch and worktree a spec folder belongs to: the recorded start branch, else from its folder name and story. */
 export function expectedPlace(root: string, config: Config, spec: SpecFolder): { branch: string; worktree: string } {
   const [id, ...slug] = spec.name.split(/-(?=[a-z])/);
   const type = spec.story?.meta.type;
   const hotfix = spec.story?.meta.lane === 'hotfix';
-  const branch = specBranch(config, branchingFor(config), {
-    id: id ?? spec.name,
-    slug: slug.join('-'),
-    ...(type ? { type } : {}),
-    ...(hotfix ? { hotfix } : {}),
-  });
+  const ref = spec.story ? trackerRef(spec.story.meta.tracker, spec.story.meta.tracker_id) : undefined;
+  // The branch spec-new really created wins: story.md's tracker fields are written by hand (review F4).
+  const branch =
+    recordedBranch(spec.dir) ??
+    specBranch(config, branchingFor(config), {
+      id: id ?? spec.name,
+      slug: slug.join('-'),
+      ...(type ? { type } : {}),
+      ...(hotfix ? { hotfix } : {}),
+      ...(ref ? { ref } : {}),
+    });
   return { branch, worktree: join(worktreesDir(root, config), spec.name) };
 }
