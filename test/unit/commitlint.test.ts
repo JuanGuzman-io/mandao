@@ -91,14 +91,18 @@ test('branchIdPattern extracts tracker and local ids', () => {
 });
 
 test('branchIdPattern reads the id through the default {prefix} template, with or without a tracker reference', () => {
-  const re = new RegExp(branchIdPattern('{prefix}{id}-{ref}-{slug}', 'MDO'));
+  const re = new RegExp(branchIdPattern('{prefix}{id}-{ref}-{slug}', 'MDO', ['feature/', 'feat/', 'fix/', '']));
   expect('feature/MDO-0012-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
   expect('feat/MDO-0012-CU-86e3w5954-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
   expect('MDO-0012-VZ-12-wizard'.match(re)?.[1]).toBe('MDO-0012');
-  expect(new RegExp(branchIdPattern('{prefix}{id}-{slug}', 'MDO')).exec('feat/MDO-0003-x')?.[1]).toBe('MDO-0003');
-  expect('users/jd/feature/MDO-0004-x'.match(re)?.[1]).toBe('MDO-0004');
-  expect('feature-MDO-0005-x'.match(re)?.[1]).toBe('MDO-0005');
   expect('main'.match(re)).toBeNull();
+  // Not a spec branch: an uppercase word with a number in the slug is no id (review F12).
+  expect('fix/handle-HTTP-500-errors'.match(re)).toBeNull();
+  expect('docs/bump-README-2-links'.match(re)).toBeNull();
+  const custom = new RegExp(branchIdPattern('{prefix}{id}-{slug}', 'MDO', ['users/jd/feature/', 'feature-']));
+  expect('users/jd/feature/MDO-0004-x'.match(custom)?.[1]).toBe('MDO-0004');
+  expect('feature-MDO-0005-x'.match(custom)?.[1]).toBe('MDO-0005');
+  expect('jd/feat-ABC-1-x'.match(custom)).toBeNull();
 });
 
 describe('generated commitlint config with commits.emoji false', () => {

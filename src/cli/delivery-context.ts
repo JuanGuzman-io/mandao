@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { readConfig } from '../engine/files.js';
 import type { Branching } from '../schemas/branching.js';
@@ -13,7 +13,6 @@ import { type StartRecord, startRecord } from '../scripts/spec-start.js';
 /** Where a delivery starts: the spec or quick, its branch and worktree, the remote and the branching model. */
 
 const git = (cwd: string, args: string[]) => execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-const _readIf = (file: string) => (existsSync(file) ? readFileSync(file, 'utf8') : undefined);
 
 export interface DeliveryContext {
   config: ReturnType<typeof readConfig>;

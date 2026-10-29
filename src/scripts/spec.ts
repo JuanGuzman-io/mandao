@@ -345,6 +345,15 @@ export function whereAmI(cwd: string, expected: { branch: string; worktree: stri
   };
 }
 
+/** The start record's branch; a state.yml that breaks its schema is no fact here (review F15), never an error. */
+function recordedBranch(dir: string): string | undefined {
+  try {
+    return startRecord(dir).branch;
+  } catch {
+    return undefined;
+  }
+}
+
 /** The branch and worktree a spec folder belongs to: the recorded start branch, else from its folder name and story. */
 export function expectedPlace(root: string, config: Config, spec: SpecFolder): { branch: string; worktree: string } {
   const [id, ...slug] = spec.name.split(/-(?=[a-z])/);
@@ -353,7 +362,7 @@ export function expectedPlace(root: string, config: Config, spec: SpecFolder): {
   const ref = spec.story ? trackerRef(spec.story.meta.tracker, spec.story.meta.tracker_id) : undefined;
   // The branch spec-new really created wins: story.md's tracker fields are written by hand (review F4).
   const branch =
-    startRecord(spec.dir).branch ??
+    recordedBranch(spec.dir) ??
     specBranch(config, branchingFor(config), {
       id: id ?? spec.name,
       slug: slug.join('-'),
