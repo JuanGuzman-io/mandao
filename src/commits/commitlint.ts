@@ -7,10 +7,12 @@ export const COMMITLINT_PATH = '.mandao/commitlint.config.mjs';
  * `export default { extends: ['./.mandao/commitlint.config.mjs'] }`.
  * The header pattern accepts the emoji prefix and a plugin rule checks it matches the type.
  */
-/** Turns `{type}/{id}-{slug}` into a regex source whose first group is the spec id. */
+/** Turns `{prefix}{id}-{ref}-{slug}` (or `{type}/…`) into a regex source whose first group is the spec id. */
 export function branchIdPattern(template: string, localPrefix: string): string {
   const escaped = template.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
   return `^${escaped
+    .replace('{prefix}', '(?:[^/]*/)?')
+    .replace(/\{ref\}[-_/]?/, '(?:[A-Za-z0-9_-]+?[-_/])??')
     .replace('\\{type\\}', '[a-z]+')
     .replace('{type}', '[a-z]+')
     .replace('{id}', `((?:[A-Z][A-Z0-9_]*|${localPrefix})-\\d+)`)

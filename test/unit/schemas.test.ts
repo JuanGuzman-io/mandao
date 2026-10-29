@@ -20,7 +20,7 @@ describe('config', () => {
       intake: 'docs/product/intake',
       worktrees: '../{repo}.worktrees',
     });
-    expect(cfg.spec.branch).toBe('{prefix}{id}-{slug}');
+    expect(cfg.spec.branch).toBe('{prefix}{id}-{ref}-{slug}');
     expect(cfg.branching).toEqual({ model: 'feature-branch' });
     expect(cfg.delivery).toEqual({ pre_push: 'impacted' });
     expect(cfg.commits.emoji).toEqual(DEFAULT_COMMIT_EMOJI);

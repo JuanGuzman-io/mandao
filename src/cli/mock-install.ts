@@ -13,7 +13,7 @@ import { repoRoot, type SpecCommit } from '../scripts/commits.js';
 import { mockDecision } from '../scripts/mockups.js';
 import type { SpecFolder } from '../scripts/spec.js';
 import { installSkills, installStep, pinSkills, type SkillResult, shellRunner, skillFolders } from '../skills/install.js';
-import { emojiPrefix } from '../spec/index.js';
+import { emojiPrefix, specTrailers } from '../spec/index.js';
 import { makeScratchDir, removeScratchDir } from '../writer/files.js';
 import type { CliContext } from './context.js';
 import { json } from './json.js';
@@ -216,7 +216,7 @@ function commitInstall(i: Install, spec: SpecFolder): SpecCommit {
   const scope = i.config.projects.length > 1 ? 'specs' : (spec.story?.meta.projects[0] ?? i.config.projects[0]!.name);
   const header = `${emojiPrefix(i.config, 'chore')}chore(${scope}): install mock skills for ${id}`;
   try {
-    git(i.repo, ['commit', '-q', '-m', [header, '', `${i.config.commits.trailers.refs}: ${id}`].join('\n'), '--', ...present]);
+    git(i.repo, ['commit', '-q', '-m', [header, '', ...specTrailers(i.config, { ...spec.story?.meta, id })].join('\n'), '--', ...present]);
   } catch (e) {
     return { committed: false, reason: String((e as { stderr?: string }).stderr || (e as Error).message).trim() };
   }

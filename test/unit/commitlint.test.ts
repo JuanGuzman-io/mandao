@@ -90,6 +90,14 @@ test('branchIdPattern extracts tracker and local ids', () => {
   expect('main'.match(re)).toBeNull();
 });
 
+test('branchIdPattern reads the id through the default {prefix} template, with or without a tracker reference', () => {
+  const re = new RegExp(branchIdPattern('{prefix}{id}-{ref}-{slug}', 'MDO'));
+  expect('feature/MDO-0012-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect('feat/MDO-0012-CU-86e3w5954-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect('MDO-0012-VZ-12-wizard'.match(re)?.[1]).toBe('MDO-0012');
+  expect(new RegExp(branchIdPattern('{prefix}{id}-{slug}', 'MDO')).exec('feat/MDO-0003-x')?.[1]).toBe('MDO-0003');
+});
+
 describe('generated commitlint config with commits.emoji false', () => {
   test('parses a plain header and does not require the emoji rule', async () => {
     const config = configSchema.parse({

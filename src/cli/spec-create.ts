@@ -122,6 +122,7 @@ export function discardSpec(root: string, config: Config, id: string, yes?: bool
 
 interface SpecNewOptions {
   id?: string;
+  trackerId?: string;
   type: string;
   project?: string;
   hotfix?: boolean;
@@ -141,7 +142,8 @@ export function registerSpecNew(run: Command, ctx: CliContext) {
   run
     .command('spec-new <title...>')
     .description('Propose the id, folder, branch, base and worktree for a new spec')
-    .option('--id <id>', 'tracker id (default: the next local id)')
+    .option('--id <id>', 'a story id such as PROJ-123 (default: the next local id)')
+    .option('--tracker-id <id>', "the tracker's own item id: the spec keeps a local id, the branch and commits carry the reference")
     .option('--type <type>', 'story | bug | …', 'story')
     .option('--project <name>', "polyrepo: use this project's branching model")
     .option('--hotfix', 'hotfix lane: start from branching.hotfix.from with the hotfix prefix')

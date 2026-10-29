@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
-import { type CommitState, commitMessage, type Progress, type Story, type Task } from '../spec/index.js';
+import { type CommitState, commitMessage, type Progress, type Story, specTrailers, type Task } from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
 import { onlyTaskBookkeeping, scriptLedgerPath, statusOnlyChange } from './commit-spec-files.js';
 import { reconcileEntries } from './reconcile.js';
@@ -378,6 +378,8 @@ export function commitSpecDocs(input: {
   specDir: string;
   header: string;
   specId: string;
+  /** The story's tracker fields: a `tracker_id` adds the `Tracker` trailer next to `Refs`. */
+  story?: { tracker?: string; tracker_id?: string | null } | undefined;
   config: Config;
   trailers?: string[];
   protectedBranches?: string[];
@@ -393,7 +395,9 @@ export function commitSpecDocs(input: {
   git(input.repo, ['add', '--', ...paths]);
   if (!git(input.repo, ['diff', '--cached', '--name-only', '--', ...paths]).trim())
     return { committed: false, reason: 'nothing to commit in the spec folder' };
-  const message = [input.header, '', `${input.config.commits.trailers.refs}: ${input.specId}`, ...(input.trailers ?? [])].join('\n');
+  const message = [input.header, '', ...specTrailers(input.config, { ...input.story, id: input.specId }), ...(input.trailers ?? [])].join(
+    '\n',
+  );
   try {
     git(input.repo, ['commit', '-q', '-m', message, '--', ...paths]);
   } catch (e) {

@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { formatIssues, STORY_ID, specStatus } from '../schemas/index.js';
+import { formatIssues, STORY_ID, specStatus, TRACKER_ITEM_ID } from '../schemas/index.js';
+
+export { trackerRef } from '../schemas/index.js';
+
 import { LAYOUT_VERSIONS } from './layout.js';
 import { type Clause, frontmatterOf, readClauses, sections, splitHeading } from './markdown.js';
 
@@ -11,6 +14,8 @@ export const storyFrontmatterSchema = z.object({
   tracker: z.enum(['jira', 'linear', 'clickup', 'monday', 'none']).default('none'),
   type: z.enum(SPEC_TYPES).default('story'),
   id: z.string().regex(STORY_ID, 'must look like PROJ-123 or MDO-0001'),
+  /** The tracker's own item id when `id` is local (always, since the tracker-reference phase): branch, trailer and PR carry it. */
+  tracker_id: z.string().regex(TRACKER_ITEM_ID, 'letters, digits, - and _ only').nullish(),
   url: z.string().nullish(),
   parent: z.string().nullish(),
   projects: z.array(z.string()).default([]),

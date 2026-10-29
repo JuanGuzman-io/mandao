@@ -89,7 +89,7 @@ function guide(input: AdapterInput): string {
     '',
     ...commitSubjectLines(config),
     '',
-    `Trailers: \`${t.refs}: <tracker id>\`, \`${t.task}: <task>\`, \`${t.acs}: <AC ids>\`, \`${t.quick}: <name>\` for quick changes.`,
+    `Trailers: \`${t.refs}: <spec id>\`, \`${t.tracker}: <tracker reference>\` when the story has a \`tracker_id\`, \`${t.task}: <task>\`, \`${t.acs}: <AC ids>\`, \`${t.quick}: <name>\` for quick changes.`,
   ];
   return `${lines.join('\n')}\n`;
 }

@@ -142,6 +142,8 @@ const commits = z
         task: z.string().default('Mandao-Task'),
         acs: z.string().default('Mandao-AC'),
         quick: z.string().default('Mandao-Quick'),
+        /** The tracker reference (`CU-86e3w5954`, `VZ-12`) when the story has a `tracker_id`. */
+        tracker: z.string().default('Tracker'),
       })
       .prefault({}),
   })
@@ -244,8 +246,11 @@ export const configSchema = z
     skill_packs: z.array(kebabId).default([]),
     spec: z
       .object({
-        /** Branch naming; `{prefix}` comes from `branching.prefixes` by spec type (`{type}`, feat or fix, still works). */
-        branch: z.string().default('{prefix}{id}-{slug}'),
+        /**
+         * Branch naming; `{prefix}` comes from `branching.prefixes` by spec type (`{type}`, feat or fix, still works);
+         * `{ref}` is the tracker reference, dropped with its separator when the spec has none.
+         */
+        branch: z.string().default('{prefix}{id}-{ref}-{slug}'),
         /** Prefix for local ids when there is no tracker: MDO-0001. */
         local_prefix: z
           .string()

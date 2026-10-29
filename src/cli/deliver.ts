@@ -14,6 +14,8 @@ import {
   pullRequestBody,
   renderCloseDocument,
   sectionOf,
+  specTrailers,
+  trackerRef,
   upsertChangelog,
   withDelivery,
 } from '../spec/index.js';
@@ -81,7 +83,11 @@ function pullRequest(delivery: DeliveryContext): { title: string; body: string }
         parseCloseSummary(closeText, delivery.spec!.name),
         `${relative(delivery.worktree, delivery.specDir).split(sep).join('/')}/`,
       );
-  return { title, body };
+  // The tracker's integration links the PR by its item reference (ClickUp, Jira, Linear read the body too).
+  const meta = delivery.quick ? undefined : delivery.spec!.story!.meta;
+  const ref = meta ? trackerRef(meta.tracker, meta.tracker_id) : undefined;
+  const link = ref ? `${delivery.config.commits.trailers.tracker}: ${meta?.url ? `[${ref}](${meta.url})` : ref}\n\n` : '';
+  return { title, body: `${link}${body}` };
 }
 
 function pushBranch(delivery: DeliveryContext): void {
@@ -250,7 +256,7 @@ function recordSpecDelivery(repo: string, specDir: string, target: string, confi
     // A non-zero status means the delivery record is staged and needs its own branch commit.
   }
   const header = `${emojiPrefix(config, 'docs')}docs(delivery): record PR destination`;
-  command(repo, 'git', ['commit', '-m', `${header}\n\n${config.commits.trailers.refs}: ${spec.story.meta.id}`]);
+  command(repo, 'git', ['commit', '-m', [header, '', ...specTrailers(config, spec.story.meta)].join('\n')]);
 }
 
 /** Cleanup runs from the principal checkout, after checking branch ancestry and refusing dirty trees. */

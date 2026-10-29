@@ -1,4 +1,4 @@
-import type { CommitType, Config } from '../schemas/index.js';
+import { type CommitType, type Config, trackerRef } from '../schemas/index.js';
 import { isTestFile } from '../scripts/impact.js';
 import type { Story } from './story.js';
 import type { Task, TaskKind } from './tasks.js';
@@ -54,6 +54,13 @@ export function emojiPrefix(config: Config, type: CommitType | 'breaking'): stri
   return config.commits.emoji === false ? '' : `${config.commits.emoji[type]} `;
 }
 
+/** `Refs: <ID>` and, when the story names a tracker item, `Tracker: <ref>`: the trailers every spec commit opens with. */
+export function specTrailers(config: Config, meta: { id: string; tracker?: string; tracker_id?: string | null }): string[] {
+  const t = config.commits.trailers;
+  const ref = trackerRef(meta.tracker ?? 'none', meta.tracker_id);
+  return [`${t.refs}: ${meta.id}`, ...(ref ? [`${t.tracker}: ${ref}`] : [])];
+}
+
 /** Header and trailers for a task's commit, following rules/commits.md and the configured emoji map. */
 export function commitMessage(
   config: Config,
@@ -69,9 +76,13 @@ export function commitMessage(
   const scope = config.projects.length > 1 ? task.project : (task.files[0]?.split('/').slice(-2, -1)[0] ?? task.project);
   const header = `${prefix}${type}(${scope})${breaking ? '!' : ''}: ${subject}`;
   const t = config.commits.trailers;
-  const trailers = [`${t.refs}: ${story.meta.id}`, `${t.task}: ${task.id}`, ...(task.ac.length ? [`${t.acs}: ${task.ac.join(', ')}`] : [])];
+  const trailers = [
+    ...specTrailers(config, story.meta),
+    `${t.task}: ${task.id}`,
+    ...(task.ac.length ? [`${t.acs}: ${task.ac.join(', ')}`] : []),
+  ];
   const issues: string[] = task.kind ? kindIssues(task.kind, files) : [];
-  const own = new Set([t.refs, t.task, t.acs, t.quick].map((k) => k.toLowerCase()));
+  const own = new Set([t.refs, t.tracker, t.task, t.acs, t.quick].map((k) => k.toLowerCase()));
   for (const line of extra) {
     const problem = trailerProblem(line, own);
     if (problem) issues.push(problem);

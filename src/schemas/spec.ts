@@ -6,6 +6,18 @@
 /** A story id: `PROJ-123`, `MDO-0001`. It names the spec's cache folder, so nothing else ever passes. */
 export const STORY_ID = /^[A-Z][A-Z0-9_]*-\d+$/;
 
+/**
+ * A planning tool's own item id (ClickUp `86e3w5954`, Jira `VZ-12`): kept next to the local story id, never as a folder
+ * name. It goes into branch names, so only letters, digits, `-` and `_`.
+ */
+export const TRACKER_ITEM_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+
+/** How a tracker's integration recognizes its item in a branch, commit or PR: ClickUp wants `CU-<id>`, the rest the id as is. */
+export function trackerRef(tracker: string, id: string | null | undefined): string | undefined {
+  if (!id || tracker === 'none') return undefined;
+  return tracker === 'clickup' ? `CU-${id}` : id;
+}
+
 /** The layout versions a story's `schema_version` may name: the one place the set is written. */
 export const LAYOUT_VERSIONS = [1, 2] as const;
 export type LayoutVersion = (typeof LAYOUT_VERSIONS)[number];

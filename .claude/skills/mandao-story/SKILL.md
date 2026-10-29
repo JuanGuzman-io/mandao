@@ -32,14 +32,16 @@ in the output which skill was missing.
 ## 1. Find or create the story
 
 1. Read `.mandao/sources.yml` for the tracker and its MCP server.
-2. If the input is a tracker id or URL, read the item through MCP.
+2. If the input is a tracker id or URL, read the item through MCP. The spec always takes the next local id;
+   the item's own id goes in `tracker_id` (frontmatter) and `--tracker-id` (below), so the branch, every commit
+   and the PR carry its reference (`CU-<id>` for ClickUp, the key as is for Jira or Linear).
 3. If there is no item, offer to create one through MCP. Show the exact title and description first;
    create it only after the user confirms. Without MCP or tracker, use the next local id from
    `node .mandao/bin/mandao.mjs run spec-new "<title>"`.
-4. **Open the spec** when it does not exist yet (phase 16). First run the proposal, `node .mandao/bin/mandao.mjs run spec-new "<title>" [--id <ID>] --type <type>`:
+4. **Open the spec** when it does not exist yet (phase 16). First run the proposal, `node .mandao/bin/mandao.mjs run spec-new "<title>" [--tracker-id <item>] --type <type>`:
    when it lists `sharedState` (another open spec changed the constitution, the intake proposals or the config
    and has not merged them), tell the PE which spec and files and ask once whether to take them. Then
-   `node .mandao/bin/mandao.mjs run spec-new "<title>" [--id <ID>] --type <type> --create --harness claude --first "/mandao-story <ID>"`, adding
+   `node .mandao/bin/mandao.mjs run spec-new "<title>" [--tracker-id <item>] --type <type> --create --harness claude --first "/mandao-story <ID>"`, adding
    `--carry-from <branch>` when the PE said yes.
    It creates the branch per `branching` (in this checkout, carrying the uncommitted intake and constitution
    changes; a worktree only when another spec is open here, or with `--worktree` when the PE asks), records the

@@ -19,7 +19,8 @@ rule: commits
 Issue long-lived refresh tokens when the user opts in, capped by
 the configurable session policy defined in the contract.
 
-Refs: PROJ-123
+Refs: MDO-0012
+Tracker: CU-86e3w5954
 Mandao-Task: T2
 Mandao-AC: AC-1, AC-3
 ```
@@ -34,7 +35,8 @@ Mandao-AC: AC-1, AC-3
 - Emoji map: fixed per type in `.mandao/config.yml` (`commits.emoji`); never choose freely. A breaking
   change uses the `breaking` emoji instead of the type's.
 - Breaking: `!` after the scope plus a `BREAKING CHANGE:` trailer (mandatory when a contract changes).
-- Trailers: `Refs`, `Mandao-Task`, `Mandao-AC`; quick changes use `Mandao-Quick: <name>`.
+- Trailers: `Refs` (the spec id), `Tracker` (the tracker item reference, when the story has a `tracker_id`;
+  the scripts add it), `Mandao-Task`, `Mandao-AC`; quick changes use `Mandao-Quick: <name>`.
 - Closing keywords (`Fixes <ID>`) only on the final commit or the PR.
 
 `.mandao/commitlint.config.mjs` enforces the header, the emoji ↔ type map (unless `commits.emoji` is
