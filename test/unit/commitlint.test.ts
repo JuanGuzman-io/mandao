@@ -132,3 +132,19 @@ describe('generated commitlint config with commits.emoji false', () => {
     expect(rule({ header: 'feat: short' })[0]).toBe(true);
   });
 });
+
+test('the generated branch pattern knows the own prefixes of each polyrepo project (review F17)', () => {
+  const config = configSchema.parse({
+    schema_version: 1,
+    workspace: 'polyrepo',
+    projects: [
+      { name: 'api', path: 'api', repo: 'local' },
+      { name: 'web', path: 'web', repo: 'local', branching: { prefixes: { feature: 'web-feature/' } } },
+    ],
+    harnesses: ['claude'],
+  });
+  const source = /const BRANCH_RE = new RegExp\((".*")\);/.exec(commitlintConfig(config, '0.0.0'))?.[1];
+  const re = new RegExp(JSON.parse(source!));
+  expect('web-feature/MDO-0007-x'.match(re)?.[1]).toBe('MDO-0007');
+  expect('fix/handle-HTTP-500-errors'.match(re)).toBeNull();
+});

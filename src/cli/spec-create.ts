@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
-import { realpathSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
+import { join } from 'node:path';
 import type { Command } from 'commander';
 import { ADAPTERS } from '../adapters/index.js';
-import { readConfig } from '../engine/files.js';
+import { readConfig, readSources, SOURCES_FILE } from '../engine/files.js';
 import type { Config } from '../schemas/index.js';
 import { branchingFor, currentBranch, startPoint, worktreeHolding } from '../scripts/branching.js';
 import { idsInUse, type ProposalOptions, proposeSpec } from '../scripts/spec.js';
@@ -123,6 +124,7 @@ export function discardSpec(root: string, config: Config, id: string, yes?: bool
 interface SpecNewOptions {
   id?: string;
   trackerId?: string;
+  trackerKind?: string;
   type: string;
   project?: string;
   hotfix?: boolean;
@@ -159,6 +161,9 @@ export function registerSpecNew(run: Command, ctx: CliContext) {
     .action((title: string[], opts: SpecNewOptions) => specNew(ctx, title.join(' '), opts));
 }
 
+/** The tracker kind sources.yml names, `none` when there is no sources file. */
+const trackerKind = (root: string) => (existsSync(join(root, SOURCES_FILE)) ? readSources(root).tracker.kind : 'none');
+
 /** `--first "/mandao-specify <ID>"` before the id is allocated: the placeholder takes the spec's id (review F11). */
 const withId = (first: string, id: string) => first.replaceAll('<ID>', id);
 
@@ -166,6 +171,7 @@ const withId = (first: string, id: string) => first.replaceAll('<ID>', id);
 async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
   const { harness, first, create, worktree, install, baseline, discard, yes, carryFrom, ...options } = opts;
   const config = readConfig(ctx.root());
+  if (options.trackerId !== undefined) options.trackerKind = trackerKind(ctx.root());
   if (discard) return json(discardSpec(ctx.root(), config, title, yes));
   const active = harnessOption(harness);
   if (!create) {

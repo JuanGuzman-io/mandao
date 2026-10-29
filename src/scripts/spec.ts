@@ -20,7 +20,7 @@ import {
 import { branchExists, branchingFor, specBranch, startPoint } from './branching.js';
 import { docPath, LITE_DOC, logPath, readProgress, specKeepsState } from './spec-log.js';
 import { startRecord } from './spec-start.js';
-import { idIssues, trackerKind } from './tracker-ref.js';
+import { idIssues } from './tracker-ref.js';
 
 /** Everything Mandao can read from one spec folder, with the problems found while reading it. */
 export interface SpecFolder {
@@ -221,6 +221,8 @@ export interface ProposalOptions {
   hotfix?: boolean;
   /** The tracker's own item id: the spec keeps a local id, the branch carries the reference. */
   trackerId?: string;
+  /** The tracker kind sources.yml names (the CLI reads it); `none` when absent. */
+  trackerKind?: string;
 }
 
 /** Proposes the spec folder, branch, base and worktree for `specify` or `quick` (ADR 0015, ADR 0023). */
@@ -228,7 +230,7 @@ export function proposeSpec(root: string, config: Config, title: string, opts: P
   const id = opts.id ?? nextLocalId(root, config);
   const slug = slugify(title);
   const b = branchingFor(config, opts.project);
-  const kind = opts.trackerId === undefined ? 'none' : trackerKind(root);
+  const kind = opts.trackerKind ?? 'none';
   const ref = opts.trackerId && TRACKER_ITEM_ID.test(opts.trackerId) ? trackerRef(kind, opts.trackerId) : undefined;
   const branch = specBranch(config, b, {
     id,
