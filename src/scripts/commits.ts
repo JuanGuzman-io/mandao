@@ -3,7 +3,15 @@ import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import type { Config } from '../schemas/index.js';
-import { type CommitState, commitMessage, type Progress, type Story, specTrailers, type Task } from '../spec/index.js';
+import {
+  type CommitState,
+  commitMessage,
+  extraTrailerProblems,
+  type Progress,
+  type Story,
+  specTrailers,
+  type Task,
+} from '../spec/index.js';
 import { writeProgress } from './checkpoint.js';
 import { onlyTaskBookkeeping, scriptLedgerPath, statusOnlyChange } from './commit-spec-files.js';
 import { reconcileEntries } from './reconcile.js';
@@ -387,6 +395,8 @@ export function commitSpecDocs(input: {
   /** Only these paths instead of the spec folder (implement's status commit leaves task bookkeeping alone). */
   only?: string[];
 }): SpecCommit {
+  const forged = extraTrailerProblems(input.config, input.trailers ?? []);
+  if (forged.length) return { committed: false, reason: forged.join('; ') };
   const branch = git(input.repo, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
   if (input.protectedBranches?.includes(branch))
     return { committed: false, reason: `${branch} is a protected branch: commit from the spec's worktree` };

@@ -374,4 +374,8 @@ test('story.md accepts a tracker_id next to the local id, and refuses one that i
   const withId = (v: string) => story.replace(/^id: .*$/m, (line) => `${line}\ntracker_id: ${v}`);
   expect(parseStory(withId('86e3w5954')).story?.meta.tracker_id).toBe('86e3w5954');
   expect(parseStory(withId('../x')).story).toBeUndefined();
+  // YAML reads these as numbers (86e3 is 86000): the id is taken as written (review F1).
+  expect(parseStory(withId('1234567890')).story?.meta.tracker_id).toBe('1234567890');
+  expect(parseStory(withId('86e3')).story?.meta.tracker_id).toBe('86e3');
+  expect(parseStory(withId('"86e3"')).story?.meta.tracker_id).toBe('86e3');
 });

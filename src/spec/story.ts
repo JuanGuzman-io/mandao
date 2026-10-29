@@ -43,11 +43,21 @@ export interface Story {
   raw: string;
 }
 
+/**
+ * YAML reads an unquoted `tracker_id: 1234567890` (Monday) or `86e3` (86000) as a number: take the value as written
+ * in the frontmatter line instead, so no id changes on the way (review F1).
+ */
+function asWritten(data: Record<string, unknown>, markdown: string): Record<string, unknown> {
+  if (typeof data.tracker_id !== 'number') return data;
+  const written = /^tracker_id:[ \t]*([^\s#]+)/m.exec(markdown)?.[1];
+  return written ? { ...data, tracker_id: written } : data;
+}
+
 /** Parses story.md. Never throws: problems come back as issues next to whatever could be read. */
 export function parseStory(markdown: string, file = 'story.md'): { story?: Story; issues: string[] } {
   const issues: string[] = [];
   const { data, content } = frontmatterOf(markdown);
-  const meta = storyFrontmatterSchema.safeParse(data);
+  const meta = storyFrontmatterSchema.safeParse(asWritten(data, markdown));
   if (!meta.success) return { issues: formatIssues(meta.error, file) };
   const title = content.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? '';
   const acs: AcceptanceCriterion[] = [];

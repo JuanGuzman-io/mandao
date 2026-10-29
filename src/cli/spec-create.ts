@@ -148,7 +148,7 @@ export function registerSpecNew(run: Command, ctx: CliContext) {
     .option('--project <name>', "polyrepo: use this project's branching model")
     .option('--hotfix', 'hotfix lane: start from branching.hotfix.from with the hotfix prefix')
     .option('--harness <id>', 'the active harness: adds `resume` when --first is given', 'claude')
-    .option('--first <command>', 'the mandao to run first in the worktree, e.g. "/mandao-specify <ID>"')
+    .option('--first <command>', 'the mandao to run first in the worktree, e.g. "/mandao-specify <ID>" (<ID> becomes the spec id)')
     .option('--create', 'create it: the branch (in place, or a worktree), the request record and the baseline')
     .option('--worktree', 'with --create: a worktree instead of the branch in this checkout')
     .option('--no-install', 'with --create --worktree: skip installing dependencies')
@@ -158,6 +158,9 @@ export function registerSpecNew(run: Command, ctx: CliContext) {
     .option('--yes', 'with --discard: remove them')
     .action((title: string[], opts: SpecNewOptions) => specNew(ctx, title.join(' '), opts));
 }
+
+/** `--first "/mandao-specify <ID>"` before the id is allocated: the placeholder takes the spec's id (review F11). */
+const withId = (first: string, id: string) => first.replaceAll('<ID>', id);
 
 /** The `run spec-new` action: discard, create, or only propose. */
 async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
@@ -169,7 +172,7 @@ async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
     // The proposal also names other open specs' unmerged shared changes, so the PE decides on --carry-from first.
     const proposal = proposeSpec(ctx.root(), config, title, options);
     const sharedState = sharedStateElsewhere(ctx.root(), config, proposal.base, proposal.branch);
-    const resume = first ? { resume: ADAPTERS[active].session.resume(proposal.worktree, first).text } : {};
+    const resume = first ? { resume: ADAPTERS[active].session.resume(proposal.worktree, withId(first, proposal.id)).text } : {};
     return json({ ...proposal, ...resume, ...(sharedState.length ? { sharedState } : {}) });
   }
   const quick = options.id === 'quick';
@@ -183,6 +186,7 @@ async function specNew(ctx: CliContext, title: string, opts: SpecNewOptions) {
     ...(carryFrom ? { carryFrom } : {}),
   });
   if (!made.ok) process.exitCode = 1;
-  const resume = made.mode === 'worktree' && first ? ADAPTERS[active].session.resume(made.worktree, first).text : undefined;
+  const resume =
+    made.mode === 'worktree' && first ? ADAPTERS[active].session.resume(made.worktree, withId(first, made.id)).text : undefined;
   return json(resume ? { ...made, resume } : made);
 }

@@ -96,6 +96,9 @@ test('branchIdPattern reads the id through the default {prefix} template, with o
   expect('feat/MDO-0012-CU-86e3w5954-contract-wizard'.match(re)?.[1]).toBe('MDO-0012');
   expect('MDO-0012-VZ-12-wizard'.match(re)?.[1]).toBe('MDO-0012');
   expect(new RegExp(branchIdPattern('{prefix}{id}-{slug}', 'MDO')).exec('feat/MDO-0003-x')?.[1]).toBe('MDO-0003');
+  expect('users/jd/feature/MDO-0004-x'.match(re)?.[1]).toBe('MDO-0004');
+  expect('feature-MDO-0005-x'.match(re)?.[1]).toBe('MDO-0005');
+  expect('main'.match(re)).toBeNull();
 });
 
 describe('generated commitlint config with commits.emoji false', () => {

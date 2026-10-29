@@ -3,7 +3,7 @@ schema_version: 2
 tracker: none            # jira | linear | clickup | monday | none
 type: story              # epic | story | bug | enhancement | task | performance
 id: MDO-0000             # local id (PROJ-123 shape); names the folder and the branch
-tracker_id:              # the tracker's own item id (86e3w5954, VZ-12): branch, commits and PR carry it
+tracker_id:              # the tracker's own item id, quoted ("86e3w5954", "VZ-12"): branch, commits and PR carry it
 url:
 parent:
 projects: []             # project names from .mandao/config.yml

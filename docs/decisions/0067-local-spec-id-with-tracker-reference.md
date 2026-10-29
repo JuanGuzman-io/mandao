@@ -19,16 +19,18 @@ was left as a literal. The `Refs` trailer rule only fired with `MANDAO_SPEC_ID` 
    the tracker. An explicit `--id` that is not a story ID is refused before anything is created, and the message
    names `--tracker-id`. IDs that already fit (Jira, Linear) still work with `--id`.
 2. The tracker's own item ID goes in a new `story.md` field, `tracker_id`. It allows letters, digits, `-` and `_`,
-   because it ends up in branch names.
+   because it ends up in branch names. The template quotes it; an unquoted value YAML reads as a number (a Monday ID, or
+   `86e3`, which YAML reads as 86000) is taken as written in the frontmatter line.
 3. The reference is `CU-<id>` for ClickUp, which is the form of ClickUp's own branch names, and the ID as is for every
    other tracker (`VZ-12`, `ENG-123`). This reference travels with the spec:
    - **Branch:** `spec.branch` gains a `{ref}` token. The default becomes `{prefix}{id}-{ref}-{slug}`. Without a
      reference, `{ref}` is dropped together with its following separator, so existing branch names do not change.
-     `run spec-new --tracker-id <item>` reads the tracker kind from `sources.yml`.
+     `run spec-new --tracker-id <item>` reads the tracker kind from `sources.yml` and refuses when it names none. A custom
+     template without `{ref}` keeps working and leaves the reference out of the branch (commits and PR still carry it).
    - **Commits:** every spec commit carries a `Tracker: <ref>` trailer after `Refs: <ID>` (`commits.trailers.tracker`).
      This covers task commits, `commit-spec`, approvals, mock installs and the delivery record. `--trailer` cannot add
-     its own `Tracker` line.
-   - **Pull request:** the body starts with the reference, linked to the story's `url` when there is one.
+     a key Mandao writes (`Refs`, `Tracker`, …) on task commits or on `commit-spec`.
+   - **Pull request:** the body starts with the reference, linked to the story's `url` when it is a plain `http(s)` URL.
    - **Content:** `story`, `specify`, the commit rules and the guide say where each one goes.
 4. `branchIdPattern` handles `{prefix}` and `{ref}`, so commitlint finds the spec ID on default branch names again.
 
@@ -36,6 +38,10 @@ was left as a literal. The `Refs` trailer rule only fired with `MANDAO_SPEC_ID` 
 
 - ClickUp, Jira and Linear link branches, commits and PRs by the item ID they contain. `Refs` keeps the spec ID, so
   `trace`, `version-notes` and the commit ledger are unchanged.
-- `expectedPlace` builds the branch from the story's `tracker_id`, so `where` and `next` agree with `spec-new`.
+- `expectedPlace` takes the branch from the start record `spec-new --create` writes, so `where`, `next` and the
+  delivery record agree with the branch really created even when `story.md` lacks its tracker fields; without a record
+  it builds the branch from the story's `tracker_id`.
+- `--first "/mandao-specify <ID>"` gets the allocated ID in place of `<ID>`, since the ID is local and not known before.
+- `branchIdPattern` reads `{prefix}` as any leading segments, so prefixes like `users/jd/feature/` or `feature-` work.
 - A spec opened with an invalid ID before this change has to be discarded with `run spec-new <id> --discard --yes`
   and opened again with `--tracker-id`.

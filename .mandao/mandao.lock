@@ -483,7 +483,7 @@ files:
     harness: mandao
     from: config:commits
     ownership: owned
-    hash: sha256-EEseHTNJ7L7RfkGBsqe9oCG6a2mxZ6IcJzS/oOmdVAM=
+    hash: sha256-NbsZCxNRlz78gKZppn9FJ/Q9elQGLah5lNr5+x9Kvkc=
     scope: project
   - path: .mandao/guide.md
     harness: agents-md
@@ -825,7 +825,7 @@ files:
     harness: mandao
     from: template:shared/spec/story.md
     ownership: owned
-    hash: sha256-w29nInYsQUVTaVboMJrQ1zTwlsvSbp40OShjuFHRNp4=
+    hash: sha256-NQhoicdJ57Bz8U4OwJnKX1+v2cS85NreC3Xco46bJeo=
     scope: project
   - path: .mandao/templates/app/spec/tasks.md
     harness: mandao

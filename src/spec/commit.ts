@@ -61,6 +61,13 @@ export function specTrailers(config: Config, meta: { id: string; tracker?: strin
   return [`${t.refs}: ${meta.id}`, ...(ref ? [`${t.tracker}: ${ref}`] : [])];
 }
 
+/** The extra trailer lines (`--trailer`) a spec commit refuses: malformed, or a key Mandao writes (Refs, Tracker, …). */
+export function extraTrailerProblems(config: Config, lines: string[]): string[] {
+  const t = config.commits.trailers;
+  const own = new Set([t.refs, t.tracker, t.task, t.acs, t.quick].map((k) => k.toLowerCase()));
+  return lines.flatMap((line) => trailerProblem(line, own) ?? []);
+}
+
 /** Header and trailers for a task's commit, following rules/commits.md and the configured emoji map. */
 export function commitMessage(
   config: Config,

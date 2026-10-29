@@ -73,6 +73,17 @@ async function selectDestination(delivery: DeliveryContext): Promise<{ choices: 
   return { choices, target };
 }
 
+/**
+ * The PR body's first line when the story names a tracker item: its integration links the PR by the reference
+ * (ClickUp, Jira and Linear read the body too). Only a plain http(s) URL becomes a link.
+ */
+export function trackerLine(config: Config, meta: { tracker: string; tracker_id?: string | null; url?: string | null }): string {
+  const ref = trackerRef(meta.tracker, meta.tracker_id);
+  if (!ref) return '';
+  const url = meta.url && /^https?:\/\/[^\s()<>]+$/.test(meta.url) ? meta.url : undefined;
+  return `${config.commits.trailers.tracker}: ${url ? `[${ref}](${url})` : ref}\n\n`;
+}
+
 function pullRequest(delivery: DeliveryContext): { title: string; body: string } {
   const closeText = delivery.quick ? undefined : readIf(join(delivery.specDir, 'close-summary.md'));
   const title = delivery.quick ? (delivery.start.title ?? delivery.quickName!) : delivery.spec!.story!.title;
@@ -83,10 +94,7 @@ function pullRequest(delivery: DeliveryContext): { title: string; body: string }
         parseCloseSummary(closeText, delivery.spec!.name),
         `${relative(delivery.worktree, delivery.specDir).split(sep).join('/')}/`,
       );
-  // The tracker's integration links the PR by its item reference (ClickUp, Jira, Linear read the body too).
-  const meta = delivery.quick ? undefined : delivery.spec!.story!.meta;
-  const ref = meta ? trackerRef(meta.tracker, meta.tracker_id) : undefined;
-  const link = ref ? `${delivery.config.commits.trailers.tracker}: ${meta?.url ? `[${ref}](${meta.url})` : ref}\n\n` : '';
+  const link = delivery.quick ? '' : trackerLine(delivery.config, delivery.spec!.story!.meta);
   return { title, body: `${link}${body}` };
 }
 

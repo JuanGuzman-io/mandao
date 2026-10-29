@@ -11,7 +11,7 @@ export const COMMITLINT_PATH = '.mandao/commitlint.config.mjs';
 export function branchIdPattern(template: string, localPrefix: string): string {
   const escaped = template.replace(/[.*+?^$()|[\]\\]/g, '\\$&');
   return `^${escaped
-    .replace('{prefix}', '(?:[^/]*/)?')
+    .replace('{prefix}', '(?:.*/)?[^/]*?') // any segments (users/jd/feature/), or one without a slash (feature-)
     .replace(/\{ref\}[-_/]?/, '(?:[A-Za-z0-9_-]+?[-_/])??')
     .replace('\\{type\\}', '[a-z]+')
     .replace('{type}', '[a-z]+')
